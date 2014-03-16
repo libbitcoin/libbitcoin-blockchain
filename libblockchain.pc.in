@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libblockchain
+Description:  Rewrite bitcoin, make it super-pluggable, very easy to do and hack everything at every level, and very configurable.
+URL: http://github.com/libbitcoin/libblockchain
+Version: @PACKAGE_VERSION@
+Requires: libbitcoin
+Cflags: -I${includedir} -std=c++11
+Libs: -L${libdir} -lblockchain
+
