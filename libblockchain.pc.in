@@ -8,6 +8,6 @@ Description:  Rewrite bitcoin, make it super-pluggable, very easy to do and hack
 URL: http://github.com/libbitcoin/libblockchain
 Version: @PACKAGE_VERSION@
 Requires: libbitcoin
-Cflags: -I${includedir} -std=c++11
-Libs: -L${libdir} -lblockchain
+Cflags: -I${includedir} -std=c++11 @CFLAG_LEVELDB@
+Libs: -L${libdir} -lblockchain @LDFLAG_LEVELDB@
 

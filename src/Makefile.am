@@ -12,3 +12,5 @@ libblockchain_la_SOURCES = \
 	leveldb/leveldb_validate_block.cpp \
 	leveldb/leveldb_common.cpp
 
+libblockchain_la_LIBADD = @LDFLAG_LEVELDB@
+
