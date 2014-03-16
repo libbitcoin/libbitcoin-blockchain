@@ -29,6 +29,8 @@
 
 namespace libblockchain {
 
+using namespace libbitcoin;
+
 // Metadata + block
 class block_detail
 {

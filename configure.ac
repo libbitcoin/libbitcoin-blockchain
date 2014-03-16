@@ -14,7 +14,7 @@ AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 PKG_PROG_PKG_CONFIG
-PKG_CHECK_MODULES([libblockchain], [libblockchain])
+PKG_CHECK_MODULES([libbitcoin], [libbitcoin])
 
 AC_SUBST(LDFLAG_LEVELDB)
 LDFLAG_LEVELDB="-lleveldb"

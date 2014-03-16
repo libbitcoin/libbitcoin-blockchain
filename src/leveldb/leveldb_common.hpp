@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2013 libblockchain developers (see AUTHORS)
  *
- * This file is part of libbitcoin.
+ * This file is part of libblockchain.
  *
- * libbitcoin is free software: you can redistribute it and/or modify
+ * libblockchain is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License with
  * additional permissions to the one published by the Free Software
  * Foundation, either version 3 of the License, or (at your option) 
@@ -29,7 +29,9 @@
 #include <bitcoin/primitives.hpp>
 #include <bitcoin/utility/serializer.hpp>
 
-namespace libbitcoin {
+namespace libblockchain {
+
+using namespace libbitcoin;
 
 class stealth_database;
 
@@ -138,7 +140,7 @@ data_chunk create_spent_key(const Point& point)
 data_chunk create_address_key(
     const payment_address& address, const output_point& outpoint);
 
-} // namespace libbitcoin
+} // namespace libblockchain
 
 #endif
 

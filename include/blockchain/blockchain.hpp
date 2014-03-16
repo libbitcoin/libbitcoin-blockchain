@@ -36,6 +36,8 @@
 
 namespace libblockchain {
 
+using namespace libbitcoin;
+
 class blockchain
 {
 public:

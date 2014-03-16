@@ -1,9 +1,9 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -I$(srcdir)/../include ${libczmq_CFLAGS}
+AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS}
 
 lib_LTLIBRARIES = libblockchain.la
-libblockchain___la_SOURCES = \
+libblockchain_la_SOURCES = \
     blockchain.cpp \
     organizer.cpp \
 	leveldb/leveldb_blockchain.cpp \

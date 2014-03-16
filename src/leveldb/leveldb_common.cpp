@@ -24,9 +24,9 @@
 #include <bitcoin/address.hpp>
 #include <bitcoin/satoshi_serialize.hpp>
 #include <bitcoin/transaction.hpp>
-#include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/logger.hpp>
+#include <blockchain/database/stealth_database.hpp>
 
 namespace libblockchain {
 

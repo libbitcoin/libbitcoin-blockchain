@@ -31,6 +31,8 @@
 
 namespace libblockchain {
 
+using namespace libbitcoin;
+
 class leveldb_common;
 typedef std::shared_ptr<leveldb_common> leveldb_common_ptr;
 
