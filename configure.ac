@@ -1,4 +1,4 @@
-AC_INIT([libblockchain], [0.4.0], [genjix@riseup.net])
+AC_INIT([libbitcoin_blockchain], [0.4.0], [genjix@riseup.net])
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG(C++)
 AC_CONFIG_AUX_DIR([build-aux])
@@ -16,11 +16,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([libbitcoin], [libbitcoin])
 
-AC_SUBST(LDFLAG_LEVELDB)
-LDFLAG_LEVELDB="-lleveldb"
-AC_SUBST(CFLAG_LEVELDB)
-CFLAG_LEVELDB="-DLEVELDB_ENABLED"
-
 AM_CXXFLAGS="-ggdb -g3 -Wall -Wno-missing-braces -pedantic -Wextra -fstack-protector-all -DDEBUG"
 AC_SUBST([AM_CXXFLAGS])
 
@@ -29,6 +24,6 @@ AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
     [pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
 AC_SUBST([pkgconfigdir])
 
-AC_CONFIG_FILES([Makefile include/blockchain/Makefile src/Makefile libblockchain.pc])
+AC_CONFIG_FILES([Makefile include/bitcoin/Makefile src/Makefile libbitcoin_blockchain.pc])
 AC_OUTPUT
 

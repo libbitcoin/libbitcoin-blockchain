@@ -2,15 +2,9 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS}
 
-lib_LTLIBRARIES = libblockchain.la
-libblockchain_la_SOURCES = \
-    blockchain.cpp \
-    organizer.cpp \
-	leveldb/leveldb_blockchain.cpp \
-	leveldb/leveldb_chain_keeper.cpp \
-	leveldb/leveldb_organizer.cpp \
-	leveldb/leveldb_validate_block.cpp \
-	leveldb/leveldb_common.cpp
+lib_LTLIBRARIES = libbitcoin_blockchain.la
+libbitcoin_blockchain_la_SOURCES = \
+    test.cpp
 
-libblockchain_la_LIBADD = @LDFLAG_LEVELDB@
+libbitcoin_blockchain_la_LIBADD = @LDFLAG_LEVELDB@
 

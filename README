@@ -22,5 +22,5 @@ instructions.
   $ sudo make install
   $ sudo ldconfig
 
-libblockchain is now installed in /usr/local/.
+libbitcoin_blockchain is now installed in /usr/local/.
 
