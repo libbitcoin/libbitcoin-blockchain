@@ -16,7 +16,7 @@ instructions.
 > Start Here! <
   ^^^^^^^^^^^
 
-  $ autoreconf -i
+  $ ./autogen.sh
   $ ./configure
   $ make
   $ sudo make install
