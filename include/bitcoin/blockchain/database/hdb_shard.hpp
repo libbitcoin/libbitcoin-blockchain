@@ -20,6 +20,8 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 
+#include <bitcoin/blockchain/define.hpp>
+
 namespace libbitcoin {
     namespace blockchain {
 
