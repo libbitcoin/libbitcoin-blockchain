@@ -17,12 +17,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HPP
-
 #include <bitcoin/blockchain/database/hdb_shard.hpp>
 
-namespace bc = libbitcoin;
+namespace libbitcoin {
+    namespace blockchain {
 
-#endif
+    } // namespace blockchain
+} // namespace libbitcoin
 
