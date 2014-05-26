@@ -6,5 +6,3 @@ lib_LTLIBRARIES = libbitcoin_blockchain.la
 libbitcoin_blockchain_la_SOURCES = \
     test.cpp
 
-libbitcoin_blockchain_la_LIBADD = @LDFLAG_LEVELDB@
-
