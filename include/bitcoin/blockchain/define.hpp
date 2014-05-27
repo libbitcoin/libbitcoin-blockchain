@@ -20,26 +20,9 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 
-// See http://gcc.gnu.org/wiki/Visibility
+#include <bitcoin/define.hpp>
 
-// Generic helper definitions for shared library support
-#if defined _MSC_VER || defined __CYGWIN__
-    #define BCB_HELPER_DLL_IMPORT __declspec(dllimport)
-    #define BCB_HELPER_DLL_EXPORT __declspec(dllexport)
-    #define BCB_HELPER_DLL_LOCAL
-#else
-    #if __GNUC__ >= 4
-        #define BCB_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
-        #define BCB_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-        #define BCB_HELPER_DLL_LOCAL  __attribute__ ((visibility ("internal")))
-    #else
-        #define BCB_HELPER_DLL_IMPORT
-        #define BCB_HELPER_DLL_EXPORT
-        #define BCB_HELPER_DLL_LOCAL
-    #endif
-#endif
-
-// Now we use the generic helper definitions above to
+// Now we use the generic helper definitions in libbitcoin to
 // define BCB_API and BCB_INTERNAL.
 // BCB_API is used for the public API symbols. It either DLL imports or
 // DLL exports (or does nothing for static build)
@@ -49,23 +32,11 @@
     #define BCB_API
     #define BCB_INTERNAL
 #elif defined BCB_DLL
-    #define BCB_API      BCB_HELPER_DLL_EXPORT
-    #define BCB_INTERNAL BCB_HELPER_DLL_LOCAL
+    #define BCB_API      BC_HELPER_DLL_EXPORT
+    #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #else
-    #define BCB_API      BCB_HELPER_DLL_IMPORT
-    #define BCB_INTERNAL BCB_HELPER_DLL_LOCAL
-#endif
-
-// Tag to deprecate functions and methods.
-// Gives a compiler warning when they are used.
-#if defined _MSC_VER || defined __CYGWIN__
-    #define BCB_DEPRECATED __declspec(deprecated)
-#else
-    #if __GNUC__ >= 4
-        #define BCB_DEPRECATED __attribute__((deprecated))
-    #else
-        #define BCB_DEPRECATED
-    #endif
+    #define BCB_API      BC_HELPER_DLL_IMPORT
+    #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
 #endif
