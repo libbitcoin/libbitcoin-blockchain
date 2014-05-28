@@ -36,8 +36,8 @@ void hdb_shard::initialize_new()
     bool success = file_.resize(total_size);
     BITCOIN_ASSERT(success);
     auto serial = make_serializer(file_.data());
-    constexpr position_type entry_end = 8 + 8 * shard_max_entries;
-    serial.write_8_bytes(entry_end);
+    constexpr position_type initial_entry_end = 8 + 8 * shard_max_entries;
+    serial.write_8_bytes(initial_entry_end);
     for (size_t i = 0; i < shard_max_entries; ++i)
         serial.write_8_bytes(0);
 }
