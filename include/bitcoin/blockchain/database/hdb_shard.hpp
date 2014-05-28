@@ -31,6 +31,7 @@ constexpr size_t shard_max_entries = 1000000;
 
 struct hdb_shard_settings
 {
+    size_t sharded_bits = 8;
 };
 
 class hdb_shard
@@ -38,7 +39,7 @@ class hdb_shard
 public:
     BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
     BCB_API void initialize_new();
-    // initialize
+    //BCB_API void add(const address_prefix& prefix, const data_chunk& row_data);
     // read(prefix)
     // add(prefix, row)
     // sync(height)

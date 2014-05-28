@@ -7,19 +7,27 @@ using namespace bc::blockchain;
 void touch_file(const std::string& filename)
 {
     std::ofstream outfile(filename);
+    // Write byte so file is nonzero size.
+    outfile.write("H", 1);
 }
 
-int main()
+void create_new(const std::string& filename)
 {
     touch_file("shard");
     mmfile file("shard");
     BITCOIN_ASSERT(file.data());
     hdb_shard_settings settings;
     hdb_shard shard(file, settings);
-    //shard.initialize_new();
-    size_t total_size = 8 + 8 * shard_max_entries;
-    bool success = file.resize(total_size);
-    BITCOIN_ASSERT(success);
+    shard.initialize_new();
+}
+
+int main()
+{
+    create_new("shard");
+    mmfile file("shard");
+    BITCOIN_ASSERT(file.data());
+    hdb_shard_settings settings;
+    hdb_shard shard(file, settings);
     return 0;
 }
 
