@@ -20,15 +20,23 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 
+#include <bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
     namespace blockchain {
 
+struct hdb_shard_settings
+{
+};
+
 class hdb_shard
 {
 public:
+    BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
 private:
+    mmfile& file_;
+    const hdb_shard_settings settings_;
 };
 
     } // namespace blockchain

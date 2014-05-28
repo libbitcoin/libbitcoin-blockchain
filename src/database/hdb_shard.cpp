@@ -22,6 +22,11 @@
 namespace libbitcoin {
     namespace blockchain {
 
+hdb_shard::hdb_shard(mmfile& file, const hdb_shard_settings& settings)
+  : file_(file), settings_(settings)
+{
+}
+
     } // namespace blockchain
 } // namespace libbitcoin
 
