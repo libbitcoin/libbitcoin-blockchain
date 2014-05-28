@@ -19,12 +19,27 @@
  */
 #include <bitcoin/blockchain/database/hdb_shard.hpp>
 
+#include <bitcoin/utility/assert.hpp>
+
 namespace libbitcoin {
     namespace blockchain {
 
 hdb_shard::hdb_shard(mmfile& file, const hdb_shard_settings& settings)
   : file_(file), settings_(settings)
 {
+}
+
+void hdb_shard::initialize_new()
+{
+    constexpr size_t total_size = 8 + 8 * shard_max_entries;
+    reserve(total_size);
+}
+
+void hdb_shard::reserve(size_t size)
+{
+    BITCOIN_ASSERT(size > file_.size());
+    bool success = file_.resize(size);
+    BITCOIN_ASSERT(success);
 }
 
     } // namespace blockchain

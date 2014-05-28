@@ -22,9 +22,12 @@
 
 #include <bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace blockchain {
+
+constexpr size_t shard_max_entries = 1000000;
 
 struct hdb_shard_settings
 {
@@ -34,7 +37,15 @@ class hdb_shard
 {
 public:
     BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
+    BCB_API void initialize_new();
+    // initialize
+    // read(prefix)
+    // add(prefix, row)
+    // sync(height)
+    // unlink(height)
 private:
+    void reserve(size_t size);
+
     mmfile& file_;
     const hdb_shard_settings settings_;
 };
