@@ -22,7 +22,6 @@
 #include <bitcoin/stealth.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
-#include <bitcoin/blockchain/database/util.hpp>
 
 namespace libbitcoin {
     namespace blockchain {
