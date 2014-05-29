@@ -105,56 +105,79 @@ void hdb_shard::link(const size_t height, const position_type entry)
     serial_last.write_8_bytes(entries_end_);
 }
 
+template <typename Serializer>
+void write_2_bytes(Serializer& serial,
+    uint16_t value, size_t begin, size_t end)
+{
+    for (size_t i = begin; i < end; ++i)
+        serial.write_2_bytes(value);
+}
+template <typename Row>
+size_t which_bucket(Row& row, size_t bucket_bitsize)
+{
+    address_bitset prefix = row.scan_key;
+    prefix_resize(prefix, bucket_bitsize);
+    const size_t bucket = prefix.to_ulong();
+    std::cout << prefix << " = " << bucket << std::endl;
+    return bucket;
+}
+template <typename Serializer, typename Rows, typename Settings>
+void write_buckets(Serializer& serial, Rows& rows, Settings& settings)
+{
+    const size_t number_buckets = settings.number_buckets();
+    size_t begin_bucket = 0;
+    for (size_t i = 0; i < rows.size(); ++i)
+    {
+        const auto& row = rows[i];
+        // Calculate bucket category for this row.
+        const size_t end_bucket =
+            which_bucket(row, settings.bucket_bitsize) + 1;
+        BITCOIN_ASSERT(begin_bucket < end_bucket);
+        const index_type value = i;
+        // Write the indexes
+        write_2_bytes(serial, value, begin_bucket, end_bucket);
+        begin_bucket = end_bucket;
+    }
+    const size_t end_bucket = number_buckets;
+    BITCOIN_ASSERT(begin_bucket < end_bucket);
+    write_2_bytes(serial, rows.size(), begin_bucket, end_bucket);
+}
+
+template <typename Serializer, typename Rows, typename Settings>
+void write_rows(Serializer& serial, Rows& rows, Settings& settings)
+{
+    const size_t scan_size = settings.scan_size();
+    for (const auto& row: rows)
+    {
+        // Convert key to data
+        BITCOIN_ASSERT(scan_size == row.scan_key.num_blocks());
+        data_chunk scan_data(scan_size);
+        boost::to_block_range(row.scan_key, scan_data.begin());
+        // Write key data
+        serial.write_data(scan_data);
+        BITCOIN_ASSERT(row.value.size() == settings.row_value_size);
+        // Write value
+        serial.write_data(row.value);
+    }
+}
+
 void hdb_shard::sync(size_t height)
 {
     sort_rows();
     // Calc space needed + reserve.
-    const size_t scan_size = settings_.scan_size();
-    const size_t row_size = scan_size + settings_.row_value_size;
-    const size_t number_buckets = settings_.number_buckets();
-    const size_t entry_header_size = 2 + 2 * number_buckets;
+    const size_t row_size = settings_.scan_size() + settings_.row_value_size;
+    const size_t entry_header_size = 2 + 2 * settings_.number_buckets();
     const size_t entry_size = entry_header_size + row_size * rows_.size();
     reserve(entry_size);
     const position_type entry_position = entries_end_;
     auto serial = make_serializer(file_.data() + entry_position);
     serial.write_2_bytes(rows_.size());
     // Write buckets.
-    size_t current_bucket = 0;
-    for (size_t i = 0; i < rows_.size(); ++i)
-    {
-        const entry_row& row = rows_[i];
-        address_bitset prefix = row.scan_key;
-        prefix_resize(prefix, settings_.bucket_bitsize);
-        size_t bucket = prefix.to_ulong();
-        std::cout << row.scan_key << std::endl;
-        std::cout << prefix << " = " << bucket << std::endl;
-        BITCOIN_ASSERT(bucket >= current_bucket);
-        // TODO: Don't forget skipped buckets
-        for (size_t bucket_idx = current_bucket;
-            bucket_idx <= bucket; ++bucket_idx)
-        {
-            serial.write_2_bytes(i);
-        }
-        current_bucket = bucket + 1;
-    }
-    BITCOIN_ASSERT(current_bucket < number_buckets);
-    for (size_t bucket_idx = current_bucket;
-        bucket_idx <= (number_buckets - 1); ++bucket_idx)
-    {
-        serial.write_2_bytes(rows_.size());
-    }
+    write_buckets(serial, rows_, settings_);
     const position_type rows_sector = entry_position + entry_header_size;
     BITCOIN_ASSERT(serial.iterator() == file_.data() + rows_sector);
     // Write rows.
-    for (const entry_row& row: rows_)
-    {
-        BITCOIN_ASSERT(scan_size == row.scan_key.num_blocks());
-        data_chunk scan_data(scan_size);
-        boost::to_block_range(row.scan_key, scan_data.begin());
-        serial.write_data(scan_data);
-        BITCOIN_ASSERT(row.value.size() == settings_.row_value_size);
-        serial.write_data(row.value);
-    }
+    write_rows(serial, rows_, settings_);
     rows_.clear();
     // Relocate entries_end.
     entries_end_ += entry_size;
