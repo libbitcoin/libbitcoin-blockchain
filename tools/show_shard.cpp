@@ -54,8 +54,11 @@ int main(int argc, char** argv)
         for (size_t i = 0; i < number_buckets; ++i)
         {
             address_bitset bucket(settings.bucket_bitsize, i);
+            std::string bucket_str;
+            boost::to_string(bucket, bucket_str);
+            std::reverse(bucket_str.begin(), bucket_str.end());
             uint16_t row_index = deserial.read_2_bytes();
-            std::cout << "  " << bucket << " (" << i
+            std::cout << "  " << bucket_str << " (" << i
                 << "): [ " << row_index << " ]" << std::endl;
         }
         std::cout << "sorted_rows:" << std::endl;
