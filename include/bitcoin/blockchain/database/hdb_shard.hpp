@@ -67,6 +67,11 @@ public:
       */
     BCB_API void sync(size_t height);
 
+    /**
+      * Free up entries deleting them from the record.
+      */
+    BCB_API void unlink(size_t height);
+
     // read(prefix)
     // add(prefix, row)
     // sync(height)
@@ -80,9 +85,14 @@ private:
     };
     typedef std::vector<entry_row> entry_row_list;
 
+    // sync() related.
     void sort_rows();
     void reserve(size_t space_needed);
     void link(const size_t height, const position_type entry);
+
+    // unlink() related.
+    position_type entry_position(size_t height) const;
+    size_t entry_size(const position_type entry) const;
 
     mmfile& file_;
     const hdb_shard_settings settings_;

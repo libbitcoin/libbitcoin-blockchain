@@ -32,6 +32,23 @@ data_chunk generate_random_bytes(size_t size)
     return result;
 }
 
+void write_random_rows(hdb_shard& shard,
+    hdb_shard_settings& settings, size_t count)
+{
+    for (size_t i = 0; i < count; ++i)
+    {
+        data_chunk key = generate_random_bytes(settings.total_key_size);
+        data_chunk value = generate_random_bytes(settings.row_value_size);
+        const size_t scan_bitsize =
+            settings.total_key_size * 8 - settings.sharded_bitsize;
+        address_bitset scan_key(scan_bitsize);
+        boost::from_block_range(key.begin(), key.end(), scan_key);
+        const size_t scan_size = (scan_bitsize - 1) / 8 + 1;
+        BITCOIN_ASSERT(scan_key.num_blocks() == scan_size);
+        shard.add(scan_key, value);
+    }
+}
+
 int main()
 {
     create_new("shard");
@@ -40,20 +57,13 @@ int main()
     hdb_shard_settings settings;
     hdb_shard shard(file, settings);
     shard.start();
-    // write 10 rows
-    for (size_t i = 0; i < 10; ++i)
-    {
-        data_chunk key = generate_random_bytes(settings.total_key_size);
-        data_chunk value = generate_random_bytes(settings.row_value_size);
-        const size_t scan_bits =
-            settings.total_key_size * 8 - settings.sharded_bits;
-        address_bitset scan_key(scan_bits);
-        boost::from_block_range(key.begin(), key.end(), scan_key);
-        const size_t scan_size = (scan_bits - 1) / 8 + 1;
-        BITCOIN_ASSERT(scan_key.num_blocks() == scan_size);
-        shard.add(scan_key, value);
-    }
+    write_random_rows(shard, settings, 10);
     shard.sync(0);
+    write_random_rows(shard, settings, 15);
+    shard.sync(1);
+    write_random_rows(shard, settings, 8);
+    shard.sync(2);
+    //shard.unlink(1);
     return 0;
 }
 

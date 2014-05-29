@@ -26,9 +26,10 @@ int main(int argc, char** argv)
     auto deserial = make_deserializer(file.data(), file.data() + file.size());
     std::cout << "values:" << std::endl;
     position_type entry_end = deserial.read_8_bytes();
+    // last_value + 2 + 2 * 256 + rows * (19 + 49)
     std::cout << "  [ " << entry_end << " ]" << std::endl;
     BITCOIN_ASSERT(entry_end >= 1 + shard_max_entries * 8);
-    BITCOIN_ASSERT(block_height_limit < shard_max_entries);
+    BITCOIN_ASSERT(block_height_limit <= shard_max_entries);
     std::cout << "positions:" << std::endl;
     for (size_t i = 0; i < shard_max_entries; ++i)
     {
@@ -39,6 +40,8 @@ int main(int argc, char** argv)
         std::cout << "  " << i << ": [ "
             << entry_position << " ]" << std::endl;
     }
+    if (block_height_limit < shard_max_entries)
+        std::cout << "   ..." << std::endl;
     std::cout << "main_table:" << std::endl;
     while (true)
     {
