@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 
+#include <functional>
 #include <bitcoin/types.hpp>
 #include <bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -45,6 +46,8 @@ struct BCB_API hdb_shard_settings
 class hdb_shard
 {
 public:
+    typedef std::function<void (const uint8_t*)> read_function;
+
     BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
 
     /**
@@ -68,14 +71,15 @@ public:
     BCB_API void sync(size_t height);
 
     /**
-      * Free up entries deleting them from the record.
+      * Delete method. Free up entries deleting them from the record.
       */
     BCB_API void unlink(size_t height);
 
-    // read(prefix)
-    // add(prefix, row)
-    // sync(height)
-    // unlink(height)
+    /**
+      * Read method. Scan shard for rows with matching prefix.
+      */
+    BCB_API void scan(const address_bitset& key,
+        read_function read, size_t from_height);
 
 private:
     struct entry_row
@@ -85,14 +89,15 @@ private:
     };
     typedef std::vector<entry_row> entry_row_list;
 
+    position_type entry_position(size_t height) const;
+    size_t calc_entry_size(const position_type entry) const;
+
     // sync() related.
     void sort_rows();
     void reserve(size_t space_needed);
     void link(const size_t height, const position_type entry);
 
-    // unlink() related.
-    position_type entry_position(size_t height) const;
-    size_t entry_size(const position_type entry) const;
+    // scan() related.
 
     mmfile& file_;
     const hdb_shard_settings settings_;

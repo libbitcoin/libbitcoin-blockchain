@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/database/hdb_shard.hpp>
 
+#include <bitcoin/stealth.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/blockchain/database/util.hpp>
@@ -105,6 +106,15 @@ void hdb_shard::link(const size_t height, const position_type entry)
     serial_last.write_8_bytes(entries_end_);
 }
 
+index_type which_bucket(address_bitset key, const size_t bucket_bitsize)
+{
+    BITCOIN_ASSERT(bucket_bitsize <= sizeof(index_type) * 8);
+    prefix_resize(key, bucket_bitsize);
+    const index_type bucket = key.to_ulong();
+    //std::cout << key << " = " << bucket << std::endl;
+    return bucket;
+}
+
 template <typename Serializer>
 void write_2_bytes(Serializer& serial,
     uint16_t value, size_t begin, size_t end)
@@ -112,26 +122,17 @@ void write_2_bytes(Serializer& serial,
     for (size_t i = begin; i < end; ++i)
         serial.write_2_bytes(value);
 }
-template <typename Row>
-size_t which_bucket(Row& row, size_t bucket_bitsize)
-{
-    address_bitset prefix = row.scan_key;
-    prefix_resize(prefix, bucket_bitsize);
-    const size_t bucket = prefix.to_ulong();
-    std::cout << prefix << " = " << bucket << std::endl;
-    return bucket;
-}
 template <typename Serializer, typename Rows, typename Settings>
 void write_buckets(Serializer& serial, Rows& rows, Settings& settings)
 {
     const size_t number_buckets = settings.number_buckets();
-    size_t begin_bucket = 0;
+    index_type begin_bucket = 0;
     for (size_t i = 0; i < rows.size(); ++i)
     {
         const auto& row = rows[i];
         // Calculate bucket category for this row.
-        const size_t end_bucket =
-            which_bucket(row, settings.bucket_bitsize) + 1;
+        const index_type end_bucket =
+            which_bucket(row.scan_key, settings.bucket_bitsize) + 1;
         // Sometimes 2 keys can have the same prefix
         BITCOIN_ASSERT(begin_bucket <= end_bucket);
         const index_type value = i;
@@ -139,7 +140,7 @@ void write_buckets(Serializer& serial, Rows& rows, Settings& settings)
         write_2_bytes(serial, value, begin_bucket, end_bucket);
         begin_bucket = end_bucket;
     }
-    const size_t end_bucket = number_buckets;
+    const index_type end_bucket = number_buckets;
     BITCOIN_ASSERT(begin_bucket < end_bucket);
     write_2_bytes(serial, rows.size(), begin_bucket, end_bucket);
 }
@@ -196,7 +197,7 @@ position_type hdb_shard::entry_position(size_t height) const
     const position_type entry = deserial.read_8_bytes();
     return entry;
 }
-size_t hdb_shard::entry_size(const position_type entry) const
+size_t hdb_shard::calc_entry_size(const position_type entry) const
 {
     const uint8_t* begin = file_.data() + entry;
     auto deserial = make_deserializer(begin, begin + 2);
@@ -212,10 +213,56 @@ void hdb_shard::unlink(size_t height)
     // Lookup entry_index at (height - 1). 
     const position_type prev_entry = entry_position(height - 1);
     // Calculate next_entry_position in entry.
-    entries_end_ = prev_entry + entry_size(prev_entry);
+    entries_end_ = prev_entry + calc_entry_size(prev_entry);
     // Set entries_end to next_entry_position.
     auto serial = make_serializer(file_.data());
     serial.write_8_bytes(entries_end_);
+}
+
+index_type read_row_index(
+    const index_type bucket_index, const uint8_t* entry_begin)
+{
+    const position_type bucket = 2 + 2 * bucket_index;
+    auto deserial = make_deserializer(
+        entry_begin + bucket, entry_begin + bucket + 2);
+    const index_type row_index = deserial.read_2_bytes();
+    return row_index;
+}
+void hdb_shard::scan(const address_bitset& key,
+    read_function read, size_t from_height)
+{
+    BITCOIN_ASSERT(key.size() <= settings_.scan_bitsize());
+    // Jump to relevant entry, loop through entries until the end:
+    position_type entry = entry_position(from_height);
+    while (entry != entries_end_)
+    {
+        const size_t entry_size = calc_entry_size(entry);
+        const uint8_t* entry_begin = file_.data() + entry;
+        const uint8_t* entry_end = entry_begin + entry_size;
+        // Lookup start index from bucket. 
+        const index_type bucket_index =
+            which_bucket(key, settings_.bucket_bitsize);
+        const index_type row_index = read_row_index(bucket_index, entry_begin);
+        // Scan row prefixes.
+        const uint8_t* rows_sector =
+            entry_begin + 2 + 2 * settings_.number_buckets();
+        const size_t row_size =
+            settings_.scan_size() + settings_.row_value_size;
+        const uint8_t* current_row = rows_sector + row_size * row_index;
+        while (current_row != entry_end)
+        {
+            // If not match, break
+            if (!stealth_match(key, current_row))
+                break;
+            // Call read()
+            const uint8_t* row_value = current_row + settings_.scan_size();
+            read(row_value);
+            // Keep scanning rows while they match.
+            current_row += row_size;
+        }
+        // Next...
+        entry += entry_size;
+    }
 }
 
     } // namespace blockchain

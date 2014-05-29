@@ -1,5 +1,6 @@
 #include <fstream>
 #include <random>
+#include <bitcoin/format.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
@@ -63,6 +64,13 @@ int main()
     shard.sync(1);
     write_random_rows(shard, settings, 8);
     shard.sync(2);
+    auto read_row = [&](const uint8_t* row)
+    {
+        data_chunk data(row, row + settings.row_value_size);
+        std::cout << data << std::endl;
+    };
+    address_bitset key(std::string("01"));
+    shard.scan(key, read_row, 0);
     //shard.unlink(1);
     return 0;
 }
