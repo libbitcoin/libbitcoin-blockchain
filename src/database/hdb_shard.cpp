@@ -88,7 +88,7 @@ void hdb_shard::sort_rows()
             if (bits_a[i] != bits_b[i])
                 return bits_a[i] < bits_b[i];
         }
-        return true;
+        return false;
     };
     auto sort_func = [reverse_less_than](
         const entry_row& entry_a, const entry_row& entry_b)
