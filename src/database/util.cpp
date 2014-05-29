@@ -24,18 +24,7 @@ namespace libbitcoin {
 
 void prefix_resize(address_bitset& bits, const size_t bitsize)
 {
-    if (bits.size() > bitsize)
-    {
-        const size_t shrink = bits.size() - bitsize;
-        bits >>= shrink;
-        bits.resize(bitsize);
-    }
-    else
-    {
-        const size_t grow = bitsize - bits.size();
-        bits.resize(bitsize, false);
-        bits <<= grow;
-    }
+    bits.resize(bitsize);
 }
 
     } // namespace blockchain

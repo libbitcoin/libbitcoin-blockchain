@@ -67,7 +67,7 @@ int main(int argc, char** argv)
             boost::from_block_range(key_data.begin(), key_data.end(), key);
             std::cout << "  " << i << std::endl;
             std::cout << "    key: " << key << std::endl;
-            prefix_resize(key, settings.bucket_bitsize);
+            key.resize(settings.bucket_bitsize);
             std::cout << "    (prefix only: " << key << ")" << std::endl;
             std::cout << "    val: " << value << std::endl;
         }

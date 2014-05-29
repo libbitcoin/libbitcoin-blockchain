@@ -80,9 +80,21 @@ void hdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
 
 void hdb_shard::sort_rows()
 {
-    auto sort_func = [](const entry_row& entry_a, const entry_row& entry_b)
+    auto reverse_less_than = [](
+        const address_bitset& bits_a, const address_bitset& bits_b)
     {
-        return entry_a.scan_key < entry_b.scan_key;
+        BITCOIN_ASSERT(bits_a.size() == bits_b.size());
+        for (size_t i = 0; i < bits_a.size(); ++i)
+        {
+            if (bits_a[i] != bits_b[i])
+                return bits_a[i] < bits_b[i];
+        }
+        return true;
+    };
+    auto sort_func = [reverse_less_than](
+        const entry_row& entry_a, const entry_row& entry_b)
+    {
+        return reverse_less_than(entry_a.scan_key, entry_b.scan_key);
     };
     std::sort(rows_.begin(), rows_.end(), sort_func);
 }
@@ -106,11 +118,22 @@ void hdb_shard::link(const size_t height, const position_type entry)
     serial_last.write_8_bytes(entries_end_);
 }
 
+index_type to_ulong_reverse(const address_bitset& key)
+{
+    index_type bucket = 0;
+    for (size_t i = 0; i < key.size(); ++i)
+    {
+        const bool value = key[key.size() - i - 1];
+        if (value)
+            bucket += (1 << i);
+    }
+    return bucket;
+}
 index_type which_bucket(address_bitset key, const size_t bucket_bitsize)
 {
     BITCOIN_ASSERT(bucket_bitsize <= sizeof(index_type) * 8);
-    prefix_resize(key, bucket_bitsize);
-    const index_type bucket = key.to_ulong();
+    key.resize(bucket_bitsize);
+    const index_type bucket = to_ulong_reverse(key);
     //std::cout << key << " = " << bucket << std::endl;
     return bucket;
 }
@@ -234,14 +257,14 @@ void hdb_shard::scan(const address_bitset& key,
     BITCOIN_ASSERT(key.size() <= settings_.scan_bitsize());
     // Jump to relevant entry, loop through entries until the end:
     position_type entry = entry_position(from_height);
+    const index_type bucket_index =
+        which_bucket(key, settings_.bucket_bitsize);
     while (entry != entries_end_)
     {
         const size_t entry_size = calc_entry_size(entry);
         const uint8_t* entry_begin = file_.data() + entry;
         const uint8_t* entry_end = entry_begin + entry_size;
         // Lookup start index from bucket. 
-        const index_type bucket_index =
-            which_bucket(key, settings_.bucket_bitsize);
         const index_type row_index = read_row_index(bucket_index, entry_begin);
         // Scan row prefixes.
         const uint8_t* rows_sector =
