@@ -21,6 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_HPP
 
 #include <bitcoin/blockchain/database/hdb_shard.hpp>
+#include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/database/util.hpp>
 
 namespace bc = libbitcoin;
 

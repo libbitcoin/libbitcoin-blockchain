@@ -21,6 +21,8 @@ int main(int argc, char** argv)
         std::cerr << "show_shard: Error opening file." << std::endl;
         return -1;
     }
+    // Use default settings.
+    hdb_shard_settings settings;
     auto deserial = make_deserializer(file.data(), file.data() + file.size());
     std::cout << "values:" << std::endl;
     position_type entry_end = deserial.read_8_bytes();
@@ -38,9 +40,39 @@ int main(int argc, char** argv)
             << entry_position << " ]" << std::endl;
     }
     std::cout << "main_table:" << std::endl;
-    position_type file_end = deserial.iterator() - file.data();
-    std::cout << "@end = " << file_end << std::endl;
-    BITCOIN_ASSERT(file_end == entry_end);
+    while (true)
+    {
+        position_type start_position = deserial.iterator() - file.data();
+        std::cout << "Entry @ " << start_position << std::endl;
+        uint16_t number_rows = deserial.read_2_bytes();
+        std::cout << "  number_rows: [ " << number_rows << " ]" << std::endl;
+        std::cout << "buckets:" << std::endl;
+        const size_t number_buckets = settings.number_buckets();
+        for (size_t i = 0; i < number_buckets; ++i)
+        {
+            address_bitset bucket(settings.bucket_bitsize, i);
+            uint16_t row_index = deserial.read_2_bytes();
+            std::cout << "  " << bucket << " (" << i
+                << "): [ " << row_index << " ]" << std::endl;
+        }
+        std::cout << "sorted_rows:" << std::endl;
+        for (size_t i = 0; i < number_rows; ++i)
+        {
+            data_chunk key_data = deserial.read_data(settings.scan_size());
+            data_chunk value = deserial.read_data(settings.row_value_size);
+            address_bitset key(settings.scan_bitsize());
+            boost::from_block_range(key_data.begin(), key_data.end(), key);
+            std::cout << "  " << i << std::endl;
+            std::cout << "    key: " << key << std::endl;
+            prefix_resize(key, settings.bucket_bitsize);
+            std::cout << "    (prefix only: " << key << ")" << std::endl;
+            std::cout << "    val: " << value << std::endl;
+        }
+        position_type end_position = deserial.iterator() - file.data();
+        BITCOIN_ASSERT(end_position <= entry_end);
+        if (end_position == entry_end)
+            break;
+    }
     return 0;
 }
 

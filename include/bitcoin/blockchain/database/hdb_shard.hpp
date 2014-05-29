@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
 
+#include <bitcoin/types.hpp>
 #include <bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
@@ -29,26 +30,64 @@ namespace libbitcoin {
 
 constexpr size_t shard_max_entries = 1000000;
 
-struct hdb_shard_settings
+struct BCB_API hdb_shard_settings
 {
-    size_t sharded_bits = 8;
+    size_t scan_bitsize() const;
+    size_t scan_size() const;
+    size_t number_buckets() const;
+
+    size_t total_key_size = 20;
+    size_t sharded_bitsize = 8;
+    size_t bucket_bitsize = 8;
+    size_t row_value_size = 49;
 };
 
 class hdb_shard
 {
 public:
     BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
+
+    /**
+      * Create database.
+      */
     BCB_API void initialize_new();
-    //BCB_API void add(const address_prefix& prefix, const data_chunk& row_data);
+
+    /**
+      * Prepare database for usage.
+      */
+    BCB_API void start();
+
+    /**
+      * Write method. Adds to in memory list of rows. sync() writes them.
+      */
+    BCB_API void add(const address_bitset& scan_key, const data_chunk& value);
+
+    /**
+      * Write method. Flushes to disk and writes actual data.
+      */
+    BCB_API void sync(size_t height);
+
     // read(prefix)
     // add(prefix, row)
     // sync(height)
     // unlink(height)
+
 private:
-    void reserve(size_t size);
+    struct entry_row
+    {
+        address_bitset scan_key;
+        data_chunk value;
+    };
+    typedef std::vector<entry_row> entry_row_list;
+
+    void sort_rows();
+    void reserve(size_t space_needed);
+    void link(const size_t height, const position_type entry);
 
     mmfile& file_;
     const hdb_shard_settings settings_;
+    position_type entries_end_;
+    entry_row_list rows_;
 };
 
     } // namespace blockchain

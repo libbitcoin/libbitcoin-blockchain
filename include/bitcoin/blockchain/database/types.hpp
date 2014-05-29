@@ -26,7 +26,7 @@
 namespace libbitcoin {
     namespace blockchain {
 
-typedef boost::dynamic_bitset<uint8_t> address_prefix;
+typedef boost::dynamic_bitset<uint8_t> address_bitset;
 
 // A fixed offset location within the file.
 typedef uint64_t position_type;
