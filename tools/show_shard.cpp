@@ -5,7 +5,7 @@
 using namespace bc;
 using namespace bc::blockchain;
 
-constexpr size_t block_height_limit = 100;
+constexpr size_t block_height_limit = 4000;
 
 int main(int argc, char** argv)
 {

@@ -47,44 +47,53 @@ void write_random_rows(hdb_shard& shard,
     const size_t scan_size = (scan_bitsize - 1) / 8 + 1;
     BITCOIN_ASSERT(scan_key.num_blocks() == scan_size);
 
-    for (size_t i = 0; i < 300000; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         shard.add(scan_key, value);
-        shard.add(scan_key, value);
-        shard.add(scan_key, value);
-        shard.sync(i);
     }
 }
 
-int main()
+void create_db(const std::string& db_name)
 {
-    //create_new("shard");
-    mmfile file("shard");
+    create_new(db_name);
+    mmfile file(db_name);
     BITCOIN_ASSERT(file.data());
     hdb_shard_settings settings;
     hdb_shard shard(file, settings);
     shard.start();
 
-    //for (size_t i = 0; i < 1000; ++i)
+    for (size_t i = 0; i < 1000; ++i)
     {
-        //std::cout << i << std::endl;
-        //write_random_rows(shard, settings, 6000);
-        //shard.sync(i);
+        std::cout << i << std::endl;
+        write_random_rows(shard, settings, 1000);
+        shard.sync(i);
     }
+}
+
+void scan_test(const std::string& db_name)
+{
+    mmfile file(db_name);
+    BITCOIN_ASSERT(file.data());
+    hdb_shard_settings settings;
+    hdb_shard shard(file, settings);
+    shard.start();
 
     size_t i = 0;
     auto read_row = [&](const uint8_t* row)
     {
         ++i;
-        data_chunk data(row, row + settings.row_value_size);
-        if (i % 10000 == 0)
-            std::cout << data << std::endl;
     };
-    timed_section t("scan", "0111111");
-    address_bitset key(std::string("0111111"));
+    std::string scan = "0111111";
+    timed_section t("scan", scan);
+    address_bitset key(scan);
     shard.scan(key, read_row, 0);
     std::cout << i << std::endl;
+}
 
+int main()
+{
+    //create_db("shard");
+    scan_test("shard");
     // Delete from block 1 onwards
     //shard.unlink(1);
     return 0;
