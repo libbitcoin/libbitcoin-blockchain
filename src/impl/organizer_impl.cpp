@@ -25,7 +25,7 @@ namespace libbitcoin {
     namespace chain {
 
 organizer_impl::organizer_impl(blockchain_common_ptr common,
-    orphans_pool_ptr orphans, chain_keeper_impl_ptr chain,
+    orphans_pool_ptr orphans, chain_keeper_ptr chain,
     reorganize_handler handler)
   : organizer(orphans, chain), common_(common), handler_(handler)
 {

@@ -50,8 +50,6 @@ private:
     leveldb_databases db_;
 };
 
-typedef std::shared_ptr<chain_keeper_impl> chain_keeper_impl_ptr;
-
     } // namespace chain
 } // namespace libbitcoin
 

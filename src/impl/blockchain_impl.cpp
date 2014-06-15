@@ -208,8 +208,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
     common_ = std::make_shared<blockchain_common>(databases, special_dbs);
     // Validate and organisation components.
     orphans_ = std::make_shared<orphans_pool>(20);
-    auto chainkeeper = std::make_shared<chain_keeper_impl>(common_, databases);
-    chain_ = chainkeeper;
+    chain_ = std::make_shared<chain_keeper_impl>(common_, databases);
     auto reorg_handler = [this](
         const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& arrivals,
@@ -226,7 +225,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
             });
     };
     organize_ = std::make_shared<organizer_impl>(
-        common_, orphans_, chainkeeper, reorg_handler);
+        common_, orphans_, chain_, reorg_handler);
     return true;
 }
 
