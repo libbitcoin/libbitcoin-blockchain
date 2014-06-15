@@ -17,24 +17,42 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_TYPES_HPP
-#define LIBBITCOIN_BLOCKCHAIN_TYPES_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_LEVELDB_CHAIN_KEEPER_H
+#define LIBBITCOIN_BLOCKCHAIN_LEVELDB_CHAIN_KEEPER_H
 
-#include <cstdint>
-#include <boost/dynamic_bitset.hpp>
+#include <bitcoin/blockchain/leveldb_blockchain.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
+#include "blockchain_common.hpp"
 
 namespace libbitcoin {
     namespace chain {
 
-typedef boost::dynamic_bitset<uint8_t> address_bitset;
+class chain_keeper_impl
+  : public chain_keeper
+{
+public:
+    chain_keeper_impl(blockchain_common_ptr common, leveldb_databases db);
 
-// A fixed offset location within the file.
-typedef uint64_t position_type;
-// An index value, usually for deriving the position.
-typedef uint32_t index_type;
+    void start();
+    void stop();
+
+    void add(block_detail_ptr incoming_block);
+    int find_index(const hash_digest& search_block_hash);
+    big_number end_slice_difficulty(size_t slice_begin_index);
+    bool end_slice(size_t slice_begin_index,
+        block_detail_list& sliced_blocks);
+
+private:
+    bool clear_transaction_data(leveldb_transaction_batch& batch,
+        const transaction_type& remove_tx);
+
+    blockchain_common_ptr common_;
+    leveldb_databases db_;
+};
+
+typedef std::shared_ptr<chain_keeper_impl> chain_keeper_impl_ptr;
 
     } // namespace chain
 } // namespace libbitcoin
 
 #endif
-

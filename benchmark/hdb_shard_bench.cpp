@@ -5,7 +5,7 @@
 #include <bitcoin/utility/timed_section.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
-using namespace bc::blockchain;
+using namespace bc::chain;
 
 void touch_file(const std::string& filename)
 {

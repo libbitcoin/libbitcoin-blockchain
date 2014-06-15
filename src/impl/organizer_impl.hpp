@@ -17,24 +17,39 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_TYPES_HPP
-#define LIBBITCOIN_BLOCKCHAIN_TYPES_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_LEVELDB_ORGANIZER_H
+#define LIBBITCOIN_BLOCKCHAIN_LEVELDB_ORGANIZER_H
 
-#include <cstdint>
-#include <boost/dynamic_bitset.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
+#include "chain_keeper_impl.hpp"
+#include "blockchain_common.hpp"
 
 namespace libbitcoin {
     namespace chain {
 
-typedef boost::dynamic_bitset<uint8_t> address_bitset;
+class organizer_impl
+  : public organizer
+{
+public:
+    typedef blockchain::reorganize_handler reorganize_handler;
 
-// A fixed offset location within the file.
-typedef uint64_t position_type;
-// An index value, usually for deriving the position.
-typedef uint32_t index_type;
+    organizer_impl(blockchain_common_ptr common, orphans_pool_ptr orphans,
+        chain_keeper_impl_ptr chain, reorganize_handler handler);
+
+protected:
+    std::error_code verify(size_t fork_index,
+        const block_detail_list& orphan_chain, size_t orphan_index);
+    void reorganize_occured(
+        size_t fork_point,
+        const blockchain::block_list& arrivals,
+        const blockchain::block_list& replaced);
+
+private:
+    blockchain_common_ptr common_;
+    reorganize_handler handler_;
+};
 
     } // namespace chain
 } // namespace libbitcoin
 
 #endif
-

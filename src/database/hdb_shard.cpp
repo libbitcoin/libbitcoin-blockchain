@@ -24,7 +24,7 @@
 #include <bitcoin/utility/serializer.hpp>
 
 namespace libbitcoin {
-    namespace blockchain {
+    namespace chain {
 
 size_t hdb_shard_settings::scan_bitsize() const
 {
@@ -50,26 +50,32 @@ hdb_shard::hdb_shard(mmfile& file, const hdb_shard_settings& settings)
 
 void hdb_shard::initialize_new()
 {
+    // Write header information.
     constexpr size_t total_size = 8 + 8 * shard_max_entries;
     bool success = file_.resize(total_size);
     BITCOIN_ASSERT(success);
     auto serial = make_serializer(file_.data());
     constexpr position_type initial_entries_end = 8 + 8 * shard_max_entries;
+    // No entries for now, so end position is data start.
     serial.write_8_bytes(initial_entries_end);
+    // Zero out all block index entries.
     for (size_t i = 0; i < shard_max_entries; ++i)
         serial.write_8_bytes(0);
 }
 
 void hdb_shard::start()
 {
+    // Read entries end.
     auto deserial = make_deserializer(file_.data(), file_.data() + 8);
     entries_end_ = deserial.read_8_bytes();
+    // Check it's sane.
     constexpr position_type initial_entries_end = 8 + 8 * shard_max_entries;
     BITCOIN_ASSERT(entries_end_ >= initial_entries_end);
 }
 
 void hdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
 {
+    // Add rows to memory, synched to disk in later final step.
     BITCOIN_ASSERT(value.size() == settings_.row_value_size);
     const size_t scan_bits =
         settings_.total_key_size * 8 - settings_.sharded_bitsize;
@@ -79,6 +85,7 @@ void hdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
 
 void hdb_shard::sort_rows()
 {
+    // Bitwise comparison.
     auto reverse_less_than = [](
         const address_bitset& bits_a, const address_bitset& bits_b)
     {
@@ -95,6 +102,7 @@ void hdb_shard::sort_rows()
     {
         return reverse_less_than(entry_a.scan_key, entry_b.scan_key);
     };
+    // Sort in-memory rows so they are synched to disk in sorted order.
     std::sort(rows_.begin(), rows_.end(), sort_func);
 }
 void hdb_shard::reserve(size_t space_needed)
@@ -102,6 +110,7 @@ void hdb_shard::reserve(size_t space_needed)
     const size_t required_size = entries_end_ + space_needed;
     if (required_size <= file_.size())
         return;
+    // Grow file by 1.5x
     const size_t new_size = required_size * 3 / 2;
     // Only ever grow file. Never shrink it!
     BITCOIN_ASSERT(new_size > file_.size());
@@ -110,9 +119,11 @@ void hdb_shard::reserve(size_t space_needed)
 }
 void hdb_shard::link(const size_t height, const position_type entry)
 {
+    // Link latest block into header.
     position_type positions_bucket = 8 + 8 * height;
     auto serial_bucket = make_serializer(file_.data() + positions_bucket);
     serial_bucket.write_8_bytes(entry);
+    // Extend entries end.
     auto serial_last = make_serializer(file_.data());
     serial_last.write_8_bytes(entries_end_);
 }
@@ -138,14 +149,14 @@ index_type which_bucket(address_bitset key, const size_t bucket_bitsize)
 }
 
 template <typename Serializer>
-void write_2_bytes(Serializer& serial,
+void write_2_bytes_range(Serializer& serial,
     uint16_t value, size_t begin, size_t end)
 {
     for (size_t i = begin; i < end; ++i)
         serial.write_2_bytes(value);
 }
 template <typename Serializer, typename Rows, typename Settings>
-void write_buckets(Serializer& serial, Rows& rows, Settings& settings)
+void write_block_buckets(Serializer& serial, Rows& rows, Settings& settings)
 {
     const size_t number_buckets = settings.number_buckets();
     index_type begin_bucket = 0;
@@ -159,12 +170,12 @@ void write_buckets(Serializer& serial, Rows& rows, Settings& settings)
         BITCOIN_ASSERT(begin_bucket <= end_bucket);
         const index_type value = i;
         // Write the indexes
-        write_2_bytes(serial, value, begin_bucket, end_bucket);
+        write_2_bytes_range(serial, value, begin_bucket, end_bucket);
         begin_bucket = end_bucket;
     }
     const index_type end_bucket = number_buckets;
     BITCOIN_ASSERT(begin_bucket < end_bucket);
-    write_2_bytes(serial, rows.size(), begin_bucket, end_bucket);
+    write_2_bytes_range(serial, rows.size(), begin_bucket, end_bucket);
 }
 
 template <typename Serializer, typename Rows, typename Settings>
@@ -197,7 +208,7 @@ void hdb_shard::sync(size_t height)
     auto serial = make_serializer(file_.data() + entry_position);
     serial.write_2_bytes(rows_.size());
     // Write buckets.
-    write_buckets(serial, rows_, settings_);
+    write_block_buckets(serial, rows_, settings_);
     const position_type rows_sector = entry_position + entry_header_size;
     BITCOIN_ASSERT(serial.iterator() == file_.data() + rows_sector);
     // Write rows.
@@ -287,6 +298,6 @@ void hdb_shard::scan(const address_bitset& key,
     }
 }
 
-    } // namespace blockchain
+    } // namespace chain
 } // namespace libbitcoin
 

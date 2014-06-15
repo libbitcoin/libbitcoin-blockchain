@@ -3,7 +3,7 @@
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
-using namespace bc::blockchain;
+using namespace bc::chain;
 
 constexpr size_t block_height_limit = 4000;
 

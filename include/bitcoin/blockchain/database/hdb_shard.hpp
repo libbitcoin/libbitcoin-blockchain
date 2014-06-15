@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
-    namespace blockchain {
+    namespace chain {
 
 constexpr size_t shard_max_entries = 1000000;
 
@@ -105,7 +105,7 @@ private:
     entry_row_list rows_;
 };
 
-    } // namespace blockchain
+    } // namespace chain
 } // namespace libbitcoin
 
 #endif
