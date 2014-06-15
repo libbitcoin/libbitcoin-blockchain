@@ -155,10 +155,7 @@ void organizer::start()
         process_queue_.pop_back();
 
         // process() can remove blocks from the queue too
-        chain_->start();
         process(process_block);
-        // May have already been stopped by replace_chain
-        chain_->stop();
     }
 }
 
@@ -169,7 +166,6 @@ void organizer::process(block_detail_ptr process_block)
     int fork_index = chain_->find_index(
         orphan_chain[0]->actual().header.previous_block_hash);
     if (fork_index != -1)
-        // replace_chain will call chain_->stop()
         replace_chain((size_t)fork_index, orphan_chain);
     // Don't mark all orphan_chain as processed here because there might be
     // a winning fork from an earlier block
@@ -228,7 +224,6 @@ void organizer::replace_chain(size_t fork_index,
         replaced_block->set_info({block_status::orphan, 0});
         orphans_->add(replaced_block);
     }
-    chain_->stop();
     notify_reorganize(fork_index, orphan_chain, replaced_slice);
 }
 

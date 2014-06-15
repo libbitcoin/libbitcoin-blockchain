@@ -32,10 +32,6 @@ class chain_keeper_impl
 {
 public:
     chain_keeper_impl(blockchain_common_ptr common, leveldb_databases db);
-
-    void start();
-    void stop();
-
     void add(block_detail_ptr incoming_block);
     int find_index(const hash_digest& search_block_hash);
     big_number end_slice_difficulty(size_t slice_begin_index);

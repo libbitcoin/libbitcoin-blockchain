@@ -103,10 +103,6 @@ typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 class chain_keeper
 {
 public:
-    virtual void start() = 0;
-    // Must be able to call stop() twice without problems
-    virtual void stop() = 0;
-
     virtual void add(block_detail_ptr incoming_block) = 0;
     virtual int find_index(const hash_digest& search_block_hash) = 0;
     virtual big_number end_slice_difficulty(size_t slice_begin_index) = 0;

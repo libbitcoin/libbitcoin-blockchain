@@ -36,13 +36,6 @@ chain_keeper_impl::chain_keeper_impl(
 {
 }
 
-void chain_keeper_impl::start()
-{
-}
-void chain_keeper_impl::stop()
-{
-}
-
 void chain_keeper_impl::add(block_detail_ptr incoming_block)
 {
     uint32_t last_block_height = common_->find_last_block_height();
