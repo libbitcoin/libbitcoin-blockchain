@@ -30,6 +30,28 @@
 namespace libbitcoin {
     namespace chain {
 
+/**
+ * Dependency graph:
+ *                   ___________
+ *                  |           |
+ *             -----| organizer |----
+ *            /     |___________|    \
+ *           /                        \
+ *  ________/_____                 ____\_________
+ * |              |               |              |
+ * | orphans_pool |               | chain_keeper |
+ * |______________|               |______________|
+ *
+ * And both implementations of the organizer and chain_keeper
+ * depend on blockchain_common.
+ *   ________________          ________
+ *  [_organizer_impl_]------->[        ]
+ *   ___________________      [ common ]
+ *  [_chain_keeper_impl_]---->[________]
+ *
+ * All these components are managed and kept inside blockchain_impl.
+ */
+
 // Metadata + block
 class block_detail
 {
