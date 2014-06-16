@@ -8,7 +8,7 @@ libbitcoin_blockchain_la_SOURCES = \
     database/stealth_database.cpp \
     database/hdb_shard.cpp \
 	impl/blockchain_impl.cpp \
-	impl/chain_keeper_impl.cpp \
+	impl/simple_chain_impl.cpp \
 	impl/blockchain_common.cpp \
 	impl/organizer_impl.cpp \
 	impl/validate_block_impl.cpp

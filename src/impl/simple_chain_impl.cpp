@@ -20,7 +20,7 @@
 #include <bitcoin/format.hpp>
 #include <bitcoin/transaction.hpp>
 #include <bitcoin/utility/logger.hpp>
-#include "chain_keeper_impl.hpp"
+#include "simple_chain_impl.hpp"
 
 namespace libbitcoin {
     namespace chain {
@@ -30,13 +30,13 @@ bool remove_debit(leveldb::WriteBatch& batch,
 bool remove_credit(leveldb::WriteBatch& batch,
     const transaction_output_type& output, const output_point& outpoint);
 
-chain_keeper_impl::chain_keeper_impl(
+simple_chain_impl::simple_chain_impl(
     blockchain_common_ptr common, leveldb_databases db)
   : common_(common), db_(db)
 {
 }
 
-void chain_keeper_impl::add(block_detail_ptr incoming_block)
+void simple_chain_impl::append(block_detail_ptr incoming_block)
 {
     uint32_t last_block_height = common_->find_last_block_height();
     const block_type& actual_block = incoming_block->actual();
@@ -44,7 +44,7 @@ void chain_keeper_impl::add(block_detail_ptr incoming_block)
         log_fatal(LOG_BLOCKCHAIN) << "Saving block in organizer failed";
 }
 
-int chain_keeper_impl::find_index(const hash_digest& search_block_hash)
+int simple_chain_impl::find_index(const hash_digest& search_block_hash)
 {
     uint32_t height = common_->get_block_height(search_block_hash);
     if (height == std::numeric_limits<uint32_t>::max())
@@ -52,11 +52,11 @@ int chain_keeper_impl::find_index(const hash_digest& search_block_hash)
     return static_cast<int>(height);
 }
 
-big_number chain_keeper_impl::end_slice_difficulty(size_t slice_begin_index)
+big_number simple_chain_impl::sum_difficulty(size_t begin_index)
 {
     big_number total_work = 0;
     leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
-    auto raw_height = to_little_endian(slice_begin_index);
+    auto raw_height = to_little_endian(begin_index);
     for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
     {
         constexpr size_t bits_field_offset = 4 + 2 * hash_size + 4;
@@ -75,43 +75,43 @@ big_number chain_keeper_impl::end_slice_difficulty(size_t slice_begin_index)
 block_detail_ptr reconstruct_block(
     blockchain_common_ptr common, const std::string& value)
 {
-    leveldb_block_info blk;
-    if (!common->deserialize_block(blk, value, true, true))
+    leveldb_block_info blk_info;
+    if (!common->deserialize_block(blk_info, value, true, true))
         return nullptr;
-    block_detail_ptr sliced_block = std::make_shared<block_detail>(blk.header);
-    for (const hash_digest& tx_hash: blk.tx_hashes)
+    block_detail_ptr blk = std::make_shared<block_detail>(blk_info.header);
+    for (const hash_digest& tx_hash: blk_info.tx_hashes)
     {
         // Get the actual transaction.
         leveldb_tx_info tx;
         if (!common->get_transaction(tx, tx_hash, false, true))
             return nullptr;
-        sliced_block->actual_ptr()->transactions.push_back(tx.tx);
+        blk->actual_ptr()->transactions.push_back(tx.tx);
     }
-    return sliced_block;
+    return blk;
 }
 
-bool chain_keeper_impl::end_slice(size_t slice_begin_index,
-    block_detail_list& sliced_blocks)
+bool simple_chain_impl::release(size_t begin_index,
+    block_detail_list& released_blocks)
 {
     leveldb_transaction_batch batch;
     leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
-    auto raw_height = to_little_endian(slice_begin_index);
+    auto raw_height = to_little_endian(begin_index);
     for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
     {
-        block_detail_ptr sliced_block =
+        block_detail_ptr blk =
             reconstruct_block(common_, it->value().ToString());
-        if (!sliced_block)
+        if (!blk)
             return false;
         // Add to list of sliced blocks
-        sliced_blocks.push_back(sliced_block);
+        released_blocks.push_back(blk);
         // Make sure to delete hash secondary index too.
-        const hash_digest& block_hash = sliced_block->hash();
+        const hash_digest& block_hash = blk->hash();
         // Delete block header...
         batch.block.Delete(it->key());
         // And it's secondary index.
         batch.block_hash.Delete(slice_block_hash(block_hash));
         // Remove txs + spends + addresses too
-        const auto& transactions = sliced_block->actual().transactions;
+        const auto& transactions = blk->actual().transactions;
         for (const transaction_type& block_tx: transactions)
             if (!clear_transaction_data(batch, block_tx))
                 return false;
@@ -122,7 +122,7 @@ bool chain_keeper_impl::end_slice(size_t slice_begin_index,
     return true;
 }
 
-bool chain_keeper_impl::clear_transaction_data(
+bool simple_chain_impl::clear_transaction_data(
     leveldb_transaction_batch& batch, const transaction_type& remove_tx)
 {
     const hash_digest& tx_hash = hash_transaction(remove_tx);

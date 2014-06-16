@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_LEVELDB_ORGANIZER_H
 
 #include <bitcoin/blockchain/organizer.hpp>
-#include "chain_keeper_impl.hpp"
+#include "simple_chain_impl.hpp"
 
 namespace libbitcoin {
     namespace chain {
@@ -33,7 +33,7 @@ public:
     typedef blockchain::reorganize_handler reorganize_handler;
 
     organizer_impl(blockchain_common_ptr common, orphans_pool_ptr orphans,
-        chain_keeper_ptr chain, reorganize_handler handler);
+        simple_chain_ptr chain, reorganize_handler handler);
 
 protected:
     std::error_code verify(size_t fork_index,

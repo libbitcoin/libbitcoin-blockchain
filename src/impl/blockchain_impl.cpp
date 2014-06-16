@@ -32,7 +32,7 @@
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/format.hpp>
 #include "blockchain_common.hpp"
-#include "chain_keeper_impl.hpp"
+#include "simple_chain_impl.hpp"
 #include "organizer_impl.hpp"
 
 namespace libbitcoin {
@@ -208,7 +208,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
     common_ = std::make_shared<blockchain_common>(databases, special_dbs);
     // Validate and organisation components.
     orphans_ = std::make_shared<orphans_pool>(20);
-    chain_ = std::make_shared<chain_keeper_impl>(common_, databases);
+    chain_ = std::make_shared<simple_chain_impl>(common_, databases);
     auto reorg_handler = [this](
         const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& arrivals,

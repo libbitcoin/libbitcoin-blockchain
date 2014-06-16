@@ -39,15 +39,15 @@ namespace libbitcoin {
  *           /                        \
  *  ________/_____                 ____\_________
  * |              |               |              |
- * | orphans_pool |               | chain_keeper |
+ * | orphans_pool |               | simple_chain |
  * |______________|               |______________|
  *
- * And both implementations of the organizer and chain_keeper
+ * And both implementations of the organizer and simple_chain
  * depend on blockchain_common.
  *   ________________          ________
  *  [_organizer_impl_]------->[        ]
  *   ___________________      [ common ]
- *  [_chain_keeper_impl_]---->[________]
+ *  [_simple_chain_impl_]---->[________]
  *
  * All these components are managed and kept inside blockchain_impl.
  */
@@ -100,23 +100,23 @@ private:
 typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 
 // The actual blockchain is encapsulated by this
-class chain_keeper
+class simple_chain
 {
 public:
-    virtual void add(block_detail_ptr incoming_block) = 0;
+    virtual void append(block_detail_ptr incoming_block) = 0;
     virtual int find_index(const hash_digest& search_block_hash) = 0;
-    virtual big_number end_slice_difficulty(size_t slice_begin_index) = 0;
-    virtual bool end_slice(size_t slice_begin_index,
-        block_detail_list& sliced_blocks) = 0;
+    virtual big_number sum_difficulty(size_t begin_index) = 0;
+    virtual bool release(size_t begin_index,
+        block_detail_list& released_blocks) = 0;
 };
 
-typedef std::shared_ptr<chain_keeper> chain_keeper_ptr;
+typedef std::shared_ptr<simple_chain> simple_chain_ptr;
 
 // Structure which organises the blocks from the orphan pool to the blockchain
 class organizer
 {
 public:
-    organizer(orphans_pool_ptr orphans, chain_keeper_ptr chain);
+    organizer(orphans_pool_ptr orphans, simple_chain_ptr chain);
 
     void start();
 
@@ -139,7 +139,7 @@ private:
         const block_detail_list& replaced_slice);
 
     orphans_pool_ptr orphans_;
-    chain_keeper_ptr chain_;
+    simple_chain_ptr chain_;
 
     block_detail_list process_queue_;
 };

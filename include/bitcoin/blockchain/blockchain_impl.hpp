@@ -201,7 +201,7 @@ private:
     blockchain_common_ptr common_;
     // Organize stuff
     orphans_pool_ptr orphans_;
-    chain_keeper_ptr chain_;
+    simple_chain_ptr chain_;
     organizer_ptr organize_;
 
     reorganize_subscriber_type::ptr reorganize_subscriber_;

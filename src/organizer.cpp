@@ -139,7 +139,7 @@ void orphans_pool::remove(block_detail_ptr remove_block)
     pool_.erase(it);
 }
 
-organizer::organizer(orphans_pool_ptr orphans, chain_keeper_ptr chain)
+organizer::organizer(orphans_pool_ptr orphans, simple_chain_ptr chain)
   : orphans_(orphans), chain_(chain)
 {
 }
@@ -194,12 +194,13 @@ void organizer::replace_chain(size_t fork_index,
     }
     // All remaining blocks in orphan_chain should all be valid now
     // Compare the difficulty of the 2 forks (original and orphan)
-    big_number main_work = chain_->end_slice_difficulty(fork_index + 1);
+    const size_t begin_index = fork_index + 1;
+    big_number main_work = chain_->sum_difficulty(begin_index);
     if (orphan_work <= main_work)
         return;
     // Replace! Switch!
     block_detail_list replaced_slice;
-    bool slice_success = chain_->end_slice(fork_index + 1, replaced_slice);
+    bool slice_success = chain_->release(begin_index, replaced_slice);
     BITCOIN_ASSERT(slice_success);
     // We add the arriving blocks first to the main chain because if
     // we add the blocks being replaced back to the pool first then
@@ -215,7 +216,7 @@ void organizer::replace_chain(size_t fork_index,
         orphans_->remove(arrival_block);
         ++arrival_index;
         arrival_block->set_info({block_status::confirmed, arrival_index});
-        chain_->add(arrival_block);
+        chain_->append(arrival_block);
     }
     // Now add the old blocks back to the pool
     for (block_detail_ptr replaced_block: replaced_slice)

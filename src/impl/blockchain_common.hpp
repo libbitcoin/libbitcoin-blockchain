@@ -89,7 +89,7 @@ public:
     uint32_t get_block_height(const hash_digest& block_hash);
     bool get_block(leveldb_block_info& blk_info,
         uint32_t height, bool read_header, bool read_tx_hashes);
-    // Used by chain_keeper when iterating through blocks.
+    // Used by simple_chain when iterating through blocks.
     // get_block isn't sufficient by itself.
     bool deserialize_block(leveldb_block_info& blk_info,
         const std::string& raw_data, bool read_header, bool read_tx_hashes);
@@ -123,7 +123,7 @@ uint32_t recreate_height(const Data& raw_data)
 
 leveldb::Slice slice_block_hash(const hash_digest& block_hash);
 
-// Used also by chain_keeper_impl when deleting spends + addresses
+// Used also by simple_chain_impl when deleting spends + addresses
 template <typename Point>
 data_chunk create_spent_key(const Point& point)
 {
