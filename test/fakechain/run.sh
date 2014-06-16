@@ -20,6 +20,10 @@
 #
 mkdir -p blockchain/
 rm -fr blockchain/*
-../../examples/initchain blockchain/
+CWD=$(pwd)
+cd ../../examples/
+make -j2
+./initchain $CWD/blockchain/
+cd $CWD
 make && ./fake
 
