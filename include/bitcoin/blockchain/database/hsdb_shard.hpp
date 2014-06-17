@@ -25,23 +25,10 @@
 #include <bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/database/hsdb_settings.hpp>
 
 namespace libbitcoin {
     namespace chain {
-
-constexpr size_t shard_max_entries = 1000000;
-
-struct BCB_API hsdb_shard_settings
-{
-    size_t scan_bitsize() const;
-    size_t scan_size() const;
-    size_t number_buckets() const;
-
-    size_t total_key_size = 20;
-    size_t sharded_bitsize = 8;
-    size_t bucket_bitsize = 8;
-    size_t row_value_size = 49;
-};
 
 class hsdb_shard
 {

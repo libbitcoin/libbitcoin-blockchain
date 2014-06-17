@@ -51,15 +51,16 @@ hsdb_shard::hsdb_shard(mmfile& file, const hsdb_shard_settings& settings)
 void hsdb_shard::initialize_new()
 {
     // Write header information.
-    constexpr size_t total_size = 8 + 8 * shard_max_entries;
+    const size_t total_size = 8 + 8 * settings_.shard_max_entries;
     bool success = file_.resize(total_size);
     BITCOIN_ASSERT(success);
     auto serial = make_serializer(file_.data());
-    constexpr position_type initial_entries_end = 8 + 8 * shard_max_entries;
+    const position_type initial_entries_end =
+        8 + 8 * settings_.shard_max_entries;
     // No entries for now, so end position is data start.
     serial.write_8_bytes(initial_entries_end);
     // Zero out all block index entries.
-    for (size_t i = 0; i < shard_max_entries; ++i)
+    for (size_t i = 0; i < settings_.shard_max_entries; ++i)
         serial.write_8_bytes(0);
 }
 
@@ -69,7 +70,8 @@ void hsdb_shard::start()
     auto deserial = make_deserializer(file_.data(), file_.data() + 8);
     entries_end_ = deserial.read_8_bytes();
     // Check it's sane.
-    constexpr position_type initial_entries_end = 8 + 8 * shard_max_entries;
+    const position_type initial_entries_end =
+        8 + 8 * settings_.shard_max_entries;
     BITCOIN_ASSERT(entries_end_ >= initial_entries_end);
 }
 

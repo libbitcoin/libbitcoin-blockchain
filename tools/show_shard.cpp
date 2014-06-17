@@ -28,10 +28,10 @@ int main(int argc, char** argv)
     position_type entry_end = deserial.read_8_bytes();
     // last_value + 2 + 2 * 256 + rows * (19 + 49)
     std::cout << "  [ " << entry_end << " ]" << std::endl;
-    BITCOIN_ASSERT(entry_end >= 1 + shard_max_entries * 8);
-    BITCOIN_ASSERT(block_height_limit <= shard_max_entries);
+    BITCOIN_ASSERT(entry_end >= 1 + settings.shard_max_entries * 8);
+    BITCOIN_ASSERT(block_height_limit <= settings.shard_max_entries);
     std::cout << "positions:" << std::endl;
-    for (size_t i = 0; i < shard_max_entries; ++i)
+    for (size_t i = 0; i < settings.shard_max_entries; ++i)
     {
         position_type entry_position = deserial.read_8_bytes();
         // Don't display all entries... Too many.
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         std::cout << "  " << i << ": [ "
             << entry_position << " ]" << std::endl;
     }
-    if (block_height_limit < shard_max_entries)
+    if (block_height_limit < settings.shard_max_entries)
         std::cout << "   ..." << std::endl;
     std::cout << "main_table:" << std::endl;
     while (true)
