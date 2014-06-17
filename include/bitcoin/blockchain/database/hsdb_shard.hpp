@@ -31,7 +31,7 @@ namespace libbitcoin {
 
 constexpr size_t shard_max_entries = 1000000;
 
-struct BCB_API hdb_shard_settings
+struct BCB_API hsdb_shard_settings
 {
     size_t scan_bitsize() const;
     size_t scan_size() const;
@@ -43,12 +43,12 @@ struct BCB_API hdb_shard_settings
     size_t row_value_size = 49;
 };
 
-class hdb_shard
+class hsdb_shard
 {
 public:
     typedef std::function<void (const uint8_t*)> read_function;
 
-    BCB_API hdb_shard(mmfile& file, const hdb_shard_settings& settings);
+    BCB_API hsdb_shard(mmfile& file, const hsdb_shard_settings& settings);
 
     /**
       * Create database.
@@ -100,7 +100,7 @@ private:
     // scan() related.
 
     mmfile& file_;
-    const hdb_shard_settings settings_;
+    const hsdb_shard_settings settings_;
     position_type entries_end_;
     entry_row_list rows_;
 };

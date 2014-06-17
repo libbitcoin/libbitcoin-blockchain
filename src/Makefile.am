@@ -6,7 +6,7 @@ lib_LTLIBRARIES = libbitcoin_blockchain.la
 libbitcoin_blockchain_la_SOURCES = \
     organizer.cpp \
     database/stealth_database.cpp \
-    database/hdb_shard.cpp \
+    database/hsdb_shard.cpp \
 	impl/blockchain_impl.cpp \
 	impl/simple_chain_impl.cpp \
 	impl/blockchain_common.cpp \

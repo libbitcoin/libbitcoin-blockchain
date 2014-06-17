@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/database/hdb_shard.hpp>
+#include <bitcoin/blockchain/database/hsdb_shard.hpp>
 
 #include <bitcoin/stealth.hpp>
 #include <bitcoin/utility/assert.hpp>
@@ -26,29 +26,29 @@
 namespace libbitcoin {
     namespace chain {
 
-size_t hdb_shard_settings::scan_bitsize() const
+size_t hsdb_shard_settings::scan_bitsize() const
 {
     BITCOIN_ASSERT(total_key_size * 8 >= sharded_bitsize);
     return total_key_size * 8 - sharded_bitsize;
 }
-size_t hdb_shard_settings::scan_size() const
+size_t hsdb_shard_settings::scan_size() const
 {
     const size_t bitsize = scan_bitsize();
     BITCOIN_ASSERT(bitsize != 0);
     const size_t size = (bitsize - 1) / 8 + 1;
     return size;
 }
-size_t hdb_shard_settings::number_buckets() const
+size_t hsdb_shard_settings::number_buckets() const
 {
     return 1 << bucket_bitsize;
 }
 
-hdb_shard::hdb_shard(mmfile& file, const hdb_shard_settings& settings)
+hsdb_shard::hsdb_shard(mmfile& file, const hsdb_shard_settings& settings)
   : file_(file), settings_(settings)
 {
 }
 
-void hdb_shard::initialize_new()
+void hsdb_shard::initialize_new()
 {
     // Write header information.
     constexpr size_t total_size = 8 + 8 * shard_max_entries;
@@ -63,7 +63,7 @@ void hdb_shard::initialize_new()
         serial.write_8_bytes(0);
 }
 
-void hdb_shard::start()
+void hsdb_shard::start()
 {
     // Read entries end.
     auto deserial = make_deserializer(file_.data(), file_.data() + 8);
@@ -73,7 +73,7 @@ void hdb_shard::start()
     BITCOIN_ASSERT(entries_end_ >= initial_entries_end);
 }
 
-void hdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
+void hsdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
 {
     // Add rows to memory, synched to disk in later final step.
     BITCOIN_ASSERT(value.size() == settings_.row_value_size);
@@ -83,7 +83,7 @@ void hdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
     rows_.push_back(entry_row{scan_key, value});
 }
 
-void hdb_shard::sort_rows()
+void hsdb_shard::sort_rows()
 {
     // Bitwise comparison.
     auto reverse_less_than = [](
@@ -105,7 +105,7 @@ void hdb_shard::sort_rows()
     // Sort in-memory rows so they are synched to disk in sorted order.
     std::sort(rows_.begin(), rows_.end(), sort_func);
 }
-void hdb_shard::reserve(size_t space_needed)
+void hsdb_shard::reserve(size_t space_needed)
 {
     const size_t required_size = entries_end_ + space_needed;
     if (required_size <= file_.size())
@@ -117,7 +117,7 @@ void hdb_shard::reserve(size_t space_needed)
     bool success = file_.resize(new_size);
     BITCOIN_ASSERT(success);
 }
-void hdb_shard::link(const size_t height, const position_type entry)
+void hsdb_shard::link(const size_t height, const position_type entry)
 {
     // Link latest block into header.
     position_type positions_bucket = 8 + 8 * height;
@@ -196,7 +196,7 @@ void write_rows(Serializer& serial, Rows& rows, Settings& settings)
     }
 }
 
-void hdb_shard::sync(size_t height)
+void hsdb_shard::sync(size_t height)
 {
     sort_rows();
     // Calc space needed + reserve.
@@ -221,26 +221,29 @@ void hdb_shard::sync(size_t height)
     link(height, entry_position);
 }
 
-position_type hdb_shard::entry_position(size_t height) const
+position_type hsdb_shard::entry_position(size_t height) const
 {
+    // Find bucket in header.
     const index_type entry_bucket = height;
     const position_type bucket = 8 + 8 * entry_bucket;
     const uint8_t* begin = file_.data() + bucket;
     auto deserial = make_deserializer(begin, begin + 8);
+    // Read entry position.
     const position_type entry = deserial.read_8_bytes();
     return entry;
 }
-size_t hdb_shard::calc_entry_size(const position_type entry) const
+size_t hsdb_shard::calc_entry_size(const position_type entry) const
 {
     const uint8_t* begin = file_.data() + entry;
     auto deserial = make_deserializer(begin, begin + 2);
+    // Read number of rows in entry.
     const size_t number_rows = deserial.read_2_bytes();
     const size_t row_size = settings_.scan_size() + settings_.row_value_size;
     const size_t entry_size =
         2 + 2 * settings_.number_buckets() + row_size * number_rows;
     return entry_size;
 }
-void hdb_shard::unlink(size_t height)
+void hsdb_shard::unlink(size_t height)
 {
     BITCOIN_ASSERT(height > 0);
     // Lookup entry_index at (height - 1). 
@@ -255,13 +258,15 @@ void hdb_shard::unlink(size_t height)
 index_type read_row_index(
     const index_type bucket_index, const uint8_t* entry_begin)
 {
+    // Find bucket inside entry.
     const position_type bucket = 2 + 2 * bucket_index;
     auto deserial = make_deserializer(
         entry_begin + bucket, entry_begin + bucket + 2);
+    // Read row index.
     const index_type row_index = deserial.read_2_bytes();
     return row_index;
 }
-void hdb_shard::scan(const address_bitset& key,
+void hsdb_shard::scan(const address_bitset& key,
     read_function read, size_t from_height)
 {
     BITCOIN_ASSERT(key.size() <= settings_.scan_bitsize());

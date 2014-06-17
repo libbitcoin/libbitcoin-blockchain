@@ -19,8 +19,8 @@ void create_new(const std::string& filename)
     touch_file("shard");
     mmfile file("shard");
     BITCOIN_ASSERT(file.data());
-    hdb_shard_settings settings;
-    hdb_shard shard(file, settings);
+    hsdb_shard_settings settings;
+    hsdb_shard shard(file, settings);
     shard.initialize_new();
 }
 
@@ -33,8 +33,8 @@ data_chunk generate_random_bytes(
     return result;
 }
 
-void write_random_rows(hdb_shard& shard,
-    hdb_shard_settings& settings, size_t count)
+void write_random_rows(hsdb_shard& shard,
+    hsdb_shard_settings& settings, size_t count)
 {
     std::random_device random;
     std::default_random_engine engine(random());
@@ -62,8 +62,8 @@ void create_db(const std::string& db_name)
     create_new(db_name);
     mmfile file(db_name);
     BITCOIN_ASSERT(file.data());
-    hdb_shard_settings settings;
-    hdb_shard shard(file, settings);
+    hsdb_shard_settings settings;
+    hsdb_shard shard(file, settings);
     shard.start();
 
     for (size_t i = 0; i < 1000; ++i)
@@ -79,8 +79,8 @@ void scan_test(const std::string& db_name)
 {
     mmfile file(db_name);
     BITCOIN_ASSERT(file.data());
-    hdb_shard_settings settings;
-    hdb_shard shard(file, settings);
+    hsdb_shard_settings settings;
+    hsdb_shard shard(file, settings);
     shard.start();
 
     size_t i = 0;
@@ -97,7 +97,7 @@ void scan_test(const std::string& db_name)
 
 void show_usage()
 {
-    std::cout << "Usage: hdb_shard_bench [--init|--benchmark]" << std::endl;
+    std::cout << "Usage: hsdb_shard_bench [--init|--benchmark]" << std::endl;
 }
 
 int main(int argc, char** argv)

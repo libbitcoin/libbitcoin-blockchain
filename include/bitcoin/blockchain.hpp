@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HPP
 
-#include <bitcoin/blockchain/database/hdb_shard.hpp>
+#include <bitcoin/blockchain/database/hsdb_shard.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace bc = libbitcoin;
