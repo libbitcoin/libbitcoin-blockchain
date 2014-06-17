@@ -79,9 +79,7 @@ void hsdb_shard::add(const address_bitset& scan_key, const data_chunk& value)
 {
     // Add rows to memory, synched to disk in later final step.
     BITCOIN_ASSERT(value.size() == settings_.row_value_size);
-    const size_t scan_bits =
-        settings_.total_key_size * 8 - settings_.sharded_bitsize;
-    BITCOIN_ASSERT(scan_key.size() == scan_bits);
+    BITCOIN_ASSERT(scan_key.size() == settings_.scan_bitsize());
     rows_.push_back(entry_row{scan_key, value});
 }
 
