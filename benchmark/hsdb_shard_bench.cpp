@@ -37,10 +37,10 @@ void write_random_rows(hsdb_shard& shard,
     hsdb_shard_settings& settings, size_t count)
 {
     std::random_device random;
-    std::default_random_engine engine(random());
 
     for (size_t i = 0; i < count; ++i)
     {
+        std::default_random_engine engine(random());
         data_chunk key =
             generate_random_bytes(engine, settings.total_key_size);
         data_chunk value =
