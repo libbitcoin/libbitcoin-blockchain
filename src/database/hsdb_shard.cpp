@@ -26,24 +26,7 @@
 namespace libbitcoin {
     namespace chain {
 
-size_t hsdb_shard_settings::scan_bitsize() const
-{
-    BITCOIN_ASSERT(total_key_size * 8 >= sharded_bitsize);
-    return total_key_size * 8 - sharded_bitsize;
-}
-size_t hsdb_shard_settings::scan_size() const
-{
-    const size_t bitsize = scan_bitsize();
-    BITCOIN_ASSERT(bitsize != 0);
-    const size_t size = (bitsize - 1) / 8 + 1;
-    return size;
-}
-size_t hsdb_shard_settings::number_buckets() const
-{
-    return 1 << bucket_bitsize;
-}
-
-hsdb_shard::hsdb_shard(mmfile& file, const hsdb_shard_settings& settings)
+hsdb_shard::hsdb_shard(mmfile& file, const hsdb_settings& settings)
   : file_(file), settings_(settings)
 {
 }

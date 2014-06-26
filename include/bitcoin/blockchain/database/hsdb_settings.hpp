@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HSDB_SETTINGS_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HSDB_SETTINGS_HPP
 
 #include <functional>
 #include <bitcoin/types.hpp>
@@ -29,8 +29,9 @@
 namespace libbitcoin {
     namespace chain {
 
-struct BCB_API hsdb_shard_settings
+struct BCB_API hsdb_settings
 {
+    size_t number_shards() const;
     size_t scan_bitsize() const;
     size_t scan_size() const;
     size_t number_buckets() const;
@@ -46,13 +47,13 @@ struct BCB_API hsdb_shard_settings
 /**
   * Load the shard settings from the control file.
   */
-BCB_API hsdb_shard_settings load_shard_settings(const mmfile& file);
+BCB_API hsdb_settings load_shard_settings(const mmfile& file);
 
 /**
   * Save the shard settings in the control file.
   */
 BCB_API void save_shard_settings(
-    mmfile& file, const hsdb_shard_settings& settings);
+    mmfile& file, const hsdb_settings& settings);
 
     } // namespace chain
 } // namespace libbitcoin

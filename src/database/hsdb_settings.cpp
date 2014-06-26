@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/database/hsdb_control.hpp>
+#include <bitcoin/blockchain/database/hsdb_settings.hpp>
 
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
@@ -27,9 +27,31 @@ namespace libbitcoin {
 
 constexpr size_t settings_file_size = 8 * 6;
 
-hsdb_shard_settings load_shard_settings(const mmfile& file)
+size_t hsdb_settings::number_shards() const
 {
-    hsdb_shard_settings settings;
+    return 1 << sharded_bitsize;
+}
+
+size_t hsdb_settings::scan_bitsize() const
+{
+    BITCOIN_ASSERT(total_key_size * 8 >= sharded_bitsize);
+    return total_key_size * 8 - sharded_bitsize;
+}
+size_t hsdb_settings::scan_size() const
+{
+    const size_t bitsize = scan_bitsize();
+    BITCOIN_ASSERT(bitsize != 0);
+    const size_t size = (bitsize - 1) / 8 + 1;
+    return size;
+}
+size_t hsdb_settings::number_buckets() const
+{
+    return 1 << bucket_bitsize;
+}
+
+hsdb_settings load_shard_settings(const mmfile& file)
+{
+    hsdb_settings settings;
     BITCOIN_ASSERT(file.size() == settings_file_size);
     auto deserial = make_deserializer(
         file.data(), file.data() + file.size());
@@ -42,7 +64,7 @@ hsdb_shard_settings load_shard_settings(const mmfile& file)
     return settings;
 }
 
-void save_shard_settings(mmfile& file, const hsdb_shard_settings& settings)
+void save_shard_settings(mmfile& file, const hsdb_settings& settings)
 {
     bool success = file.resize(settings_file_size);
     BITCOIN_ASSERT(success);

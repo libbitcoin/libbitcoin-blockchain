@@ -10,6 +10,7 @@ bitcoin_blockchain_include_HEADERS = \
 
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \
+    blockchain/database/history_scan_database.hpp \
     blockchain/database/hsdb_shard.hpp \
     blockchain/database/hsdb_settings.hpp \
     blockchain/database/types.hpp \

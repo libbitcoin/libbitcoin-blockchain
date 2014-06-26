@@ -19,7 +19,7 @@ void create_new(const std::string& filename)
     touch_file("shard");
     mmfile file("shard");
     BITCOIN_ASSERT(file.data());
-    hsdb_shard_settings settings;
+    hsdb_settings settings;
     hsdb_shard shard(file, settings);
     shard.initialize_new();
 }
@@ -34,7 +34,7 @@ data_chunk generate_random_bytes(
 }
 
 void write_random_rows(hsdb_shard& shard,
-    hsdb_shard_settings& settings, size_t count)
+    hsdb_settings& settings, size_t count)
 {
     std::random_device random;
 
@@ -62,7 +62,7 @@ void create_db(const std::string& db_name)
     create_new(db_name);
     mmfile file(db_name);
     BITCOIN_ASSERT(file.data());
-    hsdb_shard_settings settings;
+    hsdb_settings settings;
     hsdb_shard shard(file, settings);
     shard.start();
 
@@ -79,7 +79,7 @@ void scan_test(const std::string& db_name)
 {
     mmfile file(db_name);
     BITCOIN_ASSERT(file.data());
-    hsdb_shard_settings settings;
+    hsdb_settings settings;
     hsdb_shard shard(file, settings);
     shard.start();
 

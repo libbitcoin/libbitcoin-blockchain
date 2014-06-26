@@ -19,7 +19,7 @@ int main(int argc, char** argv)
         std::cerr << "show_hsdb_settings: Error opening file." << std::endl;
         return -1;
     }
-    hsdb_shard_settings settings = load_shard_settings(file);
+    hsdb_settings settings = load_shard_settings(file);
     std::cout << "Version: " << settings.version << std::endl;
     std::cout << "shard_max_entries: "
         << settings.shard_max_entries << std::endl;

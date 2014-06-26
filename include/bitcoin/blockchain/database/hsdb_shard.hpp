@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HDB_SHARD_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HSDB_SHARD_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HSDB_SHARD_HPP
 
 #include <functional>
 #include <bitcoin/types.hpp>
@@ -35,7 +35,7 @@ class hsdb_shard
 public:
     typedef std::function<void (const uint8_t*)> read_function;
 
-    BCB_API hsdb_shard(mmfile& file, const hsdb_shard_settings& settings);
+    BCB_API hsdb_shard(mmfile& file, const hsdb_settings& settings);
 
     /**
       * Create database.
@@ -87,7 +87,7 @@ private:
     // scan() related.
 
     mmfile& file_;
-    const hsdb_shard_settings settings_;
+    const hsdb_settings settings_;
     position_type entries_end_;
     entry_row_list rows_;
 };

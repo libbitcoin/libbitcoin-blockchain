@@ -5,12 +5,16 @@ default: all
 
 hsdb_shard_bench.o: hsdb_shard_bench.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
-
 hsdb_shard_bench: hsdb_shard_bench.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: hsdb_shard_bench
+hsdb_bench.o: hsdb_bench.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+hsdb_bench: hsdb_bench.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: hsdb_shard_bench hsdb_bench
 
 clean:
-	rm -f hsdb_shard_bench
+	rm -f hsdb_shard_bench hsdb_bench
 	rm -f *.o
