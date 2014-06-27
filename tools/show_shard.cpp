@@ -22,7 +22,7 @@ int main(int argc, char** argv)
         return -1;
     }
     // Use default settings.
-    hsdb_shard_settings settings;
+    hsdb_settings settings;
     auto deserial = make_deserializer(file.data(), file.data() + file.size());
     std::cout << "values:" << std::endl;
     position_type entry_end = deserial.read_8_bytes();

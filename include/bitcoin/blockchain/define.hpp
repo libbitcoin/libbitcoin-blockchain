@@ -22,6 +22,12 @@
 
 #include <bitcoin/define.hpp>
 
+// Logger defines.
+#define LOG_HSDB        "history_scan_database"
+
+// Uncomment this to enable hsdb debug logging.
+#define HSDB_DEBUG
+
 // Now we use the generic helper definitions in libbitcoin to
 // define BCB_API and BCB_INTERNAL.
 // BCB_API is used for the public API symbols. It either DLL imports or

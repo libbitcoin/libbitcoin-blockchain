@@ -17,40 +17,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HSDB_SHARD_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HSDB_SHARD_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
 
-#include <functional>
-#include <bitcoin/types.hpp>
-#include <bitcoin/utility/mmfile.hpp>
-#include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
+#include <bitcoin/blockchain/database/hsdb_shard.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-class hsdb_shard
+BCB_API void create_hsdb(const std::string& prefix,
+    const hsdb_settings& settings=hsdb_settings());
+
+class history_scan_database
 {
 public:
+    // TODO: remove, functions should expose types.
     typedef std::function<void (const uint8_t*)> read_function;
 
-    BCB_API hsdb_shard(mmfile& file, const hsdb_settings& settings);
-
-    /**
-      * Create database.
-      */
-    BCB_API void initialize_new();
-
-    /**
-      * Prepare database for usage.
-      */
-    BCB_API void start();
+    BCB_API history_scan_database(const std::string& prefix);
 
     /**
       * Write method. Adds to in memory list of rows. sync() writes them.
       */
-    BCB_API void add(const address_bitset& scan_key, const data_chunk& value);
+    BCB_API void add(const address_bitset& key, const data_chunk& value);
 
     /**
       * Write method. Flushes to disk and writes actual data.
@@ -63,33 +53,21 @@ public:
     BCB_API void unlink(size_t height);
 
     /**
-      * Read method. Scan shard for rows with matching prefix.
+      * Read method. Scan for rows with matching prefix.
       */
     BCB_API void scan(const address_bitset& key,
         read_function read, size_t from_height);
 
 private:
-    struct entry_row
-    {
-        address_bitset scan_key;
-        data_chunk value;
-    };
-    typedef std::vector<entry_row> entry_row_list;
+    typedef std::vector<mmfile> mmfile_list;
+    typedef std::vector<hsdb_shard> shard_list;
 
-    position_type entry_position(size_t height) const;
-    size_t calc_entry_size(const position_type entry) const;
+    hsdb_shard& lookup(address_bitset key);
+    address_bitset drop_prefix(address_bitset key);
 
-    // sync() related.
-    void sort_rows();
-    void reserve(size_t space_needed);
-    void link(const size_t height, const position_type entry);
-
-    // scan() related.
-
-    mmfile& file_;
-    const hsdb_settings& settings_;
-    position_type entries_end_;
-    entry_row_list rows_;
+    hsdb_settings settings_;
+    mmfile_list shard_files_;
+    shard_list shards_;
 };
 
     } // namespace chain

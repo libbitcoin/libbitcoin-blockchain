@@ -22,6 +22,7 @@
 #include <bitcoin/stealth.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/utility/logger.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -181,6 +182,10 @@ void write_rows(Serializer& serial, Rows& rows, Settings& settings)
 
 void hsdb_shard::sync(size_t height)
 {
+#ifdef HSDB_DEBUG
+    log_debug(LOG_HSDB) << "sync(" << height << ") [rows.size = "
+        << rows_.size() << "]";
+#endif
     sort_rows();
     // Calc space needed + reserve.
     const size_t row_size = settings_.scan_size() + settings_.row_value_size;
@@ -252,6 +257,10 @@ index_type read_row_index(
 void hsdb_shard::scan(const address_bitset& key,
     read_function read, size_t from_height)
 {
+#ifdef HSDB_DEBUG
+    log_debug(LOG_HSDB) << "scan(" << key << ", from_height="
+        << from_height << ")";
+#endif
     BITCOIN_ASSERT(key.size() <= settings_.scan_bitsize());
     // Jump to relevant entry, loop through entries until the end:
     position_type entry = entry_position(from_height);
