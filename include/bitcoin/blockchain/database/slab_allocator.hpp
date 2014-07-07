@@ -50,6 +50,11 @@ public:
     BCB_API position_type allocate(size_t size);
 
     /**
+     * Synchronise slab allocator to disk.
+     */
+    BCB_API void sync();
+
+    /**
      * Return a slab.
      */
     BCB_API slab_type get(position_type position);

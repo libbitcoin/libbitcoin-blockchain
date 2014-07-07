@@ -33,9 +33,8 @@ slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
 
 void slab_allocator::initialize_new()
 {
-    BITCOIN_ASSERT(file_.size() > 8);
-    auto serial = make_serializer(data_);
-    serial.write_8_bytes(8);
+    end_ = 8;
+    sync();
 }
 
 void slab_allocator::start()
@@ -53,6 +52,13 @@ position_type slab_allocator::allocate(size_t size)
     position_type slab_position = end_;
     end_ += size;
     return slab_position;
+}
+
+void slab_allocator::sync()
+{
+    BITCOIN_ASSERT(file_.size() > end_);
+    auto serial = make_serializer(data_);
+    serial.write_8_bytes(end_);
 }
 
 slab_type slab_allocator::get(position_type position)
