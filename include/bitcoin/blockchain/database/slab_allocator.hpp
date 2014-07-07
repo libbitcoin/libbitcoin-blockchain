@@ -32,7 +32,7 @@ typedef uint8_t* slab_type;
 class slab_allocator
 {
 public:
-    BCB_API slab_allocator(mmfile& file);
+    BCB_API slab_allocator(mmfile& file, position_type sector_start);
 
     /**
       * Create slab.
@@ -63,6 +63,7 @@ private:
     void reserve(size_t space_needed);
 
     mmfile& file_;
+    uint8_t* data_ = nullptr;
     position_type end_ = 0;
 };
 
