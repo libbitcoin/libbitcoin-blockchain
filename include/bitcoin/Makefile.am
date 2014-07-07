@@ -8,6 +8,10 @@ bitcoin_blockchain_include_HEADERS = \
     blockchain/blockchain_impl.hpp \
     blockchain/organizer.hpp
 
+bitcoin_blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
+bitcoin_blockchain_impl_include_HEADERS = \
+    blockchain/impl/disk_array.ipp
+
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/history_scan_database.hpp \
@@ -15,5 +19,6 @@ bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/hsdb_settings.hpp \
     blockchain/database/types.hpp \
     blockchain/database/stealth_database.hpp \
-    blockchain/database/slab_allocator.hpp
+    blockchain/database/slab_allocator.hpp \
+    blockchain/database/disk_array.hpp
 
