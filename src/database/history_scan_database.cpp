@@ -95,15 +95,13 @@ history_scan_database::history_scan_database(const std::string& prefix)
     {
         // Open each shard file.
         const std::string filename = shard_path(prefix, i, settings_);
-        mmfile file(filename);
-        BITCOIN_ASSERT(file.data());
-        shard_files_.emplace_back(std::move(file));
+        files_.emplace_back(filename);
     }
     for (size_t i = 0; i < settings_.number_shards(); ++i)
     {
-        BITCOIN_ASSERT(shard_files_[i].data());
+        BITCOIN_ASSERT(files_[i].data());
         // Start each shard.
-        hsdb_shard shard(shard_files_[i], settings_);
+        hsdb_shard shard(files_[i], settings_);
         shard.start();
         shards_.emplace_back(std::move(shard));
     }

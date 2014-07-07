@@ -93,7 +93,7 @@ private:
     address_bitset drop_prefix(address_bitset key);
 
     hsdb_settings settings_;
-    mmfile_list shard_files_;
+    mmfile_list files_;
     shard_list shards_;
 };
 
