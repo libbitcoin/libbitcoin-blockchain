@@ -45,14 +45,14 @@ struct BCB_API hsdb_settings
 };
 
 /**
-  * Load the shard settings from the control file.
+  * Load the hsdb settings from the control file.
   */
-BCB_API hsdb_settings load_shard_settings(const mmfile& file);
+BCB_API hsdb_settings load_hsdb_settings(const mmfile& file);
 
 /**
-  * Save the shard settings in the control file.
+  * Save the hsdb settings in the control file.
   */
-BCB_API void save_shard_settings(
+BCB_API void save_hsdb_settings(
     mmfile& file, const hsdb_settings& settings);
 
     } // namespace chain
