@@ -26,21 +26,55 @@
 namespace libbitcoin {
     namespace chain {
 
+/**
+ * Implements on disk array with a fixed sized.
+ *
+ * File format looks like:
+ *
+ *  [   size:IndexType   ]
+ *  [ [      ...       ] ]
+ *  [ [ item:ValueType ] ]
+ *  [ [      ...       ] ]
+ *
+ * Empty items are represented by the value array.empty
+ */
 template <typename IndexType, typename ValueType>
 class disk_array
 {
 public:
     static constexpr ValueType empty = std::numeric_limits<ValueType>::max();
 
+    /**
+     * sector_start represents the offset within the file.
+     */
     disk_array(mmfile& file, position_type sector_start);
 
+    /**
+     * Initialize a new array. The file must have enough space.
+     * The space needed is sizeof(IndexType) + size * sizeof(ValueType)
+     * Element items are initialised to disk_array::empty.
+     */
     void initialize_new(IndexType size);
 
+    /**
+     * Must be called before use. Loads the size from the file.
+     */
     void start();
 
+    /**
+     * Read item's value.
+     */
     ValueType read(IndexType index);
 
+    /**
+     * Write value to item.
+     */
     void write(IndexType index, ValueType value);
+
+    /**
+     * The array's size.
+     */
+    IndexType size() const;
 
 private:
     mmfile& file_;
