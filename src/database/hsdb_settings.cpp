@@ -49,7 +49,7 @@ size_t hsdb_settings::number_buckets() const
     return 1 << bucket_bitsize;
 }
 
-hsdb_settings load_shard_settings(const mmfile& file)
+hsdb_settings load_hsdb_settings(const mmfile& file)
 {
     hsdb_settings settings;
     BITCOIN_ASSERT(file.size() == settings_file_size);
@@ -64,7 +64,7 @@ hsdb_settings load_shard_settings(const mmfile& file)
     return settings;
 }
 
-void save_shard_settings(mmfile& file, const hsdb_settings& settings)
+void save_hsdb_settings(mmfile& file, const hsdb_settings& settings)
 {
     bool success = file.resize(settings_file_size);
     BITCOIN_ASSERT(success);

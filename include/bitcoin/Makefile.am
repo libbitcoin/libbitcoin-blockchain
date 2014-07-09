@@ -18,7 +18,10 @@ bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/hsdb_shard.hpp \
     blockchain/database/hsdb_settings.hpp \
     blockchain/database/types.hpp \
+    blockchain/database/linked_records.hpp \
+    blockchain/database/utility.hpp \
     blockchain/database/stealth_database.hpp \
     blockchain/database/slab_allocator.hpp \
+    blockchain/database/record_allocator.hpp \
     blockchain/database/disk_array.hpp
 

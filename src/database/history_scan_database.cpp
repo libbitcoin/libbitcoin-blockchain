@@ -19,13 +19,13 @@
  */
 #include <bitcoin/blockchain/database/history_scan_database.hpp>
 
-#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/logger.hpp>
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/utility/hash.hpp>
+#include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -39,13 +39,6 @@ uint64_t compute_input_checksum(const output_point& previous_output)
     serial.write_4_bytes(previous_output.index);
     const hash_digest checksum_hash = sha256_hash(data);
     return from_little_endian<uint64_t>(checksum_hash.begin());
-}
-
-void touch_file(const std::string& filename)
-{
-    std::ofstream outfile(filename);
-    // Write byte so file is nonzero size.
-    outfile.write("H", 1);
 }
 
 std::string settings_path(const std::string& prefix)
@@ -72,7 +65,7 @@ void create_hsdb(const std::string& prefix,
     // Create settings file /path/settings
     touch_file(settings_path(prefix));
     mmfile settings_file(settings_path(prefix));
-    save_shard_settings(settings_file, settings);
+    save_hsdb_settings(settings_file, settings);
     // Create each shard
     for (size_t i = 0; i < settings.number_shards(); ++i)
     {
@@ -90,7 +83,7 @@ history_scan_database::history_scan_database(const std::string& prefix)
 {
     // Load settings file /path/settings
     mmfile settings_file(settings_path(prefix));
-    settings_ = load_shard_settings(settings_file);
+    settings_ = load_hsdb_settings(settings_file);
     for (size_t i = 0; i < settings_.number_shards(); ++i)
     {
         // Open each shard file.

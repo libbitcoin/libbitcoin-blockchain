@@ -20,25 +20,19 @@
 #include <fstream>
 #include <boost/test/unit_test.hpp>
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
+#include <bitcoin/blockchain/database/utility.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
 BOOST_AUTO_TEST_SUITE(hsdb_settings_tests)
 
-void touch_file(const std::string& filename)
-{
-    std::ofstream outfile(filename);
-    // Write byte so file is nonzero size.
-    outfile.write("H", 1);
-}
-
 BOOST_AUTO_TEST_CASE(simple)
 {
     touch_file("hsdb_settings");
     mmfile file("hsdb_settings");
     BOOST_REQUIRE(file.data());
-    hsdb_shard_settings settings;
+    hsdb_settings settings;
     settings.version = 110;
     settings.shard_max_entries = 1000000;
     settings.total_key_size = 20;
@@ -46,8 +40,8 @@ BOOST_AUTO_TEST_CASE(simple)
     settings.bucket_bitsize = 8;
     settings.row_value_size = 49;
     // Save and reload.
-    save_shard_settings(file, settings);
-    hsdb_shard_settings settings1 = load_shard_settings(file);
+    save_hsdb_settings(file, settings);
+    hsdb_settings settings1 = load_hsdb_settings(file);
     BOOST_REQUIRE(settings.version == settings1.version);
     BOOST_REQUIRE(settings.shard_max_entries == settings1.shard_max_entries);
     BOOST_REQUIRE(settings.total_key_size == settings1.total_key_size);

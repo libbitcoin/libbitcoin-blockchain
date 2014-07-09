@@ -84,6 +84,12 @@ void disk_array<IndexType, ValueType>::write(
     serial.write_little_endian(value);
 }
 
+template <typename IndexType, typename ValueType>
+IndexType disk_array<IndexType, ValueType>::size() const
+{
+    return size_;
+}
+
     } // namespace chain
 } // namespace libbitcoin
 

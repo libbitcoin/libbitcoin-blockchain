@@ -29,18 +29,25 @@ namespace libbitcoin {
 
 typedef uint8_t* slab_type;
 
+/**
+ * The slab allocator represents a growing collection of various sized
+ * slabs of data on disk. It will resize the file accordingly and keep
+ * track of the current end pointer so new slabs can be allocated.
+ */
 class slab_allocator
 {
 public:
+    typedef position_type accessor_type;
+
     BCB_API slab_allocator(mmfile& file, position_type sector_start);
 
     /**
-      * Create slab.
+      * Create slab allocator.
       */
     BCB_API void initialize_new();
 
     /**
-     * Prepare slab for usage.
+     * Prepare allocator for usage.
      */
     BCB_API void start();
 
@@ -58,11 +65,6 @@ public:
      * Return a slab.
      */
     BCB_API slab_type get(position_type position);
-
-    /**
-     * Return a slab.
-     */
-    BCB_API const slab_type get(position_type position) const;
 
 private:
     void reserve(size_t space_needed);

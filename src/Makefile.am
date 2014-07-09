@@ -10,6 +10,9 @@ libbitcoin_blockchain_la_SOURCES = \
     database/hsdb_shard.cpp \
     database/hsdb_settings.cpp \
     database/slab_allocator.cpp \
+    database/record_allocator.cpp \
+    database/linked_records.cpp \
+    database/utility.cpp \
 	impl/blockchain_impl.cpp \
 	impl/simple_chain_impl.cpp \
 	impl/blockchain_common.cpp \

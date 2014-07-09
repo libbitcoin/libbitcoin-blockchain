@@ -21,6 +21,7 @@
 
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -33,6 +34,7 @@ slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
 
 void slab_allocator::initialize_new()
 {
+    BITCOIN_ASSERT(sizeof(end_) == 8);
     end_ = 8;
     sync();
 }
@@ -48,7 +50,6 @@ position_type slab_allocator::allocate(size_t size)
 {
     BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
     reserve(size);
-    BITCOIN_ASSERT(file_.size() >= end_ + size);
     position_type slab_position = end_;
     end_ += size;
     return slab_position;
@@ -56,7 +57,7 @@ position_type slab_allocator::allocate(size_t size)
 
 void slab_allocator::sync()
 {
-    BITCOIN_ASSERT(file_.size() > end_);
+    BITCOIN_ASSERT(file_.size() >= end_);
     auto serial = make_serializer(data_);
     serial.write_8_bytes(end_);
 }
@@ -68,24 +69,11 @@ slab_type slab_allocator::get(position_type position)
     return data_ + position;
 }
 
-const slab_type slab_allocator::get(position_type position) const
-{
-    BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
-    BITCOIN_ASSERT(position < file_.size());
-    return data_ + position;
-}
-
 void slab_allocator::reserve(size_t space_needed)
 {
     const size_t required_size = end_ + space_needed;
-    if (required_size <= file_.size())
-        return;
-    // Grow file by 1.5x
-    const size_t new_size = required_size * 3 / 2;
-    // Only ever grow file. Never shrink it!
-    BITCOIN_ASSERT(new_size > file_.size());
-    bool success = file_.resize(new_size);
-    BITCOIN_ASSERT(success);
+    reserve_space(file_, required_size);
+    BITCOIN_ASSERT(file_.size() >= required_size);
 }
 
     } // namespace chain
