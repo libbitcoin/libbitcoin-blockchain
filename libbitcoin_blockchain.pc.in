@@ -9,5 +9,5 @@ URL: http://github.com/libbitcoin/libbitcoin_blockchain
 Version: @PACKAGE_VERSION@
 Requires: libbitcoin
 Cflags: -I${includedir} -std=c++11
-Libs: -L${libdir} -lbitcoin_blockchain
+Libs: -L${libdir} -lbitcoin_blockchain -lgmp
 

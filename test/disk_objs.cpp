@@ -22,6 +22,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
+#include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 using namespace libbitcoin;
@@ -118,6 +119,42 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
     }
     BOOST_REQUIRE(count == 3);
     BOOST_REQUIRE(valid == idx1);
+}
+
+BOOST_AUTO_TEST_CASE(htdb_slab_tst)
+{
+    touch_file("htdb_slab");
+    mmfile file("htdb_slab");
+    BITCOIN_ASSERT(file.data());
+    file.resize(4 + 8 * 100 + 8);
+
+    htdb_slab_header header(file, 0);
+    header.initialize_new(100);
+    header.start();
+
+    slab_allocator alloc(file, 4 + 8 * 100);
+    alloc.initialize_new();
+    alloc.start();
+
+    typedef byte_array<4> tiny_hash;
+    htdb_slab<tiny_hash> ht(header, alloc);
+
+    auto write = [](uint8_t* data)
+    {
+        data[0] = 110;
+        data[1] = 110;
+        data[2] = 4;
+        data[3] = 99;
+    };
+    ht.store(tiny_hash{{0xde, 0xad, 0xbe, 0xef}}, 8, write);
+    slab_type slab = ht.get(tiny_hash{{0xde, 0xad, 0xbe, 0xef}});
+    BITCOIN_ASSERT(slab);
+    BITCOIN_ASSERT(slab[0] == 110);
+    BITCOIN_ASSERT(slab[1] == 110);
+    BITCOIN_ASSERT(slab[2] == 4);
+    BITCOIN_ASSERT(slab[3] == 99);
+    slab = ht.get(tiny_hash{{0xde, 0xad, 0xbe, 0xee}});
+    BITCOIN_ASSERT(!slab);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

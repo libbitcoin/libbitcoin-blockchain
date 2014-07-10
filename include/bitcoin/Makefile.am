@@ -10,7 +10,9 @@ bitcoin_blockchain_include_HEADERS = \
 
 bitcoin_blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
 bitcoin_blockchain_impl_include_HEADERS = \
-    blockchain/impl/disk_array.ipp
+    blockchain/impl/disk_array.ipp \
+    blockchain/impl/htdb_slab.ipp \
+    blockchain/impl/utility.ipp
 
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \
@@ -23,5 +25,6 @@ bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/stealth_database.hpp \
     blockchain/database/slab_allocator.hpp \
     blockchain/database/record_allocator.hpp \
-    blockchain/database/disk_array.hpp
+    blockchain/database/disk_array.hpp \
+    blockchain/database/htdb_slab.hpp
 
