@@ -67,10 +67,14 @@ public:
     BCB_API slab_type get(position_type position);
 
 private:
+    /// Ensure extra needed bytes are available.
     void reserve(size_t space_needed);
+    /// Accessor for data.
+    uint8_t* data(position_type position);
 
     mmfile& file_;
-    uint8_t* data_ = nullptr;
+    position_type sector_start_;
+
     position_type end_ = 0;
 };
 

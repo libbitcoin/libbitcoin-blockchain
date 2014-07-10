@@ -28,16 +28,15 @@ namespace libbitcoin {
 template <typename IndexType, typename ValueType>
 disk_array<IndexType, ValueType>::disk_array(
     mmfile& file, position_type sector_start)
-  : file_(file)
+  : file_(file), sector_start_(sector_start)
 {
-    data_ = file_.data() + sector_start;
 }
 
 template <typename IndexType, typename ValueType>
 void disk_array<IndexType, ValueType>::initialize_new(
     IndexType size)
 {
-    auto serial = make_serializer(data_);
+    auto serial = make_serializer(data(0));
     serial.write_little_endian(size);
     for (IndexType i = 0; i < size; ++i)
         serial.write_little_endian(empty);
@@ -46,7 +45,9 @@ void disk_array<IndexType, ValueType>::initialize_new(
 template <typename IndexType, typename ValueType>
 void disk_array<IndexType, ValueType>::start()
 {
-    auto deserial = make_deserializer(data_, data_ + sizeof(IndexType));
+    const uint8_t* begin = data(0);
+    const uint8_t* end = data(sizeof(IndexType));
+    auto deserial = make_deserializer(begin, end);
     size_ = deserial.read_little_endian<IndexType>();
 }
 
@@ -56,12 +57,12 @@ ValueType disk_array<IndexType, ValueType>::read(
 {
     BITCOIN_ASSERT_MSG(size_ != 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
-    // Find our bucket.
-    const size_t bucket_size = sizeof(ValueType);
-    const position_type position = index * bucket_size;
+    // Find our item.
+    const position_type position = item_position(index);
+    const size_t item_size = sizeof(ValueType);
     // Read its value.
-    const uint8_t* begin = data_ + position;
-    const uint8_t* end = begin + bucket_size;
+    const uint8_t* begin = data(position);
+    const uint8_t* end = data(position + item_size);
     // Deserialize value.
     auto deserial = make_deserializer(begin, end);
     auto value = deserial.read_little_endian<ValueType>();
@@ -75,12 +76,10 @@ void disk_array<IndexType, ValueType>::write(
 {
     BITCOIN_ASSERT_MSG(size_ != 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
-    // Find our bucket.
-    const size_t bucket_size = sizeof(ValueType);
-    const position_type position = index * bucket_size;
+    // Find our item.
+    const position_type position = item_position(index);
     // Write the value.
-    uint8_t* begin = data_ + position;
-    auto serial = make_serializer(begin);
+    auto serial = make_serializer(data(position));
     serial.write_little_endian(value);
 }
 
@@ -88,6 +87,20 @@ template <typename IndexType, typename ValueType>
 IndexType disk_array<IndexType, ValueType>::size() const
 {
     return size_;
+}
+
+template <typename IndexType, typename ValueType>
+position_type disk_array<IndexType, ValueType>::item_position(
+    IndexType index)
+{
+    return sizeof(IndexType) + index * sizeof(ValueType);
+}
+
+template <typename IndexType, typename ValueType>
+uint8_t* disk_array<IndexType, ValueType>::data(position_type position)
+{
+    BITCOIN_ASSERT(sector_start_ + position <= file_.size());
+    return file_.data() + sector_start_ + position;
 }
 
     } // namespace chain

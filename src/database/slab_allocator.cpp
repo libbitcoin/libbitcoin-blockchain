@@ -27,9 +27,8 @@ namespace libbitcoin {
     namespace chain {
 
 slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
-  : file_(file)
+  : file_(file), sector_start_(sector_start)
 {
-    data_ = file_.data() + sector_start;
 }
 
 void slab_allocator::initialize_new()
@@ -42,7 +41,7 @@ void slab_allocator::initialize_new()
 void slab_allocator::start()
 {
     BITCOIN_ASSERT(file_.size() > 8);
-    auto deserial = make_deserializer(data_, data_ + 8);
+    auto deserial = make_deserializer(data(0), data(8));
     end_ = deserial.read_8_bytes();
 }
 
@@ -57,8 +56,8 @@ position_type slab_allocator::allocate(size_t size)
 
 void slab_allocator::sync()
 {
-    BITCOIN_ASSERT(file_.size() >= end_);
-    auto serial = make_serializer(data_);
+    BITCOIN_ASSERT(end_ <= file_.size());
+    auto serial = make_serializer(data(0));
     serial.write_8_bytes(end_);
 }
 
@@ -66,14 +65,20 @@ slab_type slab_allocator::get(position_type position)
 {
     BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
     BITCOIN_ASSERT(position < file_.size());
-    return data_ + position;
+    return data(position);
 }
 
 void slab_allocator::reserve(size_t space_needed)
 {
-    const size_t required_size = end_ + space_needed;
+    const size_t required_size = sector_start_ + end_ + space_needed;
     reserve_space(file_, required_size);
     BITCOIN_ASSERT(file_.size() >= required_size);
+}
+
+uint8_t* slab_allocator::data(position_type position)
+{
+    BITCOIN_ASSERT(sector_start_ + position <= file_.size());
+    return file_.data() + sector_start_ + position;
 }
 
     } // namespace chain

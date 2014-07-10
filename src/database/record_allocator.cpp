@@ -28,9 +28,8 @@ namespace libbitcoin {
 
 record_allocator::record_allocator(
     mmfile& file, position_type sector_start, size_t record_size)
-  : file_(file), record_size_(record_size)
+  : file_(file), sector_start_(sector_start), record_size_(record_size)
 {
-    data_ = file_.data() + sector_start;
 }
 
 void record_allocator::initialize_new()
@@ -43,7 +42,7 @@ void record_allocator::initialize_new()
 void record_allocator::start()
 {
     BITCOIN_ASSERT(file_.size() >= 4);
-    auto deserial = make_deserializer(data_, data_ + 4);
+    auto deserial = make_deserializer(data(0), data(4));
     end_ = deserial.read_4_bytes();
 }
 
@@ -52,32 +51,39 @@ index_type record_allocator::allocate()
     reserve();
     const index_type record_index = end_;
     ++end_;
-    BITCOIN_ASSERT(position(end_) <= file_.size());
+    BITCOIN_ASSERT(record_position(end_) <= file_.size());
     return record_index;
 }
 
 void record_allocator::sync()
 {
-    BITCOIN_ASSERT(position(end_) <= file_.size());
-    auto serial = make_serializer(data_);
+    BITCOIN_ASSERT(record_position(end_) <= file_.size());
+    auto serial = make_serializer(data(0));
     serial.write_4_bytes(end_);
 }
 
 record_type record_allocator::get(index_type index)
 {
     BITCOIN_ASSERT(index < end_);
-    BITCOIN_ASSERT(position(end_) <= file_.size());
-    return data_ + position(index);
+    BITCOIN_ASSERT(record_position(end_) <= file_.size());
+    return data(record_position(index));
 }
 
 void record_allocator::reserve()
 {
-    const size_t required_size = 4 + (end_ + 1) * record_size_;
+    const size_t required_size =
+        sector_start_ + 4 + (end_ + 1) * record_size_;
     reserve_space(file_, required_size);
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
 
-position_type record_allocator::position(index_type index)
+uint8_t* record_allocator::data(position_type position)
+{
+    BITCOIN_ASSERT(sector_start_ + position <= file_.size());
+    return file_.data() + sector_start_ + position;
+}
+
+position_type record_allocator::record_position(index_type index)
 {
     return 4 + index * record_size_;
 }

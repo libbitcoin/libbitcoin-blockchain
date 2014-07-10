@@ -27,7 +27,7 @@ namespace libbitcoin {
     namespace chain {
 
 /**
- * Implements on disk array with a fixed sized.
+ * Implements on disk array with a fixed size.
  *
  * File format looks like:
  *
@@ -77,8 +77,14 @@ public:
     IndexType size() const;
 
 private:
+    /// Disk position of item.
+    position_type item_position(IndexType index);
+    /// Accessor for data.
+    uint8_t* data(position_type position);
+
     mmfile& file_;
-    uint8_t* data_ = nullptr;
+    position_type sector_start_;
+
     IndexType size_ = 0;
 };
 

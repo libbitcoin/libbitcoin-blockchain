@@ -13,8 +13,13 @@ hsdb_bench.o: hsdb_bench.cpp
 hsdb_bench: hsdb_bench.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: hsdb_shard_bench hsdb_bench
+htdb_bench.o: htdb_bench.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+htdb_bench: htdb_bench.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: hsdb_shard_bench hsdb_bench htdb_bench
 
 clean:
-	rm -f hsdb_shard_bench hsdb_bench
+	rm -f hsdb_shard_bench hsdb_bench htdb_bench
 	rm -f *.o

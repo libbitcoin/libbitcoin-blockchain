@@ -68,12 +68,17 @@ public:
     BCB_API record_type get(index_type index);
 
 private:
+    /// Ensure bytes for a new record are available (record_size_).
     void reserve();
-    position_type position(index_type index);
+    /// Accessor for data.
+    uint8_t* data(position_type position);
+    /// Disk position of record.
+    position_type record_position(index_type index);
 
     mmfile& file_;
-    uint8_t* data_ = nullptr;
-    const size_t record_size_ = 0;
+    position_type sector_start_;
+
+    const size_t record_size_;
     index_type end_ = 0;
 };
 
