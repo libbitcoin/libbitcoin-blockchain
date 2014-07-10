@@ -17,70 +17,70 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_HPP
 
 #include <bitcoin/blockchain/database/disk_array.hpp>
-#include <bitcoin/blockchain/database/slab_allocator.hpp>
+#include <bitcoin/blockchain/database/record_allocator.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-typedef disk_array<index_type, position_type> htdb_slab_header;
+typedef disk_array<index_type, index_type> htdb_record_header;
 
 /**
- * A hashtable mapping hashes to variable sized values (slabs).
- * Uses a combination of the disk_array and slab_allocator.
+ * A hashtable mapping hashes to fixed sized values (records).
+ * Uses a combination of the disk_array and record_allocator.
  *
  * The disk_array is basically a bucket list containing the start
  * value for the hashtable chain.
  *
- * The slab_allocator is used to create linked chains. A header
+ * The record_allocator is used to create linked chains. A header
  * containing the hash of the item, and the next value is stored
- * with each slab.
+ * with each record.
  *
  *   [ HashType ]
- *   [ next:8   ]
- *   [ value... ]
+ *   [ next:4   ]
+ *   [ record   ]
  *
+ * By using the record_allocator instead of slabs, we can have smaller
+ * indexes avoiding reading/writing extra bytes to the file.
+ * Using fixed size records is therefore faster.
  */
 template <typename HashType>
-class htdb_slab
+class htdb_record
 {
 public:
     typedef std::function<void (uint8_t*)> write_function;
 
-    htdb_slab(htdb_slab_header& header, slab_allocator& allocator);
+    htdb_record(htdb_record_header& header, record_allocator& allocator);
 
     /**
-     * Store a value. value_size is the requested size for the value.
-     * The provided write() function must write exactly value_size bytes.
+     * Store a value. The provided write() function must write
+     * the correct number of bytes (record_size - hash_size - 4).
      */
-    void store(const HashType& key,
-        const size_t value_size, write_function write);
+    void store(const HashType& key, write_function write);
 
     /**
-     * Return the slab for a given hash.
+     * Return the record for a given hash.
      */
-    const slab_type get(const HashType& key) const;
+    const record_type get(const HashType& key) const;
+
+    /**
+     * Delete a key-value pair from the hashtable by unlinking the node.
+     */
+    void unlink(const HashType& key);
 
 private:
-    /// What is the bucket given a hash.
-    index_type bucket_index(const HashType& key) const;
-    /// What is the slab start position for a chain.
-    position_type read_bucket_value(const HashType& key) const;
-    /// Link a new chain into the bucket header.
-    void link(const HashType& key, const position_type begin);
-
-    htdb_slab_header& header_;
-    slab_allocator& allocator_;
+    htdb_record_header& header_;
+    record_allocator& allocator_;
 };
 
     } // namespace chain
 } // namespace libbitcoin
 
-#include <bitcoin/blockchain/impl/htdb_slab.ipp>
+#include <bitcoin/blockchain/impl/htdb_record.ipp>
 
 #endif
 
