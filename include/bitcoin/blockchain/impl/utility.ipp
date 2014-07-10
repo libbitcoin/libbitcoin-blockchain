@@ -17,33 +17,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/database/utility.hpp>
+#ifndef LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
+#define LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 
-#include <fstream>
-#include <bitcoin/utility/assert.hpp>
+#include <gmp.h>
 
 namespace libbitcoin {
     namespace chain {
 
-void touch_file(const std::string& filename)
+template <typename HashType>
+uint64_t remainder(const HashType& value, const uint64_t divisor)
 {
-    std::ofstream outfile(filename);
-    // Write byte so file is nonzero size.
-    outfile.write("H", 1);
-}
-
-void reserve_space(mmfile& file, size_t required_size)
-{
-    if (required_size <= file.size())
-        return;
-    // Grow file by 1.5x
-    const size_t new_size = required_size * 3 / 2;
-    // Only ever grow file. Never shrink it!
-    BITCOIN_ASSERT(new_size > file.size());
-    bool success = file.resize(new_size);
-    BITCOIN_ASSERT(success);
+    mpz_t integ;
+    mpz_init(integ);
+    mpz_import(integ, value.size(), 1, 1, 1, 0, value.data());
+    uint64_t remainder = mpz_fdiv_ui(integ, divisor);
+    mpz_clear(integ);
+    return remainder;
 }
 
     } // namespace chain
 } // namespace libbitcoin
+
+#endif
 

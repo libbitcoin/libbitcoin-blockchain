@@ -28,7 +28,8 @@
 namespace libbitcoin {
     namespace chain {
 
-//BCB_API uint64_t remainder(const uint8_t* hash_data, const uint64_t divisor);
+template <typename HashType>
+uint64_t remainder(const HashType& value, const uint64_t divisor);
 
 BCB_API void touch_file(const std::string& filename);
 
@@ -36,6 +37,8 @@ BCB_API void reserve_space(mmfile& file, size_t required_size);
 
     } // namespace chain
 } // namespace libbitcoin
+
+#include <bitcoin/blockchain/impl/utility.ipp>
 
 #endif
 
