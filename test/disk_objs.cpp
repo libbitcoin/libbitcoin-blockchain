@@ -120,6 +120,7 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
     }
     BOOST_REQUIRE(count == 3);
     BOOST_REQUIRE(valid == idx1);
+    recs.sync();
 }
 
 BOOST_AUTO_TEST_CASE(htdb_slab_tst)

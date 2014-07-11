@@ -13,6 +13,11 @@ show_hsdb_settings.o: show_hsdb_settings.cpp
 show_hsdb_settings: show_hsdb_settings.o
 	$(CXX) -o $@ $< $(LIBS)
 
+show_linked_records.o: show_linked_records.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+show_linked_records: show_linked_records.o
+	$(CXX) -o $@ $< $(LIBS)
+
 show_records.o: show_records.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 show_records: show_records.o
@@ -23,8 +28,8 @@ show_array.o: show_array.cpp
 show_array: show_array.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records
+all: show_shard show_hsdb_settings show_array show_records show_linked_records
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records
+	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records
 	rm -f *.o
