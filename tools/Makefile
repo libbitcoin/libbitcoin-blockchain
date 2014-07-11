@@ -13,8 +13,13 @@ show_hsdb_settings.o: show_hsdb_settings.cpp
 show_hsdb_settings: show_hsdb_settings.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings
+show_array.o: show_array.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+show_array: show_array.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: show_shard show_hsdb_settings show_array
 
 clean:
-	rm -f show_shard show_hsdb_settings
+	rm -f show_shard show_hsdb_settings show_array
 	rm -f *.o
