@@ -44,6 +44,10 @@ typedef disk_array<index_type, position_type> htdb_slab_header;
  *   [ next:8   ]
  *   [ value... ]
  *
+ * If we run allocator.sync() before the link() step then we ensure
+ * data can be lost but the hashtable is never corrupted.
+ * Instead we prefer speed and batch that operation. The user should
+ * call allocator.sync() after a series of store() calls.
  */
 template <typename HashType>
 class htdb_slab
