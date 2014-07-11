@@ -69,6 +69,11 @@ record_type record_allocator::get(index_type index)
     return data(record_position(index));
 }
 
+index_type record_allocator::end() const
+{
+    return end_;
+}
+
 void record_allocator::reserve()
 {
     const size_t required_size =

@@ -67,6 +67,11 @@ public:
      */
     BCB_API record_type get(index_type index);
 
+    /**
+     * The current end index (or size).
+     */
+    BCB_API index_type end() const;
+
 private:
     /// Ensure bytes for a new record are available (record_size_).
     void reserve();

@@ -83,6 +83,7 @@ BOOST_AUTO_TEST_CASE(record)
     idx = recs.allocate();
     BOOST_REQUIRE(idx == 1);
     BOOST_REQUIRE(file.size() >= 2 * 10 + 4);
+    recs.sync();
 }
 
 BOOST_AUTO_TEST_CASE(linked_records_tst)
