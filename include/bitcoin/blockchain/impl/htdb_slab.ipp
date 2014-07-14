@@ -23,6 +23,7 @@
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
+#include "htdb_slab_list_item.ipp"
 
 namespace libbitcoin {
     namespace chain {
@@ -38,24 +39,14 @@ template <typename HashType>
 void htdb_slab<HashType>::store(const HashType& key,
     const size_t value_size, write_function write)
 {
-    const position_type info_size = key.size() + 8;
     // Store current bucket value.
     const position_type old_begin = read_bucket_value(key);
-    BITCOIN_ASSERT(sizeof(position_type) == 8);
-    // Create new slab.
-    //   [ HashType ]
-    //   [ next:8   ]
-    //   [ value... ]
-    const size_t slab_size = info_size + value_size;
-    position_type slab_position = allocator_.allocate(slab_size);
-    // Write to slab.
-    uint8_t* slab = allocator_.get(slab_position);
-    auto serial = make_serializer(slab);
-    serial.write_data(key);
-    serial.write_8_bytes(old_begin);
-    write(serial.iterator());
+    htdb_slab_list_item<HashType> item(allocator_);
+    const position_type new_begin =
+        item.initialize_new(key, value_size, old_begin);
+    write(item.data());
     // Link record to header.
-    link(key, slab_position);
+    link(key, new_begin);
 }
 
 template <typename HashType>
@@ -63,17 +54,15 @@ const slab_type htdb_slab<HashType>::get(const HashType& key) const
 {
     const position_type value_position = key.size() + 8;
     // Find start item...
-    position_type next = read_bucket_value(key);
-    while (next != header_.empty)
+    position_type current = read_bucket_value(key);
+    // Iterate throught list...
+    while (current != header_.empty)
     {
-        uint8_t* slab = allocator_.get(next);
-        // We have found our matching item.
-        if (std::equal(key.begin(), key.end(), slab))
-            return slab + value_position;
-        // Continue to next slab...
-        uint8_t* next_data = slab + key.size();
-        auto deserial = make_deserializer(next_data, next_data + 8);
-        next = deserial.read_8_bytes();
+        const htdb_slab_list_item<HashType> item(allocator_, current);
+        // Found match, return data.
+        if (item.compare(key))
+            return item.data();
+        current = item.next_position();
     }
     // Nothing found.
     return nullptr;
