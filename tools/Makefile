@@ -23,13 +23,18 @@ show_records.o: show_records.cpp
 show_records: show_records.o
 	$(CXX) -o $@ $< $(LIBS)
 
+read_htdb_slab_value.o: read_htdb_slab_value.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+read_htdb_slab_value: read_htdb_slab_value.o
+	$(CXX) -o $@ $< $(LIBS)
+
 show_array.o: show_array.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 show_array: show_array.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records
+all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records
+	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value
 	rm -f *.o
