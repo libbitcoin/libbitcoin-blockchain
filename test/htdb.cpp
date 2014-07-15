@@ -20,6 +20,7 @@
 #include <boost/test/unit_test.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
+#include <bitcoin/blockchain/database/htdb_record.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
@@ -97,6 +98,74 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 
         BOOST_REQUIRE(std::equal(value.begin(), value.end(), slab));
     }
+}
+
+BOOST_AUTO_TEST_CASE(htdb_record_test)
+{
+    constexpr size_t rec_buckets = 2;
+    touch_file("htdb_records");
+    mmfile file("htdb_records");
+    BITCOIN_ASSERT(file.data());
+    file.resize(4 + 4 * rec_buckets + 4);
+
+    htdb_record_header header(file, 0);
+    header.initialize_new(rec_buckets);
+    header.start();
+
+    const size_t record_size = 4 + 4 + 4;
+    record_allocator alloc(file, 4 + 4 * rec_buckets, record_size);
+    alloc.initialize_new();
+    alloc.start();
+
+    typedef byte_array<4> tiny_hash;
+    htdb_record<tiny_hash> ht(header, alloc);
+
+    tiny_hash key{{0xde, 0xad, 0xbe, 0xef}};
+    auto write = [](uint8_t* data)
+    {
+        data[0] = 110;
+        data[1] = 110;
+        data[2] = 4;
+        data[3] = 88;
+    };
+    ht.store(key, write);
+
+    tiny_hash key1{{0xb0, 0x0b, 0xb0, 0x0b}};
+    auto write1 = [](uint8_t* data)
+    {
+        data[0] = 99;
+        data[1] = 98;
+        data[2] = 97;
+        data[3] = 96;
+    };
+    ht.store(key, write);
+    ht.store(key1, write1);
+    ht.store(key1, write);
+
+    alloc.sync();
+
+    BOOST_REQUIRE(header.read(0) == header.empty);
+    BOOST_REQUIRE(header.read(1) == 3);
+
+    htdb_record_list_item<tiny_hash> item(alloc, 3);
+    BOOST_REQUIRE(item.next_index() == 2);
+    htdb_record_list_item<tiny_hash> item1(alloc, 2);
+    BOOST_REQUIRE(item1.next_index() == 1);
+
+    // Should unlink record 1
+    BOOST_REQUIRE(ht.unlink(key));
+
+    BOOST_REQUIRE(header.read(1) == 3);
+    htdb_record_list_item<tiny_hash> item2(alloc, 2);
+    BOOST_REQUIRE(item2.next_index() == 0);
+
+    // Should unlink record 3 from buckets
+    BOOST_REQUIRE(ht.unlink(key1));
+
+    BOOST_REQUIRE(header.read(1) == 2);
+
+    tiny_hash invalid{{0x00, 0x01, 0x02, 0x03}};
+    BOOST_REQUIRE(!ht.unlink(invalid));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

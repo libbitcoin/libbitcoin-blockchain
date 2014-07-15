@@ -14,6 +14,7 @@ bitcoin_blockchain_impl_include_HEADERS = \
     blockchain/impl/htdb_slab.ipp \
     blockchain/impl/htdb_slab_list_item.ipp \
     blockchain/impl/htdb_record.ipp \
+    blockchain/impl/htdb_record_list_item.ipp \
     blockchain/impl/utility.ipp
 
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database

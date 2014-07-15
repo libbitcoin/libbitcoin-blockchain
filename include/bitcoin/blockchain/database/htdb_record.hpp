@@ -70,9 +70,16 @@ public:
     /**
      * Delete a key-value pair from the hashtable by unlinking the node.
      */
-    void unlink(const HashType& key);
+    bool unlink(const HashType& key);
 
 private:
+    /// What is the bucket given a hash.
+    index_type bucket_index(const HashType& key) const;
+    /// What is the record start index for a chain.
+    index_type read_bucket_value(const HashType& key) const;
+    /// Link a new chain into the bucket header.
+    void link(const HashType& key, const index_type begin);
+
     htdb_record_header& header_;
     record_allocator& allocator_;
 };

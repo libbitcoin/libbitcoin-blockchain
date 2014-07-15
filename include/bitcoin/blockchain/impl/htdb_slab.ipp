@@ -52,7 +52,6 @@ void htdb_slab<HashType>::store(const HashType& key,
 template <typename HashType>
 const slab_type htdb_slab<HashType>::get(const HashType& key) const
 {
-    const position_type value_position = key.size() + 8;
     // Find start item...
     position_type current = read_bucket_value(key);
     // Iterate throught list...
