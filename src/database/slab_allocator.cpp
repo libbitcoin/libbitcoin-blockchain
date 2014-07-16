@@ -61,10 +61,11 @@ void slab_allocator::sync()
     serial.write_8_bytes(end_);
 }
 
-slab_type slab_allocator::get(position_type position)
+slab_type slab_allocator::get(position_type position) const
 {
-    BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
-    BITCOIN_ASSERT(position < file_.size());
+    // Disabled asserts to improve performance.
+    //BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
+    //BITCOIN_ASSERT(position < file_.size());
     return data(position);
 }
 
@@ -75,9 +76,10 @@ void slab_allocator::reserve(size_t space_needed)
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
 
-uint8_t* slab_allocator::data(position_type position)
+uint8_t* slab_allocator::data(position_type position) const
 {
-    BITCOIN_ASSERT(sector_start_ + position <= file_.size());
+    // Disabled asserts to improve performance.
+    //BITCOIN_ASSERT(sector_start_ + position <= file_.size());
     return file_.data() + sector_start_ + position;
 }
 
