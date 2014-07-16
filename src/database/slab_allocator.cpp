@@ -33,16 +33,16 @@ slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
 
 void slab_allocator::initialize_new()
 {
-    BITCOIN_ASSERT(sizeof(end_) == 8);
+    static_assert(sizeof(end_) == 8, "Internal error");
     end_ = 8;
     sync();
 }
 
 void slab_allocator::start()
 {
-    BITCOIN_ASSERT(file_.size() > 8);
-    auto deserial = make_deserializer(get(0), get(8));
-    end_ = deserial.read_8_bytes();
+    BITCOIN_ASSERT(file_.size() >= 8);
+    const slab_type data = file_.data() + sector_start_;
+    end_ = from_little_endian<uint64_t>(data);
 }
 
 position_type slab_allocator::allocate(size_t size)
