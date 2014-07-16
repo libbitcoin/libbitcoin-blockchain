@@ -79,6 +79,9 @@ private:
     index_type read_bucket_value(const HashType& key) const;
     /// Link a new chain into the bucket header.
     void link(const HashType& key, const index_type begin);
+    /// Release node from linked chain.
+    template <typename ListItem>
+    void release(const ListItem& item, const position_type previous);
 
     htdb_record_header& header_;
     record_allocator& allocator_;

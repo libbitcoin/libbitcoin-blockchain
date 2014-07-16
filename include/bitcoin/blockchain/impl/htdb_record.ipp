@@ -53,7 +53,7 @@ const record_type htdb_record<HashType>::get(const HashType& key) const
 {
     // Find start item...
     index_type current = read_bucket_value(key);
-    // Iterate throught list...
+    // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_record_list_item<HashType> item(allocator_, current);
@@ -72,23 +72,23 @@ bool htdb_record<HashType>::unlink(const HashType& key)
     // Find start item...
     const index_type begin = read_bucket_value(key);
     const htdb_record_list_item<HashType> begin_item(allocator_, begin);
+    // If start item has the key then unlink from buckets.
     if (begin_item.compare(key))
     {
         link(key, begin_item.next_index());
         return true;
     }
+    // Continue on...
     index_type previous = begin;
     index_type current = begin_item.next_index();
-    // Iterate throught list...
+    // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_record_list_item<HashType> item(allocator_, current);
-        // Found match, return data.
+        // Found match, unlink current item from previous.
         if (item.compare(key))
         {
-            BITCOIN_ASSERT(current != begin);
-            htdb_record_list_item<HashType> previous_item(allocator_, previous);
-            previous_item.write_next_index(item.next_index());
+            release(item, previous);
             return true;
         }
         previous = current;
@@ -120,6 +120,15 @@ void htdb_record<HashType>::link(
     const HashType& key, const index_type begin)
 {
     header_.write(bucket_index(key), begin);
+}
+
+template <typename HashType>
+template <typename ListItem>
+void htdb_record<HashType>::release(
+    const ListItem& item, const position_type previous)
+{
+    ListItem previous_item(allocator_, previous);
+    previous_item.write_next_index(item.next_index());
 }
 
     } // namespace chain
