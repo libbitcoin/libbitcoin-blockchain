@@ -102,13 +102,12 @@ template <typename HashType>
 position_type htdb_slab_list_item<HashType>::next_position() const
 {
     // Next position is after key data.
-    BITCOIN_ASSERT(sizeof(position_type) == 8);
+    static_assert(sizeof(position_type) == 8, "Internal error");
     constexpr size_t hash_size = std::tuple_size<HashType>::value;
     constexpr position_type next_begin = hash_size;
-    uint8_t* next_data = raw_data(next_begin);
+    const uint8_t* next_data = raw_data(next_begin);
     // Read the next position.
-    auto deserial = make_deserializer(next_data, next_data + 8);
-    return deserial.read_8_bytes();
+    return from_little_endian<position_type>(next_data);
 }
 
 template <typename HashType>
