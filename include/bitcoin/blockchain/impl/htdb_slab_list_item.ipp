@@ -49,16 +49,16 @@ public:
     position_type next_position() const;
 
 private:
-    uint8_t* raw_data(position_type offset) const;
+    static constexpr size_t hash_size = std::tuple_size<HashType>::value;
 
     slab_allocator& allocator_;
-    position_type position_;
+    slab_type raw_data_;
 };
 
 template <typename HashType>
 htdb_slab_list_item<HashType>::htdb_slab_list_item(
     slab_allocator& allocator, const position_type position)
-  : allocator_(allocator), position_(position)
+  : allocator_(allocator), raw_data_(allocator_.get(position))
 {
 }
 
@@ -73,19 +73,20 @@ position_type htdb_slab_list_item<HashType>::initialize_new(
     //   [ next:8   ]
     //   [ value... ]
     const size_t slab_size = info_size + value_size;
-    position_ = allocator_.allocate(slab_size);
+    const position_type position = allocator_.allocate(slab_size);
+    raw_data_ = allocator_.get(position);
     // Write to slab.
-    auto serial = make_serializer(raw_data(0));
+    auto serial = make_serializer(raw_data_);
     serial.write_data(key);
     serial.write_8_bytes(next);
-    return position_;
+    return position;
 }
 
 template <typename HashType>
 bool htdb_slab_list_item<HashType>::compare(const HashType& key) const
 {
     // Key data is at the start.
-    const uint8_t* key_data = raw_data(0);
+    const uint8_t* key_data = raw_data_;
     return std::equal(key.begin(), key.end(), key_data);
 }
 
@@ -93,9 +94,8 @@ template <typename HashType>
 slab_type htdb_slab_list_item<HashType>::data() const
 {
     // Value data is at the end.
-    constexpr size_t hash_size = std::tuple_size<HashType>::value;
     constexpr position_type value_begin = hash_size + 8;
-    return raw_data(value_begin);
+    return raw_data_ + value_begin;
 }
 
 template <typename HashType>
@@ -103,17 +103,10 @@ position_type htdb_slab_list_item<HashType>::next_position() const
 {
     // Next position is after key data.
     static_assert(sizeof(position_type) == 8, "Internal error");
-    constexpr size_t hash_size = std::tuple_size<HashType>::value;
     constexpr position_type next_begin = hash_size;
-    const uint8_t* next_data = raw_data(next_begin);
+    const slab_type next_data = raw_data_ + next_begin;
     // Read the next position.
     return from_little_endian<position_type>(next_data);
-}
-
-template <typename HashType>
-uint8_t* htdb_slab_list_item<HashType>::raw_data(position_type offset) const
-{
-    return allocator_.get(position_) + offset;
 }
 
     } // namespace chain

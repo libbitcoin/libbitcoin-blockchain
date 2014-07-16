@@ -150,13 +150,13 @@ BOOST_AUTO_TEST_CASE(htdb_slab_tst)
     };
     ht.store(tiny_hash{{0xde, 0xad, 0xbe, 0xef}}, 8, write);
     slab_type slab = ht.get(tiny_hash{{0xde, 0xad, 0xbe, 0xef}});
-    BITCOIN_ASSERT(slab);
-    BITCOIN_ASSERT(slab[0] == 110);
-    BITCOIN_ASSERT(slab[1] == 110);
-    BITCOIN_ASSERT(slab[2] == 4);
-    BITCOIN_ASSERT(slab[3] == 99);
+    BOOST_REQUIRE(slab);
+    BOOST_REQUIRE(slab[0] == 110);
+    BOOST_REQUIRE(slab[1] == 110);
+    BOOST_REQUIRE(slab[2] == 4);
+    BOOST_REQUIRE(slab[3] == 99);
     slab = ht.get(tiny_hash{{0xde, 0xad, 0xbe, 0xee}});
-    BITCOIN_ASSERT(!slab);
+    BOOST_REQUIRE(!slab);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

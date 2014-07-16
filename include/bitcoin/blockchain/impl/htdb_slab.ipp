@@ -80,7 +80,7 @@ position_type htdb_slab<HashType>::read_bucket_value(
     const HashType& key) const
 {
     auto value = header_.read(bucket_index(key));
-    BITCOIN_ASSERT(sizeof(value) == sizeof(position_type));
+    static_assert(sizeof(value) == sizeof(position_type), "Internal error");
     return value;
 }
 

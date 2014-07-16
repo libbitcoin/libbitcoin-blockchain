@@ -69,8 +69,6 @@ public:
 private:
     /// Ensure extra needed bytes are available.
     void reserve(size_t space_needed);
-    /// Accessor for data.
-    uint8_t* data(position_type position) const;
 
     mmfile& file_;
     position_type sector_start_;
