@@ -65,7 +65,7 @@ void record_allocator::sync()
 record_type record_allocator::get(index_type index)
 {
     BITCOIN_ASSERT(index < end_);
-    BITCOIN_ASSERT(record_position(end_) <= file_.size());
+    BITCOIN_ASSERT(sector_start_ + record_position(end_) <= file_.size());
     return data(record_position(index));
 }
 
