@@ -45,6 +45,8 @@ void write_data()
         };
         ht.store(key, value.size(), write);
     }
+
+    alloc.sync();
 }
 
 void validate_data()

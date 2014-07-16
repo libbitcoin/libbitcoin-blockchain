@@ -68,6 +68,8 @@ void write_data()
         };
         ht.store(key, value.size(), write);
     }
+
+    alloc.sync();
 }
 
 BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
