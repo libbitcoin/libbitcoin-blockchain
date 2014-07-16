@@ -27,6 +27,8 @@
 
 // Uncomment this to enable hsdb debug logging.
 #define HSDB_DEBUG
+// Lowers read performance.
+#define SLAB_DEBUG_ASSERTS
 
 // Now we use the generic helper definitions in libbitcoin to
 // define BCB_API and BCB_INTERNAL.
