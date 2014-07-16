@@ -65,8 +65,8 @@ slab_type slab_allocator::get(position_type position) const
 {
     // Disabled asserts to improve performance.
     //BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
-    //BITCOIN_ASSERT(position < file_.size());
-    //BITCOIN_ASSERT(sector_start_ + position <= file_.size());
+    //BITCOIN_ASSERT(position < end_);
+    //BITCOIN_ASSERT(sector_start_ + end_ <= file_.size());
     return file_.data() + sector_start_ + position;
 }
 
