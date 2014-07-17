@@ -67,7 +67,7 @@ public:
     /**
      * Return the slab for a given hash.
      */
-    const slab_type get(const HashType& key) const;
+    slab_type get(const HashType& key) const;
 
 private:
     /// What is the bucket given a hash.

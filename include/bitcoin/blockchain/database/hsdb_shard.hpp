@@ -66,7 +66,7 @@ public:
       * Read method. Scan shard for rows with matching prefix.
       */
     BCB_API void scan(const address_bitset& key,
-        read_function read, size_t from_height);
+        read_function read, size_t from_height) const;
 
 private:
     struct entry_row

@@ -64,7 +64,7 @@ public:
     /**
      * Read item's value.
      */
-    ValueType read(IndexType index);
+    ValueType read(IndexType index) const;
 
     /**
      * Write value to item.
@@ -78,9 +78,9 @@ public:
 
 private:
     /// Disk position of item.
-    position_type item_position(IndexType index);
+    position_type item_position(IndexType index) const;
     /// Accessor for data.
-    uint8_t* data(position_type position);
+    uint8_t* data(position_type position) const;
 
     mmfile& file_;
     position_type sector_start_;

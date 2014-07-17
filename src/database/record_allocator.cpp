@@ -62,7 +62,7 @@ void record_allocator::sync()
     serial.write_4_bytes(end_);
 }
 
-record_type record_allocator::get(index_type index)
+record_type record_allocator::get(index_type index) const
 {
     BITCOIN_ASSERT(index < end_);
     BITCOIN_ASSERT(sector_start_ + record_position(end_) <= file_.size());
@@ -82,13 +82,13 @@ void record_allocator::reserve()
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
 
-uint8_t* record_allocator::data(position_type position)
+uint8_t* record_allocator::data(position_type position) const
 {
     BITCOIN_ASSERT(sector_start_ + position <= file_.size());
     return file_.data() + sector_start_ + position;
 }
 
-position_type record_allocator::record_position(index_type index)
+position_type record_allocator::record_position(index_type index) const
 {
     return 4 + index * record_size_;
 }

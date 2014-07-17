@@ -48,7 +48,7 @@ index_type linked_records::insert(index_type next)
     return record;
 }
 
-index_type linked_records::next(index_type index)
+index_type linked_records::next(index_type index) const
 {
     uint8_t* data = allocator_.get(index);
     auto deserial = make_deserializer(data, data + 4);
@@ -56,7 +56,7 @@ index_type linked_records::next(index_type index)
     return next;
 }
 
-record_type linked_records::get(index_type index)
+record_type linked_records::get(index_type index) const
 {
     return allocator_.get(index) + 4;
 }

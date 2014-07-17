@@ -30,6 +30,8 @@ disk_array<IndexType, ValueType>::disk_array(
     mmfile& file, position_type sector_start)
   : file_(file), sector_start_(sector_start)
 {
+    static_assert(std::is_unsigned<ValueType>::value,
+        "disk_array only works with unsigned types");
 }
 
 template <typename IndexType, typename ValueType>
@@ -53,7 +55,7 @@ void disk_array<IndexType, ValueType>::start()
 
 template <typename IndexType, typename ValueType>
 ValueType disk_array<IndexType, ValueType>::read(
-    IndexType index)
+    IndexType index) const
 {
     BITCOIN_ASSERT_MSG(size_ != 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
@@ -91,13 +93,13 @@ IndexType disk_array<IndexType, ValueType>::size() const
 
 template <typename IndexType, typename ValueType>
 position_type disk_array<IndexType, ValueType>::item_position(
-    IndexType index)
+    IndexType index) const
 {
     return sizeof(IndexType) + index * sizeof(ValueType);
 }
 
 template <typename IndexType, typename ValueType>
-uint8_t* disk_array<IndexType, ValueType>::data(position_type position)
+uint8_t* disk_array<IndexType, ValueType>::data(position_type position) const
 {
     BITCOIN_ASSERT(sector_start_ + position <= file_.size());
     return file_.data() + sector_start_ + position;

@@ -65,7 +65,7 @@ public:
     /**
      * Return the record for a given hash.
      */
-    const record_type get(const HashType& key) const;
+    record_type get(const HashType& key) const;
 
     /**
      * Delete a key-value pair from the hashtable by unlinking the node.

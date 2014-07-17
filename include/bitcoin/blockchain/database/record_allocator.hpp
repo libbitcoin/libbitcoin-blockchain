@@ -65,7 +65,7 @@ public:
     /**
      * Return a slab.
      */
-    BCB_API record_type get(index_type index);
+    BCB_API record_type get(index_type index) const;
 
     /**
      * The current end index (or size).
@@ -76,9 +76,9 @@ private:
     /// Ensure bytes for a new record are available (record_size_).
     void reserve();
     /// Accessor for data.
-    uint8_t* data(position_type position);
+    uint8_t* data(position_type position) const;
     /// Disk position of record.
-    position_type record_position(index_type index);
+    position_type record_position(index_type index) const;
 
     mmfile& file_;
     position_type sector_start_;

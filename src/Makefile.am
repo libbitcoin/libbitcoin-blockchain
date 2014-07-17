@@ -12,6 +12,7 @@ libbitcoin_blockchain_la_SOURCES = \
     database/slab_allocator.cpp \
     database/record_allocator.cpp \
     database/linked_records.cpp \
+    database/multimap_records.cpp \
     database/utility.cpp \
 	impl/blockchain_impl.cpp \
 	impl/simple_chain_impl.cpp \

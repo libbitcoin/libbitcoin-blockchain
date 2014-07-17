@@ -51,12 +51,12 @@ public:
     /**
      * Read next index for record in list.
      */
-    BCB_API index_type next(index_type index);
+    BCB_API index_type next(index_type index) const;
 
     /**
      * Get underlying record data.
      */
-    BCB_API record_type get(index_type index); 
+    BCB_API record_type get(index_type index) const; 
 
 private:
     record_allocator& allocator_;

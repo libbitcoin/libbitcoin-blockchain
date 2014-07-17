@@ -255,7 +255,7 @@ index_type read_row_index(
     return row_index;
 }
 void hsdb_shard::scan(const address_bitset& key,
-    read_function read, size_t from_height)
+    read_function read, size_t from_height) const
 {
 #ifdef HSDB_DEBUG
     log_debug(LOG_HSDB) << "scan(" << key << ", from_height="

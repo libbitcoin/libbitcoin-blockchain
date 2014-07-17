@@ -83,14 +83,16 @@ public:
       * @param[in]  from_height     Starting height.
       */
     BCB_API void scan(const address_bitset& key,
-        read_function read_func, size_t from_height);
+        read_function read_func, size_t from_height) const;
 
 private:
     typedef std::vector<mmfile> mmfile_list;
     typedef std::vector<hsdb_shard> shard_list;
 
     hsdb_shard& lookup(address_bitset key);
-    address_bitset drop_prefix(address_bitset key);
+    const hsdb_shard& lookup(address_bitset key) const;
+
+    address_bitset drop_prefix(address_bitset key) const;
 
     hsdb_settings settings_;
     mmfile_list files_;

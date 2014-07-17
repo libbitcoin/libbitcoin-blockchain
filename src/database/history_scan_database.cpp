@@ -139,10 +139,10 @@ void history_scan_database::unlink(size_t height)
 }
 
 void history_scan_database::scan(const address_bitset& key,
-    read_function read_func, size_t from_height)
+    read_function read_func, size_t from_height) const
 {
     BITCOIN_ASSERT(key.size() >= settings_.sharded_bitsize);
-    hsdb_shard& shard = lookup(key);
+    const hsdb_shard& shard = lookup(key);
     address_bitset sub_key = drop_prefix(key);
     auto read_wrapped = [this, &read_func](const uint8_t* data)
     {
@@ -163,7 +163,28 @@ void history_scan_database::scan(const address_bitset& key,
     shard.scan(sub_key, read_wrapped, from_height);
 }
 
-address_bitset history_scan_database::drop_prefix(address_bitset key)
+template <typename ShardRef, typename ShardList, typename Settings>
+ShardRef lookup_impl(ShardList& shards, const Settings& settings,
+    address_bitset key)
+{
+    key.resize(settings.sharded_bitsize);
+    size_t idx = key.to_ulong();
+#ifdef HSDB_DEBUG
+    log_debug(LOG_HSDB) << "Using key " << key << " (" << idx << ")";
+#endif
+    return shards[idx];
+}
+
+hsdb_shard& history_scan_database::lookup(address_bitset key)
+{
+    return lookup_impl<hsdb_shard&>(shards_, settings_, key);
+}
+const hsdb_shard& history_scan_database::lookup(address_bitset key) const
+{
+    return lookup_impl<const hsdb_shard&>(shards_, settings_, key);
+}
+
+address_bitset history_scan_database::drop_prefix(address_bitset key) const
 {
     // Drop first sharded_bitsize bits from key.
     const size_t drop_size = settings_.sharded_bitsize;
@@ -172,16 +193,6 @@ address_bitset history_scan_database::drop_prefix(address_bitset key)
     key.resize(key.size() - drop_size);
     BITCOIN_ASSERT(key.size() <= settings_.scan_bitsize());
     return key;
-}
-
-hsdb_shard& history_scan_database::lookup(address_bitset key)
-{
-    key.resize(settings_.sharded_bitsize);
-    size_t idx = key.to_ulong();
-#ifdef HSDB_DEBUG
-    log_debug(LOG_HSDB) << "Using key " << key << " (" << idx << ")";
-#endif
-    return shards_[idx];
 }
 
     } // namespace chain

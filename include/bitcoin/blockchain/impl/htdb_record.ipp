@@ -49,7 +49,7 @@ void htdb_record<HashType>::store(const HashType& key, write_function write)
 }
 
 template <typename HashType>
-const record_type htdb_record<HashType>::get(const HashType& key) const
+record_type htdb_record<HashType>::get(const HashType& key) const
 {
     // Find start item...
     index_type current = read_bucket_value(key);
