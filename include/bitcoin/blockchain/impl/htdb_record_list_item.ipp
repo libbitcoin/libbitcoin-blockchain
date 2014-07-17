@@ -101,9 +101,7 @@ template <typename HashType>
 index_type htdb_record_list_item<HashType>::next_index() const
 {
     const uint8_t* next_data = raw_next_data();
-    // Read the next position.
-    auto deserial = make_deserializer(next_data, next_data + 4);
-    return deserial.read_4_bytes();
+    return from_little_endian<index_type>(next_data);
 }
 
 template <typename HashType>

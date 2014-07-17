@@ -61,15 +61,9 @@ ValueType disk_array<IndexType, ValueType>::read(
     BITCOIN_ASSERT(index < size_);
     // Find our item.
     const position_type position = item_position(index);
-    const size_t item_size = sizeof(ValueType);
-    // Read its value.
     const uint8_t* begin = data(position);
-    const uint8_t* end = data(position + item_size);
     // Deserialize value.
-    auto deserial = make_deserializer(begin, end);
-    auto value = deserial.read_little_endian<ValueType>();
-    BITCOIN_ASSERT(deserial.iterator() == end);
-    return value;
+    return from_little_endian<ValueType>(begin);
 }
 
 template <typename IndexType, typename ValueType>

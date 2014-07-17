@@ -50,10 +50,8 @@ index_type linked_records::insert(index_type next)
 
 index_type linked_records::next(index_type index) const
 {
-    uint8_t* data = allocator_.get(index);
-    auto deserial = make_deserializer(data, data + 4);
-    index_type next = deserial.read_4_bytes();
-    return next;
+    const uint8_t* data = allocator_.get(index);
+    return from_little_endian<index_type>(data);
 }
 
 record_type linked_records::get(index_type index) const
