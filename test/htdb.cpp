@@ -21,6 +21,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
+#include <bitcoin/blockchain/database/sizes.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
@@ -42,16 +43,20 @@ data_chunk generate_random_bytes(
 
 void write_data()
 {
+    constexpr size_t header_size = htdb_slab_header_size(buckets);
+
     touch_file("htdb_slabs");
     mmfile file("htdb_slabs");
     BITCOIN_ASSERT(file.data());
-    file.resize(4 + 8 * buckets + 8);
+    file.resize(header_size + min_slab_size);
 
     htdb_slab_header header(file, 0);
     header.initialize_new(buckets);
     header.start();
 
-    slab_allocator alloc(file, 4 + 8 * buckets);
+    const position_type slab_start = header_size;
+
+    slab_allocator alloc(file, slab_start);
     alloc.initialize_new();
     alloc.start();
 
@@ -84,7 +89,9 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 
     BOOST_REQUIRE(header.size() == buckets);
 
-    slab_allocator alloc(file, 4 + 8 * header.size());
+    const position_type slab_start = htdb_slab_header_size(header.size());
+
+    slab_allocator alloc(file, slab_start);
     alloc.start();
 
     htdb_slab<hash_digest> ht(header, alloc);
@@ -105,21 +112,25 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 BOOST_AUTO_TEST_CASE(htdb_record_test)
 {
     constexpr size_t rec_buckets = 2;
+    constexpr size_t header_size = htdb_record_header_size(rec_buckets);
+
     touch_file("htdb_records");
     mmfile file("htdb_records");
     BITCOIN_ASSERT(file.data());
-    file.resize(4 + 4 * rec_buckets + 4);
+    file.resize(header_size + min_records_size);
 
     htdb_record_header header(file, 0);
     header.initialize_new(rec_buckets);
     header.start();
 
-    const size_t record_size = 4 + 4 + 4;
-    record_allocator alloc(file, 4 + 4 * rec_buckets, record_size);
+    typedef byte_array<4> tiny_hash;
+    constexpr size_t record_size = record_size_htdb<tiny_hash>(4);
+    const position_type records_start = header_size;
+
+    record_allocator alloc(file, records_start, record_size);
     alloc.initialize_new();
     alloc.start();
 
-    typedef byte_array<4> tiny_hash;
     htdb_record<tiny_hash> ht(header, alloc);
 
     tiny_hash key{{0xde, 0xad, 0xbe, 0xef}};
