@@ -20,10 +20,22 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HPP
 
-#include <bitcoin/blockchain/database/history_scan_database.hpp>
-#include <bitcoin/blockchain/database/hsdb_settings.hpp>
+#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/slab_allocator.hpp>
+#include <bitcoin/blockchain/database/htdb_record.hpp>
 #include <bitcoin/blockchain/database/hsdb_shard.hpp>
+#include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain/database/multimap_records.hpp>
+#include <bitcoin/blockchain/database/linked_records.hpp>
+#include <bitcoin/blockchain/database/hsdb_settings.hpp>
+#include <bitcoin/blockchain/database/disk_array.hpp>
+#include <bitcoin/blockchain/database/stealth_database.hpp>
+#include <bitcoin/blockchain/database/record_allocator.hpp>
+#include <bitcoin/blockchain/database/htdb_slab.hpp>
+#include <bitcoin/blockchain/database/history_scan_database.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/blockchain_impl.hpp>
 
 namespace bc = libbitcoin;
 
