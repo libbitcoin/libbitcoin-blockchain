@@ -38,8 +38,28 @@ show_array.o: show_array.cpp
 show_array: show_array.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value
+mmr_create.o: mmr_create.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+mmr_create: mmr_create.o
+	$(CXX) -o $@ $< $(LIBS)
+
+mmr_lookup.o: mmr_lookup.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+mmr_lookup: mmr_lookup.o
+	$(CXX) -o $@ $< $(LIBS)
+
+mmr_add_row.o: mmr_add_row.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+mmr_add_row: mmr_add_row.o
+	$(CXX) -o $@ $< $(LIBS)
+
+mmr_delete_last_row.o: mmr_delete_last_row.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+mmr_delete_last_row: mmr_delete_last_row.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value
+	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row
 	rm -f *.o
