@@ -57,6 +57,11 @@ int main(int argc, char** argv)
             << std::endl;
         return -1;
     }
+    if (!record)
+    {
+        std::cerr << "read_htdb_record_value: no record found" << std::endl;
+        return -2;
+    }
     data_chunk data(record, record + value_size);
     std::cout << data << std::endl;
     return 0;
