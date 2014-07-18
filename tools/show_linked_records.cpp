@@ -23,6 +23,7 @@
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain/database/sizes.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
@@ -52,11 +53,7 @@ int main(int argc, char** argv)
     }
     const std::string filename = argv[1];
     size_t record_size = boost::lexical_cast<size_t>(argv[2]);
-    if (record_size < 4)
-    {
-        std::cerr << "show_records: RECORD_SIZE should be at least 4 bytes."
-            << std::endl;
-    }
+    record_size += linked_record_offset;
     position_type offset = 0;
     if (argc == 4)
         offset = boost::lexical_cast<position_type>(argv[3]);
