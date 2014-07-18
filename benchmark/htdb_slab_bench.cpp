@@ -4,9 +4,9 @@
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
-constexpr size_t total_txs = 20000;
+constexpr size_t total_txs = 200000;
 constexpr size_t tx_size = 200;
-constexpr size_t buckets = 100;
+constexpr size_t buckets = 200000;
 
 data_chunk generate_random_bytes(
     std::default_random_engine& engine, size_t size)
@@ -96,13 +96,18 @@ void read_data()
     oss << "txs = " << total_txs << " size = " << tx_size
         << " buckets = " << buckets << " |  ";
 
-    timed_section t("ht.get()", oss.str());
     std::default_random_engine engine;
+    std::vector<hash_digest> keys;
     for (size_t i = 0; i < total_txs; ++i)
     {
         data_chunk value = generate_random_bytes(engine, tx_size);
         hash_digest key = bitcoin_hash(value);
+        keys.push_back(key);
+    }
 
+    timed_section t("ht.get()", oss.str());
+    for (const hash_digest& key: keys)
+    {
         const slab_type slab = ht.get(key);
     }
 }
