@@ -1,2 +1,94 @@
-Run:
-  git log
+Updated on Fri Jul 18 03:58:01 CEST 2014
+
+If working with git repository, use command 'git log --oneline --decorate' for latest change log
+
+1f916c6 (HEAD, master) htdb_record_bench
+a3389df new tools: mmr_create, mmr_lookup, mmr_add_row, mmr_delete_last_row
+af9ab2e show_linked_records: add  linked_record_offset to record_size.
+d400897 message if read_htdb_record_value doesnt find value for key.
+4e64068 replace deserializer with faster from_little_endian() in a few places.
+bcf337e multimap_records - ht_records (hashtable records) + linked_records for single-key with multiple fixed size values. will be used to implement history database.
+9fa533f updated blockchain.hpp
+555d573 sizes.hpp for calculating object sizes, file offsets .etc
+595782f const correct methods.
+cf67b21 +#define SLAB_DEBUG_ASSERTS
+e88b0af fix record_allocator::get() assert
+69e7284 makefile stuff
+7ae621d add missing sync()s
+d0accea fix asserts in slab_allocator::get()
+ca887ea bugfix for slab_allocator when asserts are enabled.
+5f6ad80 htdb_bench.cpp -> htdb_slab_bench.cpp
+bda445c tidy up htdb_record::unlink()
+9dde40b (origin/master, origin/HEAD) minor performance optimisations, possible to get further from 3000ms to 2500ms (18% gain) by flattening code (see fastdb). going to stop optimising for now.
+9e7a54d incredibly drastic speedup switching to from_little_endian()! from ~4085ms to ~2850ms
+6387ebb disabling slab allocator get asserts improves htdb_slab performance from ~4300ms to <4090ms
+48eb466 ./htdb_bench -w and validate_data()
+5747bb4 old initchain tool for leveldb based blockchain
+6c1a189 read_htdb_record_value
+170715b htdb_record - hashtable database with fixed sized records used for spends db
+ee04d87 read_htdb_slab_value tool.
+1f70af4 clean up htdb_slab by creating htdb_slab_list_item
+36be7f1 show_linked_records
+6cf24f9 add text about calling allocator.sync() when using htdb_slab.store()
+335db07 show_records tool
+7e79ca2 show_array tool
+3a0a533 htdb_record stub
+fd72c3c htdb unit test
+da8a02a benchmark tool for htdb
+5fa902c more secure accessor pattern + extra comments.
+f58ab78 test case for htdb_slab
+3418d74 htdb_slab - hashtable database with varying sized slabs.
+50e91c8 remainder() function used for selecting buckets from hashes.
+4051f77 various small changes.
+e4f7056 unit tests for simple disk objects recently added
+eb65dfe linked_records uses record_allocator and implements on disk 1-way linked list.
+4579804 record_allocator, like slab_allocator but working with fixed size records.
+eb24290 utility.hpp/cpp
+85472d3 save/load_shard_settings -> save/load_hsdb_settings
+7b22ec0 docstrings for disk_array
+3e0bfee slab_allocator::sync()
+5345cf5 added disk_array, represents fixed length on-disk array.
+ac3feab ability to specify start offset for slab_allocator.
+f0df0a1 added slab_allocator. the slab allocator gives slabs of memory represented in a growing file.
+b963210 use emplace_back constructor for shard file.
+169ad50 make history_scan_database actually take and return the types passed to underlying database shards.
+8eea652 history scan database wrapper for hsdb_shards
+35573cb hsdb_settings
+bdd2241 avoid recalculating settings.scan_bitsize(), use struct method instead.
+d32d875 hsdb settings
+9ed5cd8 actually randomise values for shard bench
+784a2a1 rename hdb to hsdb (history scan database)
+1633921 split fetch_history into its own unit.
+c8d25b3 renamed chain_keeper to simple_chain and renamed methods more clearer.
+c7b8e1c improve benchmark tool to generate random rows and be more efficient.
+018bf7f improve fakechain run.sh script.
+34695e3 generate fake blocks to test blockchain.
+d040b2f BC_API -> BCB_API
+2dab536 removed unused chain_keeper start()/stop() methods.
+d03e7ec added docstring description of organizer classes.
+dc0cedc no need for chain_keeper_impl ptr, use interface class instead.
+5f14b7f migrated over blockchain functionality inside namespace and renamed classes.
+e498813 reorganise hdb_shard_bench.cpp
+a658e50 benchmark test
+200ebc1 correct reverse_less_than for bitset so 2 same values dont loop forever.
+e4651c7 remove util.hpp/cpp
+1451b52 reverse prefix bytes in show_shard tool.
+4b2e17e working scan
+475bb1f basic scan, not completely working yet.
+bc9617e shard.unlink()
+0fed9ec refactored and tidied hdb_shard write code
+f92f4ca saving new blocks to history shard works!
+cd26045 remove superfluous license file.
+16b8a08 creating shard + tool to view shard data
+99d7779 add missing types.hpp file
+d299a0c initialize stub
+4e92009 beginning of benchmark for shard.
+ed18b1a copy define.hpp BCW_API stuff from libwallet
+a9ce4f5 BCB_API define.hpp linkage stuff.
+4881936 hdb_shard stub
+06dc88a remove LDFLAG_LEVELDB reference from Makefile.
+5cb0d40 use autogen.sh
+a04f433 prepared libbitcoin_blockchain
+fd573e3 leveldb in pkgconfig file
+9b5d98c now compiles.
+9ac70fb initial commit.
