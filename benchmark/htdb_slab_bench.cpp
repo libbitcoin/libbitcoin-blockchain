@@ -1,12 +1,12 @@
+#include <boost/lexical_cast.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/utility/timed_section.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
-constexpr size_t total_txs = 200000;
+constexpr size_t total_txs = 2000000;
 constexpr size_t tx_size = 200;
-constexpr size_t buckets = 200000;
 
 data_chunk generate_random_bytes(
     std::default_random_engine& engine, size_t size)
@@ -17,8 +17,11 @@ data_chunk generate_random_bytes(
     return result;
 }
 
-void write_data()
+void write_data(const size_t buckets)
 {
+    BITCOIN_ASSERT(buckets > 0);
+    std::cout << "Buckets: " << buckets << std::endl;
+
     touch_file("htdb_slabs");
     mmfile file("htdb_slabs");
     BITCOIN_ASSERT(file.data());
@@ -57,8 +60,6 @@ void validate_data()
     htdb_slab_header header(file, 0);
     header.start();
 
-    BITCOIN_ASSERT(header.size() == buckets);
-
     slab_allocator alloc(file, 4 + 8 * header.size());
     alloc.start();
 
@@ -85,8 +86,6 @@ void read_data()
     htdb_slab_header header(file, 0);
     header.start();
 
-    BITCOIN_ASSERT(header.size() == buckets);
-
     slab_allocator alloc(file, 4 + 8 * header.size());
     alloc.start();
 
@@ -94,7 +93,7 @@ void read_data()
 
     std::ostringstream oss;
     oss << "txs = " << total_txs << " size = " << tx_size
-        << " buckets = " << buckets << " |  ";
+        << " buckets = " << header.size() << " |  ";
 
     std::default_random_engine engine;
     std::vector<hash_digest> keys;
@@ -114,32 +113,44 @@ void read_data()
 
 void show_usage()
 {
-    std::cerr << "Usage: htdb_bench [-w]" << std::endl;
+    std::cerr << "Usage: htdb_bench [-w] [BUCKETS]" << std::endl;
 }
 
 int main(int argc, char** argv)
 {
-    if (argc != 1 && argc != 2)
+    if (argc > 4)
     {
         show_usage();
         return -1;
     }
-    const std::string arg = (argc == 2) ? argv[1] : "";
+    std::string arg = "";
+    if (argc >= 2)
+        arg = argv[1];
+    std::string buckets_arg = "100";
+    if (argc >= 3)
+        buckets_arg = argv[2];
+
     if (arg == "-h" || arg == "--help")
     {
         show_usage();
         return 0;
     }
+
     if (arg == "-w" || arg == "--write")
     {
+        const size_t buckets =
+            boost::lexical_cast<size_t>(buckets_arg);
         std::cout << "Writing..." << std::endl;
-        write_data();
+        write_data(buckets);
         std::cout << "Validating..." << std::endl;
         validate_data();
         std::cout << "Done." << std::endl;
     }
-    // Perform benchmark.
-    read_data();
+    else
+    {
+        // Perform benchmark.
+        read_data();
+    }
     return 0;
 }
 

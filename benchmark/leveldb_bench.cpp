@@ -8,9 +8,8 @@ using namespace libbitcoin;
 // Differences in performance become more marked as leveldb
 // does not scale linearly.
 
-constexpr size_t total_txs = 200000;
+constexpr size_t total_txs = 2000000;
 constexpr size_t tx_size = 200;
-constexpr size_t buckets = 400000;
 
 data_chunk generate_random_bytes(
     std::default_random_engine& engine, size_t size)
