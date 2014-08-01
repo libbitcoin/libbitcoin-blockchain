@@ -103,6 +103,8 @@ void read_data()
         hash_digest key = bitcoin_hash(value);
         keys.push_back(key);
     }
+    std::srand(unsigned(std::time(0)));
+    std::random_shuffle(keys.begin(), keys.end());
 
     timed_section t("ht.get()", oss.str());
     for (const hash_digest& key: keys)
@@ -113,7 +115,7 @@ void read_data()
 
 void show_usage()
 {
-    std::cerr << "Usage: htdb_bench [-w] [BUCKETS]" << std::endl;
+    std::cerr << "Usage: htdb_bench [-w [BUCKETS]]" << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -126,7 +128,7 @@ int main(int argc, char** argv)
     std::string arg = "";
     if (argc >= 2)
         arg = argv[1];
-    std::string buckets_arg = "100";
+    std::string buckets_arg = boost::lexical_cast<std::string>(total_txs);
     if (argc >= 3)
         buckets_arg = argv[2];
 

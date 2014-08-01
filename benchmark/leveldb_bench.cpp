@@ -112,6 +112,8 @@ void read_data()
         hash_digest key = bitcoin_hash(value);
         keys.push_back(key);
     }
+    std::srand(unsigned(std::time(0)));
+    std::random_shuffle(keys.begin(), keys.end());
 
     {
         timed_section t("ht.get()", oss.str());
