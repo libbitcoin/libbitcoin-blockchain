@@ -116,7 +116,7 @@ void read_data()
     std::random_shuffle(keys.begin(), keys.end());
 
     {
-        timed_section t("ht.get()", oss.str());
+        timed_section t("leveldb.Get()", oss.str());
         for (const hash_digest& key: keys)
         {
             leveldb::Slice key_slice(
