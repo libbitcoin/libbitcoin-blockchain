@@ -32,6 +32,12 @@ namespace libbitcoin {
 template <typename HashType>
 uint64_t remainder(const HashType& value, const uint64_t divisor);
 
+/**
+ * Fast modulus calculation where divisor is a power of 2.
+ */
+template <typename HashType>
+uint64_t remainder_fast(const HashType& value, const uint64_t divisor);
+
 BCB_API void touch_file(const std::string& filename);
 
 BCB_API void reserve_space(mmfile& file, size_t required_size);
