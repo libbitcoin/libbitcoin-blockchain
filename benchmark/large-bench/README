@@ -1,3 +1,13 @@
+Step 1 creates two files called values.seqdb and keys.seqdb.
+Step 2 then iterates through values.seqdb, recreating the corresponding key
+and adding it to the database.
+Step 3 iterates keys.seqdb, fetching the values from the database.
+./null_read simulates iterating the file without any fetching a database.
+
+With the large database sizes Bitcoin with millions of keys (30 million txs),
+we cannot store the dataset in memory. To compensate, null_read allows us
+to see the magnitude of performance impact on our final calculations.
+
 1. First prepare the test.
 
   $ ./prepare 
