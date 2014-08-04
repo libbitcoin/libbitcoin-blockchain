@@ -23,13 +23,18 @@ htdb_slab_bench.o: htdb_slab_bench.cpp
 htdb_slab_bench: htdb_slab_bench.o
 	$(CXX) -o $@ $< $(LIBS)
 
+mmr_bench.o: mmr_bench.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+mmr_bench: mmr_bench.o
+	$(CXX) -o $@ $< $(LIBS)
+
 drop_caches.o: drop_caches.c
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 drop_cahes: drop_caches.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench drop_caches
+all: hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench drop_caches
 
 clean:
-	rm -f hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench drop_caches
+	rm -f hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench drop_caches
 	rm -f *.o
