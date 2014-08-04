@@ -115,7 +115,7 @@ void read_data()
 
 void show_usage()
 {
-    std::cerr << "Usage: htdb_bench [-w [BUCKETS]]" << std::endl;
+    std::cerr << "Usage: htdb_slab_bench [-w [BUCKETS]]" << std::endl;
 }
 
 int main(int argc, char** argv)
