@@ -5,11 +5,11 @@
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
-constexpr size_t total_txs = 200000;
+constexpr size_t total_txs = 2000000;
 constexpr size_t key_size = 32 + 4;
 constexpr size_t data_size = 32 + 4;
 
-typedef byte_array<data_size> raw_point_type;
+typedef byte_array<key_size> raw_point_type;
 constexpr size_t record_size = key_size + 4 + data_size;
 
 template <typename DataBuffer>
@@ -96,14 +96,21 @@ void read_data()
     std::ostringstream oss;
     oss << "txs = " << total_txs << " buckets = " << header.size() << " |  ";
 
-    timed_section t("ht.get()", oss.str());
     std::default_random_engine engine;
+    std::vector<raw_point_type> keys;
     for (size_t i = 0; i < total_txs; ++i)
     {
         raw_point_type key, value;
         generate_random_bytes(engine, key);
         generate_random_bytes(engine, value);
+        keys.push_back(key);
+    }
+    std::srand(unsigned(std::time(0)));
+    std::random_shuffle(keys.begin(), keys.end());
 
+    timed_section t("ht.get()", oss.str());
+    for (const raw_point_type& key: keys)
+    {
         const record_type rec = ht.get(key);
     }
 }
