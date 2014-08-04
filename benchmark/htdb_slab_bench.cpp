@@ -8,6 +8,8 @@ using namespace libbitcoin::chain;
 constexpr size_t total_txs = 2000000;
 constexpr size_t tx_size = 200;
 
+constexpr size_t key_size = 32;
+
 data_chunk generate_random_bytes(
     std::default_random_engine& engine, size_t size)
 {
@@ -35,7 +37,8 @@ void write_data(const size_t buckets)
     alloc.initialize_new();
     alloc.start();
 
-    htdb_slab<hash_digest> ht(header, alloc);
+    typedef byte_array<key_size> hash_type;
+    htdb_slab<hash_type> ht(header, alloc);
 
     std::default_random_engine engine;
     for (size_t i = 0; i < total_txs; ++i)
@@ -63,7 +66,8 @@ void validate_data()
     slab_allocator alloc(file, 4 + 8 * header.size());
     alloc.start();
 
-    htdb_slab<hash_digest> ht(header, alloc);
+    typedef byte_array<key_size> hash_type;
+    htdb_slab<hash_type> ht(header, alloc);
 
     std::default_random_engine engine;
     for (size_t i = 0; i < total_txs; ++i)
@@ -89,14 +93,15 @@ void read_data()
     slab_allocator alloc(file, 4 + 8 * header.size());
     alloc.start();
 
-    htdb_slab<hash_digest> ht(header, alloc);
+    typedef byte_array<key_size> hash_type;
+    htdb_slab<hash_type> ht(header, alloc);
 
     std::ostringstream oss;
     oss << "txs = " << total_txs << " size = " << tx_size
         << " buckets = " << header.size() << " |  ";
 
     std::default_random_engine engine;
-    std::vector<hash_digest> keys;
+    std::vector<hash_type> keys;
     for (size_t i = 0; i < total_txs; ++i)
     {
         data_chunk value = generate_random_bytes(engine, tx_size);
