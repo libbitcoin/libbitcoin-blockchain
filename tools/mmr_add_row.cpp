@@ -11,7 +11,7 @@ void show_usage()
 }
 
 template <size_t N>
-int mmr_lookup(
+int mmr_add_row(
     const data_chunk& key_data, const data_chunk& value,
     const std::string& map_filename, const std::string& rows_filename)
 {
@@ -67,14 +67,11 @@ int main(int argc, char** argv)
     const std::string map_filename = argv[3];
     const std::string rows_filename = argv[4];
     if (key_data.size() == 4)
-        return mmr_lookup<4>(key_data,
-            value, map_filename, rows_filename);
+        return mmr_add_row<4>(key_data, value, map_filename, rows_filename);
     if (key_data.size() == 20)
-        return mmr_lookup<20>(key_data,
-            value, map_filename, rows_filename);
+        return mmr_add_row<20>(key_data, value, map_filename, rows_filename);
     if (key_data.size() == 32)
-        return mmr_lookup<32>(key_data,
-            value, map_filename, rows_filename);
+        return mmr_add_row<32>(key_data, value, map_filename, rows_filename);
     return 0;
 }
 
