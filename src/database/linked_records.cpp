@@ -42,7 +42,7 @@ index_type linked_records::insert(index_type next)
     index_type record = allocator_.allocate();
     uint8_t* data = allocator_.get(record);
     // Write next value at first 4 bytes of record.
-    BITCOIN_ASSERT(sizeof(index_type) == 4);
+    static_assert(sizeof(index_type) == 4, "index_type not 4 bytes");
     auto serial = make_serializer(data);
     serial.write_4_bytes(next);
     return record;
