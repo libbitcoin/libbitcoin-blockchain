@@ -31,20 +31,21 @@ to see the magnitude of performance impact on our final calculations.
   $ ./leveldb_read 
   Usage: leveldb_read ITERATIONS
   
-  $ sudo ../drop_caches.sh 
+  $ sudo ../drop_caches
   $ ./leveldb_read 400000
   DEBUG [leveldb.Get()]: iterations = 400000 |   2191.961003
   
   $ ./htdb_slab_read 
   Usage: htdb_slab_read ITERATIONS
   
-  $ sudo ../drop_caches.sh 
+  $ sudo ../drop_caches
   $ ./htdb_slab_read 400000
   DEBUG [ht.get()]: iterations = 400000 buckets = 20000 |   782.870643
   
-  $ sudo ../drop_caches.sh 
   $ ./null_read 
   Usage: null_read ITERATIONS
+
+  $ sudo ../drop_caches
   $ ./null_read 400000
   DEBUG [None]: iterations = 400000 |   197.432649
 
