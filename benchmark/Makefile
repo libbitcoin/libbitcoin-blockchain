@@ -1,5 +1,5 @@
 CXXFLAGS=$(shell pkg-config --cflags libbitcoin_blockchain) -ggdb
-LIBS=$(shell pkg-config --libs libbitcoin_blockchain)
+LIBS=$(shell pkg-config --libs libbitcoin_blockchain) -lleveldb
 
 default: all
 
@@ -28,13 +28,18 @@ mmr_bench.o: mmr_bench.cpp
 mmr_bench: mmr_bench.o
 	$(CXX) -o $@ $< $(LIBS)
 
-drop_caches.o: drop_caches.c
+records_access.o: records_access.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
-drop_cahes: drop_caches.o
+records_access: records_access.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench drop_caches
+drop_caches.o: drop_caches.c
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+drop_caches: drop_caches.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
 
 clean:
-	rm -f hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench drop_caches
+	rm -f hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
 	rm -f *.o

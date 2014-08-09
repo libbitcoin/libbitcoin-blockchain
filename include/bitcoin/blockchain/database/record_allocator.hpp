@@ -76,7 +76,7 @@ private:
     /// Ensure bytes for a new record are available (record_size_).
     void reserve();
     /// Accessor for data.
-    uint8_t* data(position_type position) const;
+    uint8_t* data(const position_type position) const;
     /// Disk position of record.
     position_type record_position(index_type index) const;
 

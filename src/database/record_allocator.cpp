@@ -64,9 +64,13 @@ void record_allocator::sync()
 
 record_type record_allocator::get(index_type index) const
 {
+#ifdef RECORD_DEBUG_ASSERTS
+    // Disabled asserts to improve performance.
     BITCOIN_ASSERT(index < end_);
     BITCOIN_ASSERT(sector_start_ + record_position(end_) <= file_.size());
-    return data(record_position(index));
+#endif
+    // For some reason calling data(record_position(index)); is way slower...
+    return file_.data() + sector_start_ + record_position(index);
 }
 
 index_type record_allocator::end() const
@@ -82,7 +86,7 @@ void record_allocator::reserve()
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
 
-uint8_t* record_allocator::data(position_type position) const
+uint8_t* record_allocator::data(const position_type position) const
 {
     BITCOIN_ASSERT(sector_start_ + position <= file_.size());
     return file_.data() + sector_start_ + position;
