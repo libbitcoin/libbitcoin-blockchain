@@ -23,6 +23,7 @@
 #include <bitcoin/utility/assert.hpp>
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/utility/logger.hpp>
+#include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -92,14 +93,7 @@ void hsdb_shard::sort_rows()
 void hsdb_shard::reserve(size_t space_needed)
 {
     const size_t required_size = entries_end_ + space_needed;
-    if (required_size <= file_.size())
-        return;
-    // Grow file by 1.5x
-    const size_t new_size = required_size * 3 / 2;
-    // Only ever grow file. Never shrink it!
-    BITCOIN_ASSERT(new_size > file_.size());
-    bool success = file_.resize(new_size);
-    BITCOIN_ASSERT(success);
+    reserve_space(file_, required_size);
 }
 void hsdb_shard::link(const size_t height, const position_type entry)
 {
