@@ -63,7 +63,7 @@ public:
     BCB_API void sync();
 
     /**
-     * Return a slab.
+     * Return a record.
      */
     BCB_API record_type get(index_type index) const;
 
