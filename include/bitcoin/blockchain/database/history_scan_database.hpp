@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
-#define LIBBITCOIN_BLOCKCHAIN_HDB_SETTINGS_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HISTORY_SCAN_DATABASE_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HISTORY_SCAN_DATABASE_HPP
 
 #include <bitcoin/primitives.hpp>
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
