@@ -6,20 +6,19 @@ using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
 constexpr size_t total_rows = 2000000;
-constexpr size_t key_size = 20;
+constexpr size_t key_size = 36;
 constexpr size_t value_size = 36 + 4 + 8 + 36 + 4;
 constexpr size_t buckets = total_rows;
 constexpr size_t min_rows = 1, max_rows = 10;
 
 const std::string map_filename = "mmr_map", rows_filename = "mmr_rows";
 
-data_chunk generate_random_bytes(
-    std::default_random_engine& engine, size_t size)
+template <typename DataBuffer>
+void set_random_bytes(
+    std::default_random_engine& engine, DataBuffer& data)
 {
-    data_chunk result(size);
-    for (uint8_t& byte: result)
+    for (uint8_t& byte: data)
         byte = engine() % std::numeric_limits<uint8_t>::max();
-    return result;
 }
 
 void write_data()
@@ -65,11 +64,13 @@ void write_data()
 
     for (size_t i = 0; i < total_rows; ++i)
     {
-        data_chunk value = generate_random_bytes(engine, 20);
-        short_hash key = bitcoin_short_hash(value);
+        hash_type key;
+        set_random_bytes(engine, key);
         const size_t rows = dist(engine);
         for (size_t j = 0; j < rows; ++j)
         {
+            //data_chunk value;
+            //set_random_bytes(engine, value);
             auto write = [](uint8_t* data)
             {
             };
@@ -119,8 +120,8 @@ void read_data()
     std::vector<hash_type> keys;
     for (size_t i = 0; i < total_rows; ++i)
     {
-        data_chunk value = generate_random_bytes(engine, 20);
-        short_hash key = bitcoin_short_hash(value);
+        hash_type key;
+        set_random_bytes(engine, key);
         keys.push_back(key);
         const size_t rows = dist(engine);
         for (size_t j = 0; j < rows; ++j)
@@ -136,6 +137,7 @@ void read_data()
     {
         for (const index_type idx: multimap.lookup(key))
         {
+            const record_type rec = lrs.get(idx);
         }
     }
 }
