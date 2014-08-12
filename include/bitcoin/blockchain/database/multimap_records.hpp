@@ -29,13 +29,30 @@
 namespace libbitcoin {
     namespace chain {
 
+/**
+ * Forward iterator for multimap record values.
+ * After performing a lookup of a key, we can iterate the
+ * multiple values in a for loop.
+ *
+ * @code
+ *  for (const index_type idx: multimap.lookup(key))
+ *      const record_type rec = linked_recs.get(idx);
+ * @endcode
+ */
 class multimap_records_iterator
 {
 public:
     BCB_API multimap_records_iterator(
         linked_records& linked_rows, index_type index);
 
+    /**
+     * Next value in the chain.
+     */
     BCB_API void operator++();
+
+    /**
+     * Dereference the record index.
+     */
     BCB_API index_type operator*() const;
 
 private:
@@ -46,9 +63,16 @@ private:
     index_type index_;
 };
 
+/**
+ * Compare too multimap value iterators for (lack of) equivalency.
+ */
 BCB_API bool operator!=(
     multimap_records_iterator iter_a, multimap_records_iterator iter_b);
 
+/**
+ * Result of a multimap database query. This is a container wrapper
+ * allowing the values to be iteratable.
+ */
 class multimap_lookup_result
 {
 public:
@@ -63,6 +87,15 @@ private:
     index_type begin_index_;
 };
 
+/**
+ * A multimap hashtable where each key maps to a set of fixed size
+ * values.
+ *
+ * The database is abstracted on top of a record map, and linked records.
+ * The map links keys to start indexes in the linked records.
+ * The linked records are chains of records that can be iterated through
+ * given a start index.
+ */
 template <typename HashType>
 class multimap_records
 {
@@ -72,13 +105,29 @@ public:
 
     multimap_records(htdb_type& map, linked_records& linked_rows);
 
+    /**
+     * Lookup a key, returning an iterable result with multiple values.
+     */
     multimap_lookup_result lookup(const HashType& key) const;
+
+    /**
+     * Add a new row for a key. If the key doesn't exist, it will be
+     * created. If it does exist, the value will be added at the start
+     * of the chain.
+     */
     void add_row(const HashType& key, write_function write);
+
+    /**
+     * Delete the last row entry that was added. This means when deleting
+     * blocks we must walk backwards and delete in reverse order.
+     */
     void delete_last_row(const HashType& key);
 
 private:
+    /// Add new value to existing key.
     void add_to_list(record_type start_info,
         const HashType& key, write_function write);
+    /// Create new key with a single value.
     void create_new(const HashType& key, write_function write);
 
     htdb_type& map_;
