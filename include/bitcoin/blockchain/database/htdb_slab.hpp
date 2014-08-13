@@ -60,8 +60,9 @@ public:
     /**
      * Store a value. value_size is the requested size for the value.
      * The provided write() function must write exactly value_size bytes.
+     * Returns the position of the inserted value in the slab_allocator.
      */
-    void store(const HashType& key,
+    position_type store(const HashType& key,
         const size_t value_size, write_function write);
 
     /**

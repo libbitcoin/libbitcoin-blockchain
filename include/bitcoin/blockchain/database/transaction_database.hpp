@@ -24,39 +24,50 @@
 #include <bitcoin/primitives.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
+#include <bitcoin/blockchain/database/record_allocator.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
+/**
+ * transaction_database
+ */
 class transaction_database
 {
 public:
     typedef std::function<void (
         const std::error_code&, const transaction_type&)> fetch_handler;
 
-    BCB_API transaction_database(const std::string& filename);
+    BCB_API transaction_database(
+        const std::string& map_filename, const std::string& records_filename);
 
     BCB_API void initialize_new();
     BCB_API void start();
 
-    BCB_API void fetch(const position_type position,
+    BCB_API void fetch(const index_type index,
         fetch_handler handle_fetch) const;
 
     BCB_API void fetch(const hash_digest& hash,
         fetch_handler handle_fetch) const;
 
-    BCB_API void store(const transaction_type& tx);
+    BCB_API index_type store(const transaction_type& tx);
 
     BCB_API void sync();
 
 private:
     typedef htdb_slab<hash_digest> map_type;
 
-    mmfile file_;
+    index_type write_position(const position_type position);
+    position_type read_position(const index_type index) const;
+
+    mmfile map_file_;
     htdb_slab_header header_;
     slab_allocator allocator_;
     map_type map_;
+
+    mmfile records_file_;
+    record_allocator records_;
 };
 
     } // namespace chain

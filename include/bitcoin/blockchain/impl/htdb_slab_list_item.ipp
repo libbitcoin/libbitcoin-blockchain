@@ -34,6 +34,9 @@ template <typename HashType>
 class htdb_slab_list_item
 {
 public:
+    static constexpr size_t hash_size = std::tuple_size<HashType>::value;
+    static constexpr position_type value_begin = hash_size + 8;
+
     htdb_slab_list_item(
         slab_allocator& allocator, const position_type position=0);
 
@@ -49,8 +52,6 @@ public:
     position_type next_position() const;
 
 private:
-    static constexpr size_t hash_size = std::tuple_size<HashType>::value;
-
     slab_allocator& allocator_;
     slab_type raw_data_;
 };
@@ -94,7 +95,6 @@ template <typename HashType>
 slab_type htdb_slab_list_item<HashType>::data() const
 {
     // Value data is at the end.
-    constexpr position_type value_begin = hash_size + 8;
     return raw_data_ + value_begin;
 }
 

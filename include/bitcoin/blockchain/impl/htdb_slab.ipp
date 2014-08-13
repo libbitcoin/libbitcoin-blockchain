@@ -36,7 +36,7 @@ htdb_slab<HashType>::htdb_slab(
 }
 
 template <typename HashType>
-void htdb_slab<HashType>::store(const HashType& key,
+position_type htdb_slab<HashType>::store(const HashType& key,
     const size_t value_size, write_function write)
 {
     // Store current bucket value.
@@ -47,6 +47,8 @@ void htdb_slab<HashType>::store(const HashType& key,
     write(item.data());
     // Link record to header.
     link(key, new_begin);
+    // Return position,
+    return new_begin + item.value_begin;
 }
 
 template <typename HashType>
