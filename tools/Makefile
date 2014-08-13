@@ -1,5 +1,5 @@
 CXXFLAGS=$(shell pkg-config --cflags libbitcoin_blockchain) -ggdb
-LIBS=$(shell pkg-config --libs libbitcoin_blockchain)
+LIBS=$(shell pkg-config --libs libbitcoin_blockchain) -lleveldb
 
 default: all
 
