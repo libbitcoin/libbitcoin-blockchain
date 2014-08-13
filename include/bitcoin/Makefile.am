@@ -33,5 +33,6 @@ bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/htdb_record.hpp \
     blockchain/database/multimap_records.hpp \
     blockchain/database/sizes.hpp \
-    blockchain/database/htdb_slab.hpp
+    blockchain/database/htdb_slab.hpp \
+    blockchain/database/transaction_database.hpp
 

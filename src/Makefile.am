@@ -14,6 +14,7 @@ libbitcoin_blockchain_la_SOURCES = \
     database/linked_records.cpp \
     database/multimap_records.cpp \
     database/utility.cpp \
+    database/transaction_database.cpp \
 	impl/blockchain_impl.cpp \
 	impl/simple_chain_impl.cpp \
 	impl/blockchain_common.cpp \
