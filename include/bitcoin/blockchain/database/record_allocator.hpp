@@ -68,9 +68,9 @@ public:
     BCB_API record_type get(index_type index) const;
 
     /**
-     * The current end index (or size).
+     * The size of this container (number of records).
      */
-    BCB_API index_type end() const;
+    BCB_API index_type size() const;
 
 private:
     /// Ensure bytes for a new record are available (record_size_).

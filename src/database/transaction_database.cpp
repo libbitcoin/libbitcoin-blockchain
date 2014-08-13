@@ -71,7 +71,7 @@ transaction_type deserialize(const Iterator first)
 void transaction_database::fetch(const index_type index,
     fetch_handler handle_fetch) const
 {
-    if (index >= records_.end())
+    if (index >= records_.size())
     {
         handle_fetch(error::not_found, transaction_type());
         return;

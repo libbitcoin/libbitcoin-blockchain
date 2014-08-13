@@ -73,7 +73,7 @@ record_type record_allocator::get(index_type index) const
     return file_.data() + sector_start_ + record_position(index);
 }
 
-index_type record_allocator::end() const
+index_type record_allocator::size() const
 {
     return end_;
 }

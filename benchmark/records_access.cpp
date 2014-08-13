@@ -32,18 +32,18 @@ void read_data(const size_t iterations)
 
     std::random_device device;
     std::default_random_engine engine(device());
-    std::uniform_int_distribution<> dist(0, alloc.end() - 1);
+    std::uniform_int_distribution<> dist(0, alloc.size() - 1);
 
     std::ostringstream oss;
-    oss << "total = " << alloc.end() << " record_size = " << record_size
+    oss << "total = " << alloc.size() << " record_size = " << record_size
         << " iterations = " << iterations << " |  ";
     timed_section t("ht.get()", oss.str());
 
     // Iterate sequentially...
     /*
-    for (size_t i = 0; i < iterations / alloc.end(); ++i)
+    for (size_t i = 0; i < iterations / alloc.size(); ++i)
     {
-        for (size_t j = 0; j < alloc.end(); ++j)
+        for (size_t j = 0; j < alloc.size(); ++j)
             alloc.get(j)[0];
     }
     */

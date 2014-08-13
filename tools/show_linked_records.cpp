@@ -67,7 +67,7 @@ int main(int argc, char** argv)
     recs.start();
     linked_records lrs(recs);
     chain_list chains;
-    for (index_type rec_idx = 0; rec_idx < recs.end(); ++rec_idx)
+    for (index_type rec_idx = 0; rec_idx < recs.size(); ++rec_idx)
     {
         BITCOIN_ASSERT(record_size >= 4);
         const record_type rec = recs.get(rec_idx);

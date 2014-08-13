@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     }
     record_allocator recs(file, offset, record_size);
     recs.start();
-    for (size_t i = 0; i < recs.end(); ++i)
+    for (size_t i = 0; i < recs.size(); ++i)
     {
         record_type rec = recs.get(i);
         data_chunk data(rec, rec + record_size);
