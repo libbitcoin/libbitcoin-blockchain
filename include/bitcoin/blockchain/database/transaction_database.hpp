@@ -31,7 +31,11 @@ namespace libbitcoin {
     namespace chain {
 
 /**
- * transaction_database
+ * transaction_database enables lookups of transactions by hash.
+ * An alternative and faster method is lookup from a unique index
+ * that is assigned upon storage.
+ * This is so we can quickly reconstruct blocks given a list of tx indexes
+ * belonging to that block. These are stored with the block.
  */
 class transaction_database
 {
@@ -42,30 +46,56 @@ public:
     BCB_API transaction_database(
         const std::string& map_filename, const std::string& records_filename);
 
+    /**
+     * Initialize a new transaction database.
+     */
     BCB_API void initialize_new();
+
+    /**
+     * You must call start() before using the database.
+     */
     BCB_API void start();
 
+    /**
+     * Fetch transaction from its unique index. Does an intermediate
+     * lookup in another table to find its position on disk.
+     */
     BCB_API void fetch(const index_type index,
         fetch_handler handle_fetch) const;
 
+    /**
+     * Fetch transaction from its hash.
+     */
     BCB_API void fetch(const hash_digest& hash,
         fetch_handler handle_fetch) const;
 
+    /**
+     * Store a transaction in the database. Returns a unique index
+     * which can be used to reference the transaction.
+     */
     BCB_API index_type store(const transaction_type& tx);
 
+    /**
+     * Synchronise storage with disk so things are consistent.
+     * Should be done at the end of every block write.
+     */
     BCB_API void sync();
 
 private:
     typedef htdb_slab<hash_digest> map_type;
 
+    /// Write position of tx and return assigned index
     index_type write_position(const position_type position);
+    /// Use intermediate records table to find tx position.
     position_type read_position(const index_type index) const;
 
+    /// The hashtable used for looking up txs by hash.
     mmfile map_file_;
     htdb_slab_header header_;
     slab_allocator allocator_;
     map_type map_;
 
+    /// Record table used for looking up tx position from a unique index.
     mmfile records_file_;
     record_allocator records_;
 };
