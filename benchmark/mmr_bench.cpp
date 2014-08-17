@@ -136,7 +136,8 @@ void read_data()
     timed_section t("multimap.lookup()", oss.str());
     for (const hash_type& key: keys)
     {
-        for (const index_type idx: multimap.lookup(key))
+        multimap_iterable container(lrs, multimap.lookup(key));
+        for (const index_type idx: container)
         {
             const record_type rec = lrs.get(idx);
         }

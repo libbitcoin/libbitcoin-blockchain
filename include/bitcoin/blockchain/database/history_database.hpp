@@ -75,7 +75,7 @@ public:
      */
     BCB_API void fetch(
         const short_hash& key, fetch_handler handle_fetch,
-        const size_t limit=0, const index_type start=0);
+        const size_t limit=0, index_type start=0);
 
     /**
      * Delete the last row that was added to key.

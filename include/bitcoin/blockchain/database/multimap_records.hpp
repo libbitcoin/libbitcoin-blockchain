@@ -73,10 +73,10 @@ BCB_API bool operator!=(
  * Result of a multimap database query. This is a container wrapper
  * allowing the values to be iteratable.
  */
-class multimap_lookup_result
+class multimap_iterable
 {
 public:
-    BCB_API multimap_lookup_result(
+    BCB_API multimap_iterable(
         linked_records& linked_rows, index_type begin_index);
 
     BCB_API multimap_records_iterator begin() const;
@@ -108,7 +108,7 @@ public:
     /**
      * Lookup a key, returning an iterable result with multiple values.
      */
-    multimap_lookup_result lookup(const HashType& key) const;
+    index_type lookup(const HashType& key) const;
 
     /**
      * Add a new row for a key. If the key doesn't exist, it will be
@@ -125,8 +125,7 @@ public:
 
 private:
     /// Add new value to existing key.
-    void add_to_list(record_type start_info,
-        const HashType& key, write_function write);
+    void add_to_list(record_type start_info, write_function write);
     /// Create new key with a single value.
     void create_new(const HashType& key, write_function write);
 

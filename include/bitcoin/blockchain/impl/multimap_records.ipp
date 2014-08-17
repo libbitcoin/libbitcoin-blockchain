@@ -31,14 +31,13 @@ multimap_records<HashType>::multimap_records(
 }
 
 template <typename HashType>
-multimap_lookup_result multimap_records<HashType>::lookup(
-    const HashType& key) const
+index_type multimap_records<HashType>::lookup(const HashType& key) const
 {
     const record_type start_info = map_.get(key);
     if (!start_info)
-        return multimap_lookup_result(linked_rows_, linked_rows_.empty);
+        return linked_rows_.empty;
     const index_type first = from_little_endian<index_type>(start_info);
-    return multimap_lookup_result(linked_rows_, first);
+    return first;
 }
 
 template <typename HashType>
@@ -51,7 +50,7 @@ void multimap_records<HashType>::add_row(
         create_new(key, write);
         return;
     }
-    add_to_list(start_info, key, write);
+    add_to_list(start_info, write);
 }
 
 template <typename HashType>
@@ -74,8 +73,7 @@ void multimap_records<HashType>::delete_last_row(const HashType& key)
 
 template <typename HashType>
 void multimap_records<HashType>::add_to_list(
-    record_type start_info,
-    const HashType& key, write_function write)
+    record_type start_info, write_function write)
 {
     const index_type old_begin = from_little_endian<index_type>(start_info);
     const index_type new_begin = linked_rows_.insert(old_begin);

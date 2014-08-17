@@ -82,7 +82,7 @@ void history_database::add_row(const short_hash& key, const history_row& row)
 
 void history_database::fetch(
     const short_hash& key, fetch_handler handle_fetch,
-    const size_t limit, const index_type start)
+    const size_t limit, index_type start)
 {
     history_list history;
     auto read_row = [&history](const uint8_t* data)
@@ -98,7 +98,9 @@ void history_database::fetch(
             deserial.read_4_bytes()};
     };
     index_type stop = 0;
-    for (const index_type index: map_.lookup(key))
+    if (!start)
+        start = map_.lookup(key);
+    for (const index_type index: multimap_iterable(linked_rows_, start))
     {
         if (limit && history.size() >= limit)
         {

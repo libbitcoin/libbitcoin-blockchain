@@ -37,17 +37,17 @@ index_type multimap_records_iterator::operator*() const
     return index_;
 }
 
-multimap_lookup_result::multimap_lookup_result(
+multimap_iterable::multimap_iterable(
     linked_records& linked_rows, index_type begin_index)
   : linked_rows_(linked_rows), begin_index_(begin_index)
 {
 }
 
-multimap_records_iterator multimap_lookup_result::begin() const
+multimap_records_iterator multimap_iterable::begin() const
 {
     return multimap_records_iterator(linked_rows_, begin_index_);
 }
-multimap_records_iterator multimap_lookup_result::end() const
+multimap_records_iterator multimap_iterable::end() const
 {
     return multimap_records_iterator(linked_rows_, linked_rows_.empty);
 }

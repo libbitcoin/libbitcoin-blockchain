@@ -45,7 +45,8 @@ int mmr_lookup(
     linked_records lrs(recs);
 
     multimap_records<hash_type> multimap(ht, lrs);
-    for (const index_type index: multimap.lookup(key))
+    multimap_iterable container(lrs, multimap.lookup(key));
+    for (const index_type index: container)
     {
         std::cout << "Index: " << index << std::endl;
         const record_type record = recs.get(index) + linked_record_offset;
