@@ -10,12 +10,12 @@ void show_usage()
         "MAP_FILENAME ROWS_FILENAME" << std::endl;
 }
 
-template <size_t N>
+template <size_t KeySize>
 int mmr_lookup(
     const data_chunk& key_data, const size_t value_size,
     const std::string& map_filename, const std::string& rows_filename)
 {
-    typedef byte_array<N> hash_type;
+    typedef byte_array<KeySize> hash_type;
     hash_type key;
     BITCOIN_ASSERT(key.size() == key_data.size());
     std::copy(key_data.begin(), key_data.end(), key.begin());
@@ -26,7 +26,8 @@ int mmr_lookup(
     htdb_record_header header(ht_file, 0);
     header.start();
 
-    const size_t record_size = record_size_htdb<hash_type>(value_size);
+    const size_t record_size = map_record_size_multimap<hash_type>();
+    BITCOIN_ASSERT(record_size == KeySize + 4 + 4);
     const size_t header_size = htdb_record_header_size(header.size());
     const position_type records_start = header_size;
 

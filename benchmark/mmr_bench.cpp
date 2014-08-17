@@ -37,7 +37,8 @@ void write_data()
     header.start();
 
     typedef byte_array<key_size> hash_type;
-    const size_t record_size = record_size_htdb<hash_type>(value_size);
+    const size_t record_size = map_record_size_multimap<hash_type>();
+    BITCOIN_ASSERT(record_size == key_size + 4 + 4);
     const position_type records_start = header_size;
 
     record_allocator alloc(ht_file, records_start, record_size);
@@ -92,7 +93,7 @@ void read_data()
     const size_t header_size = htdb_record_header_size(header.size());
 
     typedef byte_array<key_size> hash_type;
-    const size_t record_size = record_size_htdb<hash_type>(value_size);
+    const size_t record_size = map_record_size_multimap<hash_type>();
     const position_type records_start = header_size;
 
     record_allocator alloc(ht_file, records_start, record_size);

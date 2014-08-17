@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -49,6 +50,12 @@ template <typename HashType>
 constexpr size_t record_size_htdb(size_t value_size)
 {
     return std::tuple_size<HashType>::value + 4 + value_size;
+}
+
+template <typename HashType>
+constexpr size_t map_record_size_multimap()
+{
+    return record_size_htdb<HashType>(sizeof(index_type));
 }
 
     } // namespace chain

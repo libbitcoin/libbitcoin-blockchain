@@ -27,7 +27,8 @@ void mmr_create(const size_t value_size,
     header.start();
 
     typedef byte_array<KeySize> hash_type;
-    const size_t record_size = record_size_htdb<hash_type>(value_size);
+    const size_t record_size = map_record_size_multimap<hash_type>();
+    BITCOIN_ASSERT(record_size == KeySize + 4 + 4);
     const position_type records_start = header_size;
 
     record_allocator alloc(ht_file, records_start, record_size);
