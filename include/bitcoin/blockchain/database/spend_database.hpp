@@ -86,7 +86,7 @@ public:
 private:
     typedef htdb_record<hash_digest> map_type;
 
-    /// The hashtable used for looking up txs by hash.
+    /// The hashtable used for looking up inpoint spends by outpoint.
     mmfile file_;
     htdb_record_header header_;
     record_allocator allocator_;
