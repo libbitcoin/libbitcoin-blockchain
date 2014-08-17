@@ -59,12 +59,30 @@ public:
     /**
      * Fetch transaction from its unique index. Does an intermediate
      * lookup in another table to find its position on disk.
+     *
+     * @param[in]   index           Unique transaction identifier.
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void handle_fetch(
+     *      const std::error_code& ec,  // Status of operation
+     *      const transaction_type& tx  // Transaction
+     *  );
+     * @endcode
      */
     BCB_API void fetch(const index_type index,
         fetch_handler handle_fetch) const;
 
     /**
      * Fetch transaction from its hash.
+     *
+     * @param[in]   hash            Transaction's hash
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void handle_fetch(
+     *      const std::error_code& ec,  // Status of operation
+     *      const transaction_type& tx  // Transaction
+     *  );
+     * @endcode
      */
     BCB_API void fetch(const hash_digest& hash,
         fetch_handler handle_fetch) const;
