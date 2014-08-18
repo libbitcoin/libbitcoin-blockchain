@@ -58,7 +58,27 @@ public:
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_row(const short_hash& key, const history_row& row);
+    BCB_API void add_row(
+        const short_hash& key, const output_point& outpoint,
+        const uint32_t output_height, const uint64_t value);
+
+    /**
+     * Add a spend to an existing row.
+     */
+    BCB_API void add_spend(
+        const short_hash& key, const output_point& previous,
+        const input_point& spend, const size_t spend_height);
+
+    /**
+     * Delete a spend.
+     */
+    BCB_API void delete_spend(
+        const short_hash& key, const input_point& spend);
+
+    /**
+     * Delete the last row that was added to key.
+     */
+    BCB_API void delete_last_row(const short_hash& key);
 
     /**
      * Fetches the output points, output values, corresponding input point
@@ -76,11 +96,6 @@ public:
     BCB_API void fetch(
         const short_hash& key, fetch_handler handle_fetch,
         const size_t limit=0, index_type start=0);
-
-    /**
-     * Delete the last row that was added to key.
-     */
-    BCB_API void delete_last_row(const short_hash& key);
 
 private:
     typedef htdb_record<short_hash> map_type;

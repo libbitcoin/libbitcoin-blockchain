@@ -33,6 +33,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/history_scan_database.hpp>
+#include <bitcoin/blockchain/database/history_database.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/blockchain_impl.hpp>

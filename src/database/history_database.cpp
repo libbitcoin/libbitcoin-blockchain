@@ -64,20 +64,74 @@ void history_database::start()
     rows_.start();
 }
 
-void history_database::add_row(const short_hash& key, const history_row& row)
+constexpr size_t outpoint_size = hash_size + 4;
+constexpr position_type spend_offset = outpoint_size + 4 + 8;
+constexpr position_type spend_height_offset = spend_offset + outpoint_size;
+
+void history_database::add_row(
+    const short_hash& key, const output_point& outpoint,
+    const uint32_t output_height, const uint64_t value)
 {
-    auto write = [&row](uint8_t* data)
+    auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        serial.write_hash(row.output.hash);
-        serial.write_4_bytes(row.output.index);
-        serial.write_4_bytes(row.output_height);
-        serial.write_8_bytes(row.value);
-        serial.write_hash(row.spend.hash);
-        serial.write_4_bytes(row.spend.index);
-        serial.write_4_bytes(row.spend_height);
+        serial.write_hash(outpoint.hash);
+        serial.write_4_bytes(outpoint.index);
+        serial.write_4_bytes(output_height);
+        serial.write_8_bytes(value);
+        // Skip writing spend since it doesn't exist yet.
+        serial.set_iterator(serial.iterator() + outpoint_size);
+        serial.write_4_bytes(0);
     };
     map_.add_row(key, write);
+}
+
+void history_database::add_spend(
+    const short_hash& key, const output_point& previous,
+    const input_point& spend, const size_t spend_height)
+{
+    const index_type start = map_.lookup(key);
+    for (const index_type index: multimap_iterable(linked_rows_, start))
+    {
+        const record_type data = linked_rows_.get(index);
+        auto deserial = make_deserializer_unsafe(data);
+        const output_point outpoint{
+            deserial.read_hash(),
+            deserial.read_4_bytes()};
+        if (outpoint != previous)
+            continue;
+        auto serial = make_serializer(data + spend_offset);
+        serial.write_hash(spend.hash);
+        serial.write_4_bytes(spend.index);
+        serial.write_4_bytes(spend_height);
+        return;
+    }
+    BITCOIN_ASSERT(false);
+}
+
+void history_database::delete_spend(
+    const short_hash& key, const input_point& spend)
+{
+    const index_type start = map_.lookup(key);
+    for (const index_type index: multimap_iterable(linked_rows_, start))
+    {
+        const record_type data = linked_rows_.get(index);
+        auto deserial = make_deserializer_unsafe(data + spend_offset);
+        const input_point inpoint{
+            deserial.read_hash(),
+            deserial.read_4_bytes()};
+        if (inpoint != spend)
+            continue;
+        auto serial = make_serializer(data + spend_height_offset);
+        serial.write_4_bytes(0);
+        return;
+    }
+    BITCOIN_ASSERT(false);
+}
+
+void history_database::delete_last_row(const short_hash& key)
+{
+    map_.delete_last_row(key);
 }
 
 void history_database::fetch(
@@ -111,11 +165,6 @@ void history_database::fetch(
         history.emplace_back(read_row(data));
     }
     handle_fetch(std::error_code(), history, stop);
-}
-
-void history_database::delete_last_row(const short_hash& key)
-{
-    map_.delete_last_row(key);
 }
 
     } // namespace chain
