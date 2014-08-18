@@ -19,18 +19,18 @@
  */
 #include <bitcoin/blockchain/database/spend_database.hpp>
 
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 10000;
-constexpr size_t header_size = htdb_record_header_size(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_records_size;
+constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
+constexpr size_t initial_map_file_size = header_size + min_records_fsize;
 
 constexpr position_type alloc_offset = header_size;
 constexpr size_t value_size = hash_size + 4;
-constexpr size_t record_size = record_size_htdb<hash_digest>(value_size);
+constexpr size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 
 hash_digest tweak(hash_digest hash, const uint32_t index)
 {

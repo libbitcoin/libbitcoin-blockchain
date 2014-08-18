@@ -27,8 +27,8 @@
 namespace libbitcoin {
     namespace chain {
 
-constexpr size_t min_slab_size = 8;
-constexpr size_t min_records_size = 4;
+constexpr size_t min_slab_fsize = 8;
+constexpr size_t min_records_fsize = 4;
 
 /**
  * To calculate the record_size needed for the linked_records type, use:
@@ -36,26 +36,26 @@ constexpr size_t min_records_size = 4;
  */
 constexpr size_t linked_record_offset = 4;
 
-constexpr size_t htdb_slab_header_size(size_t buckets)
+constexpr size_t htdb_slab_header_fsize(size_t buckets)
 {
     return 4 + 8 * buckets;
 }
 
-constexpr size_t htdb_record_header_size(size_t buckets)
+constexpr size_t htdb_record_header_fsize(size_t buckets)
 {
     return 4 + 4 * buckets;
 }
 
 template <typename HashType>
-constexpr size_t record_size_htdb(size_t value_size)
+constexpr size_t record_fsize_htdb(size_t value_size)
 {
     return std::tuple_size<HashType>::value + 4 + value_size;
 }
 
 template <typename HashType>
-constexpr size_t map_record_size_multimap()
+constexpr size_t map_record_fsize_multimap()
 {
-    return record_size_htdb<HashType>(sizeof(index_type));
+    return record_fsize_htdb<HashType>(sizeof(index_type));
 }
 
     } // namespace chain

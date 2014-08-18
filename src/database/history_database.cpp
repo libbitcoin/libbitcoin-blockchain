@@ -19,20 +19,20 @@
  */
 #include <bitcoin/blockchain/database/history_database.hpp>
 
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 10000;
-constexpr size_t header_size = htdb_record_header_size(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_records_size;
+constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
+constexpr size_t initial_map_file_size = header_size + min_records_fsize;
 
 constexpr position_type alloc_offset = header_size;
-constexpr size_t alloc_record_size = map_record_size_multimap<short_hash>();
+constexpr size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
 
 constexpr size_t value_size = 36 + 4 + 8 + 36 + 4;
-constexpr size_t row_record_size = record_size_htdb<hash_digest>(value_size);
+constexpr size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
 history_database::history_database(
     const std::string& map_filename, const std::string& rows_filename)
@@ -53,7 +53,7 @@ void history_database::initialize_new()
     header_.initialize_new(number_buckets);
     allocator_.initialize_new();
 
-    rows_file_.resize(min_records_size);
+    rows_file_.resize(min_records_fsize);
     rows_.initialize_new();
 }
 

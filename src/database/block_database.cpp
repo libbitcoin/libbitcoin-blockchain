@@ -21,14 +21,14 @@
 
 #include <bitcoin/satoshi_serialize.hpp>
 #include <bitcoin/block.hpp>
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 10000;
-constexpr size_t header_size = htdb_slab_header_size(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_slab_size;
+constexpr size_t header_size = htdb_slab_header_fsize(number_buckets);
+constexpr size_t initial_map_file_size = header_size + min_slab_fsize;
 
 constexpr position_type alloc_offset = header_size;
 
@@ -87,7 +87,7 @@ void block_database::initialize_new()
     header_.initialize_new(number_buckets);
     allocator_.initialize_new();
 
-    index_file_.resize(min_records_size);
+    index_file_.resize(min_records_fsize);
     index_.initialize_new();
 }
 
