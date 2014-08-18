@@ -30,6 +30,40 @@
 namespace libbitcoin {
     namespace chain {
 
+struct transaction_metainfo
+{
+    const size_t height, index;
+};
+
+class transaction_result
+{
+public:
+    transaction_result(const slab_type slab);
+
+    /**
+     * Test whether the result exists, return false otherwise.
+     */
+    BCB_API operator bool() const;
+
+    /**
+     * Height of the block which includes this transaction.
+     */
+    BCB_API size_t height() const;
+
+    /**
+     * Index of transaction within a block.
+     */
+    BCB_API size_t index() const;
+
+    /**
+     * Actual transaction itself.
+     */
+    BCB_API transaction_type transaction() const;
+
+private:
+    const slab_type slab_;
+};
+
 /**
  * transaction_database enables lookups of transactions by hash.
  * An alternative and faster method is lookup from a unique index
@@ -40,11 +74,8 @@ namespace libbitcoin {
 class transaction_database
 {
 public:
-    typedef std::function<void (
-        const std::error_code&, const transaction_type&)> fetch_handler;
-
     BCB_API transaction_database(
-        const std::string& map_filename, const std::string& records_filename);
+        const std::string& map_filename, const std::string& index_filename);
 
     /**
      * Initialize a new transaction database.
@@ -59,39 +90,20 @@ public:
     /**
      * Fetch transaction from its unique index. Does an intermediate
      * lookup in another table to find its position on disk.
-     *
-     * @param[in]   index           Unique transaction identifier.
-     * @param[in]   handle_fetch    Completion handler for fetch operation.
-     * @code
-     *  void handle_fetch(
-     *      const std::error_code& ec,  // Status of operation
-     *      const transaction_type& tx  // Transaction
-     *  );
-     * @endcode
      */
-    BCB_API void fetch(const index_type index,
-        fetch_handler handle_fetch) const;
+    BCB_API transaction_result get(const index_type index) const;
 
     /**
      * Fetch transaction from its hash.
-     *
-     * @param[in]   hash            Transaction's hash
-     * @param[in]   handle_fetch    Completion handler for fetch operation.
-     * @code
-     *  void handle_fetch(
-     *      const std::error_code& ec,  // Status of operation
-     *      const transaction_type& tx  // Transaction
-     *  );
-     * @endcode
      */
-    BCB_API void fetch(const hash_digest& hash,
-        fetch_handler handle_fetch) const;
+    BCB_API transaction_result get(const hash_digest& hash) const;
 
     /**
      * Store a transaction in the database. Returns a unique index
      * which can be used to reference the transaction.
      */
-    BCB_API index_type store(const transaction_type& tx);
+    BCB_API index_type store(
+        const transaction_metainfo& info, const transaction_type& tx);
 
     /**
      * Synchronise storage with disk so things are consistent.
@@ -114,8 +126,8 @@ private:
     map_type map_;
 
     /// Record table used for looking up tx position from a unique index.
-    mmfile records_file_;
-    record_allocator records_;
+    mmfile index_file_;
+    record_allocator index_;
 };
 
     } // namespace chain

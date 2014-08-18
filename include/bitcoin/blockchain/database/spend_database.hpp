@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_DATABASE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_DATABASE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
+#define LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
 
 #include <bitcoin/error.hpp>
 #include <bitcoin/primitives.hpp>
@@ -29,6 +29,30 @@
 namespace libbitcoin {
     namespace chain {
 
+class spend_result
+{
+public:
+    spend_result(const record_type record);
+
+    /**
+     * Test whether the result exists, return false otherwise.
+     */
+    BCB_API operator bool() const;
+
+    /**
+     * Transaction hash for spend.
+     */
+    BCB_API hash_digest hash() const;
+
+    /**
+     * Index of input within transaction for spend.
+     */
+    BCB_API uint32_t index() const;
+
+private:
+    const record_type record_;
+};
+
 /**
  * spend_database enables you to lookup the spend of an output point,
  * returning the input point. It is a simple map.
@@ -36,9 +60,6 @@ namespace libbitcoin {
 class spend_database
 {
 public:
-    typedef std::function<void (
-        const std::error_code&, const input_point&)> fetch_handler;
-
     BCB_API spend_database(const std::string& filename);
 
     /**
@@ -52,19 +73,9 @@ public:
     BCB_API void start();
 
     /**
-     * Fetch input spend of an output point.
-     *
-     * @param[in]   outpoint        Representation of an output.
-     * @param[in]   handle_fetch    Completion handler for fetch operation.
-     * @code
-     *  void handle_fetch(
-     *      const std::error_code& ec,      // Status of operation
-     *      const input_point& inpoint      // Spend of output
-     *  );
-     * @endcode
+     * Get input spend of an output point.
      */
-    BCB_API void fetch(const output_point& outpoint,
-        fetch_handler handle_fetch) const;
+    BCB_API spend_result get(const output_point& outpoint) const;
 
     /**
      * Store a spend in the database.

@@ -72,6 +72,11 @@ public:
      */
     BCB_API index_type size() const;
 
+    /**
+     * Readjust the size of this container. Need to call sync() after.
+     */
+    BCB_API void resize(const index_type size);
+
 private:
     /// Ensure bytes for a new record are available (record_size_).
     void reserve();

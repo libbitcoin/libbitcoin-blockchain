@@ -32,34 +32,6 @@ constexpr size_t initial_map_file_size = header_size + min_slab_size;
 
 constexpr position_type alloc_offset = header_size;
 
-transaction_database::transaction_database(
-    const std::string& map_filename, const std::string& records_filename)
-  : map_file_(map_filename), header_(map_file_, 0),
-    allocator_(map_file_, alloc_offset), map_(header_, allocator_),
-    records_file_(records_filename),
-    records_(records_file_, 0, sizeof(position_type))
-{
-    BITCOIN_ASSERT(map_file_.data());
-    BITCOIN_ASSERT(records_file_.data());
-}
-
-void transaction_database::initialize_new()
-{
-    map_file_.resize(initial_map_file_size);
-    header_.initialize_new(number_buckets);
-    allocator_.initialize_new();
-
-    records_file_.resize(min_records_size);
-    records_.initialize_new();
-}
-
-void transaction_database::start()
-{
-    header_.start();
-    allocator_.start();
-    records_.start();
-}
-
 template <typename Iterator>
 transaction_type deserialize(const Iterator first)
 {
@@ -68,56 +40,105 @@ transaction_type deserialize(const Iterator first)
     return tx;
 }
 
-void transaction_database::fetch(const index_type index,
-    fetch_handler handle_fetch) const
+transaction_result::transaction_result(const slab_type slab)
+  : slab_(slab)
 {
-    if (index >= records_.size())
-    {
-        handle_fetch(error::not_found, transaction_type());
-        return;
-    }
+}
+
+transaction_result::operator bool() const
+{
+    return slab_ != nullptr;
+}
+
+size_t transaction_result::height() const
+{
+    BITCOIN_ASSERT(slab_);
+    return from_little_endian<uint32_t>(slab_);
+}
+
+size_t transaction_result::index() const
+{
+    BITCOIN_ASSERT(slab_);
+    return from_little_endian<uint32_t>(slab_ + 4);
+}
+
+transaction_type transaction_result::transaction() const
+{
+    BITCOIN_ASSERT(slab_);
+    return deserialize(slab_ + 8);
+}
+
+transaction_database::transaction_database(
+    const std::string& map_filename, const std::string& index_filename)
+  : map_file_(map_filename), header_(map_file_, 0),
+    allocator_(map_file_, alloc_offset), map_(header_, allocator_),
+    index_file_(index_filename),
+    index_(index_file_, 0, sizeof(position_type))
+{
+    BITCOIN_ASSERT(map_file_.data());
+    BITCOIN_ASSERT(index_file_.data());
+}
+
+void transaction_database::initialize_new()
+{
+    map_file_.resize(initial_map_file_size);
+    header_.initialize_new(number_buckets);
+    allocator_.initialize_new();
+
+    index_file_.resize(min_records_size);
+    index_.initialize_new();
+}
+
+void transaction_database::start()
+{
+    header_.start();
+    allocator_.start();
+    index_.start();
+}
+
+transaction_result transaction_database::get(const index_type index) const
+{
+    if (index >= index_.size())
+        return transaction_result(nullptr);
     const position_type position = read_position(index);
     const slab_type slab = allocator_.get(position);
-    const transaction_type tx = deserialize(slab);
-    // Need some protection against user error here...
-    // Might need a separate record_allocator to look actual position before.
-    handle_fetch(std::error_code(), tx);
+    return transaction_result(slab);
 }
 
-void transaction_database::fetch(const hash_digest& hash,
-    fetch_handler handle_fetch) const
+transaction_result transaction_database::get(const hash_digest& hash) const
 {
     const slab_type slab = map_.get(hash);
-    if (!slab)
-    {
-        handle_fetch(error::not_found, transaction_type());
-        return;
-    }
-    const transaction_type tx = deserialize(slab);
-    handle_fetch(std::error_code(), tx);
+    return transaction_result(slab);
 }
 
-index_type transaction_database::store(const transaction_type& tx)
+index_type transaction_database::store(
+    const transaction_metainfo& info, const transaction_type& tx)
 {
+    // Write block data.
     const hash_digest key = hash_transaction(tx);
-    const size_t value_size = satoshi_raw_size(tx);
-    auto write = [&tx](uint8_t* data)
+    const size_t value_size = 4 + 4 + satoshi_raw_size(tx);
+    auto write = [&info, &tx](uint8_t* data)
     {
-        satoshi_save(tx, data);
+        auto serial = make_serializer(data);
+        serial.write_4_bytes(info.height);
+        serial.write_4_bytes(info.index);
+        satoshi_save(tx, serial.iterator());
     };
-    position_type position = map_.store(key, value_size, write);
+    const position_type position = map_.store(key, value_size, write);
+    // Write index -> position mapping.
     return write_position(position);
 }
 
 void transaction_database::sync()
 {
     allocator_.sync();
+    index_.sync();
 }
 
 index_type transaction_database::write_position(const position_type position)
 {
-    const index_type index = records_.allocate();
-    record_type record = records_.get(index);
+    const index_type index = index_.allocate();
+    record_type record = index_.get(index);
     auto serial = make_serializer(record);
     serial.write_8_bytes(position);
     return index;
@@ -125,7 +146,7 @@ index_type transaction_database::write_position(const position_type position)
 
 position_type transaction_database::read_position(const index_type index) const
 {
-    record_type record = records_.get(index);
+    record_type record = index_.get(index);
     return from_little_endian<position_type>(record);
 }
 

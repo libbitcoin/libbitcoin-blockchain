@@ -39,6 +39,30 @@ hash_digest tweak(hash_digest hash, const uint32_t index)
     return hash;
 }
 
+spend_result::spend_result(const record_type record)
+  : record_(record)
+{
+}
+
+spend_result::operator bool() const
+{
+    return record_ != nullptr;
+}
+
+hash_digest spend_result::hash() const
+{
+    BITCOIN_ASSERT(record_);
+    hash_digest result;
+    std::copy(record_, record_ + hash_size, result.begin());
+    return result;
+}
+
+uint32_t spend_result::index() const
+{
+    BITCOIN_ASSERT(record_);
+    return from_little_endian<uint32_t>(record_ + hash_size);
+}
+
 spend_database::spend_database(const std::string& filename)
   : file_(filename), header_(file_, 0),
     allocator_(file_, alloc_offset, record_size),
@@ -60,21 +84,11 @@ void spend_database::start()
     allocator_.start();
 }
 
-void spend_database::fetch(const output_point& outpoint,
-    fetch_handler handle_fetch) const
+spend_result spend_database::get(const output_point& outpoint) const
 {
     const hash_digest key = tweak(outpoint.hash, outpoint.index);
     const record_type record = map_.get(key);
-    if (!record)
-    {
-        handle_fetch(error::not_found, input_point());
-        return;
-    }
-    input_point spend;
-    auto deserial = make_deserializer_unsafe(record);
-    spend.hash = deserial.read_hash();
-    spend.index = deserial.read_4_bytes();
-    handle_fetch(std::error_code(), spend);
+    return spend_result(record);
 }
 
 void spend_database::store(
@@ -84,7 +98,7 @@ void spend_database::store(
     auto write = [&spend](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        serial.write_hash(spend.hash);
+        serial.write_data(spend.hash);
         serial.write_4_bytes(spend.index);
     };
     map_.store(key, write);

@@ -36,5 +36,6 @@ bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/htdb_slab.hpp \
     blockchain/database/transaction_database.hpp \
     blockchain/database/spend_database.hpp \
-    blockchain/database/history_database.hpp
+    blockchain/database/history_database.hpp \
+    blockchain/database/block_database.hpp
 

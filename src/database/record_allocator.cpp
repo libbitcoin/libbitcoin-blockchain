@@ -78,6 +78,11 @@ index_type record_allocator::size() const
     return end_;
 }
 
+void record_allocator::resize(const index_type size)
+{
+    end_ = size;
+}
+
 void record_allocator::reserve()
 {
     const size_t required_size =
