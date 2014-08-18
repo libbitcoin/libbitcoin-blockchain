@@ -167,6 +167,12 @@ void history_database::fetch(
     handle_fetch(std::error_code(), history, stop);
 }
 
+void history_database::sync()
+{
+    allocator_.sync();
+    rows_.sync();
+}
+
     } // namespace chain
 } // namespace libbitcoin
 

@@ -182,6 +182,7 @@ int main(int argc, char** argv)
             return -1;
         db.start();
         db.add_row(key, outpoint, output_height, value);
+        db.sync();
         return 0;
     }
     else if (command == "add_spend")
@@ -236,6 +237,7 @@ int main(int argc, char** argv)
             return -1;
         db.start();
         db.delete_last_row(key);
+        db.sync();
         return 0;
     }
     else if (command == "fetch")

@@ -97,6 +97,11 @@ public:
         const short_hash& key, fetch_handler handle_fetch,
         const size_t limit=0, index_type start=0);
 
+    /**
+     * Synchonise with disk.
+     */
+    BCB_API void sync();
+
 private:
     typedef htdb_record<short_hash> map_type;
     typedef multimap_records<short_hash> multimap_type;
