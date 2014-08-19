@@ -41,7 +41,7 @@ void show_command_help(const std::string& command)
     else if (command == "add_spend")
     {
         std::cout << "Usage: history_db " << command << " MAP ROWS "
-            << "KEY SPEND HEIGHT" << std::endl;
+            << "KEY PREVIOUS SPEND HEIGHT" << std::endl;
     }
     else if (command == "delete_spend")
     {
