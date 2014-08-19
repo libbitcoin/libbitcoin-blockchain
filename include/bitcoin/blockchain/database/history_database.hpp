@@ -42,7 +42,7 @@ public:
             fetch_handler;
 
     BCB_API history_database(
-        const std::string& map_filename, const std::string& rows_filename);
+        const std::string& lookup_filename, const std::string& rows_filename);
 
     /**
      * Initialize a new history database.
@@ -108,7 +108,7 @@ private:
 
     /// The hashtable used for looking start index for a
     /// linked list by address hash.
-    mmfile map_file_;
+    mmfile lookup_file_;
     htdb_record_header header_;
     record_allocator allocator_;
     map_type start_lookup_;

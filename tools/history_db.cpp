@@ -7,7 +7,7 @@ using namespace bc::chain;
 
 void show_help()
 {
-    std::cout << "Usage: history_db MAP ROWS COMMAND [ARGS]" << std::endl;
+    std::cout << "Usage: history_db LOOKUP ROWS COMMAND [ARGS]" << std::endl;
     std::cout << std::endl;
     std::cout << "The most commonly used history_db commands are:" << std::endl;
     std::cout << "  initialize_new  "
@@ -30,32 +30,32 @@ void show_command_help(const std::string& command)
 {
     if (command == "initialize_new")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "" << std::endl;
     }
     else if (command == "add_row")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY OUTPUT HEIGHT VALUE" << std::endl;
     }
     else if (command == "add_spend")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY PREVIOUS SPEND HEIGHT" << std::endl;
     }
     else if (command == "delete_spend")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY SPEND" << std::endl;
     }
     else if (command == "delete_last_row")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY" << std::endl;
     }
     else if (command == "fetch")
     {
-        std::cout << "Usage: history_db " << command << " MAP ROWS "
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY [LIMIT] [START]" << std::endl;
     }
     else

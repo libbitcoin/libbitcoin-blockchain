@@ -26,7 +26,7 @@ namespace libbitcoin {
 
 constexpr size_t number_buckets = 10000;
 constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_records_fsize;
+constexpr size_t initial_lookup_file_size = header_size + min_records_fsize;
 
 constexpr position_type alloc_offset = header_size;
 constexpr size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
@@ -35,21 +35,21 @@ constexpr size_t value_size = 36 + 4 + 8 + 36 + 4;
 constexpr size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
 history_database::history_database(
-    const std::string& map_filename, const std::string& rows_filename)
-  : map_file_(map_filename), header_(map_file_, 0),
-    allocator_(map_file_, alloc_offset, alloc_record_size),
+    const std::string& lookup_filename, const std::string& rows_filename)
+  : lookup_file_(lookup_filename), header_(lookup_file_, 0),
+    allocator_(lookup_file_, alloc_offset, alloc_record_size),
     start_lookup_(header_, allocator_),
     rows_file_(rows_filename), rows_(rows_file_, 0, row_record_size),
     linked_rows_(rows_),
     map_(start_lookup_, linked_rows_)
 {
-    BITCOIN_ASSERT(map_file_.data());
+    BITCOIN_ASSERT(lookup_file_.data());
     BITCOIN_ASSERT(rows_file_.data());
 }
 
 void history_database::initialize_new()
 {
-    map_file_.resize(initial_map_file_size);
+    lookup_file_.resize(initial_lookup_file_size);
     header_.initialize_new(number_buckets);
     allocator_.initialize_new();
 
