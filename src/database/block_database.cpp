@@ -145,10 +145,17 @@ void block_database::sync()
     index_.sync();
 }
 
-index_type block_database::write_position(const position_type position)
+size_t block_database::last_height() const
 {
-    const index_type index = index_.allocate();
-    record_type record = index_.get(index);
+    if (index_.size() == 0)
+        return null_height;
+    return index_.size() - 1;
+}
+
+position_type block_database::write_position(const position_type position)
+{
+    const index_type height = index_.allocate();
+    record_type record = index_.get(height);
     auto serial = make_serializer(record);
     serial.write_8_bytes(position);
     return index;

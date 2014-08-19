@@ -68,7 +68,9 @@ typedef std::vector<index_type> transaction_index_list;
 class block_database
 {
 public:
-    block_database(
+    static constexpr size_t null_height = std::numeric_limits<size_t>::max();
+
+    BCB_API block_database(
         const std::string& map_filename, const std::string& index_filename);
 
     /**
@@ -107,6 +109,12 @@ public:
      * Should be done at the end of every block write.
      */
     BCB_API void sync();
+
+    /**
+     * Latest block height in our chain. Returns block_database::null_height
+     * if no blocks exist.
+     */
+    BCB_API size_t last_height() const;
 
 private:
     typedef htdb_slab<hash_digest> map_type;
