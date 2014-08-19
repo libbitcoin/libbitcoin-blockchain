@@ -96,7 +96,7 @@ public:
     /**
      * Store a block in the database.
      */
-    BCB_API void store(const size_t height, const block_header_type& header,
+    BCB_API void store(const block_header_type& header,
         const transaction_index_list& tx_indexes);
 
     /**
@@ -119,8 +119,8 @@ public:
 private:
     typedef htdb_slab<hash_digest> map_type;
 
-    /// Write position of tx and return the height (assigned index);
-    index_type write_position(const position_type position);
+    /// Write position of tx.
+    void write_position(const position_type position);
     /// Use intermediate records table to find blk position from height.
     position_type read_position(const index_type index) const;
 

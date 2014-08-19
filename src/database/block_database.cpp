@@ -113,8 +113,7 @@ block_result block_database::get(const hash_digest& hash) const
     return block_result(slab);
 }
 
-void block_database::store(
-    const size_t height, const block_header_type& header,
+void block_database::store(const block_header_type& header,
     const transaction_index_list& tx_indexes)
 {
     // Write block data.
@@ -130,8 +129,7 @@ void block_database::store(
     };
     const position_type position = map_.store(key, value_size, write);
     // Write height -> position mapping.
-    const index_type index = write_position(position);
-    BITCOIN_ASSERT(index == height);
+    write_position(position);
 }
 
 void block_database::unlink(const size_t from_height)
@@ -152,13 +150,12 @@ size_t block_database::last_height() const
     return index_.size() - 1;
 }
 
-position_type block_database::write_position(const position_type position)
+void block_database::write_position(const position_type position)
 {
     const index_type height = index_.allocate();
     record_type record = index_.get(height);
     auto serial = make_serializer(record);
     serial.write_8_bytes(position);
-    return index;
 }
 
 position_type block_database::read_position(const index_type index) const
