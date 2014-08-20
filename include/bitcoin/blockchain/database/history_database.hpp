@@ -37,11 +37,7 @@ class history_database
 public:
     typedef blockchain::history_row history_row;
     typedef blockchain::history_list history_list;
-    // TODO: use this typedef.
-    //typedef blockchain::fetch_handler_history fetch_handler;
-    typedef std::function<void (
-        const std::error_code&, const history_list&, index_type)>
-            fetch_handler;
+    typedef blockchain::fetch_handler_history fetch_handler;
 
     BCB_API history_database(
         const std::string& lookup_filename, const std::string& rows_filename);

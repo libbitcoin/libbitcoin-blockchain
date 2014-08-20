@@ -493,7 +493,7 @@ bool blockchain_impl::do_fetch_history(const payment_address& address,
 {
     auto fetch_history = fetch_history_functor(db_credit_, db_debit_);
     history_list history = fetch_history(address, from_height);
-    return finish_fetch(slock, handle_fetch, std::error_code(), history);
+    return finish_fetch(slock, handle_fetch, std::error_code(), history, 0);
 }
 
 void blockchain_impl::fetch_stealth(const stealth_prefix& prefix,
