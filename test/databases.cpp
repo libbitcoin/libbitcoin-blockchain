@@ -81,6 +81,7 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     auto res4 = db.get(key4);
     BOOST_REQUIRE(res4);
     BOOST_REQUIRE(res4.hash() == val4.hash && res4.index() == val4.index);
+    db.sync();
 }
 
 BOOST_AUTO_TEST_CASE(block_db_test)
@@ -180,6 +181,45 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     auto res_h5b = db.get(h5b);
     BOOST_REQUIRE(res_h5b);
     BOOST_REQUIRE(hash_block_header(res_h5b.header()) == h5b);
+    db.sync();
+}
+
+BOOST_AUTO_TEST_CASE(transaction_db_test)
+{
+    transaction_metainfo info1{110, 88};
+    transaction_type tx1;
+    data_chunk raw_tx1 = decode_hex(
+        "0100000001537c9d05b5f7d67b09e5108e3bd5e466909cc9403ddd98bc42973f"
+        "366fe729410600000000ffffffff0163000000000000001976a914fe06e7b4c8"
+        "8a719e92373de489c08244aee4520b88ac00000000");
+    satoshi_load(raw_tx1.begin(), raw_tx1.end(), tx1);
+    const hash_digest h1 = hash_transaction(tx1);
+
+    transaction_metainfo info2{4, 6};
+    transaction_type tx2;
+    data_chunk raw_tx2 = decode_hex(
+        "010000000147811c3fc0c0e750af5d0ea7343b16ea2d0c291c002e3db7786692"
+        "16eb689de80000000000ffffffff0118ddf505000000001976a914575c2f0ea8"
+        "8fcbad2389a372d942dea95addc25b88ac00000000");
+    satoshi_load(raw_tx2.begin(), raw_tx2.end(), tx2);
+    const hash_digest h2 = hash_transaction(tx2);
+
+    touch_file("tx_db_map");
+    touch_file("tx_db_index");
+    transaction_database db("tx_db_map", "tx_db_index");
+    db.initialize_new();
+    db.start();
+    index_type idx1 = db.store(info1, tx1);
+    index_type idx2 = db.store(info2, tx2);
+    BOOST_REQUIRE(idx1 == 0);
+    BOOST_REQUIRE(idx2 == 1);
+    auto res1 = db.get(h1);
+    BOOST_REQUIRE(hash_transaction(res1.transaction()) == h1);
+    auto res2 = db.get(h2);
+    BOOST_REQUIRE(hash_transaction(res2.transaction()) == h2);
+    auto res_idx2 = db.get(idx2);
+    BOOST_REQUIRE(hash_transaction(res_idx2.transaction()) == h2);
+    db.sync();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
