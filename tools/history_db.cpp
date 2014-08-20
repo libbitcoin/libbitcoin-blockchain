@@ -7,7 +7,7 @@ using namespace bc::chain;
 
 void show_help()
 {
-    std::cout << "Usage: history_db LOOKUP ROWS COMMAND [ARGS]" << std::endl;
+    std::cout << "Usage: history_db COMMAND LOOKUP ROWS [ARGS]" << std::endl;
     std::cout << std::endl;
     std::cout << "The most commonly used history_db commands are:" << std::endl;
     std::cout << "  initialize_new  "

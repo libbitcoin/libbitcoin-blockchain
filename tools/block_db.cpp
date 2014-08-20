@@ -8,11 +8,11 @@ using namespace bc::chain;
 
 void show_help()
 {
-    std::cout << "Usage: block_db MAP ROWS COMMAND [ARGS]" << std::endl;
+    std::cout << "Usage: block_db COMMAND MAP ROWS [ARGS]" << std::endl;
     std::cout << std::endl;
     std::cout << "The most commonly used block_db commands are:" << std::endl;
     std::cout << "  initialize_new  "
-        << "Create a new history_database" << std::endl;
+        << "Create a new block_database" << std::endl;
     std::cout << "  get             "
         << "Fetch block by height or hash" << std::endl;
     std::cout << "  store           "

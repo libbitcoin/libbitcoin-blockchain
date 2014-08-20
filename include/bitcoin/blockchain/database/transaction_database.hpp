@@ -32,7 +32,7 @@ namespace libbitcoin {
 
 struct transaction_metainfo
 {
-    const size_t height, index;
+    size_t height, index;
 };
 
 class transaction_result
