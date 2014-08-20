@@ -60,7 +60,6 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     db.store(key1, val1);
     db.store(key2, val2);
     db.store(key3, val3);
-    db.store(key4, val4);
     // Test fetch.
     auto res1 = db.get(key1);
     BOOST_REQUIRE(res1);
@@ -71,12 +70,116 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     auto res3 = db.get(key3);
     BOOST_REQUIRE(res3);
     BOOST_REQUIRE(res3.hash() == val3.hash && res3.index() == val3.index);
-    auto res4 = db.get(key4);
-    BOOST_REQUIRE(res4);
-    BOOST_REQUIRE(res4.hash() == val4.hash && res4.index() == val4.index);
+    // Record shouldnt exist yet.
+    BOOST_REQUIRE(!db.get(key4));
     // Delete record.
     db.remove(key3);
     BOOST_REQUIRE(!db.get(key3));
+    // Add another record.
+    db.store(key4, val4);
+    // Fetch it.
+    auto res4 = db.get(key4);
+    BOOST_REQUIRE(res4);
+    BOOST_REQUIRE(res4.hash() == val4.hash && res4.index() == val4.index);
+}
+
+BOOST_AUTO_TEST_CASE(block_db_test)
+{
+    block_header_type header0 = genesis_block().header;
+    transaction_index_list txs0;
+    const hash_digest h0 = hash_block_header(header0);
+
+    block_header_type header1 = header0;
+    header1.nonce = 4;
+    transaction_index_list txs1{{110, 89, 76, 63, 44}};
+    const hash_digest h1 = hash_block_header(header1);
+
+    block_header_type header2 = header0;
+    header2.nonce = 110;
+    transaction_index_list txs2{{110, 89, 76, 63, 44}};
+    const hash_digest h2 = hash_block_header(header2);
+
+    block_header_type header3 = header0;
+    header3.nonce = 88;
+    transaction_index_list txs3{{63, 56, 89}};
+    const hash_digest h3 = hash_block_header(header3);
+
+    block_header_type header4a = header0;
+    header4a.nonce = 63;
+    transaction_index_list txs4a{{22, 12, 15, 77, 88, 99, 100}};
+    const hash_digest h4a = hash_block_header(header4a);
+
+    block_header_type header5a = header0;
+    header5a.nonce = 26;
+    transaction_index_list txs5a{{2, 4, 6, 8, 10, 12}};
+    const hash_digest h5a = hash_block_header(header5a);
+
+    block_header_type header4b = header0;
+    header4b.nonce = 28;
+    transaction_index_list txs4b{{100, 200, 500, 1000}};
+    const hash_digest h4b = hash_block_header(header4b);
+
+    block_header_type header5b = header0;
+    header5b.nonce = 100;
+    transaction_index_list txs5b{{88, 32, 12, 78, 100010810, 99}};
+    const hash_digest h5b = hash_block_header(header5b);
+
+    touch_file("block_db_lookup");
+    touch_file("block_db_rows");
+    block_database db("block_db_lookup", "block_db_rows");
+    db.initialize_new();
+    db.start();
+    BOOST_REQUIRE(db.last_height() == block_database::null_height);
+    db.store(header0, txs0);
+    db.store(header1, txs1);
+    db.store(header2, txs2);
+    db.store(header3, txs3);
+    BOOST_REQUIRE(db.last_height() == 3);
+    // Fetch block 2 by hash.
+    auto res_h2 = db.get(h2);
+    BOOST_REQUIRE(res_h2);
+    BOOST_REQUIRE(hash_block_header(res_h2.header()) == h2);
+    for (size_t i = 0; i < res_h2.transactions_size(); ++i)
+        BOOST_REQUIRE(res_h2.transaction_index(i) == txs2[i]);
+    // Try a fork event.
+    db.store(header4a, txs4a);
+    db.store(header5a, txs5a);
+    // Fetch blocks.
+    auto res4a = db.get(4);
+    BOOST_REQUIRE(res4a);
+    BOOST_REQUIRE(hash_block_header(res4a.header()) == h4a);
+    auto res5a = db.get(5);
+    BOOST_REQUIRE(res5a);
+    BOOST_REQUIRE(hash_block_header(res5a.header()) == h5a);
+    // Unlink old chain.
+    BOOST_REQUIRE(db.last_height() == 5);
+    db.unlink(4);
+    BOOST_REQUIRE(db.last_height() == 3);
+    // Block 3 exists.
+    auto res3_exists = db.get(3);
+    BOOST_REQUIRE(res3_exists);
+    // No blocks exist now.
+    auto res4_none = db.get(4);
+    BOOST_REQUIRE(!res4_none);
+    auto res5_none = db.get(5);
+    BOOST_REQUIRE(!res5_none);
+    // Add new blocks.
+    db.store(header4b, txs4b);
+    db.store(header5b, txs5b);
+    BOOST_REQUIRE(db.last_height() == 5);
+    // Fetch blocks.
+    auto res4b = db.get(4);
+    BOOST_REQUIRE(res4b);
+    BOOST_REQUIRE(hash_block_header(res4b.header()) == h4b);
+    auto res5b = db.get(5);
+    BOOST_REQUIRE(res5b);
+    BOOST_REQUIRE(hash_block_header(res5b.header()) == h5b);
+    for (size_t i = 0; i < res5b.transactions_size(); ++i)
+        BOOST_REQUIRE(res5b.transaction_index(i) == txs5b[i]);
+    // Test also fetch by hash.
+    auto res_h5b = db.get(h5b);
+    BOOST_REQUIRE(res_h5b);
+    BOOST_REQUIRE(hash_block_header(res_h5b.header()) == h5b);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
