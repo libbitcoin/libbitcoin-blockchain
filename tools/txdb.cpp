@@ -181,12 +181,12 @@ int main(int argc, char** argv)
         if (command == "get_info")
         {
             std::cout << "Height: " << result->height()
-                << "    Index: " << result->height() << std::endl;
+                << "    Index: " << result->index() << std::endl;
         }
         else
         {
             const transaction_type tx = result->transaction();
-            data_chunk rawtx;
+            data_chunk rawtx(satoshi_raw_size(tx));
             satoshi_save(tx, rawtx.begin());
             std::cout << rawtx << std::endl;
         }
