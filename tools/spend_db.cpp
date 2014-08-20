@@ -1,4 +1,3 @@
-#include <bitcoin/blockchain/database/spend_database.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/bitcoin.hpp>
