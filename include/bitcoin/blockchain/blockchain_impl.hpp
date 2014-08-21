@@ -26,6 +26,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/utility/subscriber.hpp>
 #include <bitcoin/threadpool.hpp>
@@ -103,6 +104,7 @@ private:
     typedef std::unique_ptr<leveldb::Comparator> comparator_ptr;
     typedef std::unique_ptr<mmfile> mmfile_ptr;
     typedef std::unique_ptr<stealth_database> stealth_db_ptr;
+    typedef std::unique_ptr<db_interface> db_interface_auto;
 
     typedef std::function<bool (size_t)> perform_read_functor;
 
@@ -172,6 +174,8 @@ private:
     // might not be the largest height in our blockchain.
     comparator_ptr height_comparator_;
     leveldb::Options open_options_;
+
+    db_interface_auto interface_;
 
     // Blocks indexed by height.
     //   block height -> block header + list(tx_hashes)

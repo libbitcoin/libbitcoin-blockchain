@@ -299,8 +299,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     db.add_row(key2, out21, out_h21, val21);
     db.add_row(key2, out22, out_h22, val22);
 
-    auto fetch_s1 = [=](const std::error_code& ec,
-        const blockchain::history_list& history, index_type stop)
+    auto fetch_s1 = [=](const blockchain::history_list& history)
     {
         BOOST_REQUIRE(history.size() == 3);
         BOOST_REQUIRE(history[2].output.hash == out11.hash);
@@ -325,17 +324,17 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[0].spend.index == spend13.index);
         BOOST_REQUIRE(history[0].spend_height == spend_h13);
     };
-    db.fetch(key1, fetch_s1);
-    auto no_spend = [=](const std::error_code& ec,
-        const blockchain::history_list& history, index_type stop)
+    auto res_s1 = db.get(key1);
+    fetch_s1(res_s1.history);
+    auto no_spend = [=](const blockchain::history_list& history)
     {
         BOOST_REQUIRE(history[0].spend_height == 0);
         BOOST_REQUIRE(history[1].spend_height == 0);
     };
-    db.fetch(key2, no_spend);
+    auto res_ns = db.get(key2);
+    no_spend(res_ns.history);
     db.add_spend(key2, out22, spend22, spend_h22);
-    auto has_spend = [=](const std::error_code& ec,
-        const blockchain::history_list& history, index_type stop)
+    auto has_spend = [=](const blockchain::history_list& history)
     {
         BOOST_REQUIRE(history[0].output.hash == out22.hash);
         BOOST_REQUIRE(history[0].output.index == out22.index);
@@ -347,27 +346,31 @@ BOOST_AUTO_TEST_CASE(history_db_test)
 
         BOOST_REQUIRE(history[1].spend_height == 0);
     };
-    db.fetch(key2, has_spend);
+    auto res_has_sp = db.get(key2);
+    has_spend(res_has_sp.history);
     db.delete_spend(key2, spend22);
-    db.fetch(key2, no_spend);
+    auto res_no_sp = db.get(key2);
+    no_spend(res_no_sp.history);
 
     db.add_row(key3, out31, out_h31, val31);
     db.add_row(key4, out31, out_h41, val41);
-    auto has_one_row = [=](const std::error_code& ec,
-        const blockchain::history_list& history, index_type stop)
+    auto has_one_row = [=](const blockchain::history_list& history)
     {
         BOOST_REQUIRE(history.size() == 1);
     };
-    db.fetch(key3, has_one_row);
-    db.fetch(key4, has_one_row);
-    auto has_no_rows = [=](const std::error_code& ec,
-        const blockchain::history_list& history, index_type stop)
+    auto res_1r1 = db.get(key3);
+    has_one_row(res_1r1.history);
+    auto res_1r2 = db.get(key4);
+    has_one_row(res_1r2.history);
+    auto has_no_rows = [=](const blockchain::history_list& history)
     {
         BOOST_REQUIRE(history.empty());
     };
     db.delete_last_row(key3);
-    db.fetch(key3, has_no_rows);
-    db.fetch(key4, has_one_row);
+    auto res_1nr1 = db.get(key3);
+    has_no_rows(res_1nr1.history);
+    auto res_1nr2 = db.get(key4);
+    has_one_row(res_1nr2.history);
 
     db.sync();
 }

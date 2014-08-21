@@ -25,19 +25,19 @@ void write_data()
 {
     BITCOIN_ASSERT(buckets > 0);
     std::cout << "Buckets: " << buckets << std::endl;
-    const size_t header_size = htdb_record_header_size(buckets);
+    const size_t header_size = htdb_record_header_fsize(buckets);
 
     touch_file(map_filename);
     mmfile ht_file(map_filename);
     BITCOIN_ASSERT(ht_file.data());
-    ht_file.resize(header_size + min_records_size);
+    ht_file.resize(header_size + min_records_fsize);
 
     htdb_record_header header(ht_file, 0);
     header.initialize_new(buckets);
     header.start();
 
     typedef byte_array<key_size> hash_type;
-    const size_t record_size = map_record_size_multimap<hash_type>();
+    const size_t record_size = map_record_fsize_multimap<hash_type>();
     BITCOIN_ASSERT(record_size == key_size + 4 + 4);
     const position_type records_start = header_size;
 
@@ -50,7 +50,7 @@ void write_data()
     touch_file(rows_filename);
     mmfile lrs_file(rows_filename);
     BITCOIN_ASSERT(lrs_file.data());
-    lrs_file.resize(min_records_size);
+    lrs_file.resize(min_records_fsize);
     const size_t lrs_record_size = linked_record_offset + value_size;
     record_allocator recs(lrs_file, 0, lrs_record_size);
     recs.initialize_new();
@@ -90,10 +90,10 @@ void read_data()
 
     htdb_record_header header(ht_file, 0);
     header.start();
-    const size_t header_size = htdb_record_header_size(header.size());
+    const size_t header_size = htdb_record_header_fsize(header.size());
 
     typedef byte_array<key_size> hash_type;
-    const size_t record_size = map_record_size_multimap<hash_type>();
+    const size_t record_size = map_record_fsize_multimap<hash_type>();
     const position_type records_start = header_size;
 
     record_allocator alloc(ht_file, records_start, record_size);

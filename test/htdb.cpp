@@ -21,7 +21,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
@@ -43,12 +43,12 @@ data_chunk generate_random_bytes(
 
 void write_data()
 {
-    constexpr size_t header_size = htdb_slab_header_size(buckets);
+    constexpr size_t header_size = htdb_slab_header_fsize(buckets);
 
     touch_file("htdb_slabs");
     mmfile file("htdb_slabs");
     BITCOIN_ASSERT(file.data());
-    file.resize(header_size + min_slab_size);
+    file.resize(header_size + min_slab_fsize);
 
     htdb_slab_header header(file, 0);
     header.initialize_new(buckets);
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 
     BOOST_REQUIRE(header.size() == buckets);
 
-    const position_type slab_start = htdb_slab_header_size(header.size());
+    const position_type slab_start = htdb_slab_header_fsize(header.size());
 
     slab_allocator alloc(file, slab_start);
     alloc.start();
@@ -112,19 +112,19 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 BOOST_AUTO_TEST_CASE(htdb_record_test)
 {
     constexpr size_t rec_buckets = 2;
-    constexpr size_t header_size = htdb_record_header_size(rec_buckets);
+    constexpr size_t header_size = htdb_record_header_fsize(rec_buckets);
 
     touch_file("htdb_records");
     mmfile file("htdb_records");
     BITCOIN_ASSERT(file.data());
-    file.resize(header_size + min_records_size);
+    file.resize(header_size + min_records_fsize);
 
     htdb_record_header header(file, 0);
     header.initialize_new(rec_buckets);
     header.start();
 
     typedef byte_array<4> tiny_hash;
-    constexpr size_t record_size = record_size_htdb<tiny_hash>(4);
+    constexpr size_t record_size = record_fsize_htdb<tiny_hash>(4);
     const position_type records_start = header_size;
 
     record_allocator alloc(file, records_start, record_size);

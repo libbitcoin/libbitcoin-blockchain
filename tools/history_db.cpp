@@ -258,27 +258,19 @@ int main(int argc, char** argv)
         if (args.size() >= 3)
             if (!parse_uint(start, args[2]))
                 return -1;
-        auto fetch = [](const std::error_code& ec,
-            const blockchain::history_list& history,
-            const index_type stop)
-        {
-            if (ec)
-            {
-                std::cout << "Error: " << ec.message() << std::endl;
-                return;
-            }
-            for (const auto& row: history)
-            {
-                std::cout << row.output.hash << ":" << row.output.index
-                    << " " << row.output_height << " " << row.value;
-                if (row.spend_height)
-                    std::cout << " " << row.spend.hash << ":"
-                        << row.spend.index << " " << row.spend_height;
-                std::cout << std::endl;
-            }
-        };
         db.start();
-        db.fetch(key, fetch, limit, start);
+        auto result = db.get(key, limit, start);
+        for (const auto& row: result.history)
+        {
+            std::cout << row.output.hash << ":" << row.output.index
+                << " " << row.output_height << " " << row.value;
+            if (row.spend_height)
+                std::cout << " " << row.spend.hash << ":"
+                    << row.spend.index << " " << row.spend_height;
+            std::cout << std::endl;
+        }
+        if (result.stop)
+            std::cout << "Stop: " << result.stop << std::endl;
         return 0;
     }
     else

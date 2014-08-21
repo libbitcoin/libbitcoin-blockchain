@@ -11,7 +11,7 @@ void write_data(const size_t count)
     touch_file("recs");
     mmfile file("recs");
     BITCOIN_ASSERT(file.data());
-    file.resize(min_records_size);
+    file.resize(min_records_fsize);
     record_allocator alloc(file, 0, record_size);
     alloc.initialize_new();
     alloc.start();

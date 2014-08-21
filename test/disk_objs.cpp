@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/database/linked_records.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;

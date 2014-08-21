@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
-#include <bitcoin/blockchain/database/sizes.hpp>
+#include <bitcoin/blockchain/database/fsizes.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
