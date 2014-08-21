@@ -5,6 +5,7 @@ AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS}
 lib_LTLIBRARIES = libbitcoin_blockchain.la
 libbitcoin_blockchain_la_SOURCES = \
     organizer.cpp \
+	db_interface.cpp \
     database/stealth_database.cpp \
     database/history_scan_database.cpp \
     database/hsdb_shard.cpp \
