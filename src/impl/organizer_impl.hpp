@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_LEVELDB_ORGANIZER_H
-#define LIBBITCOIN_BLOCKCHAIN_LEVELDB_ORGANIZER_H
+#ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
+#define LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
 
 #include <bitcoin/blockchain/organizer.hpp>
 #include "simple_chain_impl.hpp"
