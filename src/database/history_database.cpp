@@ -134,8 +134,7 @@ void history_database::delete_last_row(const short_hash& key)
     map_.delete_last_row(key);
 }
 
-void history_database::fetch(
-    const short_hash& key, fetch_handler handle_fetch,
+history_result history_database::get(const short_hash& key,
     const size_t limit, index_type start)
 {
     history_list history;
@@ -164,7 +163,7 @@ void history_database::fetch(
         const record_type data = linked_rows_.get(index);
         history.emplace_back(read_row(data));
     }
-    handle_fetch(std::error_code(), history, stop);
+    return history_result{std::move(history), stop};
 }
 
 void history_database::sync()

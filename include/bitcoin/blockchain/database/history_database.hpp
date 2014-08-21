@@ -28,6 +28,15 @@
 namespace libbitcoin {
     namespace chain {
 
+typedef blockchain::history_row history_row;
+typedef blockchain::history_list history_list;
+
+struct history_result
+{
+    history_list history;
+    index_type stop;
+};
+
 /**
  * history_database is a multimap where the key is the Bitcoin address hash,
  * which returns several rows giving the history for that address.
@@ -35,10 +44,6 @@ namespace libbitcoin {
 class history_database
 {
 public:
-    typedef blockchain::history_row history_row;
-    typedef blockchain::history_list history_list;
-    typedef blockchain::fetch_handler_history fetch_handler;
-
     BCB_API history_database(
         const std::string& lookup_filename, const std::string& rows_filename);
 
@@ -79,20 +84,11 @@ public:
     BCB_API void delete_last_row(const short_hash& key);
 
     /**
-     * Fetches the output points, output values, corresponding input point
+     * Gets the output points, output values, corresponding input point
      * spends and the block heights associated with a Bitcoin address.
-     * The returned history is a list of rows with the following fields:
-     *
-     * @code
-     *  void handle_fetch(
-     *      const std::error_code& ec,                // Status of operation
-     *      const blockchain::history_list& history,  // History
-     *      index_type stop                           // Stop index for paging
-     *  );
-     * @endcode
+     * The returned history is a list of rows and a stop index.
      */
-    BCB_API void fetch(
-        const short_hash& key, fetch_handler handle_fetch,
+    BCB_API history_result get(const short_hash& key,
         const size_t limit=0, index_type start=0);
 
     /**
