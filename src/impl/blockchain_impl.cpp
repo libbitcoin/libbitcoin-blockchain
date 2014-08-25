@@ -152,6 +152,10 @@ void open_stealth_db(const std::string& prefix,
 
 bool blockchain_impl::initialize(const std::string& prefix)
 {
+    db_paths paths(prefix);
+    interface_.reset(new db_interface(paths));
+    interface_->start();
+
     using boost::filesystem::path;
     // Try to lock the directory first
     path lock_path = path(prefix) / "db-lock";
@@ -438,11 +442,12 @@ bool blockchain_impl::do_fetch_transaction(
     const hash_digest& transaction_hash,
     fetch_handler_transaction handle_fetch, size_t slock)
 {
-    leveldb_tx_info tx;
-    if (!common_->get_transaction(tx, transaction_hash, false, true))
+    auto result = interface_->transactions.get(transaction_hash);
+    if (!result)
         return finish_fetch(slock, handle_fetch,
             error::not_found, transaction_type());
-    return finish_fetch(slock, handle_fetch, std::error_code(), tx.tx);
+    return finish_fetch(slock, handle_fetch,
+        std::error_code(), result.transaction());
 }
 
 void blockchain_impl::fetch_transaction_index(
@@ -457,11 +462,12 @@ bool blockchain_impl::do_fetch_transaction_index(
     const hash_digest& transaction_hash,
     fetch_handler_transaction_index handle_fetch, size_t slock)
 {
-    leveldb_tx_info tx;
-    if (!common_->get_transaction(tx, transaction_hash, true, false))
-        return finish_fetch(slock, handle_fetch, error::not_found, 0, 0);
-    return finish_fetch(slock, handle_fetch, std::error_code(),
-        tx.height, tx.index);
+    auto result = interface_->transactions.get(transaction_hash);
+    if (!result)
+        return finish_fetch(slock, handle_fetch,
+            error::not_found, 0, 0);
+    return finish_fetch(slock, handle_fetch,
+        std::error_code(), result.height(), result.index());
 }
 
 void blockchain_impl::fetch_spend(const output_point& outpoint,
