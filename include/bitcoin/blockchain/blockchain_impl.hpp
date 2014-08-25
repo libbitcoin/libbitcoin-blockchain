@@ -110,10 +110,10 @@ private:
 
     bool initialize(const std::string& prefix);
 
-    void begin_write();
+    void start_write();
 
     template <typename Handler, typename... Args>
-    void finish_write(Handler handler, Args&&... args)
+    void stop_write(Handler handler, Args&&... args)
     {
         ++seqlock_;
         // seqlock is now even again.

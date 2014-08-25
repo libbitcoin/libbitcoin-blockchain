@@ -230,7 +230,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
     return true;
 }
 
-void blockchain_impl::begin_write()
+void blockchain_impl::start_write()
 {
     ++seqlock_;
     // seqlock is now odd.
@@ -247,24 +247,24 @@ void blockchain_impl::store(const block_type& stored_block,
 void blockchain_impl::do_store(const block_type& stored_block,
     store_block_handler handle_store)
 {
-    begin_write();
+    start_write();
     block_detail_ptr stored_detail =
         std::make_shared<block_detail>(stored_block);
     int height = chain_->find_index(hash_block_header(stored_block.header));
     if (height != -1)
     {
-        finish_write(handle_store, error::duplicate,
+        stop_write(handle_store, error::duplicate,
             block_info{block_status::confirmed, static_cast<size_t>(height)});
         return;
     }
     if (!orphans_->add(stored_detail))
     {
-        finish_write(handle_store, error::duplicate,
+        stop_write(handle_store, error::duplicate,
             block_info{block_status::orphan, 0});
         return;
     }
     organize_->start();
-    finish_write(handle_store, stored_detail->errc(), stored_detail->info());
+    stop_write(handle_store, stored_detail->errc(), stored_detail->info());
 }
 
 void blockchain_impl::import(const block_type& import_block,
@@ -277,13 +277,13 @@ void blockchain_impl::import(const block_type& import_block,
 void blockchain_impl::do_import(const block_type& import_block,
     size_t height, import_block_handler handle_import)
 {
-    begin_write();
+    start_write();
     if (!common_->save_block(height, import_block))
     {
-        finish_write(handle_import, error::operation_failed);
+        stop_write(handle_import, error::operation_failed);
         return;
     }
-    finish_write(handle_import, std::error_code());
+    stop_write(handle_import, std::error_code());
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
