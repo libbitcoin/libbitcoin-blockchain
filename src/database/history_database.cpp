@@ -135,7 +135,7 @@ void history_database::delete_last_row(const short_hash& key)
 }
 
 history_result history_database::get(const short_hash& key,
-    const size_t limit, index_type start)
+    const size_t limit, index_type start) const
 {
     history_list history;
     auto read_row = [&history](const uint8_t* data)

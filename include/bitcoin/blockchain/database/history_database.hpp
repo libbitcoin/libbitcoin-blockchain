@@ -89,7 +89,7 @@ public:
      * The returned history is a list of rows and a stop index.
      */
     BCB_API history_result get(const short_hash& key,
-        const size_t limit=0, index_type start=0);
+        const size_t limit=0, index_type start=0) const;
 
     /**
      * Synchonise with disk.

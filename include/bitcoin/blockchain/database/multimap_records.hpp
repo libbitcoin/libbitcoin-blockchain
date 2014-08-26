@@ -43,7 +43,7 @@ class multimap_records_iterator
 {
 public:
     BCB_API multimap_records_iterator(
-        linked_records& linked_rows, index_type index);
+        const linked_records& linked_rows, index_type index);
 
     /**
      * Next value in the chain.
@@ -59,7 +59,7 @@ private:
     friend bool operator!=(
         multimap_records_iterator iter_a, multimap_records_iterator iter_b);
 
-    linked_records& linked_rows_;
+    const linked_records& linked_rows_;
     index_type index_;
 };
 
@@ -77,13 +77,13 @@ class multimap_iterable
 {
 public:
     BCB_API multimap_iterable(
-        linked_records& linked_rows, index_type begin_index);
+        const linked_records& linked_rows, index_type begin_index);
 
     BCB_API multimap_records_iterator begin() const;
     BCB_API multimap_records_iterator end() const;
 
 private:
-    linked_records& linked_rows_;
+    const linked_records& linked_rows_;
     index_type begin_index_;
 };
 
