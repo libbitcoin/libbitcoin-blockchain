@@ -175,7 +175,7 @@ void organizer::process(block_detail_ptr process_block)
 void organizer::replace_chain(size_t fork_index,
     block_detail_list& orphan_chain)
 {
-    big_number orphan_work = 0;
+    hash_number orphan_work = 0;
     for (size_t orphan_index = 0; orphan_index < orphan_chain.size();
         ++orphan_index)
     {
@@ -195,7 +195,7 @@ void organizer::replace_chain(size_t fork_index,
     // All remaining blocks in orphan_chain should all be valid now
     // Compare the difficulty of the 2 forks (original and orphan)
     const size_t begin_index = fork_index + 1;
-    big_number main_work = chain_->sum_difficulty(begin_index);
+    hash_number main_work = chain_->sum_difficulty(begin_index);
     if (orphan_work <= main_work)
         return;
     // Replace! Switch!

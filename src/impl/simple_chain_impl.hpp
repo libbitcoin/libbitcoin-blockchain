@@ -36,7 +36,7 @@ public:
         blockchain_common_ptr common, leveldb_databases db);
     void append(block_detail_ptr incoming_block);
     int find_index(const hash_digest& search_block_hash);
-    big_number sum_difficulty(size_t begin_index);
+    hash_number sum_difficulty(size_t begin_index);
     bool release(size_t begin_index,
         block_detail_list& released_blocks);
 

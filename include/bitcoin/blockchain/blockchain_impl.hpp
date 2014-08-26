@@ -67,24 +67,24 @@ public:
     BCB_API void fetch_block_header(size_t height,
         fetch_handler_block_header handle_fetch);
     // fetch block header by hash
-    BCB_API void fetch_block_header(const hash_digest& block_hash,
+    BCB_API void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
-    // fetch transaction hashes in block by height
-    BCB_API void fetch_block_transaction_hashes(size_t height,
-        fetch_handler_block_transaction_hashes handle_fetch);
     // fetch transaction hashes in block by hash
-    BCB_API void fetch_block_transaction_hashes(const hash_digest& block_hash,
-        fetch_handler_block_transaction_hashes handle_fetch);
+    BCB_API void fetch_block_transaction_indexes(const hash_digest& hash,
+        fetch_handler_block_transaction_indexes handle_fetch);
     // fetch height of block by hash
-    BCB_API void fetch_block_height(const hash_digest& block_hash,
+    BCB_API void fetch_block_height(const hash_digest& hash,
         fetch_handler_block_height handle_fetch);
     // fetch height of latest block
     BCB_API void fetch_last_height(fetch_handler_last_height handle_fetch);
+    // fetch transaction by index
+    BCB_API void fetch_transaction(const index_type index,
+        fetch_handler_transaction handle_fetch);
     // fetch transaction by hash
-    BCB_API void fetch_transaction(const hash_digest& transaction_hash,
+    BCB_API void fetch_transaction(const hash_digest& hash,
         fetch_handler_transaction handle_fetch);
     // fetch height and offset within block of transaction by hash
-    BCB_API void fetch_transaction_index(const hash_digest& transaction_hash,
+    BCB_API void fetch_transaction_index(const hash_digest& hash,
         fetch_handler_transaction_index handle_fetch);
     // fetch spend of an output point
     BCB_API void fetch_spend(const output_point& outpoint,
@@ -140,22 +140,6 @@ private:
         return true;
     }
 
-    bool fetch_block_header_by_height(size_t height, 
-        fetch_handler_block_header handle_fetch, size_t slock);
-    bool fetch_block_header_by_hash(const hash_digest& block_hash, 
-        fetch_handler_block_header handle_fetch, size_t slock);
-    bool do_fetch_block_height(const hash_digest& block_hash,
-        fetch_handler_block_height handle_fetch, size_t slock);
-    bool do_fetch_last_height(
-        fetch_handler_last_height handle_fetch, size_t slock);
-    bool do_fetch_transaction(const hash_digest& transaction_hash,
-        fetch_handler_transaction handle_fetch, size_t slock);
-    bool do_fetch_transaction_index(const hash_digest& transaction_hash,
-        fetch_handler_transaction_index handle_fetch, size_t slock);
-    bool do_fetch_spend(const output_point& outpoint,
-        fetch_handler_spend handle_fetch, size_t slock);
-    bool do_fetch_history(const payment_address& address,
-        fetch_handler_history handle_fetch, size_t from_height, size_t slock);
     bool do_fetch_stealth(const stealth_prefix& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height, size_t slock);
 

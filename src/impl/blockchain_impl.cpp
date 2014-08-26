@@ -318,189 +318,171 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
 void blockchain_impl::fetch_block_header(size_t height,
     fetch_handler_block_header handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::fetch_block_header_by_height,
-            this, height, handle_fetch, _1));
-}
-
-bool blockchain_impl::fetch_block_header_by_height(size_t height,
-    fetch_handler_block_header handle_fetch, size_t slock)
-{
-    leveldb_block_info blk;
-    if (!common_->get_block(blk, height, true, false))
+    auto do_fetch = [this, height, handle_fetch](size_t slock)
+    {
+        auto result = interface_->blocks.get(height);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, block_header_type());
+        }
         return finish_fetch(slock, handle_fetch,
-            error::not_found, block_header_type());
-    return finish_fetch(slock, handle_fetch, std::error_code(), blk.header);
+            std::error_code(), result.header());
+    };
+    fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_block_header(const hash_digest& block_hash,
+void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch_handler_block_header handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::fetch_block_header_by_hash,
-            this, block_hash, handle_fetch, _1));
-}
-
-bool blockchain_impl::fetch_block_header_by_hash(
-    const hash_digest& block_hash,
-    fetch_handler_block_header handle_fetch, size_t slock)
-{
-    auto result = interface_->blocks.get(block_hash);
-    if (!result)
-        return finish_fetch(slock, handle_fetch,
-            error::not_found, block_header_type());
-    return finish_fetch(slock, handle_fetch,
-        std::error_code(), result.header());
-}
-
-template<typename Handler, typename SeqLockPtr>
-bool fetch_blk_tx_hashes_impl(size_t height,
-    blockchain_common_ptr common, Handler handle_fetch,
-    size_t slock, SeqLockPtr seqlock)
-{
-    leveldb_block_info blk;
-    if (!common->get_block(blk, height, false, true))
+    auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        if (slock != *seqlock)
-            return false;
-        handle_fetch(error::not_found, hash_digest_list());
-        return true;
-    }
-    if (slock != *seqlock)
-        return false;
-    handle_fetch(std::error_code(), blk.tx_hashes);
-    return true;
-}
-
-void blockchain_impl::fetch_block_transaction_hashes(size_t height,
-    fetch_handler_block_transaction_hashes handle_fetch)
-{
-    fetch(
-        [this, height, handle_fetch](size_t slock)
+        auto result = interface_->blocks.get(hash);
+        if (!result)
         {
-            return fetch_blk_tx_hashes_impl(
-                height, common_, handle_fetch, slock, &seqlock_);
-        });
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, block_header_type());
+        }
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), result.header());
+    };
+    fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_block_transaction_hashes(
-    const hash_digest& block_hash,
-    fetch_handler_block_transaction_hashes handle_fetch)
+void blockchain_impl::fetch_block_transaction_indexes(
+    const hash_digest& hash,
+    fetch_handler_block_transaction_indexes handle_fetch)
 {
-    fetch(
-        [this, block_hash, handle_fetch](size_t slock)
+    auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    {
+        auto result = interface_->blocks.get(hash);
+        if (!result)
         {
-            uint32_t height = common_->get_block_height(block_hash);
-            if (height == std::numeric_limits<uint32_t>::max())
-                return false;
-            return fetch_blk_tx_hashes_impl(
-                height, common_, handle_fetch, slock, &seqlock_);
-        });
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, index_list());
+        }
+        const size_t txs_size = result.transactions_size();
+        index_list indexes;
+        for (size_t i = 0; i < txs_size; ++i)
+            indexes.push_back(result.transaction_index(i));
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), indexes);
+    };
 }
 
-void blockchain_impl::fetch_block_height(const hash_digest& block_hash,
+void blockchain_impl::fetch_block_height(const hash_digest& hash,
     fetch_handler_block_height handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_block_height,
-            this, block_hash, handle_fetch, _1));
-}
-bool blockchain_impl::do_fetch_block_height(const hash_digest& block_hash,
-    fetch_handler_block_height handle_fetch, size_t slock)
-{
-    uint32_t height = common_->get_block_height(block_hash);
-    if (height == std::numeric_limits<uint32_t>::max())
-        return finish_fetch(slock, handle_fetch, error::not_found, 0);
-    return finish_fetch(slock, handle_fetch, std::error_code(), height);
+    auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    {
+        auto result = interface_->blocks.get(hash);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, 0);
+        }
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), result.height());
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_last_height(
     fetch_handler_last_height handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_last_height,
-            this, handle_fetch, _1));
+    auto do_fetch = [this, handle_fetch](size_t slock)
+    {
+        const size_t last_height = interface_->blocks.last_height();
+        if (last_height == block_database::null_height)
+        {
+            return finish_fetch(slock, handle_fetch, error::not_found, 0);
+        }
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), last_height);
+    };
+    fetch(do_fetch);
 }
-bool blockchain_impl::do_fetch_last_height(
-    fetch_handler_last_height handle_fetch, size_t slock)
+
+void blockchain_impl::fetch_transaction(const index_type index,
+    fetch_handler_transaction handle_fetch)
 {
-    const size_t last_height = interface_->blocks.last_height();
-    if (last_height == block_database::null_height)
-        return finish_fetch(slock, handle_fetch, error::not_found, 0);
-    return finish_fetch(slock, handle_fetch, std::error_code(), last_height);
+    auto do_fetch = [this, index, handle_fetch](size_t slock)
+    {
+        auto result = interface_->transactions.get(index);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, transaction_type());
+        }
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), result.transaction());
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_transaction(
-    const hash_digest& transaction_hash,
+    const hash_digest& hash,
     fetch_handler_transaction handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_transaction,
-            this, transaction_hash, handle_fetch, _1));
-}
-bool blockchain_impl::do_fetch_transaction(
-    const hash_digest& transaction_hash,
-    fetch_handler_transaction handle_fetch, size_t slock)
-{
-    auto result = interface_->transactions.get(transaction_hash);
-    if (!result)
+    auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    {
+        auto result = interface_->transactions.get(hash);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, transaction_type());
+        }
         return finish_fetch(slock, handle_fetch,
-            error::not_found, transaction_type());
-    return finish_fetch(slock, handle_fetch,
-        std::error_code(), result.transaction());
+            std::error_code(), result.transaction());
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_transaction_index(
-    const hash_digest& transaction_hash,
+    const hash_digest& hash,
     fetch_handler_transaction_index handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_transaction_index,
-            this, transaction_hash, handle_fetch, _1));
-}
-bool blockchain_impl::do_fetch_transaction_index(
-    const hash_digest& transaction_hash,
-    fetch_handler_transaction_index handle_fetch, size_t slock)
-{
-    auto result = interface_->transactions.get(transaction_hash);
-    if (!result)
+    auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    {
+        auto result = interface_->transactions.get(hash);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, 0, 0);
+        }
         return finish_fetch(slock, handle_fetch,
-            error::not_found, 0, 0);
-    return finish_fetch(slock, handle_fetch,
-        std::error_code(), result.height(), result.index());
+            std::error_code(), result.height(), result.index());
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_spend(const output_point& outpoint,
     fetch_handler_spend handle_fetch)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_spend,
-            this, outpoint, handle_fetch, _1));
-}
-bool blockchain_impl::do_fetch_spend(const output_point& outpoint,
-    fetch_handler_spend handle_fetch, size_t slock)
-{
-    auto result = interface_->spends.get(outpoint);
-    if (!result)
+    auto do_fetch = [this, outpoint, handle_fetch](size_t slock)
+    {
+        auto result = interface_->spends.get(outpoint);
+        if (!result)
+        {
+            return finish_fetch(slock, handle_fetch,
+                error::unspent_output, input_point());
+        }
         return finish_fetch(slock, handle_fetch,
-            error::unspent_output, input_point());
-    return finish_fetch(slock, handle_fetch,
-        std::error_code(), input_point{result.hash(), result.index()});
+            std::error_code(), input_point{result.hash(), result.index()});
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch, size_t from_height)
 {
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_history,
-            this, address, handle_fetch, from_height, _1));
-}
-bool blockchain_impl::do_fetch_history(const payment_address& address,
-    fetch_handler_history handle_fetch, size_t from_height, size_t slock)
-{
-    auto fetch_history = fetch_history_functor(db_credit_, db_debit_);
-    history_list history = fetch_history(address, from_height);
-    return finish_fetch(slock, handle_fetch, std::error_code(), history, 0);
+    auto do_fetch = [this, address, handle_fetch, from_height](size_t slock)
+    {
+        auto result = interface_->history.get(address.hash());
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), result.history, result.stop);
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_stealth(const stealth_prefix& prefix,

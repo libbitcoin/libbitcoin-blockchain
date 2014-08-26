@@ -54,9 +54,9 @@ int simple_chain_impl::find_index(const hash_digest& search_block_hash)
     return static_cast<int>(result.height());
 }
 
-big_number simple_chain_impl::sum_difficulty(size_t begin_index)
+hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
 {
-    big_number total_work = 0;
+    hash_number total_work = 0;
     leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
     auto raw_height = to_little_endian(begin_index);
     for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
