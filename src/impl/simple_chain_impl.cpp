@@ -75,36 +75,40 @@ hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
 }
 
 block_detail_ptr reconstruct_block(
-    blockchain_common_ptr common,
-    db_interface& interface_, const std::string& value)
+    db_interface& interface_, const size_t height)
 {
-    leveldb_block_info blk_info;
-    if (!common->deserialize_block(blk_info, value, true, true))
-        return nullptr;
-    block_detail_ptr blk = std::make_shared<block_detail>(blk_info.header);
-    for (const hash_digest& tx_hash: blk_info.tx_hashes)
+    auto blk_result = interface_.blocks.get(height);
+    BITCOIN_ASSERT(blk_result);
+    block_detail_ptr block =
+        std::make_shared<block_detail>(blk_result.header());
+    const size_t txs_size = blk_result.transactions_size();
+    for (size_t i = 0; i < txs_size; ++i)
     {
-        // Get the actual transaction.
-        auto result = interface_.transactions.get(tx_hash);
-        if (!result)
-            return nullptr;
-        blk->actual_ptr()->transactions.push_back(result.transaction());
+        const index_type index = blk_result.transaction_index(i);
+        auto tx_result = interface_.transactions.get(index);
+        BITCOIN_ASSERT(tx_result);
+        block->actual_ptr()->transactions.push_back(tx_result.transaction());
     }
-    return blk;
+    return block;
 }
 
 bool simple_chain_impl::release(size_t begin_index,
     block_detail_list& released_blocks)
 {
+    const size_t last_height = interface_.blocks.last_height();
+    BITCOIN_ASSERT(last_height != block_database::null_height);
+    for (size_t height = begin_index; height <= last_height; ++height)
+    {
+        block_detail_ptr block = reconstruct_block(interface_, height);
+    }
+    //
     leveldb_transaction_batch batch;
     leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
     auto raw_height = to_little_endian(begin_index);
     for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
     {
-        block_detail_ptr blk =
-            reconstruct_block(common_, interface_, it->value().ToString());
-        if (!blk)
-            return false;
+#if 0
+        block_detail_ptr block = reconstruct_block(interface_, height);
         // Add to list of sliced blocks
         released_blocks.push_back(blk);
         // Make sure to delete hash secondary index too.
@@ -118,6 +122,7 @@ bool simple_chain_impl::release(size_t begin_index,
         for (const transaction_type& block_tx: transactions)
             if (!clear_transaction_data(batch, block_tx))
                 return false;
+#endif
     }
     leveldb::WriteOptions options;
     // Execute batches.

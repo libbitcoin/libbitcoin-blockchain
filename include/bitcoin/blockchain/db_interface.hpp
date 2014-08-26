@@ -55,6 +55,9 @@ public:
     BCB_API void initialize_new();
     BCB_API void start();
 
+    BCB_API void push(const block_type& block);
+    BCB_API block_type pop();
+
     block_database blocks;
     spend_database spends;
     transaction_database transactions;
@@ -64,7 +67,27 @@ public:
     // These 2 databases need improvement.
     //history_scan_database scan;
     //stealth_database stealth;
+
+private:
+    void push_inputs(
+        const hash_digest& tx_hash, const size_t block_height,
+        const transaction_input_list& inputs);
+    void push_outputs(
+        const hash_digest& tx_hash, const size_t block_height,
+        const transaction_output_list& outputs);
+
+    void pop_inputs(
+        const hash_digest& tx_hash,
+        const transaction_input_list& inputs);
+    void pop_outputs(
+        const transaction_output_list& outputs);
 };
+
+/**
+ * Convenience function to create a new blockchain with a given
+ * prefix and default paths.
+ */
+BCB_API void initialize_blockchain(const std::string& prefix);
 
     } // namespace chain
 } // namespace libbitcoin
