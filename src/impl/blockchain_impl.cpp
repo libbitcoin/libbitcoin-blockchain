@@ -70,8 +70,9 @@ const char* height_comparator::Name() const
     return "depth_comparator";
 }
 
-blockchain_impl::blockchain_impl(threadpool& pool)
-  : ios_(pool.service()), strand_(pool), reorg_strand_(pool), seqlock_(0)
+blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
+  : ios_(pool.service()), strand_(pool), reorg_strand_(pool), seqlock_(0),
+    interface_(db_paths(prefix))
 {
     reorganize_subscriber_ =
         std::make_shared<reorganize_subscriber_type>(pool);
@@ -82,17 +83,9 @@ blockchain_impl::~blockchain_impl()
     delete open_options_.filter_policy;
 }
 
-void blockchain_impl::start(const std::string& prefix,
-    start_handler handle_start)
+void blockchain_impl::start()
 {
-    strand_.randomly_queue(
-        [this, prefix, handle_start]
-        {
-            if (initialize(prefix))
-                handle_start(std::error_code());
-            else
-                handle_start(error::operation_failed);
-        });
+    interface_.start();
 }
 
 void close(std::unique_ptr<leveldb::DB>& db)
@@ -152,9 +145,7 @@ void open_stealth_db(const std::string& prefix,
 
 bool blockchain_impl::initialize(const std::string& prefix)
 {
-    db_paths paths(prefix);
-    interface_.reset(new db_interface(paths));
-    interface_->start();
+    interface_.start();
 
     using boost::filesystem::path;
     // Try to lock the directory first
@@ -210,13 +201,12 @@ bool blockchain_impl::initialize(const std::string& prefix)
     special_databases special_dbs{
         db_stealth_.get()};
     // G++ has an internal compiler error when you use the implicit * cast.
-    db_interface* interface = interface_.get();
-    common_ = std::make_shared<blockchain_common>(*interface,
+    common_ = std::make_shared<blockchain_common>(interface_,
         databases, special_dbs);
     // Validate and organisation components.
     orphans_ = std::make_shared<orphans_pool>(20);
     chain_ = std::make_shared<simple_chain_impl>(
-        *interface, common_, databases);
+        interface_, common_, databases);
     auto reorg_handler = [this](
         const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& arrivals,
@@ -233,7 +223,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
             });
     };
     organize_ = std::make_shared<organizer_impl>(
-        *interface, orphans_, chain_, reorg_handler);
+        interface_, orphans_, chain_, reorg_handler);
     return true;
 }
 
@@ -320,7 +310,7 @@ void blockchain_impl::fetch_block_header(size_t height,
 {
     auto do_fetch = [this, height, handle_fetch](size_t slock)
     {
-        auto result = interface_->blocks.get(height);
+        auto result = interface_.blocks.get(height);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -337,7 +327,7 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        auto result = interface_->blocks.get(hash);
+        auto result = interface_.blocks.get(hash);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -355,7 +345,7 @@ void blockchain_impl::fetch_block_transaction_indexes(
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        auto result = interface_->blocks.get(hash);
+        auto result = interface_.blocks.get(hash);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -375,7 +365,7 @@ void blockchain_impl::fetch_block_height(const hash_digest& hash,
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        auto result = interface_->blocks.get(hash);
+        auto result = interface_.blocks.get(hash);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -392,7 +382,7 @@ void blockchain_impl::fetch_last_height(
 {
     auto do_fetch = [this, handle_fetch](size_t slock)
     {
-        const size_t last_height = interface_->blocks.last_height();
+        const size_t last_height = interface_.blocks.last_height();
         if (last_height == block_database::null_height)
         {
             return finish_fetch(slock, handle_fetch, error::not_found, 0);
@@ -408,7 +398,7 @@ void blockchain_impl::fetch_transaction(const index_type index,
 {
     auto do_fetch = [this, index, handle_fetch](size_t slock)
     {
-        auto result = interface_->transactions.get(index);
+        auto result = interface_.transactions.get(index);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -426,7 +416,7 @@ void blockchain_impl::fetch_transaction(
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        auto result = interface_->transactions.get(hash);
+        auto result = interface_.transactions.get(hash);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -444,7 +434,7 @@ void blockchain_impl::fetch_transaction_index(
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        auto result = interface_->transactions.get(hash);
+        auto result = interface_.transactions.get(hash);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -461,7 +451,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 {
     auto do_fetch = [this, outpoint, handle_fetch](size_t slock)
     {
-        auto result = interface_->spends.get(outpoint);
+        auto result = interface_.spends.get(outpoint);
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
@@ -478,7 +468,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
 {
     auto do_fetch = [this, address, handle_fetch, from_height](size_t slock)
     {
-        auto result = interface_->history.get(address.hash());
+        auto result = interface_.history.get(address.hash());
         return finish_fetch(slock, handle_fetch,
             std::error_code(), result.history, result.stop);
     };

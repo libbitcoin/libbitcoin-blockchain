@@ -46,16 +46,14 @@ public:
         const std::error_code&, size_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
-    typedef std::function<void (const std::error_code)> start_handler;
-
-    BCB_API blockchain_impl(threadpool& pool);
+    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix);
     BCB_API ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
-    BCB_API void start(const std::string& prefix, start_handler handle_start);
+    BCB_API void start();
     BCB_API void stop();
 
     BCB_API void store(const block_type& block,
@@ -104,7 +102,6 @@ private:
     typedef std::unique_ptr<leveldb::Comparator> comparator_ptr;
     typedef std::unique_ptr<mmfile> mmfile_ptr;
     typedef std::unique_ptr<stealth_database> stealth_db_ptr;
-    typedef std::unique_ptr<db_interface> db_interface_auto;
 
     typedef std::function<bool (size_t)> perform_read_functor;
 
@@ -159,7 +156,7 @@ private:
     comparator_ptr height_comparator_;
     leveldb::Options open_options_;
 
-    db_interface_auto interface_;
+    db_interface interface_;
 
     // Blocks indexed by height.
     //   block height -> block header + list(tx_hashes)
