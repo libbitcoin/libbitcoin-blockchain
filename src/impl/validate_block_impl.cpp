@@ -27,10 +27,11 @@
 namespace libbitcoin {
     namespace chain {
 
-validate_block_impl::validate_block_impl(blockchain_common_ptr common,
-    int fork_index, const block_detail_list& orphan_chain,
-    int orphan_index, size_t height, const block_type& current_block)
-  : validate_block(height, current_block), common_(common),
+validate_block_impl::validate_block_impl(
+    db_interface& interface, int fork_index,
+    const block_detail_list& orphan_chain, int orphan_index,
+    size_t height, const block_type& current_block)
+  : validate_block(height, current_block), interface_(interface),
     height_(height), fork_index_(fork_index),
     orphan_index_(orphan_index), orphan_chain_(orphan_chain)
 {
@@ -45,11 +46,10 @@ block_header_type validate_block_impl::fetch_block(size_t fetch_height)
         BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
         return orphan_chain_[fetch_index]->actual().header;
     }
-    leveldb_block_info blk;
     // We only really need the bits and timestamp fields.
-    bool get_status = common_->get_block(blk, fetch_height, true, false);
-    BITCOIN_ASSERT(get_status);
-    return blk.header;
+    auto result = interface_.blocks.get(fetch_height);
+    BITCOIN_ASSERT(result);
+    return result.header();
 }
 
 uint32_t validate_block_impl::previous_block_bits()
@@ -82,44 +82,39 @@ uint64_t validate_block_impl::median_time_past()
     return times[times.size() / 2];
 }
 
-bool tx_after_fork(const leveldb_tx_info& tx, size_t fork_index)
+bool tx_after_fork(size_t tx_height, size_t fork_index)
 {
-    if (tx.height <= fork_index)
+    if (tx_height <= fork_index)
         return false;
     return true;
 }
 
 bool validate_block_impl::transaction_exists(const hash_digest& tx_hash)
 {
-    leveldb_tx_info tx;
-    if (!common_->get_transaction(tx, tx_hash, true, false))
+    auto result = interface_.transactions.get(tx_hash);
+    if (!result)
         return false;
-    return !tx_after_fork(tx, fork_index_);
+    return !tx_after_fork(result.height(), fork_index_);
 }
 
 bool validate_block_impl::is_output_spent(
     const output_point& outpoint)
 {
-    input_point input_spend;
-    if (!common_->fetch_spend(outpoint, input_spend))
+    auto result = interface_.spends.get(outpoint);
+    if (!result)
         return false;
     // Lookup block height. Is the spend after the fork point?
-    return transaction_exists(input_spend.hash);
+    return transaction_exists(result.hash());
 }
 
 bool validate_block_impl::fetch_transaction(transaction_type& tx,
     size_t& tx_height, const hash_digest& tx_hash)
 {
-    leveldb_tx_info tx_info;
-    bool tx_exists = common_->get_transaction(tx_info, tx_hash, true, true);
-    if (!tx_exists || tx_after_fork(tx_info, fork_index_))
-    {
-        if (!fetch_orphan_transaction(tx, tx_height, tx_hash))
-            return false;
-        return true;
-    }
-    tx = tx_info.tx;
-    tx_height = tx_info.height;
+    auto result = interface_.transactions.get(tx_hash);
+    tx_height = result.height();
+    if (!result || tx_after_fork(tx_height, fork_index_))
+        return fetch_orphan_transaction(tx, tx_height, tx_hash);
+    tx = result.transaction();
     return true;
 }
 

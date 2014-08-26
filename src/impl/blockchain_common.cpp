@@ -59,42 +59,10 @@ bool add_credit(leveldb::WriteBatch& batch,
     const payment_address& address, uint64_t output_value,
     const output_point& outpoint, uint32_t block_height);
 
-blockchain_common::blockchain_common(
+blockchain_common::blockchain_common(db_interface& interface,
     leveldb_databases db, special_databases special_dbs)
-  : db_(db), db_stealth_(special_dbs.stealth)
+  : interface_(interface), db_(db), db_stealth_(special_dbs.stealth)
 {
-}
-
-uint32_t blockchain_common::find_last_block_height()
-{
-    leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
-    it->SeekToLast();
-    if (!it->Valid() || !it->status().ok())
-        return std::numeric_limits<uint32_t>::max();
-    BITCOIN_ASSERT(it->key().size() == 4);
-    return recreate_height(it->key());
-}
-
-bool blockchain_common::fetch_spend(const output_point& spent_output,
-    input_point& input_spend)
-{
-    data_chunk spent_key = create_spent_key(spent_output);
-    std::string raw_spend;
-    leveldb::Status status = db_.spend->Get(
-        leveldb::ReadOptions(), slice(spent_key), &raw_spend);
-    if (status.IsNotFound())
-        return false;
-    else if (!status.ok())
-    {
-        log_fatal(LOG_BLOCKCHAIN) << "fetch_spend: " << status.ToString();
-        return false;
-    }
-    const data_chunk raw_spend_data(raw_spend.begin(), raw_spend.end());
-    auto deserial = make_deserializer(
-        raw_spend_data.begin(), raw_spend_data.end());
-    input_spend.hash = deserial.read_hash();
-    input_spend.index = deserial.read_4_bytes();
-    return true;
 }
 
 bool blockchain_common::save_block(

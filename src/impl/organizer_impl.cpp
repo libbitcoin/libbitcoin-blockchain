@@ -24,10 +24,10 @@
 namespace libbitcoin {
     namespace chain {
 
-organizer_impl::organizer_impl(blockchain_common_ptr common,
+organizer_impl::organizer_impl(db_interface& interface,
     orphans_pool_ptr orphans, simple_chain_ptr chain,
     reorganize_handler handler)
-  : organizer(orphans, chain), common_(common), handler_(handler)
+  : organizer(orphans, chain), interface_(interface), handler_(handler)
 {
 }
 
@@ -38,7 +38,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
     const block_type& current_block = orphan_chain[orphan_index]->actual();
     size_t height = fork_index + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
-    validate_block_impl validate(common_, fork_index, orphan_chain,
+    validate_block_impl validate(interface_, fork_index, orphan_chain,
         orphan_index, height, current_block);
     // Perform checks.
     std::error_code ec;

@@ -27,6 +27,7 @@
 #include <bitcoin/format.hpp>
 #include <bitcoin/primitives.hpp>
 #include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/blockchain/db_interface.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -77,12 +78,8 @@ struct special_databases
 class blockchain_common
 {
 public:
-    blockchain_common(leveldb_databases db, special_databases special_dbs);
-
-    uint32_t find_last_block_height();
-    bool fetch_spend(
-        const output_point& spent_output,
-        input_point& input_spend);
+    blockchain_common(db_interface& interface,
+        leveldb_databases db, special_databases special_dbs);
 
     bool save_block(uint32_t height, const block_type& serial_block);
 
@@ -100,6 +97,8 @@ private:
     bool save_transaction(leveldb_transaction_batch& batch,
         uint32_t block_height, uint32_t tx_index,
         const hash_digest& tx_hash, const transaction_type& block_tx);
+
+    db_interface& interface_;
 
     leveldb_databases db_;
     stealth_database* db_stealth_;

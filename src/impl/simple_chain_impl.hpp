@@ -31,7 +31,9 @@ class simple_chain_impl
   : public simple_chain
 {
 public:
-    simple_chain_impl(blockchain_common_ptr common, leveldb_databases db);
+    simple_chain_impl(
+        db_interface& interface,
+        blockchain_common_ptr common, leveldb_databases db);
     void append(block_detail_ptr incoming_block);
     int find_index(const hash_digest& search_block_hash);
     big_number sum_difficulty(size_t begin_index);
@@ -42,6 +44,7 @@ private:
     bool clear_transaction_data(leveldb_transaction_batch& batch,
         const transaction_type& remove_tx);
 
+    db_interface& interface_;
     blockchain_common_ptr common_;
     leveldb_databases db_;
 };

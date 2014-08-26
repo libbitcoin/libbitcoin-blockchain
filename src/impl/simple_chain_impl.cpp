@@ -31,25 +31,27 @@ bool remove_credit(leveldb::WriteBatch& batch,
     const transaction_output_type& output, const output_point& outpoint);
 
 simple_chain_impl::simple_chain_impl(
+    db_interface& interface,
     blockchain_common_ptr common, leveldb_databases db)
-  : common_(common), db_(db)
+  : interface_(interface), common_(common), db_(db)
 {
 }
 
 void simple_chain_impl::append(block_detail_ptr incoming_block)
 {
-    uint32_t last_block_height = common_->find_last_block_height();
+    const size_t last_height = interface_.blocks.last_height();
+    BITCOIN_ASSERT(last_height != block_database::null_height);
     const block_type& actual_block = incoming_block->actual();
-    if (!common_->save_block(last_block_height + 1, actual_block))
+    if (!common_->save_block(last_height + 1, actual_block))
         log_fatal(LOG_BLOCKCHAIN) << "Saving block in organizer failed";
 }
 
 int simple_chain_impl::find_index(const hash_digest& search_block_hash)
 {
-    uint32_t height = common_->get_block_height(search_block_hash);
-    if (height == std::numeric_limits<uint32_t>::max())
+    auto result = interface_.blocks.get(search_block_hash);
+    if (!result)
         return -1;
-    return static_cast<int>(height);
+    return static_cast<int>(result.height());
 }
 
 big_number simple_chain_impl::sum_difficulty(size_t begin_index)

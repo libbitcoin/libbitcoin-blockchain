@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 
 #include <bitcoin/validate.hpp>
+#include <bitcoin/blockchain/db_interface.hpp>
 #include "blockchain_common.hpp"
 #include "organizer_impl.hpp"
 
@@ -31,7 +32,7 @@ class validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(blockchain_common_ptr common, int fork_index,
+    validate_block_impl(db_interface& interface, int fork_index,
         const block_detail_list& orphan_chain, int orphan_index,
         size_t height, const block_type& current_block);
 
@@ -54,7 +55,7 @@ private:
     bool orphan_is_spent(const output_point& previous_output,
         size_t skip_tx, size_t skip_input);
 
-    blockchain_common_ptr common_;
+    db_interface& interface_;
     size_t height_;
 
     size_t fork_index_, orphan_index_;

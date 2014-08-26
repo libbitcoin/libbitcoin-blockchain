@@ -210,10 +210,13 @@ bool blockchain_impl::initialize(const std::string& prefix)
     special_databases special_dbs{
         db_stealth_.get()};
     // G++ has an internal compiler error when you use the implicit * cast.
-    common_ = std::make_shared<blockchain_common>(databases, special_dbs);
+    db_interface* interface = interface_.get();
+    common_ = std::make_shared<blockchain_common>(*interface,
+        databases, special_dbs);
     // Validate and organisation components.
     orphans_ = std::make_shared<orphans_pool>(20);
-    chain_ = std::make_shared<simple_chain_impl>(common_, databases);
+    chain_ = std::make_shared<simple_chain_impl>(
+        *interface, common_, databases);
     auto reorg_handler = [this](
         const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& arrivals,
@@ -230,7 +233,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
             });
     };
     organize_ = std::make_shared<organizer_impl>(
-        common_, orphans_, chain_, reorg_handler);
+        *interface, orphans_, chain_, reorg_handler);
     return true;
 }
 
@@ -342,15 +345,12 @@ bool blockchain_impl::fetch_block_header_by_hash(
     const hash_digest& block_hash,
     fetch_handler_block_header handle_fetch, size_t slock)
 {
-    leveldb_block_info blk;
-    uint32_t height = common_->get_block_height(block_hash);
-    if (height == std::numeric_limits<uint32_t>::max() ||
-        !common_->get_block(blk, height, true, false))
-    {
+    auto result = interface_->blocks.get(block_hash);
+    if (!result)
         return finish_fetch(slock, handle_fetch,
             error::not_found, block_header_type());
-    }
-    return finish_fetch(slock, handle_fetch, std::error_code(), blk.header);
+    return finish_fetch(slock, handle_fetch,
+        std::error_code(), result.header());
 }
 
 template<typename Handler, typename SeqLockPtr>
@@ -424,8 +424,8 @@ void blockchain_impl::fetch_last_height(
 bool blockchain_impl::do_fetch_last_height(
     fetch_handler_last_height handle_fetch, size_t slock)
 {
-    uint32_t last_height = common_->find_last_block_height();
-    if (last_height == std::numeric_limits<uint32_t>::max())
+    const size_t last_height = interface_->blocks.last_height();
+    if (last_height == block_database::null_height)
         return finish_fetch(slock, handle_fetch, error::not_found, 0);
     return finish_fetch(slock, handle_fetch, std::error_code(), last_height);
 }
@@ -480,11 +480,12 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 bool blockchain_impl::do_fetch_spend(const output_point& outpoint,
     fetch_handler_spend handle_fetch, size_t slock)
 {
-    input_point input_spend;
-    if (!common_->fetch_spend(outpoint, input_spend))
+    auto result = interface_->spends.get(outpoint);
+    if (!result)
         return finish_fetch(slock, handle_fetch,
             error::unspent_output, input_point());
-    return finish_fetch(slock, handle_fetch, std::error_code(), input_spend);
+    return finish_fetch(slock, handle_fetch,
+        std::error_code(), input_point{result.hash(), result.index()});
 }
 
 void blockchain_impl::fetch_history(const payment_address& address,
