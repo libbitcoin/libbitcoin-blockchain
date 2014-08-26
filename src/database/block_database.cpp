@@ -125,7 +125,7 @@ void block_database::store(const block_header_type& header,
     const size_t height = index_.size();
     // Write block data.
     const hash_digest key = hash_block_header(header);
-    const size_t value_size = 80 + 4 + tx_indexes.size() * 4;
+    const size_t value_size = 80 + 2 + 4 + tx_indexes.size() * 4;
     auto write = [&](uint8_t* data)
     {
         satoshi_save(header, data);
