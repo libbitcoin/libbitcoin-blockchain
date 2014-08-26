@@ -46,6 +46,11 @@ public:
     BCB_API block_header_type header() const;
 
     /**
+     * The height of this block in the blockchain.
+     */
+    BCB_API size_t height() const;
+
+    /**
      * Read the number of transactions in this block.
      */
     BCB_API size_t transactions_size() const;

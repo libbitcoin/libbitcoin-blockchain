@@ -56,17 +56,23 @@ block_header_type block_result::header() const
     return deserialize(slab_);
 }
 
+size_t block_result::height() const
+{
+    BITCOIN_ASSERT(slab_);
+    return from_little_endian<uint16_t>(slab_ + 80);
+}
+
 size_t block_result::transactions_size() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_ + 80);
+    return from_little_endian<uint32_t>(slab_ + 80 + 2);
 }
 
 index_type block_result::transaction_index(size_t i) const
 {
     BITCOIN_ASSERT(slab_);
     BITCOIN_ASSERT(i < transactions_size());
-    const uint8_t* first = slab_ + 80 + 4 + i * 4;
+    const uint8_t* first = slab_ + 80 + 2 + 4 + i * 4;
     return from_little_endian<uint32_t>(first);
 }
 
@@ -116,13 +122,15 @@ block_result block_database::get(const hash_digest& hash) const
 void block_database::store(const block_header_type& header,
     const transaction_index_list& tx_indexes)
 {
+    const size_t height = index_.size();
     // Write block data.
     const hash_digest key = hash_block_header(header);
     const size_t value_size = 80 + 4 + tx_indexes.size() * 4;
-    auto write = [&header, &tx_indexes](uint8_t* data)
+    auto write = [&](uint8_t* data)
     {
         satoshi_save(header, data);
         auto serial = make_serializer(data + 80);
+        serial.write_2_bytes(height);
         serial.write_4_bytes(tx_indexes.size());
         for (const index_type tx_index: tx_indexes)
             serial.write_4_bytes(tx_index);
