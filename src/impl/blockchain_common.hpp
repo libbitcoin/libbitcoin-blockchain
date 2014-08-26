@@ -83,15 +83,10 @@ public:
 
     bool save_block(uint32_t height, const block_type& serial_block);
 
-    uint32_t get_block_height(const hash_digest& block_hash);
-    bool get_block(leveldb_block_info& blk_info,
-        uint32_t height, bool read_header, bool read_tx_hashes);
     // Used by simple_chain when iterating through blocks.
     // get_block isn't sufficient by itself.
     bool deserialize_block(leveldb_block_info& blk_info,
         const std::string& raw_data, bool read_header, bool read_tx_hashes);
-    bool get_transaction(leveldb_tx_info& tx_info,
-        const hash_digest& tx_hash, bool read_parent, bool read_tx);
 
 private:
     bool save_transaction(leveldb_transaction_batch& batch,

@@ -75,7 +75,8 @@ hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
 }
 
 block_detail_ptr reconstruct_block(
-    blockchain_common_ptr common, const std::string& value)
+    blockchain_common_ptr common,
+    db_interface& interface_, const std::string& value)
 {
     leveldb_block_info blk_info;
     if (!common->deserialize_block(blk_info, value, true, true))
@@ -84,10 +85,10 @@ block_detail_ptr reconstruct_block(
     for (const hash_digest& tx_hash: blk_info.tx_hashes)
     {
         // Get the actual transaction.
-        leveldb_tx_info tx;
-        if (!common->get_transaction(tx, tx_hash, false, true))
+        auto result = interface_.transactions.get(tx_hash);
+        if (!result)
             return nullptr;
-        blk->actual_ptr()->transactions.push_back(tx.tx);
+        blk->actual_ptr()->transactions.push_back(result.transaction());
     }
     return blk;
 }
@@ -101,7 +102,7 @@ bool simple_chain_impl::release(size_t begin_index,
     for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
     {
         block_detail_ptr blk =
-            reconstruct_block(common_, it->value().ToString());
+            reconstruct_block(common_, interface_, it->value().ToString());
         if (!blk)
             return false;
         // Add to list of sliced blocks

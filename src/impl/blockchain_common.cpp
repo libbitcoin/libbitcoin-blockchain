@@ -274,40 +274,6 @@ bool add_credit(leveldb::WriteBatch& batch,
     return true;
 }
 
-uint32_t blockchain_common::get_block_height(const hash_digest& block_hash)
-{
-    std::string value;
-    leveldb::Status status = db_.block_hash->Get(
-        leveldb::ReadOptions(), slice_block_hash(block_hash), &value);
-    if (status.IsNotFound())
-        return std::numeric_limits<uint32_t>::max();
-    else if (!status.ok())
-    {
-        log_fatal(LOG_BLOCKCHAIN) << "fetch_block_height("
-            << block_hash << "): " << status.ToString();
-        return std::numeric_limits<uint32_t>::max();
-    }
-    return recreate_height(value);
-}
-
-bool blockchain_common::get_block(leveldb_block_info& blk_info,
-    uint32_t height, bool read_header, bool read_tx_hashes)
-{
-    // First we try to read the bytes from the database.
-    auto raw_height = to_little_endian(height);
-    std::string value;
-    leveldb::Status status = db_.block->Get(
-        leveldb::ReadOptions(), slice(raw_height), &value);
-    if (status.IsNotFound())
-        return false;
-    else if (!status.ok())
-    {
-        log_fatal(LOG_BLOCKCHAIN) << "fetch_proto_block("
-            << height << "): " << status.ToString();
-        return false;
-    }
-    return deserialize_block(blk_info, value, read_header, read_tx_hashes);
-}
 bool blockchain_common::deserialize_block(leveldb_block_info& blk_info,
     const std::string& raw_data, bool read_header, bool read_tx_hashes)
 {
@@ -327,46 +293,6 @@ bool blockchain_common::deserialize_block(leveldb_block_info& blk_info,
         const hash_digest& tx_hash = deserial.read_hash();
         blk_info.tx_hashes.push_back(tx_hash);
     }
-    return true;
-}
-
-bool blockchain_common::get_transaction(leveldb_tx_info& tx_info,
-    const hash_digest& tx_hash, bool read_parent, bool read_tx)
-{
-    // First we try to read the bytes from the database.
-    std::string value;
-    leveldb::Status status = db_.tx->Get(
-        leveldb::ReadOptions(), slice(tx_hash), &value);
-    if (status.IsNotFound())
-        return false;
-    else if (!status.ok())
-    {
-        log_fatal(LOG_BLOCKCHAIN) << "get_transaction("
-            << tx_hash << "): " << status.ToString();
-        return false;
-    }
-    // Read the parent block height and our index in that block (if neccessary).
-    BITCOIN_ASSERT(value.size() > 8);
-    if (read_parent)
-    {
-        auto deserial = make_deserializer(value.begin(), value.begin() + 8);
-        tx_info.height = deserial.read_4_bytes();
-        tx_info.index = deserial.read_4_bytes();
-    }
-    if (!read_tx)
-        return true;
-    // Read the actual transaction (if neccessary).
-    try
-    {
-        BITCOIN_ASSERT(value.size() > 8);
-        satoshi_load(value.begin() + 8, value.end(), tx_info.tx);
-    }
-    catch (end_of_stream)
-    {
-        return false;
-    }
-    BITCOIN_ASSERT(satoshi_raw_size(tx_info.tx) + 8 == value.size());
-    BITCOIN_ASSERT(hash_transaction(tx_info.tx) == tx_hash);
     return true;
 }
 
