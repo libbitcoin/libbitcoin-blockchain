@@ -21,6 +21,16 @@ plot "gets.data" using 1:2 title "LevelDB" with linespoints, \
      "gets.data" using 1:3 title "None" with linespoints, \
      "gets.data" using 1:4 title "ht (a=1.0)" with linespoints
 
+set title "Cache utilisation (normalised performance) 100 million values stored"
+set xlabel "Gets (millions)"
+set xrange [10: 600]
+set ylabel "Time taken (microsecs)"
+set yrange [0: 50000]
+set output "gets-normalised.png"
+plot "gets-normalised.data" using 1:2 title "LevelDB" with linespoints, \
+     "gets-normalised.data" using 1:3 title "None" with linespoints, \
+     "gets-normalised.data" using 1:4 title "ht (a=1.0)" with linespoints
+
 set title "Different load factors with 100 million values stored"
 set xlabel "Load factor (a)"
 set xrange [0.4: 4.0]
