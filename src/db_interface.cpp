@@ -157,6 +157,8 @@ block_type db_interface::pop()
         result.transactions.push_back(tx);
     }
     blocks.unlink(block_height);
+    // Since we looped backwards
+    std::reverse(result.transactions.begin(), result.transactions.end());
     return result;
 }
 
