@@ -1,0 +1,2746 @@
+Preparing 20 million txs...
+Done.
+Writing LevelDB database...
+Wrote 20000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   456539.868099
+DEBUG [leveldb.Get()]: iterations = 20000000 |   646936.331090
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1279181.159918
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1884740.779390
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2515612.955832
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3212121.430717
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3750341.672814
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4359938.827280
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4996750.755623
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5674061.536602
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6117269.507042
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7825410.328372
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9346163.918217
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12533224.344746
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18756477.592431
+DEBUG [None]: iterations = 10000000 |   7989.292845
+DEBUG [None]: iterations = 20000000 |   12170.362002
+DEBUG [None]: iterations = 40000000 |   20749.818209
+DEBUG [None]: iterations = 60000000 |   29081.293992
+DEBUG [None]: iterations = 80000000 |   37643.693033
+DEBUG [None]: iterations = 100000000 |   46394.928770
+DEBUG [None]: iterations = 120000000 |   54463.525861
+DEBUG [None]: iterations = 140000000 |   62802.991607
+DEBUG [None]: iterations = 160000000 |   71173.687705
+DEBUG [None]: iterations = 180000000 |   79836.313193
+DEBUG [None]: iterations = 200000000 |   89210.401680
+DEBUG [None]: iterations = 250000000 |   109242.759419
+DEBUG [None]: iterations = 300000000 |   129856.481269
+DEBUG [None]: iterations = 400000000 |   172692.899436
+DEBUG [None]: iterations = 600000000 |   257236.672742
+Writing htdb_slab database (a = 0.4)...
+Buckets: 8000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 8000000 |   34617.069091
+DEBUG [ht.get()]: iterations = 20000000 buckets = 8000000 |   51334.719244
+DEBUG [ht.get()]: iterations = 40000000 buckets = 8000000 |   81688.428750
+DEBUG [ht.get()]: iterations = 60000000 buckets = 8000000 |   112461.262974
+DEBUG [ht.get()]: iterations = 80000000 buckets = 8000000 |   143681.387892
+DEBUG [ht.get()]: iterations = 100000000 buckets = 8000000 |   176228.861204
+DEBUG [ht.get()]: iterations = 120000000 buckets = 8000000 |   204210.490681
+DEBUG [ht.get()]: iterations = 140000000 buckets = 8000000 |   237367.238213
+DEBUG [ht.get()]: iterations = 160000000 buckets = 8000000 |   270987.650120
+DEBUG [ht.get()]: iterations = 180000000 buckets = 8000000 |   297190.248167
+DEBUG [ht.get()]: iterations = 200000000 buckets = 8000000 |   334066.223308
+DEBUG [ht.get()]: iterations = 250000000 buckets = 8000000 |   406737.301198
+DEBUG [ht.get()]: iterations = 300000000 buckets = 8000000 |   481522.046363
+DEBUG [ht.get()]: iterations = 400000000 buckets = 8000000 |   645231.967217
+DEBUG [ht.get()]: iterations = 600000000 buckets = 8000000 |   970697.008578
+Writing htdb_slab database (a = 0.6)...
+Buckets: 12000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 12000000 |   34260.353130
+DEBUG [ht.get()]: iterations = 20000000 buckets = 12000000 |   49714.859852
+DEBUG [ht.get()]: iterations = 40000000 buckets = 12000000 |   79110.320166
+DEBUG [ht.get()]: iterations = 60000000 buckets = 12000000 |   108784.975059
+DEBUG [ht.get()]: iterations = 80000000 buckets = 12000000 |   138521.634463
+DEBUG [ht.get()]: iterations = 100000000 buckets = 12000000 |   168473.800742
+DEBUG [ht.get()]: iterations = 120000000 buckets = 12000000 |   200036.379651
+DEBUG [ht.get()]: iterations = 140000000 buckets = 12000000 |   228399.171965
+DEBUG [ht.get()]: iterations = 160000000 buckets = 12000000 |   257163.903599
+DEBUG [ht.get()]: iterations = 180000000 buckets = 12000000 |   290058.755352
+DEBUG [ht.get()]: iterations = 200000000 buckets = 12000000 |   318052.026030
+DEBUG [ht.get()]: iterations = 250000000 buckets = 12000000 |   391787.318215
+DEBUG [ht.get()]: iterations = 300000000 buckets = 12000000 |   469163.377291
+DEBUG [ht.get()]: iterations = 400000000 buckets = 12000000 |   622139.719773
+DEBUG [ht.get()]: iterations = 600000000 buckets = 12000000 |   930102.240436
+Writing htdb_slab database (a = 0.8)...
+Buckets: 16000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 16000000 |   34427.005241
+DEBUG [ht.get()]: iterations = 20000000 buckets = 16000000 |   49326.036815
+DEBUG [ht.get()]: iterations = 40000000 buckets = 16000000 |   78643.915942
+DEBUG [ht.get()]: iterations = 60000000 buckets = 16000000 |   107024.726534
+DEBUG [ht.get()]: iterations = 80000000 buckets = 16000000 |   138580.286802
+DEBUG [ht.get()]: iterations = 100000000 buckets = 16000000 |   165680.789055
+DEBUG [ht.get()]: iterations = 120000000 buckets = 16000000 |   196496.406495
+DEBUG [ht.get()]: iterations = 140000000 buckets = 16000000 |   224171.399776
+DEBUG [ht.get()]: iterations = 160000000 buckets = 16000000 |   255637.695239
+DEBUG [ht.get()]: iterations = 180000000 buckets = 16000000 |   282556.058567
+DEBUG [ht.get()]: iterations = 200000000 buckets = 16000000 |   311882.367256
+DEBUG [ht.get()]: iterations = 250000000 buckets = 16000000 |   385211.618205
+DEBUG [ht.get()]: iterations = 300000000 buckets = 16000000 |   458070.545165
+DEBUG [ht.get()]: iterations = 400000000 buckets = 16000000 |   605161.400075
+DEBUG [ht.get()]: iterations = 600000000 buckets = 16000000 |   896770.109869
+Writing htdb_slab database (a = 1.0)...
+Buckets: 20000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 20000000 |   34550.521693
+DEBUG [ht.get()]: iterations = 20000000 buckets = 20000000 |   48783.291866
+DEBUG [ht.get()]: iterations = 40000000 buckets = 20000000 |   77633.896363
+DEBUG [ht.get()]: iterations = 60000000 buckets = 20000000 |   108107.494638
+DEBUG [ht.get()]: iterations = 80000000 buckets = 20000000 |   137809.285677
+DEBUG [ht.get()]: iterations = 100000000 buckets = 20000000 |   164074.664779
+DEBUG [ht.get()]: iterations = 120000000 buckets = 20000000 |   193289.643108
+DEBUG [ht.get()]: iterations = 140000000 buckets = 20000000 |   221869.411016
+DEBUG [ht.get()]: iterations = 160000000 buckets = 20000000 |   251426.037327
+DEBUG [ht.get()]: iterations = 180000000 buckets = 20000000 |   280429.670418
+DEBUG [ht.get()]: iterations = 200000000 buckets = 20000000 |   309942.041937
+DEBUG [ht.get()]: iterations = 250000000 buckets = 20000000 |   386157.220354
+DEBUG [ht.get()]: iterations = 300000000 buckets = 20000000 |   452960.922770
+DEBUG [ht.get()]: iterations = 400000000 buckets = 20000000 |   598696.704335
+DEBUG [ht.get()]: iterations = 600000000 buckets = 20000000 |   888794.035238
+Writing htdb_slab database (a = 1.2)...
+Buckets: 24000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 24000000 |   34453.371121
+DEBUG [ht.get()]: iterations = 20000000 buckets = 24000000 |   48823.416669
+DEBUG [ht.get()]: iterations = 40000000 buckets = 24000000 |   77667.897055
+DEBUG [ht.get()]: iterations = 60000000 buckets = 24000000 |   106943.968115
+DEBUG [ht.get()]: iterations = 80000000 buckets = 24000000 |   134581.641442
+DEBUG [ht.get()]: iterations = 100000000 buckets = 24000000 |   164568.736477
+DEBUG [ht.get()]: iterations = 120000000 buckets = 24000000 |   193209.964036
+DEBUG [ht.get()]: iterations = 140000000 buckets = 24000000 |   220916.063346
+DEBUG [ht.get()]: iterations = 160000000 buckets = 24000000 |   250434.424787
+DEBUG [ht.get()]: iterations = 180000000 buckets = 24000000 |   283554.728010
+DEBUG [ht.get()]: iterations = 200000000 buckets = 24000000 |   310875.687829
+DEBUG [ht.get()]: iterations = 250000000 buckets = 24000000 |   381582.932164
+DEBUG [ht.get()]: iterations = 300000000 buckets = 24000000 |   450929.782632
+DEBUG [ht.get()]: iterations = 400000000 buckets = 24000000 |   595941.209314
+DEBUG [ht.get()]: iterations = 600000000 buckets = 24000000 |   888183.465436
+Writing htdb_slab database (a = 1.4)...
+Buckets: 28000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 28000000 |   34445.694763
+DEBUG [ht.get()]: iterations = 20000000 buckets = 28000000 |   49372.704151
+DEBUG [ht.get()]: iterations = 40000000 buckets = 28000000 |   78530.669569
+DEBUG [ht.get()]: iterations = 60000000 buckets = 28000000 |   105851.904599
+DEBUG [ht.get()]: iterations = 80000000 buckets = 28000000 |   136886.746031
+DEBUG [ht.get()]: iterations = 100000000 buckets = 28000000 |   163319.026830
+DEBUG [ht.get()]: iterations = 120000000 buckets = 28000000 |   196489.101211
+DEBUG [ht.get()]: iterations = 140000000 buckets = 28000000 |   220448.837958
+DEBUG [ht.get()]: iterations = 160000000 buckets = 28000000 |   249698.864577
+DEBUG [ht.get()]: iterations = 180000000 buckets = 28000000 |   278009.349718
+DEBUG [ht.get()]: iterations = 200000000 buckets = 28000000 |   313886.616383
+DEBUG [ht.get()]: iterations = 250000000 buckets = 28000000 |   383713.963014
+DEBUG [ht.get()]: iterations = 300000000 buckets = 28000000 |   449944.157258
+DEBUG [ht.get()]: iterations = 400000000 buckets = 28000000 |   592224.561263
+DEBUG [ht.get()]: iterations = 600000000 buckets = 28000000 |   879997.533351
+Writing htdb_slab database (a = 1.6)...
+Buckets: 32000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 32000000 |   34632.811251
+DEBUG [ht.get()]: iterations = 20000000 buckets = 32000000 |   49708.159945
+DEBUG [ht.get()]: iterations = 40000000 buckets = 32000000 |   77579.320046
+DEBUG [ht.get()]: iterations = 60000000 buckets = 32000000 |   105823.829982
+DEBUG [ht.get()]: iterations = 80000000 buckets = 32000000 |   136187.154537
+DEBUG [ht.get()]: iterations = 100000000 buckets = 32000000 |   163191.302637
+DEBUG [ht.get()]: iterations = 120000000 buckets = 32000000 |   192087.491347
+DEBUG [ht.get()]: iterations = 140000000 buckets = 32000000 |   221330.983218
+DEBUG [ht.get()]: iterations = 160000000 buckets = 32000000 |   250919.644029
+DEBUG [ht.get()]: iterations = 180000000 buckets = 32000000 |   278143.352994
+DEBUG [ht.get()]: iterations = 200000000 buckets = 32000000 |   308569.061378
+DEBUG [ht.get()]: iterations = 250000000 buckets = 32000000 |   379924.360597
+DEBUG [ht.get()]: iterations = 300000000 buckets = 32000000 |   460203.945982
+DEBUG [ht.get()]: iterations = 400000000 buckets = 32000000 |   595921.712294
+DEBUG [ht.get()]: iterations = 600000000 buckets = 32000000 |   887270.226670
+Writing htdb_slab database (a = 1.8)...
+Buckets: 36000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 36000000 |   34797.668053
+DEBUG [ht.get()]: iterations = 20000000 buckets = 36000000 |   49174.526291
+DEBUG [ht.get()]: iterations = 40000000 buckets = 36000000 |   78095.439806
+DEBUG [ht.get()]: iterations = 60000000 buckets = 36000000 |   106537.992569
+DEBUG [ht.get()]: iterations = 80000000 buckets = 36000000 |   135277.523266
+DEBUG [ht.get()]: iterations = 100000000 buckets = 36000000 |   163361.230012
+DEBUG [ht.get()]: iterations = 120000000 buckets = 36000000 |   192991.551160
+DEBUG [ht.get()]: iterations = 140000000 buckets = 36000000 |   221983.709611
+DEBUG [ht.get()]: iterations = 160000000 buckets = 36000000 |   249649.059632
+DEBUG [ht.get()]: iterations = 180000000 buckets = 36000000 |   277439.382767
+DEBUG [ht.get()]: iterations = 200000000 buckets = 36000000 |   306454.275818
+DEBUG [ht.get()]: iterations = 250000000 buckets = 36000000 |   378658.180658
+DEBUG [ht.get()]: iterations = 300000000 buckets = 36000000 |   449791.654004
+DEBUG [ht.get()]: iterations = 400000000 buckets = 36000000 |   595441.780421
+DEBUG [ht.get()]: iterations = 600000000 buckets = 36000000 |   897205.849001
+Writing htdb_slab database (a = 2.0)...
+Buckets: 40000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 40000000 |   35081.909606
+DEBUG [ht.get()]: iterations = 20000000 buckets = 40000000 |   49288.637951
+DEBUG [ht.get()]: iterations = 40000000 buckets = 40000000 |   78865.264144
+DEBUG [ht.get()]: iterations = 60000000 buckets = 40000000 |   106249.181214
+DEBUG [ht.get()]: iterations = 80000000 buckets = 40000000 |   134103.854459
+DEBUG [ht.get()]: iterations = 100000000 buckets = 40000000 |   163068.691708
+DEBUG [ht.get()]: iterations = 120000000 buckets = 40000000 |   193055.448714
+DEBUG [ht.get()]: iterations = 140000000 buckets = 40000000 |   224042.820422
+DEBUG [ht.get()]: iterations = 160000000 buckets = 40000000 |   248472.111645
+DEBUG [ht.get()]: iterations = 180000000 buckets = 40000000 |   277153.215415
+DEBUG [ht.get()]: iterations = 200000000 buckets = 40000000 |   305564.547716
+DEBUG [ht.get()]: iterations = 250000000 buckets = 40000000 |   382865.901211
+DEBUG [ht.get()]: iterations = 300000000 buckets = 40000000 |   454907.310540
+DEBUG [ht.get()]: iterations = 400000000 buckets = 40000000 |   588875.995053
+DEBUG [ht.get()]: iterations = 600000000 buckets = 40000000 |   887137.059262
+Writing htdb_slab database (a = 2.2)...
+Buckets: 44000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 44000000 |   35193.696317
+DEBUG [ht.get()]: iterations = 20000000 buckets = 44000000 |   49667.806305
+DEBUG [ht.get()]: iterations = 40000000 buckets = 44000000 |   77935.476037
+DEBUG [ht.get()]: iterations = 60000000 buckets = 44000000 |   106742.476243
+DEBUG [ht.get()]: iterations = 80000000 buckets = 44000000 |   134746.089097
+DEBUG [ht.get()]: iterations = 100000000 buckets = 44000000 |   164312.023591
+DEBUG [ht.get()]: iterations = 120000000 buckets = 44000000 |   192117.330400
+DEBUG [ht.get()]: iterations = 140000000 buckets = 44000000 |   221221.148971
+DEBUG [ht.get()]: iterations = 160000000 buckets = 44000000 |   250018.270092
+DEBUG [ht.get()]: iterations = 180000000 buckets = 44000000 |   276831.540260
+DEBUG [ht.get()]: iterations = 200000000 buckets = 44000000 |   306452.759172
+DEBUG [ht.get()]: iterations = 250000000 buckets = 44000000 |   382584.397867
+DEBUG [ht.get()]: iterations = 300000000 buckets = 44000000 |   447292.946401
+DEBUG [ht.get()]: iterations = 400000000 buckets = 44000000 |   592706.573421
+DEBUG [ht.get()]: iterations = 600000000 buckets = 44000000 |   875776.061551
+Writing htdb_slab database (a = 2.4)...
+Buckets: 48000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 48000000 |   35549.236170
+DEBUG [ht.get()]: iterations = 20000000 buckets = 48000000 |   50075.882227
+DEBUG [ht.get()]: iterations = 40000000 buckets = 48000000 |   78278.725594
+DEBUG [ht.get()]: iterations = 60000000 buckets = 48000000 |   106332.142682
+DEBUG [ht.get()]: iterations = 80000000 buckets = 48000000 |   134733.660925
+DEBUG [ht.get()]: iterations = 100000000 buckets = 48000000 |   163470.950941
+DEBUG [ht.get()]: iterations = 120000000 buckets = 48000000 |   191336.429762
+DEBUG [ht.get()]: iterations = 140000000 buckets = 48000000 |   220067.723852
+DEBUG [ht.get()]: iterations = 160000000 buckets = 48000000 |   248349.389865
+DEBUG [ht.get()]: iterations = 180000000 buckets = 48000000 |   276190.354879
+DEBUG [ht.get()]: iterations = 200000000 buckets = 48000000 |   310852.169969
+DEBUG [ht.get()]: iterations = 250000000 buckets = 48000000 |   376382.737865
+DEBUG [ht.get()]: iterations = 300000000 buckets = 48000000 |   451764.399299
+DEBUG [ht.get()]: iterations = 400000000 buckets = 48000000 |   593145.630602
+DEBUG [ht.get()]: iterations = 600000000 buckets = 48000000 |   896095.362725
+Writing htdb_slab database (a = 2.6)...
+Buckets: 52000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 52000000 |   35723.478287
+DEBUG [ht.get()]: iterations = 20000000 buckets = 52000000 |   49872.151107
+DEBUG [ht.get()]: iterations = 40000000 buckets = 52000000 |   78784.294333
+DEBUG [ht.get()]: iterations = 60000000 buckets = 52000000 |   106713.509677
+DEBUG [ht.get()]: iterations = 80000000 buckets = 52000000 |   135714.692896
+DEBUG [ht.get()]: iterations = 100000000 buckets = 52000000 |   168050.466578
+DEBUG [ht.get()]: iterations = 120000000 buckets = 52000000 |   192244.148873
+DEBUG [ht.get()]: iterations = 140000000 buckets = 52000000 |   220896.199232
+DEBUG [ht.get()]: iterations = 160000000 buckets = 52000000 |   251742.880532
+DEBUG [ht.get()]: iterations = 180000000 buckets = 52000000 |   278211.810152
+DEBUG [ht.get()]: iterations = 200000000 buckets = 52000000 |   310990.607459
+DEBUG [ht.get()]: iterations = 250000000 buckets = 52000000 |   381408.270072
+DEBUG [ht.get()]: iterations = 300000000 buckets = 52000000 |   445222.549379
+DEBUG [ht.get()]: iterations = 400000000 buckets = 52000000 |   590651.721771
+DEBUG [ht.get()]: iterations = 600000000 buckets = 52000000 |   872409.965396
+Writing htdb_slab database (a = 2.8)...
+Buckets: 56000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 56000000 |   35748.610022
+DEBUG [ht.get()]: iterations = 20000000 buckets = 56000000 |   49796.557370
+DEBUG [ht.get()]: iterations = 40000000 buckets = 56000000 |   78513.221840
+DEBUG [ht.get()]: iterations = 60000000 buckets = 56000000 |   106499.857150
+DEBUG [ht.get()]: iterations = 80000000 buckets = 56000000 |   137285.889267
+DEBUG [ht.get()]: iterations = 100000000 buckets = 56000000 |   166366.960501
+DEBUG [ht.get()]: iterations = 120000000 buckets = 56000000 |   196224.331317
+DEBUG [ht.get()]: iterations = 140000000 buckets = 56000000 |   222416.309606
+DEBUG [ht.get()]: iterations = 160000000 buckets = 56000000 |   251838.722281
+DEBUG [ht.get()]: iterations = 180000000 buckets = 56000000 |   277448.549082
+DEBUG [ht.get()]: iterations = 200000000 buckets = 56000000 |   307164.873194
+DEBUG [ht.get()]: iterations = 250000000 buckets = 56000000 |   375934.084146
+DEBUG [ht.get()]: iterations = 300000000 buckets = 56000000 |   448895.970186
+DEBUG [ht.get()]: iterations = 400000000 buckets = 56000000 |   590047.897375
+DEBUG [ht.get()]: iterations = 600000000 buckets = 56000000 |   875655.401049
+Writing htdb_slab database (a = 3.0)...
+Buckets: 60000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 60000000 |   35805.957473
+DEBUG [ht.get()]: iterations = 20000000 buckets = 60000000 |   50676.598131
+DEBUG [ht.get()]: iterations = 40000000 buckets = 60000000 |   81989.494685
+DEBUG [ht.get()]: iterations = 60000000 buckets = 60000000 |   107698.079489
+DEBUG [ht.get()]: iterations = 80000000 buckets = 60000000 |   137375.938368
+DEBUG [ht.get()]: iterations = 100000000 buckets = 60000000 |   165356.048702
+DEBUG [ht.get()]: iterations = 120000000 buckets = 60000000 |   195637.162869
+DEBUG [ht.get()]: iterations = 140000000 buckets = 60000000 |   222867.311026
+DEBUG [ht.get()]: iterations = 160000000 buckets = 60000000 |   250095.069667
+DEBUG [ht.get()]: iterations = 180000000 buckets = 60000000 |   280670.113922
+DEBUG [ht.get()]: iterations = 200000000 buckets = 60000000 |   309806.011890
+DEBUG [ht.get()]: iterations = 250000000 buckets = 60000000 |   382771.796887
+DEBUG [ht.get()]: iterations = 300000000 buckets = 60000000 |   453120.517018
+DEBUG [ht.get()]: iterations = 400000000 buckets = 60000000 |   599035.853629
+DEBUG [ht.get()]: iterations = 600000000 buckets = 60000000 |   894803.486646
+Writing htdb_slab database (a = 4.0)...
+Buckets: 80000000
+Wrote 20000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 80000000 |   36932.808659
+DEBUG [ht.get()]: iterations = 20000000 buckets = 80000000 |   50961.584188
+DEBUG [ht.get()]: iterations = 40000000 buckets = 80000000 |   80081.081221
+DEBUG [ht.get()]: iterations = 60000000 buckets = 80000000 |   108777.785516
+DEBUG [ht.get()]: iterations = 80000000 buckets = 80000000 |   136258.611042
+DEBUG [ht.get()]: iterations = 100000000 buckets = 80000000 |   165472.417664
+DEBUG [ht.get()]: iterations = 120000000 buckets = 80000000 |   196551.657058
+DEBUG [ht.get()]: iterations = 140000000 buckets = 80000000 |   223042.224781
+DEBUG [ht.get()]: iterations = 160000000 buckets = 80000000 |   254402.465670
+DEBUG [ht.get()]: iterations = 180000000 buckets = 80000000 |   279289.699293
+DEBUG [ht.get()]: iterations = 200000000 buckets = 80000000 |   309968.900693
+DEBUG [ht.get()]: iterations = 250000000 buckets = 80000000 |   378726.599551
+DEBUG [ht.get()]: iterations = 300000000 buckets = 80000000 |   450591.795057
+DEBUG [ht.get()]: iterations = 400000000 buckets = 80000000 |   590875.269826
+DEBUG [ht.get()]: iterations = 600000000 buckets = 80000000 |   882661.806713
+Preparing 30 million txs...
+Done.
+Writing LevelDB database...
+Wrote 30000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   419137.587619
+DEBUG [leveldb.Get()]: iterations = 20000000 |   645502.374276
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1266228.428716
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1890006.236915
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2511665.953713
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3116174.318746
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3743367.761395
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4360577.485708
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4972164.739848
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5682835.092612
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6222049.108345
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7801583.111754
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9326512.740979
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12267223.321105
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18702122.837034
+DEBUG [None]: iterations = 10000000 |   9983.786056
+DEBUG [None]: iterations = 20000000 |   14339.853515
+DEBUG [None]: iterations = 40000000 |   22921.810145
+DEBUG [None]: iterations = 60000000 |   31513.317520
+DEBUG [None]: iterations = 80000000 |   40253.434167
+DEBUG [None]: iterations = 100000000 |   49007.653492
+DEBUG [None]: iterations = 120000000 |   57555.904396
+DEBUG [None]: iterations = 140000000 |   65814.531099
+DEBUG [None]: iterations = 160000000 |   74569.972825
+DEBUG [None]: iterations = 180000000 |   83036.999557
+DEBUG [None]: iterations = 200000000 |   92114.806833
+DEBUG [None]: iterations = 250000000 |   113410.112318
+DEBUG [None]: iterations = 300000000 |   134674.045815
+DEBUG [None]: iterations = 400000000 |   177974.427523
+DEBUG [None]: iterations = 600000000 |   265052.560414
+Writing htdb_slab database (a = 0.4)...
+Buckets: 12000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 12000000 |   36372.024721
+DEBUG [ht.get()]: iterations = 20000000 buckets = 12000000 |   51376.847396
+DEBUG [ht.get()]: iterations = 40000000 buckets = 12000000 |   81683.131074
+DEBUG [ht.get()]: iterations = 60000000 buckets = 12000000 |   111870.912192
+DEBUG [ht.get()]: iterations = 80000000 buckets = 12000000 |   141972.193807
+DEBUG [ht.get()]: iterations = 100000000 buckets = 12000000 |   173399.953286
+DEBUG [ht.get()]: iterations = 120000000 buckets = 12000000 |   202151.900957
+DEBUG [ht.get()]: iterations = 140000000 buckets = 12000000 |   232659.545293
+DEBUG [ht.get()]: iterations = 160000000 buckets = 12000000 |   267039.322125
+DEBUG [ht.get()]: iterations = 180000000 buckets = 12000000 |   292671.720445
+DEBUG [ht.get()]: iterations = 200000000 buckets = 12000000 |   322973.386837
+DEBUG [ht.get()]: iterations = 250000000 buckets = 12000000 |   397477.390701
+DEBUG [ht.get()]: iterations = 300000000 buckets = 12000000 |   482151.206226
+DEBUG [ht.get()]: iterations = 400000000 buckets = 12000000 |   623529.767011
+DEBUG [ht.get()]: iterations = 600000000 buckets = 12000000 |   922017.374319
+Writing htdb_slab database (a = 0.6)...
+Buckets: 18000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 18000000 |   36302.342615
+DEBUG [ht.get()]: iterations = 20000000 buckets = 18000000 |   51614.359389
+DEBUG [ht.get()]: iterations = 40000000 buckets = 18000000 |   80738.581300
+DEBUG [ht.get()]: iterations = 60000000 buckets = 18000000 |   110304.407867
+DEBUG [ht.get()]: iterations = 80000000 buckets = 18000000 |   139961.154490
+DEBUG [ht.get()]: iterations = 100000000 buckets = 18000000 |   168401.991616
+DEBUG [ht.get()]: iterations = 120000000 buckets = 18000000 |   197961.893127
+DEBUG [ht.get()]: iterations = 140000000 buckets = 18000000 |   228113.295806
+DEBUG [ht.get()]: iterations = 160000000 buckets = 18000000 |   260785.407643
+DEBUG [ht.get()]: iterations = 180000000 buckets = 18000000 |   286452.797099
+DEBUG [ht.get()]: iterations = 200000000 buckets = 18000000 |   317365.118682
+DEBUG [ht.get()]: iterations = 250000000 buckets = 18000000 |   390904.453536
+DEBUG [ht.get()]: iterations = 300000000 buckets = 18000000 |   463128.569814
+DEBUG [ht.get()]: iterations = 400000000 buckets = 18000000 |   611657.284045
+DEBUG [ht.get()]: iterations = 600000000 buckets = 18000000 |   904764.647252
+Writing htdb_slab database (a = 0.8)...
+Buckets: 24000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 24000000 |   36543.267667
+DEBUG [ht.get()]: iterations = 20000000 buckets = 24000000 |   51082.489462
+DEBUG [ht.get()]: iterations = 40000000 buckets = 24000000 |   79831.488233
+DEBUG [ht.get()]: iterations = 60000000 buckets = 24000000 |   109394.716747
+DEBUG [ht.get()]: iterations = 80000000 buckets = 24000000 |   137944.464476
+DEBUG [ht.get()]: iterations = 100000000 buckets = 24000000 |   167296.646175
+DEBUG [ht.get()]: iterations = 120000000 buckets = 24000000 |   197474.837682
+DEBUG [ht.get()]: iterations = 140000000 buckets = 24000000 |   228668.257803
+DEBUG [ht.get()]: iterations = 160000000 buckets = 24000000 |   255952.732936
+DEBUG [ht.get()]: iterations = 180000000 buckets = 24000000 |   285336.950222
+DEBUG [ht.get()]: iterations = 200000000 buckets = 24000000 |   314038.796097
+DEBUG [ht.get()]: iterations = 250000000 buckets = 24000000 |   384779.167331
+DEBUG [ht.get()]: iterations = 300000000 buckets = 24000000 |   453568.271205
+DEBUG [ht.get()]: iterations = 400000000 buckets = 24000000 |   607486.040662
+DEBUG [ht.get()]: iterations = 600000000 buckets = 24000000 |   896852.045071
+Writing htdb_slab database (a = 1.0)...
+Buckets: 30000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 30000000 |   36748.393668
+DEBUG [ht.get()]: iterations = 20000000 buckets = 30000000 |   51153.721187
+DEBUG [ht.get()]: iterations = 40000000 buckets = 30000000 |   80461.187169
+DEBUG [ht.get()]: iterations = 60000000 buckets = 30000000 |   109131.988091
+DEBUG [ht.get()]: iterations = 80000000 buckets = 30000000 |   139339.682167
+DEBUG [ht.get()]: iterations = 100000000 buckets = 30000000 |   166930.561249
+DEBUG [ht.get()]: iterations = 120000000 buckets = 30000000 |   197333.049377
+DEBUG [ht.get()]: iterations = 140000000 buckets = 30000000 |   225957.336971
+DEBUG [ht.get()]: iterations = 160000000 buckets = 30000000 |   254080.994268
+DEBUG [ht.get()]: iterations = 180000000 buckets = 30000000 |   283633.230716
+DEBUG [ht.get()]: iterations = 200000000 buckets = 30000000 |   311432.867793
+DEBUG [ht.get()]: iterations = 250000000 buckets = 30000000 |   386814.243671
+DEBUG [ht.get()]: iterations = 300000000 buckets = 30000000 |   456848.786064
+DEBUG [ht.get()]: iterations = 400000000 buckets = 30000000 |   600285.675950
+DEBUG [ht.get()]: iterations = 600000000 buckets = 30000000 |   889853.784959
+Writing htdb_slab database (a = 1.2)...
+Buckets: 36000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 36000000 |   37353.114203
+DEBUG [ht.get()]: iterations = 20000000 buckets = 36000000 |   51608.596077
+DEBUG [ht.get()]: iterations = 40000000 buckets = 36000000 |   80538.017716
+DEBUG [ht.get()]: iterations = 60000000 buckets = 36000000 |   109425.217282
+DEBUG [ht.get()]: iterations = 80000000 buckets = 36000000 |   138805.389987
+DEBUG [ht.get()]: iterations = 100000000 buckets = 36000000 |   167153.118582
+DEBUG [ht.get()]: iterations = 120000000 buckets = 36000000 |   194879.151810
+DEBUG [ht.get()]: iterations = 140000000 buckets = 36000000 |   226075.024203
+DEBUG [ht.get()]: iterations = 160000000 buckets = 36000000 |   251840.489727
+DEBUG [ht.get()]: iterations = 180000000 buckets = 36000000 |   288113.155061
+DEBUG [ht.get()]: iterations = 200000000 buckets = 36000000 |   311352.332789
+DEBUG [ht.get()]: iterations = 250000000 buckets = 36000000 |   383124.364694
+DEBUG [ht.get()]: iterations = 300000000 buckets = 36000000 |   456384.742279
+DEBUG [ht.get()]: iterations = 400000000 buckets = 36000000 |   598816.464342
+DEBUG [ht.get()]: iterations = 600000000 buckets = 36000000 |   896496.101635
+Writing htdb_slab database (a = 1.4)...
+Buckets: 42000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 42000000 |   37159.514692
+DEBUG [ht.get()]: iterations = 20000000 buckets = 42000000 |   51813.747790
+DEBUG [ht.get()]: iterations = 40000000 buckets = 42000000 |   80405.340646
+DEBUG [ht.get()]: iterations = 60000000 buckets = 42000000 |   108690.736650
+DEBUG [ht.get()]: iterations = 80000000 buckets = 42000000 |   137760.236925
+DEBUG [ht.get()]: iterations = 100000000 buckets = 42000000 |   165947.275108
+DEBUG [ht.get()]: iterations = 120000000 buckets = 42000000 |   198944.520431
+DEBUG [ht.get()]: iterations = 140000000 buckets = 42000000 |   224004.930713
+DEBUG [ht.get()]: iterations = 160000000 buckets = 42000000 |   257323.893068
+DEBUG [ht.get()]: iterations = 180000000 buckets = 42000000 |   281848.283465
+DEBUG [ht.get()]: iterations = 200000000 buckets = 42000000 |   310366.268514
+DEBUG [ht.get()]: iterations = 250000000 buckets = 42000000 |   381073.954999
+DEBUG [ht.get()]: iterations = 300000000 buckets = 42000000 |   454396.841343
+DEBUG [ht.get()]: iterations = 400000000 buckets = 42000000 |   602017.101434
+DEBUG [ht.get()]: iterations = 600000000 buckets = 42000000 |   890555.751510
+Writing htdb_slab database (a = 1.6)...
+Buckets: 48000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 48000000 |   37434.645161
+DEBUG [ht.get()]: iterations = 20000000 buckets = 48000000 |   51682.038058
+DEBUG [ht.get()]: iterations = 40000000 buckets = 48000000 |   80974.652831
+DEBUG [ht.get()]: iterations = 60000000 buckets = 48000000 |   110526.491721
+DEBUG [ht.get()]: iterations = 80000000 buckets = 48000000 |   138921.867459
+DEBUG [ht.get()]: iterations = 100000000 buckets = 48000000 |   166155.792977
+DEBUG [ht.get()]: iterations = 120000000 buckets = 48000000 |   195309.200762
+DEBUG [ht.get()]: iterations = 140000000 buckets = 48000000 |   223878.240503
+DEBUG [ht.get()]: iterations = 160000000 buckets = 48000000 |   253472.302182
+DEBUG [ht.get()]: iterations = 180000000 buckets = 48000000 |   280970.118952
+DEBUG [ht.get()]: iterations = 200000000 buckets = 48000000 |   310213.701421
+DEBUG [ht.get()]: iterations = 250000000 buckets = 48000000 |   381802.650946
+DEBUG [ht.get()]: iterations = 300000000 buckets = 48000000 |   456425.895917
+DEBUG [ht.get()]: iterations = 400000000 buckets = 48000000 |   598867.726399
+DEBUG [ht.get()]: iterations = 600000000 buckets = 48000000 |   884959.885212
+Writing htdb_slab database (a = 1.8)...
+Buckets: 54000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 54000000 |   37776.998668
+DEBUG [ht.get()]: iterations = 20000000 buckets = 54000000 |   52634.931408
+DEBUG [ht.get()]: iterations = 40000000 buckets = 54000000 |   80642.444757
+DEBUG [ht.get()]: iterations = 60000000 buckets = 54000000 |   109336.662417
+DEBUG [ht.get()]: iterations = 80000000 buckets = 54000000 |   141754.571172
+DEBUG [ht.get()]: iterations = 100000000 buckets = 54000000 |   167372.967547
+DEBUG [ht.get()]: iterations = 120000000 buckets = 54000000 |   197961.879469
+DEBUG [ht.get()]: iterations = 140000000 buckets = 54000000 |   226709.769029
+DEBUG [ht.get()]: iterations = 160000000 buckets = 54000000 |   252765.339591
+DEBUG [ht.get()]: iterations = 180000000 buckets = 54000000 |   289909.466042
+DEBUG [ht.get()]: iterations = 200000000 buckets = 54000000 |   310786.004530
+DEBUG [ht.get()]: iterations = 250000000 buckets = 54000000 |   383388.219206
+DEBUG [ht.get()]: iterations = 300000000 buckets = 54000000 |   455126.493577
+DEBUG [ht.get()]: iterations = 400000000 buckets = 54000000 |   600055.601854
+DEBUG [ht.get()]: iterations = 600000000 buckets = 54000000 |   890853.845248
+Writing htdb_slab database (a = 2.0)...
+Buckets: 60000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 60000000 |   37923.959381
+DEBUG [ht.get()]: iterations = 20000000 buckets = 60000000 |   52502.278680
+DEBUG [ht.get()]: iterations = 40000000 buckets = 60000000 |   81595.308028
+DEBUG [ht.get()]: iterations = 60000000 buckets = 60000000 |   110914.244384
+DEBUG [ht.get()]: iterations = 80000000 buckets = 60000000 |   142944.424113
+DEBUG [ht.get()]: iterations = 100000000 buckets = 60000000 |   167195.595017
+DEBUG [ht.get()]: iterations = 120000000 buckets = 60000000 |   195155.848987
+DEBUG [ht.get()]: iterations = 140000000 buckets = 60000000 |   227400.599426
+DEBUG [ht.get()]: iterations = 160000000 buckets = 60000000 |   256393.005320
+DEBUG [ht.get()]: iterations = 180000000 buckets = 60000000 |   283184.574099
+DEBUG [ht.get()]: iterations = 200000000 buckets = 60000000 |   312086.680853
+DEBUG [ht.get()]: iterations = 250000000 buckets = 60000000 |   385586.293198
+DEBUG [ht.get()]: iterations = 300000000 buckets = 60000000 |   457670.643656
+DEBUG [ht.get()]: iterations = 400000000 buckets = 60000000 |   598056.965895
+DEBUG [ht.get()]: iterations = 600000000 buckets = 60000000 |   885361.956055
+Writing htdb_slab database (a = 2.2)...
+Buckets: 66000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 66000000 |   38309.389285
+DEBUG [ht.get()]: iterations = 20000000 buckets = 66000000 |   52694.699198
+DEBUG [ht.get()]: iterations = 40000000 buckets = 66000000 |   81301.549026
+DEBUG [ht.get()]: iterations = 60000000 buckets = 66000000 |   110293.748872
+DEBUG [ht.get()]: iterations = 80000000 buckets = 66000000 |   138437.261994
+DEBUG [ht.get()]: iterations = 100000000 buckets = 66000000 |   168106.105728
+DEBUG [ht.get()]: iterations = 120000000 buckets = 66000000 |   196051.475920
+DEBUG [ht.get()]: iterations = 140000000 buckets = 66000000 |   224646.310614
+DEBUG [ht.get()]: iterations = 160000000 buckets = 66000000 |   253393.948279
+DEBUG [ht.get()]: iterations = 180000000 buckets = 66000000 |   287264.033334
+DEBUG [ht.get()]: iterations = 200000000 buckets = 66000000 |   310072.253101
+DEBUG [ht.get()]: iterations = 250000000 buckets = 66000000 |   381124.134255
+DEBUG [ht.get()]: iterations = 300000000 buckets = 66000000 |   453980.917017
+DEBUG [ht.get()]: iterations = 400000000 buckets = 66000000 |   597059.643378
+DEBUG [ht.get()]: iterations = 600000000 buckets = 66000000 |   884221.893801
+Writing htdb_slab database (a = 2.4)...
+Buckets: 72000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 72000000 |   38537.460949
+DEBUG [ht.get()]: iterations = 20000000 buckets = 72000000 |   53157.879794
+DEBUG [ht.get()]: iterations = 40000000 buckets = 72000000 |   82461.137985
+DEBUG [ht.get()]: iterations = 60000000 buckets = 72000000 |   111339.336073
+DEBUG [ht.get()]: iterations = 80000000 buckets = 72000000 |   139386.079578
+DEBUG [ht.get()]: iterations = 100000000 buckets = 72000000 |   167708.673193
+DEBUG [ht.get()]: iterations = 120000000 buckets = 72000000 |   197826.034015
+DEBUG [ht.get()]: iterations = 140000000 buckets = 72000000 |   228200.627064
+DEBUG [ht.get()]: iterations = 160000000 buckets = 72000000 |   256254.006762
+DEBUG [ht.get()]: iterations = 180000000 buckets = 72000000 |   284040.866117
+DEBUG [ht.get()]: iterations = 200000000 buckets = 72000000 |   312480.979872
+DEBUG [ht.get()]: iterations = 250000000 buckets = 72000000 |   386086.384617
+DEBUG [ht.get()]: iterations = 300000000 buckets = 72000000 |   458686.289212
+DEBUG [ht.get()]: iterations = 400000000 buckets = 72000000 |   601346.586024
+DEBUG [ht.get()]: iterations = 600000000 buckets = 72000000 |   890466.167388
+Writing htdb_slab database (a = 2.6)...
+Buckets: 78000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 78000000 |   38836.416796
+DEBUG [ht.get()]: iterations = 20000000 buckets = 78000000 |   53291.469201
+DEBUG [ht.get()]: iterations = 40000000 buckets = 78000000 |   82252.422387
+DEBUG [ht.get()]: iterations = 60000000 buckets = 78000000 |   110572.953916
+DEBUG [ht.get()]: iterations = 80000000 buckets = 78000000 |   140207.537268
+DEBUG [ht.get()]: iterations = 100000000 buckets = 78000000 |   168299.099113
+DEBUG [ht.get()]: iterations = 120000000 buckets = 78000000 |   198146.002780
+DEBUG [ht.get()]: iterations = 140000000 buckets = 78000000 |   228006.629635
+DEBUG [ht.get()]: iterations = 160000000 buckets = 78000000 |   257929.683347
+DEBUG [ht.get()]: iterations = 180000000 buckets = 78000000 |   286796.054995
+DEBUG [ht.get()]: iterations = 200000000 buckets = 78000000 |   312355.181513
+DEBUG [ht.get()]: iterations = 250000000 buckets = 78000000 |   384309.423172
+DEBUG [ht.get()]: iterations = 300000000 buckets = 78000000 |   461379.803193
+DEBUG [ht.get()]: iterations = 400000000 buckets = 78000000 |   604310.385438
+DEBUG [ht.get()]: iterations = 600000000 buckets = 78000000 |   881278.680416
+Writing htdb_slab database (a = 2.8)...
+Buckets: 84000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 84000000 |   39068.842704
+DEBUG [ht.get()]: iterations = 20000000 buckets = 84000000 |   53632.097462
+DEBUG [ht.get()]: iterations = 40000000 buckets = 84000000 |   81999.165320
+DEBUG [ht.get()]: iterations = 60000000 buckets = 84000000 |   111403.270807
+DEBUG [ht.get()]: iterations = 80000000 buckets = 84000000 |   139739.337684
+DEBUG [ht.get()]: iterations = 100000000 buckets = 84000000 |   168836.626118
+DEBUG [ht.get()]: iterations = 120000000 buckets = 84000000 |   197314.989340
+DEBUG [ht.get()]: iterations = 140000000 buckets = 84000000 |   227666.098847
+DEBUG [ht.get()]: iterations = 160000000 buckets = 84000000 |   255757.415435
+DEBUG [ht.get()]: iterations = 180000000 buckets = 84000000 |   283432.050044
+DEBUG [ht.get()]: iterations = 200000000 buckets = 84000000 |   315759.275503
+DEBUG [ht.get()]: iterations = 250000000 buckets = 84000000 |   386968.901726
+DEBUG [ht.get()]: iterations = 300000000 buckets = 84000000 |   459119.113643
+DEBUG [ht.get()]: iterations = 400000000 buckets = 84000000 |   601282.205085
+DEBUG [ht.get()]: iterations = 600000000 buckets = 84000000 |   886886.400575
+Writing htdb_slab database (a = 3.0)...
+Buckets: 90000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 90000000 |   39864.186035
+DEBUG [ht.get()]: iterations = 20000000 buckets = 90000000 |   54132.945298
+DEBUG [ht.get()]: iterations = 40000000 buckets = 90000000 |   82598.071193
+DEBUG [ht.get()]: iterations = 60000000 buckets = 90000000 |   112539.954555
+DEBUG [ht.get()]: iterations = 80000000 buckets = 90000000 |   140833.749068
+DEBUG [ht.get()]: iterations = 100000000 buckets = 90000000 |   168710.353228
+DEBUG [ht.get()]: iterations = 120000000 buckets = 90000000 |   199136.735252
+DEBUG [ht.get()]: iterations = 140000000 buckets = 90000000 |   230078.555550
+DEBUG [ht.get()]: iterations = 160000000 buckets = 90000000 |   258345.851719
+DEBUG [ht.get()]: iterations = 180000000 buckets = 90000000 |   283505.273112
+DEBUG [ht.get()]: iterations = 200000000 buckets = 90000000 |   312853.479924
+DEBUG [ht.get()]: iterations = 250000000 buckets = 90000000 |   390361.311711
+DEBUG [ht.get()]: iterations = 300000000 buckets = 90000000 |   456949.882074
+DEBUG [ht.get()]: iterations = 400000000 buckets = 90000000 |   600183.395992
+DEBUG [ht.get()]: iterations = 600000000 buckets = 90000000 |   898952.147307
+Writing htdb_slab database (a = 4.0)...
+Buckets: 120000000
+Wrote 30000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 120000000 |   40917.460817
+DEBUG [ht.get()]: iterations = 20000000 buckets = 120000000 |   55475.651957
+DEBUG [ht.get()]: iterations = 40000000 buckets = 120000000 |   84719.433579
+DEBUG [ht.get()]: iterations = 60000000 buckets = 120000000 |   113272.234807
+DEBUG [ht.get()]: iterations = 80000000 buckets = 120000000 |   143901.977261
+DEBUG [ht.get()]: iterations = 100000000 buckets = 120000000 |   174473.585134
+DEBUG [ht.get()]: iterations = 120000000 buckets = 120000000 |   200746.577394
+DEBUG [ht.get()]: iterations = 140000000 buckets = 120000000 |   230198.957592
+DEBUG [ht.get()]: iterations = 160000000 buckets = 120000000 |   256555.644535
+DEBUG [ht.get()]: iterations = 180000000 buckets = 120000000 |   287639.683682
+DEBUG [ht.get()]: iterations = 200000000 buckets = 120000000 |   315813.289436
+DEBUG [ht.get()]: iterations = 250000000 buckets = 120000000 |   388374.087849
+DEBUG [ht.get()]: iterations = 300000000 buckets = 120000000 |   458942.687156
+DEBUG [ht.get()]: iterations = 400000000 buckets = 120000000 |   603619.690654
+DEBUG [ht.get()]: iterations = 600000000 buckets = 120000000 |   891689.684080
+Preparing 40 million txs...
+Done.
+Writing LevelDB database...
+Wrote 40000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   423331.248580
+DEBUG [leveldb.Get()]: iterations = 20000000 |   647332.321572
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1269510.301211
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1856393.674527
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2509941.374775
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3124681.390688
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3754194.050852
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4325335.846322
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4935285.537282
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5576214.737279
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6261506.942164
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7853852.128805
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9288404.926898
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12518964.853874
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18461937.842680
+DEBUG [None]: iterations = 10000000 |   11939.617887
+DEBUG [None]: iterations = 20000000 |   16315.182913
+DEBUG [None]: iterations = 40000000 |   25125.401852
+DEBUG [None]: iterations = 60000000 |   33900.380609
+DEBUG [None]: iterations = 80000000 |   42700.709373
+DEBUG [None]: iterations = 100000000 |   51346.070624
+DEBUG [None]: iterations = 120000000 |   60409.489215
+DEBUG [None]: iterations = 140000000 |   69161.465278
+DEBUG [None]: iterations = 160000000 |   77909.469905
+DEBUG [None]: iterations = 180000000 |   86830.632161
+DEBUG [None]: iterations = 200000000 |   95626.702325
+DEBUG [None]: iterations = 250000000 |   117068.751270
+DEBUG [None]: iterations = 300000000 |   139807.498181
+DEBUG [None]: iterations = 400000000 |   184533.563723
+DEBUG [None]: iterations = 600000000 |   271829.445573
+Writing htdb_slab database (a = 0.4)...
+Buckets: 16000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 16000000 |   38606.889966
+DEBUG [ht.get()]: iterations = 20000000 buckets = 16000000 |   54124.094333
+DEBUG [ht.get()]: iterations = 40000000 buckets = 16000000 |   83984.412631
+DEBUG [ht.get()]: iterations = 60000000 buckets = 16000000 |   115710.090272
+DEBUG [ht.get()]: iterations = 80000000 buckets = 16000000 |   143696.645763
+DEBUG [ht.get()]: iterations = 100000000 buckets = 16000000 |   172241.650232
+DEBUG [ht.get()]: iterations = 120000000 buckets = 16000000 |   203080.869190
+DEBUG [ht.get()]: iterations = 140000000 buckets = 16000000 |   232392.084183
+DEBUG [ht.get()]: iterations = 160000000 buckets = 16000000 |   261787.711391
+DEBUG [ht.get()]: iterations = 180000000 buckets = 16000000 |   291653.707022
+DEBUG [ht.get()]: iterations = 200000000 buckets = 16000000 |   321774.786153
+DEBUG [ht.get()]: iterations = 250000000 buckets = 16000000 |   396208.245000
+DEBUG [ht.get()]: iterations = 300000000 buckets = 16000000 |   472998.403457
+DEBUG [ht.get()]: iterations = 400000000 buckets = 16000000 |   621625.286400
+DEBUG [ht.get()]: iterations = 600000000 buckets = 16000000 |   920976.485732
+Writing htdb_slab database (a = 0.6)...
+Buckets: 24000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 24000000 |   38816.638834
+DEBUG [ht.get()]: iterations = 20000000 buckets = 24000000 |   53611.315340
+DEBUG [ht.get()]: iterations = 40000000 buckets = 24000000 |   83965.323712
+DEBUG [ht.get()]: iterations = 60000000 buckets = 24000000 |   113326.882220
+DEBUG [ht.get()]: iterations = 80000000 buckets = 24000000 |   143744.821165
+DEBUG [ht.get()]: iterations = 100000000 buckets = 24000000 |   170546.463591
+DEBUG [ht.get()]: iterations = 120000000 buckets = 24000000 |   200731.225107
+DEBUG [ht.get()]: iterations = 140000000 buckets = 24000000 |   232095.466767
+DEBUG [ht.get()]: iterations = 160000000 buckets = 24000000 |   286806.710206
+DEBUG [ht.get()]: iterations = 180000000 buckets = 24000000 |   289754.399058
+DEBUG [ht.get()]: iterations = 200000000 buckets = 24000000 |   315370.171048
+DEBUG [ht.get()]: iterations = 250000000 buckets = 24000000 |   391348.894763
+DEBUG [ht.get()]: iterations = 300000000 buckets = 24000000 |   463607.844641
+DEBUG [ht.get()]: iterations = 400000000 buckets = 24000000 |   609013.755325
+DEBUG [ht.get()]: iterations = 600000000 buckets = 24000000 |   918373.406101
+Writing htdb_slab database (a = 0.8)...
+Buckets: 32000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 32000000 |   39087.248122
+DEBUG [ht.get()]: iterations = 20000000 buckets = 32000000 |   53732.442032
+DEBUG [ht.get()]: iterations = 40000000 buckets = 32000000 |   83549.333765
+DEBUG [ht.get()]: iterations = 60000000 buckets = 32000000 |   113281.003110
+DEBUG [ht.get()]: iterations = 80000000 buckets = 32000000 |   139942.830923
+DEBUG [ht.get()]: iterations = 100000000 buckets = 32000000 |   169355.608486
+DEBUG [ht.get()]: iterations = 120000000 buckets = 32000000 |   200033.191758
+DEBUG [ht.get()]: iterations = 140000000 buckets = 32000000 |   228020.268856
+DEBUG [ht.get()]: iterations = 160000000 buckets = 32000000 |   258048.100196
+DEBUG [ht.get()]: iterations = 180000000 buckets = 32000000 |   284482.317324
+DEBUG [ht.get()]: iterations = 200000000 buckets = 32000000 |   316529.652576
+DEBUG [ht.get()]: iterations = 250000000 buckets = 32000000 |   386608.204001
+DEBUG [ht.get()]: iterations = 300000000 buckets = 32000000 |   456692.083010
+DEBUG [ht.get()]: iterations = 400000000 buckets = 32000000 |   604042.730482
+DEBUG [ht.get()]: iterations = 600000000 buckets = 32000000 |   896605.619860
+Writing htdb_slab database (a = 1.0)...
+Buckets: 40000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 40000000 |   39100.304720
+DEBUG [ht.get()]: iterations = 20000000 buckets = 40000000 |   53933.495115
+DEBUG [ht.get()]: iterations = 40000000 buckets = 40000000 |   83187.956771
+DEBUG [ht.get()]: iterations = 60000000 buckets = 40000000 |   111705.461466
+DEBUG [ht.get()]: iterations = 80000000 buckets = 40000000 |   139793.230636
+DEBUG [ht.get()]: iterations = 100000000 buckets = 40000000 |   170570.002498
+DEBUG [ht.get()]: iterations = 120000000 buckets = 40000000 |   198146.730918
+DEBUG [ht.get()]: iterations = 140000000 buckets = 40000000 |   227411.624402
+DEBUG [ht.get()]: iterations = 160000000 buckets = 40000000 |   255967.360860
+DEBUG [ht.get()]: iterations = 180000000 buckets = 40000000 |   284917.035409
+DEBUG [ht.get()]: iterations = 200000000 buckets = 40000000 |   314281.306794
+DEBUG [ht.get()]: iterations = 250000000 buckets = 40000000 |   385532.034898
+DEBUG [ht.get()]: iterations = 300000000 buckets = 40000000 |   458213.094704
+DEBUG [ht.get()]: iterations = 400000000 buckets = 40000000 |   600772.884540
+DEBUG [ht.get()]: iterations = 600000000 buckets = 40000000 |   905669.221835
+Writing htdb_slab database (a = 1.2)...
+Buckets: 48000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 48000000 |   39599.271963
+DEBUG [ht.get()]: iterations = 20000000 buckets = 48000000 |   54607.188583
+DEBUG [ht.get()]: iterations = 40000000 buckets = 48000000 |   83473.435770
+DEBUG [ht.get()]: iterations = 60000000 buckets = 48000000 |   112027.068451
+DEBUG [ht.get()]: iterations = 80000000 buckets = 48000000 |   140312.944915
+DEBUG [ht.get()]: iterations = 100000000 buckets = 48000000 |   174089.217338
+DEBUG [ht.get()]: iterations = 120000000 buckets = 48000000 |   199413.112259
+DEBUG [ht.get()]: iterations = 140000000 buckets = 48000000 |   232010.263086
+DEBUG [ht.get()]: iterations = 160000000 buckets = 48000000 |   255489.018256
+DEBUG [ht.get()]: iterations = 180000000 buckets = 48000000 |   290634.111058
+DEBUG [ht.get()]: iterations = 200000000 buckets = 48000000 |   314669.798337
+DEBUG [ht.get()]: iterations = 250000000 buckets = 48000000 |   386256.028919
+DEBUG [ht.get()]: iterations = 300000000 buckets = 48000000 |   460002.360763
+DEBUG [ht.get()]: iterations = 400000000 buckets = 48000000 |   608230.056552
+DEBUG [ht.get()]: iterations = 600000000 buckets = 48000000 |   905347.960263
+Writing htdb_slab database (a = 1.4)...
+Buckets: 56000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 56000000 |   40024.968283
+DEBUG [ht.get()]: iterations = 20000000 buckets = 56000000 |   54555.430685
+DEBUG [ht.get()]: iterations = 40000000 buckets = 56000000 |   84908.542921
+DEBUG [ht.get()]: iterations = 60000000 buckets = 56000000 |   113553.403615
+DEBUG [ht.get()]: iterations = 80000000 buckets = 56000000 |   141866.376485
+DEBUG [ht.get()]: iterations = 100000000 buckets = 56000000 |   172244.642376
+DEBUG [ht.get()]: iterations = 120000000 buckets = 56000000 |   201496.800067
+DEBUG [ht.get()]: iterations = 140000000 buckets = 56000000 |   229069.682247
+DEBUG [ht.get()]: iterations = 160000000 buckets = 56000000 |   258495.568659
+DEBUG [ht.get()]: iterations = 180000000 buckets = 56000000 |   286826.470838
+DEBUG [ht.get()]: iterations = 200000000 buckets = 56000000 |   311299.750516
+DEBUG [ht.get()]: iterations = 250000000 buckets = 56000000 |   386845.602519
+DEBUG [ht.get()]: iterations = 300000000 buckets = 56000000 |   457080.509692
+DEBUG [ht.get()]: iterations = 400000000 buckets = 56000000 |   602629.627627
+DEBUG [ht.get()]: iterations = 600000000 buckets = 56000000 |   907424.503100
+Writing htdb_slab database (a = 1.6)...
+Buckets: 64000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 64000000 |   40366.869473
+DEBUG [ht.get()]: iterations = 20000000 buckets = 64000000 |   55028.784748
+DEBUG [ht.get()]: iterations = 40000000 buckets = 64000000 |   83680.556231
+DEBUG [ht.get()]: iterations = 60000000 buckets = 64000000 |   112130.662900
+DEBUG [ht.get()]: iterations = 80000000 buckets = 64000000 |   143120.161448
+DEBUG [ht.get()]: iterations = 100000000 buckets = 64000000 |   170292.457681
+DEBUG [ht.get()]: iterations = 120000000 buckets = 64000000 |   199183.963309
+DEBUG [ht.get()]: iterations = 140000000 buckets = 64000000 |   228898.690862
+DEBUG [ht.get()]: iterations = 160000000 buckets = 64000000 |   257196.627883
+DEBUG [ht.get()]: iterations = 180000000 buckets = 64000000 |   286179.161804
+DEBUG [ht.get()]: iterations = 200000000 buckets = 64000000 |   328588.023292
+DEBUG [ht.get()]: iterations = 250000000 buckets = 64000000 |   385214.920722
+DEBUG [ht.get()]: iterations = 300000000 buckets = 64000000 |   457395.464875
+DEBUG [ht.get()]: iterations = 400000000 buckets = 64000000 |   604312.012347
+DEBUG [ht.get()]: iterations = 600000000 buckets = 64000000 |   905380.517325
+Writing htdb_slab database (a = 1.8)...
+Buckets: 72000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 72000000 |   40541.086294
+DEBUG [ht.get()]: iterations = 20000000 buckets = 72000000 |   55327.252510
+DEBUG [ht.get()]: iterations = 40000000 buckets = 72000000 |   84339.874002
+DEBUG [ht.get()]: iterations = 60000000 buckets = 72000000 |   113465.775766
+DEBUG [ht.get()]: iterations = 80000000 buckets = 72000000 |   142159.525590
+DEBUG [ht.get()]: iterations = 100000000 buckets = 72000000 |   171232.964712
+DEBUG [ht.get()]: iterations = 120000000 buckets = 72000000 |   200560.832337
+DEBUG [ht.get()]: iterations = 140000000 buckets = 72000000 |   229839.145689
+DEBUG [ht.get()]: iterations = 160000000 buckets = 72000000 |   267006.607875
+DEBUG [ht.get()]: iterations = 180000000 buckets = 72000000 |   287811.822162
+DEBUG [ht.get()]: iterations = 200000000 buckets = 72000000 |   317956.069896
+DEBUG [ht.get()]: iterations = 250000000 buckets = 72000000 |   388099.512817
+DEBUG [ht.get()]: iterations = 300000000 buckets = 72000000 |   462352.881174
+DEBUG [ht.get()]: iterations = 400000000 buckets = 72000000 |   607478.034912
+DEBUG [ht.get()]: iterations = 600000000 buckets = 72000000 |   908116.195308
+Writing htdb_slab database (a = 2.0)...
+Buckets: 80000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 80000000 |   40961.578362
+DEBUG [ht.get()]: iterations = 20000000 buckets = 80000000 |   55566.066141
+DEBUG [ht.get()]: iterations = 40000000 buckets = 80000000 |   84278.821912
+DEBUG [ht.get()]: iterations = 60000000 buckets = 80000000 |   113432.655386
+DEBUG [ht.get()]: iterations = 80000000 buckets = 80000000 |   142840.743792
+DEBUG [ht.get()]: iterations = 100000000 buckets = 80000000 |   171086.078641
+DEBUG [ht.get()]: iterations = 120000000 buckets = 80000000 |   200988.735911
+DEBUG [ht.get()]: iterations = 140000000 buckets = 80000000 |   229210.517683
+DEBUG [ht.get()]: iterations = 160000000 buckets = 80000000 |   266088.848115
+DEBUG [ht.get()]: iterations = 180000000 buckets = 80000000 |   292480.673016
+DEBUG [ht.get()]: iterations = 200000000 buckets = 80000000 |   321566.145674
+DEBUG [ht.get()]: iterations = 250000000 buckets = 80000000 |   390165.077886
+DEBUG [ht.get()]: iterations = 300000000 buckets = 80000000 |   460346.590787
+DEBUG [ht.get()]: iterations = 400000000 buckets = 80000000 |   604373.991376
+DEBUG [ht.get()]: iterations = 600000000 buckets = 80000000 |   895520.385412
+Writing htdb_slab database (a = 2.2)...
+Buckets: 88000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 88000000 |   41549.141085
+DEBUG [ht.get()]: iterations = 20000000 buckets = 88000000 |   56112.757996
+DEBUG [ht.get()]: iterations = 40000000 buckets = 88000000 |   85029.162014
+DEBUG [ht.get()]: iterations = 60000000 buckets = 88000000 |   113570.847027
+DEBUG [ht.get()]: iterations = 80000000 buckets = 88000000 |   144288.967875
+DEBUG [ht.get()]: iterations = 100000000 buckets = 88000000 |   171869.038486
+DEBUG [ht.get()]: iterations = 120000000 buckets = 88000000 |   202364.578686
+DEBUG [ht.get()]: iterations = 140000000 buckets = 88000000 |   237624.600955
+DEBUG [ht.get()]: iterations = 160000000 buckets = 88000000 |   259160.964347
+DEBUG [ht.get()]: iterations = 180000000 buckets = 88000000 |   288296.354641
+DEBUG [ht.get()]: iterations = 200000000 buckets = 88000000 |   315544.932972
+DEBUG [ht.get()]: iterations = 250000000 buckets = 88000000 |   389744.556280
+DEBUG [ht.get()]: iterations = 300000000 buckets = 88000000 |   460407.354450
+DEBUG [ht.get()]: iterations = 400000000 buckets = 88000000 |   607931.673600
+DEBUG [ht.get()]: iterations = 600000000 buckets = 88000000 |   896169.044244
+Writing htdb_slab database (a = 2.4)...
+Buckets: 96000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 96000000 |   41738.216423
+DEBUG [ht.get()]: iterations = 20000000 buckets = 96000000 |   56473.764709
+DEBUG [ht.get()]: iterations = 40000000 buckets = 96000000 |   85165.662599
+DEBUG [ht.get()]: iterations = 60000000 buckets = 96000000 |   115615.644929
+DEBUG [ht.get()]: iterations = 80000000 buckets = 96000000 |   143627.202006
+DEBUG [ht.get()]: iterations = 100000000 buckets = 96000000 |   171262.290934
+DEBUG [ht.get()]: iterations = 120000000 buckets = 96000000 |   200623.464519
+DEBUG [ht.get()]: iterations = 140000000 buckets = 96000000 |   231001.620769
+DEBUG [ht.get()]: iterations = 160000000 buckets = 96000000 |   263338.671845
+DEBUG [ht.get()]: iterations = 180000000 buckets = 96000000 |   287715.734660
+DEBUG [ht.get()]: iterations = 200000000 buckets = 96000000 |   318450.522415
+DEBUG [ht.get()]: iterations = 250000000 buckets = 96000000 |   388736.852655
+DEBUG [ht.get()]: iterations = 300000000 buckets = 96000000 |   460151.358209
+DEBUG [ht.get()]: iterations = 400000000 buckets = 96000000 |   605636.605005
+DEBUG [ht.get()]: iterations = 600000000 buckets = 96000000 |   911582.639262
+Writing htdb_slab database (a = 2.6)...
+Buckets: 104000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 104000000 |   42180.463837
+DEBUG [ht.get()]: iterations = 20000000 buckets = 104000000 |   56823.483721
+DEBUG [ht.get()]: iterations = 40000000 buckets = 104000000 |   85256.926242
+DEBUG [ht.get()]: iterations = 60000000 buckets = 104000000 |   116178.978253
+DEBUG [ht.get()]: iterations = 80000000 buckets = 104000000 |   143450.696291
+DEBUG [ht.get()]: iterations = 100000000 buckets = 104000000 |   171856.923742
+DEBUG [ht.get()]: iterations = 120000000 buckets = 104000000 |   201809.192246
+DEBUG [ht.get()]: iterations = 140000000 buckets = 104000000 |   230631.689470
+DEBUG [ht.get()]: iterations = 160000000 buckets = 104000000 |   258861.623959
+DEBUG [ht.get()]: iterations = 180000000 buckets = 104000000 |   293868.890555
+DEBUG [ht.get()]: iterations = 200000000 buckets = 104000000 |   317724.524493
+DEBUG [ht.get()]: iterations = 250000000 buckets = 104000000 |   389692.188167
+DEBUG [ht.get()]: iterations = 300000000 buckets = 104000000 |   467958.979252
+DEBUG [ht.get()]: iterations = 400000000 buckets = 104000000 |   603477.960662
+DEBUG [ht.get()]: iterations = 600000000 buckets = 104000000 |   925557.781921
+Writing htdb_slab database (a = 2.8)...
+Buckets: 112000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 112000000 |   42671.121593
+DEBUG [ht.get()]: iterations = 20000000 buckets = 112000000 |   57714.423454
+DEBUG [ht.get()]: iterations = 40000000 buckets = 112000000 |   87292.047823
+DEBUG [ht.get()]: iterations = 60000000 buckets = 112000000 |   115123.237277
+DEBUG [ht.get()]: iterations = 80000000 buckets = 112000000 |   144964.468353
+DEBUG [ht.get()]: iterations = 100000000 buckets = 112000000 |   175213.759674
+DEBUG [ht.get()]: iterations = 120000000 buckets = 112000000 |   202637.783825
+DEBUG [ht.get()]: iterations = 140000000 buckets = 112000000 |   231441.384215
+DEBUG [ht.get()]: iterations = 160000000 buckets = 112000000 |   264602.642404
+DEBUG [ht.get()]: iterations = 180000000 buckets = 112000000 |   289305.979898
+DEBUG [ht.get()]: iterations = 200000000 buckets = 112000000 |   319413.675543
+DEBUG [ht.get()]: iterations = 250000000 buckets = 112000000 |   390280.230890
+DEBUG [ht.get()]: iterations = 300000000 buckets = 112000000 |   464950.108041
+DEBUG [ht.get()]: iterations = 400000000 buckets = 112000000 |   613373.677691
+DEBUG [ht.get()]: iterations = 600000000 buckets = 112000000 |   897646.062496
+Writing htdb_slab database (a = 3.0)...
+Buckets: 120000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 120000000 |   43089.732681
+DEBUG [ht.get()]: iterations = 20000000 buckets = 120000000 |   57537.985920
+DEBUG [ht.get()]: iterations = 40000000 buckets = 120000000 |   87714.800751
+DEBUG [ht.get()]: iterations = 60000000 buckets = 120000000 |   116480.227163
+DEBUG [ht.get()]: iterations = 80000000 buckets = 120000000 |   144264.056301
+DEBUG [ht.get()]: iterations = 100000000 buckets = 120000000 |   176897.106323
+DEBUG [ht.get()]: iterations = 120000000 buckets = 120000000 |   205369.810084
+DEBUG [ht.get()]: iterations = 140000000 buckets = 120000000 |   232945.602446
+DEBUG [ht.get()]: iterations = 160000000 buckets = 120000000 |   268979.721974
+DEBUG [ht.get()]: iterations = 180000000 buckets = 120000000 |   288099.096263
+DEBUG [ht.get()]: iterations = 200000000 buckets = 120000000 |   325070.899795
+DEBUG [ht.get()]: iterations = 250000000 buckets = 120000000 |   392505.841882
+DEBUG [ht.get()]: iterations = 300000000 buckets = 120000000 |   462770.702963
+DEBUG [ht.get()]: iterations = 400000000 buckets = 120000000 |   609037.872664
+DEBUG [ht.get()]: iterations = 600000000 buckets = 120000000 |   897469.173465
+Writing htdb_slab database (a = 4.0)...
+Buckets: 160000000
+Wrote 40000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 160000000 |   45101.256508
+DEBUG [ht.get()]: iterations = 20000000 buckets = 160000000 |   59781.539186
+DEBUG [ht.get()]: iterations = 40000000 buckets = 160000000 |   89421.927460
+DEBUG [ht.get()]: iterations = 60000000 buckets = 160000000 |   118326.451478
+DEBUG [ht.get()]: iterations = 80000000 buckets = 160000000 |   149062.807633
+DEBUG [ht.get()]: iterations = 100000000 buckets = 160000000 |   175173.687790
+DEBUG [ht.get()]: iterations = 120000000 buckets = 160000000 |   204245.655481
+DEBUG [ht.get()]: iterations = 140000000 buckets = 160000000 |   233986.346794
+DEBUG [ht.get()]: iterations = 160000000 buckets = 160000000 |   263123.896196
+DEBUG [ht.get()]: iterations = 180000000 buckets = 160000000 |   297054.966342
+DEBUG [ht.get()]: iterations = 200000000 buckets = 160000000 |   325371.092518
+DEBUG [ht.get()]: iterations = 250000000 buckets = 160000000 |   394087.069740
+DEBUG [ht.get()]: iterations = 300000000 buckets = 160000000 |   478466.111916
+DEBUG [ht.get()]: iterations = 400000000 buckets = 160000000 |   612666.436848
+DEBUG [ht.get()]: iterations = 600000000 buckets = 160000000 |   906169.843513
+Preparing 50 million txs...
+Done.
+Writing LevelDB database...
+Wrote 50000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   412183.646425
+DEBUG [leveldb.Get()]: iterations = 20000000 |   643814.639896
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1285519.521976
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1889158.054836
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2502302.168491
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3133655.450071
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3742090.918861
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4322804.010815
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4938409.961527
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5595469.304077
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6100916.441767
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7920009.525203
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9138375.529104
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12414197.260291
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18606138.317245
+DEBUG [None]: iterations = 10000000 |   13943.009595
+DEBUG [None]: iterations = 20000000 |   18355.652950
+DEBUG [None]: iterations = 40000000 |   27312.100617
+DEBUG [None]: iterations = 60000000 |   36308.349085
+DEBUG [None]: iterations = 80000000 |   45172.792859
+DEBUG [None]: iterations = 100000000 |   54451.385025
+DEBUG [None]: iterations = 120000000 |   62855.932300
+DEBUG [None]: iterations = 140000000 |   72047.562688
+DEBUG [None]: iterations = 160000000 |   81076.160713
+DEBUG [None]: iterations = 180000000 |   89885.052893
+DEBUG [None]: iterations = 200000000 |   98559.082195
+DEBUG [None]: iterations = 250000000 |   121052.067486
+DEBUG [None]: iterations = 300000000 |   143057.043896
+DEBUG [None]: iterations = 400000000 |   188128.923460
+DEBUG [None]: iterations = 600000000 |   278030.945676
+Writing htdb_slab database (a = 0.4)...
+Buckets: 20000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 20000000 |   40488.269286
+DEBUG [ht.get()]: iterations = 20000000 buckets = 20000000 |   55533.010124
+DEBUG [ht.get()]: iterations = 40000000 buckets = 20000000 |   85139.013993
+DEBUG [ht.get()]: iterations = 60000000 buckets = 20000000 |   114084.987721
+DEBUG [ht.get()]: iterations = 80000000 buckets = 20000000 |   143919.263262
+DEBUG [ht.get()]: iterations = 100000000 buckets = 20000000 |   173455.927022
+DEBUG [ht.get()]: iterations = 120000000 buckets = 20000000 |   202844.012258
+DEBUG [ht.get()]: iterations = 140000000 buckets = 20000000 |   232703.630577
+DEBUG [ht.get()]: iterations = 160000000 buckets = 20000000 |   261404.700746
+DEBUG [ht.get()]: iterations = 180000000 buckets = 20000000 |   291686.834692
+DEBUG [ht.get()]: iterations = 200000000 buckets = 20000000 |   321044.782312
+DEBUG [ht.get()]: iterations = 250000000 buckets = 20000000 |   396420.615040
+DEBUG [ht.get()]: iterations = 300000000 buckets = 20000000 |   469665.092333
+DEBUG [ht.get()]: iterations = 400000000 buckets = 20000000 |   619324.499962
+DEBUG [ht.get()]: iterations = 600000000 buckets = 20000000 |   928789.182328
+Writing htdb_slab database (a = 0.6)...
+Buckets: 30000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 30000000 |   40784.926963
+DEBUG [ht.get()]: iterations = 20000000 buckets = 30000000 |   55527.315982
+DEBUG [ht.get()]: iterations = 40000000 buckets = 30000000 |   85094.658872
+DEBUG [ht.get()]: iterations = 60000000 buckets = 30000000 |   114132.680319
+DEBUG [ht.get()]: iterations = 80000000 buckets = 30000000 |   143927.950943
+DEBUG [ht.get()]: iterations = 100000000 buckets = 30000000 |   174675.317795
+DEBUG [ht.get()]: iterations = 120000000 buckets = 30000000 |   202069.586086
+DEBUG [ht.get()]: iterations = 140000000 buckets = 30000000 |   237794.064978
+DEBUG [ht.get()]: iterations = 160000000 buckets = 30000000 |   267388.059597
+DEBUG [ht.get()]: iterations = 180000000 buckets = 30000000 |   289692.471751
+DEBUG [ht.get()]: iterations = 200000000 buckets = 30000000 |   324065.547462
+DEBUG [ht.get()]: iterations = 250000000 buckets = 30000000 |   395265.078058
+DEBUG [ht.get()]: iterations = 300000000 buckets = 30000000 |   464463.781872
+DEBUG [ht.get()]: iterations = 400000000 buckets = 30000000 |   615829.431272
+DEBUG [ht.get()]: iterations = 600000000 buckets = 30000000 |   903954.389132
+Writing htdb_slab database (a = 0.8)...
+Buckets: 40000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 40000000 |   41197.271114
+DEBUG [ht.get()]: iterations = 20000000 buckets = 40000000 |   55636.041261
+DEBUG [ht.get()]: iterations = 40000000 buckets = 40000000 |   84935.993616
+DEBUG [ht.get()]: iterations = 60000000 buckets = 40000000 |   113989.266496
+DEBUG [ht.get()]: iterations = 80000000 buckets = 40000000 |   143466.563086
+DEBUG [ht.get()]: iterations = 100000000 buckets = 40000000 |   172820.769358
+DEBUG [ht.get()]: iterations = 120000000 buckets = 40000000 |   200181.736517
+DEBUG [ht.get()]: iterations = 140000000 buckets = 40000000 |   232414.821589
+DEBUG [ht.get()]: iterations = 160000000 buckets = 40000000 |   262904.499222
+DEBUG [ht.get()]: iterations = 180000000 buckets = 40000000 |   289148.646773
+DEBUG [ht.get()]: iterations = 200000000 buckets = 40000000 |   317379.502318
+DEBUG [ht.get()]: iterations = 250000000 buckets = 40000000 |   399352.453725
+DEBUG [ht.get()]: iterations = 300000000 buckets = 40000000 |   459986.534579
+DEBUG [ht.get()]: iterations = 400000000 buckets = 40000000 |   607339.665616
+DEBUG [ht.get()]: iterations = 600000000 buckets = 40000000 |   898679.473934
+Writing htdb_slab database (a = 1.0)...
+Buckets: 50000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 50000000 |   41497.953429
+DEBUG [ht.get()]: iterations = 20000000 buckets = 50000000 |   56200.317088
+DEBUG [ht.get()]: iterations = 40000000 buckets = 50000000 |   84937.866017
+DEBUG [ht.get()]: iterations = 60000000 buckets = 50000000 |   114344.414787
+DEBUG [ht.get()]: iterations = 80000000 buckets = 50000000 |   142766.636211
+DEBUG [ht.get()]: iterations = 100000000 buckets = 50000000 |   170665.487176
+DEBUG [ht.get()]: iterations = 120000000 buckets = 50000000 |   200297.671646
+DEBUG [ht.get()]: iterations = 140000000 buckets = 50000000 |   231698.186460
+DEBUG [ht.get()]: iterations = 160000000 buckets = 50000000 |   260622.138231
+DEBUG [ht.get()]: iterations = 180000000 buckets = 50000000 |   285439.643926
+DEBUG [ht.get()]: iterations = 200000000 buckets = 50000000 |   318332.651663
+DEBUG [ht.get()]: iterations = 250000000 buckets = 50000000 |   392425.603782
+DEBUG [ht.get()]: iterations = 300000000 buckets = 50000000 |   465094.475226
+DEBUG [ht.get()]: iterations = 400000000 buckets = 50000000 |   607160.876845
+DEBUG [ht.get()]: iterations = 600000000 buckets = 50000000 |   900022.043650
+Writing htdb_slab database (a = 1.2)...
+Buckets: 60000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 60000000 |   41957.079118
+DEBUG [ht.get()]: iterations = 20000000 buckets = 60000000 |   56703.167909
+DEBUG [ht.get()]: iterations = 40000000 buckets = 60000000 |   85691.322660
+DEBUG [ht.get()]: iterations = 60000000 buckets = 60000000 |   114702.754504
+DEBUG [ht.get()]: iterations = 80000000 buckets = 60000000 |   147112.217473
+DEBUG [ht.get()]: iterations = 100000000 buckets = 60000000 |   177542.563860
+DEBUG [ht.get()]: iterations = 120000000 buckets = 60000000 |   206772.408035
+DEBUG [ht.get()]: iterations = 140000000 buckets = 60000000 |   229972.432387
+DEBUG [ht.get()]: iterations = 160000000 buckets = 60000000 |   258718.735898
+DEBUG [ht.get()]: iterations = 180000000 buckets = 60000000 |   290537.096430
+DEBUG [ht.get()]: iterations = 200000000 buckets = 60000000 |   316715.184954
+DEBUG [ht.get()]: iterations = 250000000 buckets = 60000000 |   395892.021192
+DEBUG [ht.get()]: iterations = 300000000 buckets = 60000000 |   467707.725040
+DEBUG [ht.get()]: iterations = 400000000 buckets = 60000000 |   610303.331806
+DEBUG [ht.get()]: iterations = 600000000 buckets = 60000000 |   899790.635569
+Writing htdb_slab database (a = 1.4)...
+Buckets: 70000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 70000000 |   42411.491583
+DEBUG [ht.get()]: iterations = 20000000 buckets = 70000000 |   57246.596995
+DEBUG [ht.get()]: iterations = 40000000 buckets = 70000000 |   86124.540994
+DEBUG [ht.get()]: iterations = 60000000 buckets = 70000000 |   115550.760348
+DEBUG [ht.get()]: iterations = 80000000 buckets = 70000000 |   144727.808671
+DEBUG [ht.get()]: iterations = 100000000 buckets = 70000000 |   173622.106646
+DEBUG [ht.get()]: iterations = 120000000 buckets = 70000000 |   203083.206913
+DEBUG [ht.get()]: iterations = 140000000 buckets = 70000000 |   231963.941353
+DEBUG [ht.get()]: iterations = 160000000 buckets = 70000000 |   261975.521567
+DEBUG [ht.get()]: iterations = 180000000 buckets = 70000000 |   290499.901650
+DEBUG [ht.get()]: iterations = 200000000 buckets = 70000000 |   322141.837354
+DEBUG [ht.get()]: iterations = 250000000 buckets = 70000000 |   400144.268871
+DEBUG [ht.get()]: iterations = 300000000 buckets = 70000000 |   469674.224734
+DEBUG [ht.get()]: iterations = 400000000 buckets = 70000000 |   611983.940709
+DEBUG [ht.get()]: iterations = 600000000 buckets = 70000000 |   901844.964568
+Writing htdb_slab database (a = 1.6)...
+Buckets: 80000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 80000000 |   42912.027803
+DEBUG [ht.get()]: iterations = 20000000 buckets = 80000000 |   57168.174969
+DEBUG [ht.get()]: iterations = 40000000 buckets = 80000000 |   86424.451382
+DEBUG [ht.get()]: iterations = 60000000 buckets = 80000000 |   115795.129383
+DEBUG [ht.get()]: iterations = 80000000 buckets = 80000000 |   146961.081715
+DEBUG [ht.get()]: iterations = 100000000 buckets = 80000000 |   174176.759975
+DEBUG [ht.get()]: iterations = 120000000 buckets = 80000000 |   203874.523277
+DEBUG [ht.get()]: iterations = 140000000 buckets = 80000000 |   233783.520551
+DEBUG [ht.get()]: iterations = 160000000 buckets = 80000000 |   261149.509074
+DEBUG [ht.get()]: iterations = 180000000 buckets = 80000000 |   289223.339708
+DEBUG [ht.get()]: iterations = 200000000 buckets = 80000000 |   323451.804324
+DEBUG [ht.get()]: iterations = 250000000 buckets = 80000000 |   388260.597004
+DEBUG [ht.get()]: iterations = 300000000 buckets = 80000000 |   470053.247270
+DEBUG [ht.get()]: iterations = 400000000 buckets = 80000000 |   609953.654217
+DEBUG [ht.get()]: iterations = 600000000 buckets = 80000000 |   895170.949776
+Writing htdb_slab database (a = 1.8)...
+Buckets: 90000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 90000000 |   43559.263614
+DEBUG [ht.get()]: iterations = 20000000 buckets = 90000000 |   58044.814066
+DEBUG [ht.get()]: iterations = 40000000 buckets = 90000000 |   87510.125252
+DEBUG [ht.get()]: iterations = 60000000 buckets = 90000000 |   116207.396854
+DEBUG [ht.get()]: iterations = 80000000 buckets = 90000000 |   145164.459303
+DEBUG [ht.get()]: iterations = 100000000 buckets = 90000000 |   173870.675049
+DEBUG [ht.get()]: iterations = 120000000 buckets = 90000000 |   203796.890531
+DEBUG [ht.get()]: iterations = 140000000 buckets = 90000000 |   235663.718488
+DEBUG [ht.get()]: iterations = 160000000 buckets = 90000000 |   261546.345920
+DEBUG [ht.get()]: iterations = 180000000 buckets = 90000000 |   289562.459618
+DEBUG [ht.get()]: iterations = 200000000 buckets = 90000000 |   319108.744092
+DEBUG [ht.get()]: iterations = 250000000 buckets = 90000000 |   393963.514004
+DEBUG [ht.get()]: iterations = 300000000 buckets = 90000000 |   463310.354889
+DEBUG [ht.get()]: iterations = 400000000 buckets = 90000000 |   616580.810574
+DEBUG [ht.get()]: iterations = 600000000 buckets = 90000000 |   906546.881767
+Writing htdb_slab database (a = 2.0)...
+Buckets: 100000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 100000000 |   43686.959731
+DEBUG [ht.get()]: iterations = 20000000 buckets = 100000000 |   58849.261347
+DEBUG [ht.get()]: iterations = 40000000 buckets = 100000000 |   88521.279366
+DEBUG [ht.get()]: iterations = 60000000 buckets = 100000000 |   117152.418999
+DEBUG [ht.get()]: iterations = 80000000 buckets = 100000000 |   146168.274081
+DEBUG [ht.get()]: iterations = 100000000 buckets = 100000000 |   174159.167301
+DEBUG [ht.get()]: iterations = 120000000 buckets = 100000000 |   204659.685140
+DEBUG [ht.get()]: iterations = 140000000 buckets = 100000000 |   230259.675375
+DEBUG [ht.get()]: iterations = 160000000 buckets = 100000000 |   263186.395008
+DEBUG [ht.get()]: iterations = 180000000 buckets = 100000000 |   292675.249739
+DEBUG [ht.get()]: iterations = 200000000 buckets = 100000000 |   322438.946518
+DEBUG [ht.get()]: iterations = 250000000 buckets = 100000000 |   393056.893729
+DEBUG [ht.get()]: iterations = 300000000 buckets = 100000000 |   465160.392550
+DEBUG [ht.get()]: iterations = 400000000 buckets = 100000000 |   618981.422493
+DEBUG [ht.get()]: iterations = 600000000 buckets = 100000000 |   903080.542889
+Writing htdb_slab database (a = 2.2)...
+Buckets: 110000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 110000000 |   44426.837464
+DEBUG [ht.get()]: iterations = 20000000 buckets = 110000000 |   58822.423047
+DEBUG [ht.get()]: iterations = 40000000 buckets = 110000000 |   88143.842317
+DEBUG [ht.get()]: iterations = 60000000 buckets = 110000000 |   118371.579566
+DEBUG [ht.get()]: iterations = 80000000 buckets = 110000000 |   146436.206158
+DEBUG [ht.get()]: iterations = 100000000 buckets = 110000000 |   179937.125617
+DEBUG [ht.get()]: iterations = 120000000 buckets = 110000000 |   204454.309238
+DEBUG [ht.get()]: iterations = 140000000 buckets = 110000000 |   234450.788223
+DEBUG [ht.get()]: iterations = 160000000 buckets = 110000000 |   267090.820775
+DEBUG [ht.get()]: iterations = 180000000 buckets = 110000000 |   292096.830877
+DEBUG [ht.get()]: iterations = 200000000 buckets = 110000000 |   322325.498506
+DEBUG [ht.get()]: iterations = 250000000 buckets = 110000000 |   393452.816364
+DEBUG [ht.get()]: iterations = 300000000 buckets = 110000000 |   464780.080888
+DEBUG [ht.get()]: iterations = 400000000 buckets = 110000000 |   613618.905820
+DEBUG [ht.get()]: iterations = 600000000 buckets = 110000000 |   898697.678385
+Writing htdb_slab database (a = 2.4)...
+Buckets: 120000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 120000000 |   44697.796267
+DEBUG [ht.get()]: iterations = 20000000 buckets = 120000000 |   59233.253147
+DEBUG [ht.get()]: iterations = 40000000 buckets = 120000000 |   88360.685819
+DEBUG [ht.get()]: iterations = 60000000 buckets = 120000000 |   118700.876449
+DEBUG [ht.get()]: iterations = 80000000 buckets = 120000000 |   151001.764850
+DEBUG [ht.get()]: iterations = 100000000 buckets = 120000000 |   176948.948093
+DEBUG [ht.get()]: iterations = 120000000 buckets = 120000000 |   205742.509801
+DEBUG [ht.get()]: iterations = 140000000 buckets = 120000000 |   232942.369257
+DEBUG [ht.get()]: iterations = 160000000 buckets = 120000000 |   263763.904576
+DEBUG [ht.get()]: iterations = 180000000 buckets = 120000000 |   294855.880357
+DEBUG [ht.get()]: iterations = 200000000 buckets = 120000000 |   326004.829850
+DEBUG [ht.get()]: iterations = 250000000 buckets = 120000000 |   397432.599470
+DEBUG [ht.get()]: iterations = 300000000 buckets = 120000000 |   470843.636008
+DEBUG [ht.get()]: iterations = 400000000 buckets = 120000000 |   618943.563658
+DEBUG [ht.get()]: iterations = 600000000 buckets = 120000000 |   916256.711824
+Writing htdb_slab database (a = 2.6)...
+Buckets: 130000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 130000000 |   45410.433197
+DEBUG [ht.get()]: iterations = 20000000 buckets = 130000000 |   59696.628970
+DEBUG [ht.get()]: iterations = 40000000 buckets = 130000000 |   89160.244178
+DEBUG [ht.get()]: iterations = 60000000 buckets = 130000000 |   118002.129476
+DEBUG [ht.get()]: iterations = 80000000 buckets = 130000000 |   147217.022032
+DEBUG [ht.get()]: iterations = 100000000 buckets = 130000000 |   178584.097378
+DEBUG [ht.get()]: iterations = 120000000 buckets = 130000000 |   205812.651887
+DEBUG [ht.get()]: iterations = 140000000 buckets = 130000000 |   236566.707232
+DEBUG [ht.get()]: iterations = 160000000 buckets = 130000000 |   263283.802802
+DEBUG [ht.get()]: iterations = 180000000 buckets = 130000000 |   293112.618632
+DEBUG [ht.get()]: iterations = 200000000 buckets = 130000000 |   322458.138051
+DEBUG [ht.get()]: iterations = 250000000 buckets = 130000000 |   394494.949866
+DEBUG [ht.get()]: iterations = 300000000 buckets = 130000000 |   467231.409187
+DEBUG [ht.get()]: iterations = 400000000 buckets = 130000000 |   618112.520753
+DEBUG [ht.get()]: iterations = 600000000 buckets = 130000000 |   905810.755444
+Writing htdb_slab database (a = 2.8)...
+Buckets: 140000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 140000000 |   45860.226694
+DEBUG [ht.get()]: iterations = 20000000 buckets = 140000000 |   60347.911362
+DEBUG [ht.get()]: iterations = 40000000 buckets = 140000000 |   89845.412891
+DEBUG [ht.get()]: iterations = 60000000 buckets = 140000000 |   120480.156568
+DEBUG [ht.get()]: iterations = 80000000 buckets = 140000000 |   148990.997071
+DEBUG [ht.get()]: iterations = 100000000 buckets = 140000000 |   178170.121213
+DEBUG [ht.get()]: iterations = 120000000 buckets = 140000000 |   207895.262567
+DEBUG [ht.get()]: iterations = 140000000 buckets = 140000000 |   236903.864686
+DEBUG [ht.get()]: iterations = 160000000 buckets = 140000000 |   266387.309994
+DEBUG [ht.get()]: iterations = 180000000 buckets = 140000000 |   294799.056649
+DEBUG [ht.get()]: iterations = 200000000 buckets = 140000000 |   325653.251139
+DEBUG [ht.get()]: iterations = 250000000 buckets = 140000000 |   396318.669843
+DEBUG [ht.get()]: iterations = 300000000 buckets = 140000000 |   470480.851491
+DEBUG [ht.get()]: iterations = 400000000 buckets = 140000000 |   619005.781869
+DEBUG [ht.get()]: iterations = 600000000 buckets = 140000000 |   914423.843052
+Writing htdb_slab database (a = 3.0)...
+Buckets: 150000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 150000000 |   46172.639576
+DEBUG [ht.get()]: iterations = 20000000 buckets = 150000000 |   61343.678826
+DEBUG [ht.get()]: iterations = 40000000 buckets = 150000000 |   90544.563217
+DEBUG [ht.get()]: iterations = 60000000 buckets = 150000000 |   119344.162570
+DEBUG [ht.get()]: iterations = 80000000 buckets = 150000000 |   148697.409722
+DEBUG [ht.get()]: iterations = 100000000 buckets = 150000000 |   177927.813883
+DEBUG [ht.get()]: iterations = 120000000 buckets = 150000000 |   206796.054441
+DEBUG [ht.get()]: iterations = 140000000 buckets = 150000000 |   235384.251908
+DEBUG [ht.get()]: iterations = 160000000 buckets = 150000000 |   265842.113649
+DEBUG [ht.get()]: iterations = 180000000 buckets = 150000000 |   295201.478735
+DEBUG [ht.get()]: iterations = 200000000 buckets = 150000000 |   322974.087561
+DEBUG [ht.get()]: iterations = 250000000 buckets = 150000000 |   398038.590107
+DEBUG [ht.get()]: iterations = 300000000 buckets = 150000000 |   472502.014185
+DEBUG [ht.get()]: iterations = 400000000 buckets = 150000000 |   615242.751866
+DEBUG [ht.get()]: iterations = 600000000 buckets = 150000000 |   926639.329171
+Writing htdb_slab database (a = 4.0)...
+Buckets: 200000000
+Wrote 50000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 200000000 |   48629.397624
+DEBUG [ht.get()]: iterations = 20000000 buckets = 200000000 |   63962.365210
+DEBUG [ht.get()]: iterations = 40000000 buckets = 200000000 |   92931.973170
+DEBUG [ht.get()]: iterations = 60000000 buckets = 200000000 |   121522.886846
+DEBUG [ht.get()]: iterations = 80000000 buckets = 200000000 |   150341.946769
+DEBUG [ht.get()]: iterations = 100000000 buckets = 200000000 |   179451.456451
+DEBUG [ht.get()]: iterations = 120000000 buckets = 200000000 |   210269.526346
+DEBUG [ht.get()]: iterations = 140000000 buckets = 200000000 |   238920.417331
+DEBUG [ht.get()]: iterations = 160000000 buckets = 200000000 |   268555.527687
+DEBUG [ht.get()]: iterations = 180000000 buckets = 200000000 |   297463.937274
+DEBUG [ht.get()]: iterations = 200000000 buckets = 200000000 |   327334.648794
+DEBUG [ht.get()]: iterations = 250000000 buckets = 200000000 |   399272.287375
+DEBUG [ht.get()]: iterations = 300000000 buckets = 200000000 |   486277.353526
+DEBUG [ht.get()]: iterations = 400000000 buckets = 200000000 |   628187.344661
+DEBUG [ht.get()]: iterations = 600000000 buckets = 200000000 |   914916.798294
+Preparing 60 million txs...
+Done.
+Writing LevelDB database...
+Wrote 60000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   437003.685164
+DEBUG [leveldb.Get()]: iterations = 20000000 |   651990.116971
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1264071.320419
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1882407.618328
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2489213.517268
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3137054.206279
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3744571.751522
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4386906.521244
+DEBUG [leveldb.Get()]: iterations = 160000000 |   5019915.527522
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5479362.631724
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6212039.712785
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7885528.612352
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9450942.922731
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12341425.286885
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18713229.307936
+DEBUG [None]: iterations = 10000000 |   15904.822740
+DEBUG [None]: iterations = 20000000 |   20413.176061
+DEBUG [None]: iterations = 40000000 |   29361.062295
+DEBUG [None]: iterations = 60000000 |   38435.143342
+DEBUG [None]: iterations = 80000000 |   47391.856975
+DEBUG [None]: iterations = 100000000 |   56333.521295
+DEBUG [None]: iterations = 120000000 |   66171.678262
+DEBUG [None]: iterations = 140000000 |   74396.704986
+DEBUG [None]: iterations = 160000000 |   83550.371065
+DEBUG [None]: iterations = 180000000 |   92614.840235
+DEBUG [None]: iterations = 200000000 |   101640.465575
+DEBUG [None]: iterations = 250000000 |   124393.165241
+DEBUG [None]: iterations = 300000000 |   146945.905826
+DEBUG [None]: iterations = 400000000 |   191528.240310
+DEBUG [None]: iterations = 600000000 |   282030.945596
+Writing htdb_slab database (a = 0.4)...
+Buckets: 24000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 24000000 |   42448.407362
+DEBUG [ht.get()]: iterations = 20000000 buckets = 24000000 |   57399.857438
+DEBUG [ht.get()]: iterations = 40000000 buckets = 24000000 |   87247.662762
+DEBUG [ht.get()]: iterations = 60000000 buckets = 24000000 |   116561.690162
+DEBUG [ht.get()]: iterations = 80000000 buckets = 24000000 |   145218.379099
+DEBUG [ht.get()]: iterations = 100000000 buckets = 24000000 |   174008.530862
+DEBUG [ht.get()]: iterations = 120000000 buckets = 24000000 |   205672.878608
+DEBUG [ht.get()]: iterations = 140000000 buckets = 24000000 |   235119.283050
+DEBUG [ht.get()]: iterations = 160000000 buckets = 24000000 |   264137.319043
+DEBUG [ht.get()]: iterations = 180000000 buckets = 24000000 |   293436.631965
+DEBUG [ht.get()]: iterations = 200000000 buckets = 24000000 |   324506.212639
+DEBUG [ht.get()]: iterations = 250000000 buckets = 24000000 |   397075.923309
+DEBUG [ht.get()]: iterations = 300000000 buckets = 24000000 |   480707.574394
+DEBUG [ht.get()]: iterations = 400000000 buckets = 24000000 |   618969.780909
+DEBUG [ht.get()]: iterations = 600000000 buckets = 24000000 |   914794.796512
+Writing htdb_slab database (a = 0.6)...
+Buckets: 36000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 36000000 |   43064.707077
+DEBUG [ht.get()]: iterations = 20000000 buckets = 36000000 |   57591.927216
+DEBUG [ht.get()]: iterations = 40000000 buckets = 36000000 |   86937.206841
+DEBUG [ht.get()]: iterations = 60000000 buckets = 36000000 |   115750.704682
+DEBUG [ht.get()]: iterations = 80000000 buckets = 36000000 |   145363.610807
+DEBUG [ht.get()]: iterations = 100000000 buckets = 36000000 |   174510.715790
+DEBUG [ht.get()]: iterations = 120000000 buckets = 36000000 |   206006.693203
+DEBUG [ht.get()]: iterations = 140000000 buckets = 36000000 |   236126.973038
+DEBUG [ht.get()]: iterations = 160000000 buckets = 36000000 |   262668.791345
+DEBUG [ht.get()]: iterations = 180000000 buckets = 36000000 |   291114.517028
+DEBUG [ht.get()]: iterations = 200000000 buckets = 36000000 |   321307.284411
+DEBUG [ht.get()]: iterations = 250000000 buckets = 36000000 |   395033.850412
+DEBUG [ht.get()]: iterations = 300000000 buckets = 36000000 |   468580.406427
+DEBUG [ht.get()]: iterations = 400000000 buckets = 36000000 |   615698.236306
+DEBUG [ht.get()]: iterations = 600000000 buckets = 36000000 |   900890.169335
+Writing htdb_slab database (a = 0.8)...
+Buckets: 48000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 48000000 |   43193.413235
+DEBUG [ht.get()]: iterations = 20000000 buckets = 48000000 |   58244.497881
+DEBUG [ht.get()]: iterations = 40000000 buckets = 48000000 |   86972.427626
+DEBUG [ht.get()]: iterations = 60000000 buckets = 48000000 |   115977.137226
+DEBUG [ht.get()]: iterations = 80000000 buckets = 48000000 |   145128.064675
+DEBUG [ht.get()]: iterations = 100000000 buckets = 48000000 |   177719.474487
+DEBUG [ht.get()]: iterations = 120000000 buckets = 48000000 |   204221.559662
+DEBUG [ht.get()]: iterations = 140000000 buckets = 48000000 |   233381.016077
+DEBUG [ht.get()]: iterations = 160000000 buckets = 48000000 |   266615.628571
+DEBUG [ht.get()]: iterations = 180000000 buckets = 48000000 |   290744.716283
+DEBUG [ht.get()]: iterations = 200000000 buckets = 48000000 |   320891.677149
+DEBUG [ht.get()]: iterations = 250000000 buckets = 48000000 |   394955.418690
+DEBUG [ht.get()]: iterations = 300000000 buckets = 48000000 |   467257.596161
+DEBUG [ht.get()]: iterations = 400000000 buckets = 48000000 |   609342.386905
+DEBUG [ht.get()]: iterations = 600000000 buckets = 48000000 |   893520.910988
+Writing htdb_slab database (a = 1.0)...
+Buckets: 60000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 60000000 |   43708.366575
+DEBUG [ht.get()]: iterations = 20000000 buckets = 60000000 |   58328.574688
+DEBUG [ht.get()]: iterations = 40000000 buckets = 60000000 |   88056.138424
+DEBUG [ht.get()]: iterations = 60000000 buckets = 60000000 |   118319.963082
+DEBUG [ht.get()]: iterations = 80000000 buckets = 60000000 |   145349.713388
+DEBUG [ht.get()]: iterations = 100000000 buckets = 60000000 |   175574.378851
+DEBUG [ht.get()]: iterations = 120000000 buckets = 60000000 |   205365.137876
+DEBUG [ht.get()]: iterations = 140000000 buckets = 60000000 |   234827.936663
+DEBUG [ht.get()]: iterations = 160000000 buckets = 60000000 |   263839.027243
+DEBUG [ht.get()]: iterations = 180000000 buckets = 60000000 |   290057.101544
+DEBUG [ht.get()]: iterations = 200000000 buckets = 60000000 |   322079.134596
+DEBUG [ht.get()]: iterations = 250000000 buckets = 60000000 |   398668.871099
+DEBUG [ht.get()]: iterations = 300000000 buckets = 60000000 |   467571.175507
+DEBUG [ht.get()]: iterations = 400000000 buckets = 60000000 |   610995.665057
+DEBUG [ht.get()]: iterations = 600000000 buckets = 60000000 |   901804.318874
+Writing htdb_slab database (a = 1.2)...
+Buckets: 72000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 72000000 |   44219.495191
+DEBUG [ht.get()]: iterations = 20000000 buckets = 72000000 |   59080.087216
+DEBUG [ht.get()]: iterations = 40000000 buckets = 72000000 |   88391.403271
+DEBUG [ht.get()]: iterations = 60000000 buckets = 72000000 |   117729.330696
+DEBUG [ht.get()]: iterations = 80000000 buckets = 72000000 |   147936.719922
+DEBUG [ht.get()]: iterations = 100000000 buckets = 72000000 |   179740.839826
+DEBUG [ht.get()]: iterations = 120000000 buckets = 72000000 |   207849.882503
+DEBUG [ht.get()]: iterations = 140000000 buckets = 72000000 |   234652.965193
+DEBUG [ht.get()]: iterations = 160000000 buckets = 72000000 |   261511.815530
+DEBUG [ht.get()]: iterations = 180000000 buckets = 72000000 |   293971.443417
+DEBUG [ht.get()]: iterations = 200000000 buckets = 72000000 |   320886.419560
+DEBUG [ht.get()]: iterations = 250000000 buckets = 72000000 |   395007.515255
+DEBUG [ht.get()]: iterations = 300000000 buckets = 72000000 |   468673.122187
+DEBUG [ht.get()]: iterations = 400000000 buckets = 72000000 |   608168.979494
+DEBUG [ht.get()]: iterations = 600000000 buckets = 72000000 |   907436.810104
+Writing htdb_slab database (a = 1.4)...
+Buckets: 84000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 84000000 |   45000.843464
+DEBUG [ht.get()]: iterations = 20000000 buckets = 84000000 |   59704.555821
+DEBUG [ht.get()]: iterations = 40000000 buckets = 84000000 |   88831.052205
+DEBUG [ht.get()]: iterations = 60000000 buckets = 84000000 |   118330.631814
+DEBUG [ht.get()]: iterations = 80000000 buckets = 84000000 |   147968.771851
+DEBUG [ht.get()]: iterations = 100000000 buckets = 84000000 |   175130.347087
+DEBUG [ht.get()]: iterations = 120000000 buckets = 84000000 |   206079.616864
+DEBUG [ht.get()]: iterations = 140000000 buckets = 84000000 |   235216.321314
+DEBUG [ht.get()]: iterations = 160000000 buckets = 84000000 |   265709.821209
+DEBUG [ht.get()]: iterations = 180000000 buckets = 84000000 |   292297.190029
+DEBUG [ht.get()]: iterations = 200000000 buckets = 84000000 |   321875.375037
+DEBUG [ht.get()]: iterations = 250000000 buckets = 84000000 |   396384.215958
+DEBUG [ht.get()]: iterations = 300000000 buckets = 84000000 |   467173.574885
+DEBUG [ht.get()]: iterations = 400000000 buckets = 84000000 |   614500.249281
+DEBUG [ht.get()]: iterations = 600000000 buckets = 84000000 |   908505.120418
+Writing htdb_slab database (a = 1.6)...
+Buckets: 96000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 96000000 |   45706.133962
+DEBUG [ht.get()]: iterations = 20000000 buckets = 96000000 |   60332.144516
+DEBUG [ht.get()]: iterations = 40000000 buckets = 96000000 |   89471.231118
+DEBUG [ht.get()]: iterations = 60000000 buckets = 96000000 |   118653.367307
+DEBUG [ht.get()]: iterations = 80000000 buckets = 96000000 |   147106.035571
+DEBUG [ht.get()]: iterations = 100000000 buckets = 96000000 |   179243.411021
+DEBUG [ht.get()]: iterations = 120000000 buckets = 96000000 |   208239.369936
+DEBUG [ht.get()]: iterations = 140000000 buckets = 96000000 |   238210.307831
+DEBUG [ht.get()]: iterations = 160000000 buckets = 96000000 |   265855.365584
+DEBUG [ht.get()]: iterations = 180000000 buckets = 96000000 |   294754.469729
+DEBUG [ht.get()]: iterations = 200000000 buckets = 96000000 |   322322.490364
+DEBUG [ht.get()]: iterations = 250000000 buckets = 96000000 |   396925.091174
+DEBUG [ht.get()]: iterations = 300000000 buckets = 96000000 |   466539.086670
+DEBUG [ht.get()]: iterations = 400000000 buckets = 96000000 |   613784.545758
+DEBUG [ht.get()]: iterations = 600000000 buckets = 96000000 |   906056.399264
+Writing htdb_slab database (a = 1.8)...
+Buckets: 108000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 108000000 |   46494.245410
+DEBUG [ht.get()]: iterations = 20000000 buckets = 108000000 |   60973.876692
+DEBUG [ht.get()]: iterations = 40000000 buckets = 108000000 |   90490.223073
+DEBUG [ht.get()]: iterations = 60000000 buckets = 108000000 |   119766.463601
+DEBUG [ht.get()]: iterations = 80000000 buckets = 108000000 |   150814.388933
+DEBUG [ht.get()]: iterations = 100000000 buckets = 108000000 |   178391.095941
+DEBUG [ht.get()]: iterations = 120000000 buckets = 108000000 |   205681.722847
+DEBUG [ht.get()]: iterations = 140000000 buckets = 108000000 |   237599.648639
+DEBUG [ht.get()]: iterations = 160000000 buckets = 108000000 |   265286.360928
+DEBUG [ht.get()]: iterations = 180000000 buckets = 108000000 |   298040.374229
+DEBUG [ht.get()]: iterations = 200000000 buckets = 108000000 |   325176.803606
+DEBUG [ht.get()]: iterations = 250000000 buckets = 108000000 |   398361.237663
+DEBUG [ht.get()]: iterations = 300000000 buckets = 108000000 |   468727.953798
+DEBUG [ht.get()]: iterations = 400000000 buckets = 108000000 |   625230.456150
+DEBUG [ht.get()]: iterations = 600000000 buckets = 108000000 |   933837.436673
+Writing htdb_slab database (a = 2.0)...
+Buckets: 120000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 120000000 |   46833.261199
+DEBUG [ht.get()]: iterations = 20000000 buckets = 120000000 |   62085.747557
+DEBUG [ht.get()]: iterations = 40000000 buckets = 120000000 |   93318.823077
+DEBUG [ht.get()]: iterations = 60000000 buckets = 120000000 |   120163.285325
+DEBUG [ht.get()]: iterations = 80000000 buckets = 120000000 |   151265.663039
+DEBUG [ht.get()]: iterations = 100000000 buckets = 120000000 |   179933.696767
+DEBUG [ht.get()]: iterations = 120000000 buckets = 120000000 |   207839.517162
+DEBUG [ht.get()]: iterations = 140000000 buckets = 120000000 |   239222.197407
+DEBUG [ht.get()]: iterations = 160000000 buckets = 120000000 |   266838.607966
+DEBUG [ht.get()]: iterations = 180000000 buckets = 120000000 |   296872.345896
+DEBUG [ht.get()]: iterations = 200000000 buckets = 120000000 |   324341.570592
+DEBUG [ht.get()]: iterations = 250000000 buckets = 120000000 |   397892.231629
+DEBUG [ht.get()]: iterations = 300000000 buckets = 120000000 |   481116.787896
+DEBUG [ht.get()]: iterations = 400000000 buckets = 120000000 |   614746.484000
+DEBUG [ht.get()]: iterations = 600000000 buckets = 120000000 |   920023.660597
+Writing htdb_slab database (a = 2.2)...
+Buckets: 132000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 132000000 |   47237.787251
+DEBUG [ht.get()]: iterations = 20000000 buckets = 132000000 |   61719.700879
+DEBUG [ht.get()]: iterations = 40000000 buckets = 132000000 |   91107.618069
+DEBUG [ht.get()]: iterations = 60000000 buckets = 132000000 |   120711.161151
+DEBUG [ht.get()]: iterations = 80000000 buckets = 132000000 |   149415.075422
+DEBUG [ht.get()]: iterations = 100000000 buckets = 132000000 |   180676.155049
+DEBUG [ht.get()]: iterations = 120000000 buckets = 132000000 |   209550.544610
+DEBUG [ht.get()]: iterations = 140000000 buckets = 132000000 |   239441.295299
+DEBUG [ht.get()]: iterations = 160000000 buckets = 132000000 |   269330.231954
+DEBUG [ht.get()]: iterations = 180000000 buckets = 132000000 |   297371.288989
+DEBUG [ht.get()]: iterations = 200000000 buckets = 132000000 |   328994.126319
+DEBUG [ht.get()]: iterations = 250000000 buckets = 132000000 |   400942.664505
+DEBUG [ht.get()]: iterations = 300000000 buckets = 132000000 |   480626.388039
+DEBUG [ht.get()]: iterations = 400000000 buckets = 132000000 |   627539.350735
+DEBUG [ht.get()]: iterations = 600000000 buckets = 132000000 |   914191.927284
+Writing htdb_slab database (a = 2.4)...
+Buckets: 144000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 144000000 |   47879.849775
+DEBUG [ht.get()]: iterations = 20000000 buckets = 144000000 |   62573.047252
+DEBUG [ht.get()]: iterations = 40000000 buckets = 144000000 |   91758.352177
+DEBUG [ht.get()]: iterations = 60000000 buckets = 144000000 |   121441.875505
+DEBUG [ht.get()]: iterations = 80000000 buckets = 144000000 |   151535.013200
+DEBUG [ht.get()]: iterations = 100000000 buckets = 144000000 |   178421.998413
+DEBUG [ht.get()]: iterations = 120000000 buckets = 144000000 |   211537.706337
+DEBUG [ht.get()]: iterations = 140000000 buckets = 144000000 |   238488.819358
+DEBUG [ht.get()]: iterations = 160000000 buckets = 144000000 |   268542.779846
+DEBUG [ht.get()]: iterations = 180000000 buckets = 144000000 |   296077.982078
+DEBUG [ht.get()]: iterations = 200000000 buckets = 144000000 |   326890.986749
+DEBUG [ht.get()]: iterations = 250000000 buckets = 144000000 |   401050.560798
+DEBUG [ht.get()]: iterations = 300000000 buckets = 144000000 |   474289.201232
+DEBUG [ht.get()]: iterations = 400000000 buckets = 144000000 |   622166.557447
+DEBUG [ht.get()]: iterations = 600000000 buckets = 144000000 |   904190.610350
+Writing htdb_slab database (a = 2.6)...
+Buckets: 156000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 156000000 |   48256.814430
+DEBUG [ht.get()]: iterations = 20000000 buckets = 156000000 |   63311.733473
+DEBUG [ht.get()]: iterations = 40000000 buckets = 156000000 |   92251.914373
+DEBUG [ht.get()]: iterations = 60000000 buckets = 156000000 |   121618.861152
+DEBUG [ht.get()]: iterations = 80000000 buckets = 156000000 |   150777.572807
+DEBUG [ht.get()]: iterations = 100000000 buckets = 156000000 |   182859.372228
+DEBUG [ht.get()]: iterations = 120000000 buckets = 156000000 |   214658.319866
+DEBUG [ht.get()]: iterations = 140000000 buckets = 156000000 |   254656.297786
+DEBUG [ht.get()]: iterations = 160000000 buckets = 156000000 |   271275.597834
+DEBUG [ht.get()]: iterations = 180000000 buckets = 156000000 |   297275.544827
+DEBUG [ht.get()]: iterations = 200000000 buckets = 156000000 |   326655.018936
+DEBUG [ht.get()]: iterations = 250000000 buckets = 156000000 |   401235.897540
+DEBUG [ht.get()]: iterations = 300000000 buckets = 156000000 |   476467.291344
+DEBUG [ht.get()]: iterations = 400000000 buckets = 156000000 |   634575.598282
+DEBUG [ht.get()]: iterations = 600000000 buckets = 156000000 |   909988.404342
+Writing htdb_slab database (a = 2.8)...
+Buckets: 168000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 168000000 |   49237.503411
+DEBUG [ht.get()]: iterations = 20000000 buckets = 168000000 |   64111.163314
+DEBUG [ht.get()]: iterations = 40000000 buckets = 168000000 |   93991.152424
+DEBUG [ht.get()]: iterations = 60000000 buckets = 168000000 |   122240.927844
+DEBUG [ht.get()]: iterations = 80000000 buckets = 168000000 |   152117.613993
+DEBUG [ht.get()]: iterations = 100000000 buckets = 168000000 |   180629.628267
+DEBUG [ht.get()]: iterations = 120000000 buckets = 168000000 |   212571.529992
+DEBUG [ht.get()]: iterations = 140000000 buckets = 168000000 |   240950.526155
+DEBUG [ht.get()]: iterations = 160000000 buckets = 168000000 |   272763.506853
+DEBUG [ht.get()]: iterations = 180000000 buckets = 168000000 |   297642.078501
+DEBUG [ht.get()]: iterations = 200000000 buckets = 168000000 |   331507.628326
+DEBUG [ht.get()]: iterations = 250000000 buckets = 168000000 |   402113.651089
+DEBUG [ht.get()]: iterations = 300000000 buckets = 168000000 |   472985.307193
+DEBUG [ht.get()]: iterations = 400000000 buckets = 168000000 |   622085.904513
+DEBUG [ht.get()]: iterations = 600000000 buckets = 168000000 |   919901.588626
+Writing htdb_slab database (a = 3.0)...
+Buckets: 180000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 180000000 |   49377.770146
+DEBUG [ht.get()]: iterations = 20000000 buckets = 180000000 |   64987.059975
+DEBUG [ht.get()]: iterations = 40000000 buckets = 180000000 |   93670.443216
+DEBUG [ht.get()]: iterations = 60000000 buckets = 180000000 |   123121.080901
+DEBUG [ht.get()]: iterations = 80000000 buckets = 180000000 |   152027.529867
+DEBUG [ht.get()]: iterations = 100000000 buckets = 180000000 |   180833.329776
+DEBUG [ht.get()]: iterations = 120000000 buckets = 180000000 |   211071.113517
+DEBUG [ht.get()]: iterations = 140000000 buckets = 180000000 |   239494.624933
+DEBUG [ht.get()]: iterations = 160000000 buckets = 180000000 |   273593.536355
+DEBUG [ht.get()]: iterations = 180000000 buckets = 180000000 |   299452.121305
+DEBUG [ht.get()]: iterations = 200000000 buckets = 180000000 |   328118.959798
+DEBUG [ht.get()]: iterations = 250000000 buckets = 180000000 |   408028.214410
+DEBUG [ht.get()]: iterations = 300000000 buckets = 180000000 |   476226.160893
+DEBUG [ht.get()]: iterations = 400000000 buckets = 180000000 |   620862.555446
+DEBUG [ht.get()]: iterations = 600000000 buckets = 180000000 |   911539.265525
+Writing htdb_slab database (a = 4.0)...
+Buckets: 240000000
+Wrote 60000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 240000000 |   52380.705616
+DEBUG [ht.get()]: iterations = 20000000 buckets = 240000000 |   67199.440902
+DEBUG [ht.get()]: iterations = 40000000 buckets = 240000000 |   97049.311928
+DEBUG [ht.get()]: iterations = 60000000 buckets = 240000000 |   126853.200337
+DEBUG [ht.get()]: iterations = 80000000 buckets = 240000000 |   154811.375849
+DEBUG [ht.get()]: iterations = 100000000 buckets = 240000000 |   185994.137732
+DEBUG [ht.get()]: iterations = 120000000 buckets = 240000000 |   213986.164000
+DEBUG [ht.get()]: iterations = 140000000 buckets = 240000000 |   242905.539380
+DEBUG [ht.get()]: iterations = 160000000 buckets = 240000000 |   274085.914903
+DEBUG [ht.get()]: iterations = 180000000 buckets = 240000000 |   305313.493199
+DEBUG [ht.get()]: iterations = 200000000 buckets = 240000000 |   331013.753587
+DEBUG [ht.get()]: iterations = 250000000 buckets = 240000000 |   403011.389553
+DEBUG [ht.get()]: iterations = 300000000 buckets = 240000000 |   480875.841034
+DEBUG [ht.get()]: iterations = 400000000 buckets = 240000000 |   626926.270973
+DEBUG [ht.get()]: iterations = 600000000 buckets = 240000000 |   918386.959465
+Preparing 70 million txs...
+Done.
+Writing LevelDB database...
+Wrote 70000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   445585.287328
+DEBUG [leveldb.Get()]: iterations = 20000000 |   656316.165194
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1277686.357458
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1903556.066317
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2513601.427910
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3153827.476716
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3743705.293889
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4349653.074585
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4980951.145905
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5702208.853638
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6172580.903376
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7785794.766994
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9232299.334617
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12463678.388829
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18547095.019166
+DEBUG [None]: iterations = 10000000 |   17811.911536
+DEBUG [None]: iterations = 20000000 |   22395.311562
+DEBUG [None]: iterations = 40000000 |   31685.611104
+DEBUG [None]: iterations = 60000000 |   40670.579678
+DEBUG [None]: iterations = 80000000 |   49856.894772
+DEBUG [None]: iterations = 100000000 |   59079.313908
+DEBUG [None]: iterations = 120000000 |   68014.490237
+DEBUG [None]: iterations = 140000000 |   77007.890537
+DEBUG [None]: iterations = 160000000 |   86338.040812
+DEBUG [None]: iterations = 180000000 |   95435.462469
+DEBUG [None]: iterations = 200000000 |   104212.637507
+DEBUG [None]: iterations = 250000000 |   127355.186200
+DEBUG [None]: iterations = 300000000 |   150359.226658
+DEBUG [None]: iterations = 400000000 |   195823.878513
+DEBUG [None]: iterations = 600000000 |   287586.947856
+Writing htdb_slab database (a = 0.4)...
+Buckets: 28000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 28000000 |   44694.412549
+DEBUG [ht.get()]: iterations = 20000000 buckets = 28000000 |   59478.787018
+DEBUG [ht.get()]: iterations = 40000000 buckets = 28000000 |   90225.625114
+DEBUG [ht.get()]: iterations = 60000000 buckets = 28000000 |   117295.093800
+DEBUG [ht.get()]: iterations = 80000000 buckets = 28000000 |   147560.558518
+DEBUG [ht.get()]: iterations = 100000000 buckets = 28000000 |   176866.265052
+DEBUG [ht.get()]: iterations = 120000000 buckets = 28000000 |   208585.459874
+DEBUG [ht.get()]: iterations = 140000000 buckets = 28000000 |   236826.781499
+DEBUG [ht.get()]: iterations = 160000000 buckets = 28000000 |   264979.208801
+DEBUG [ht.get()]: iterations = 180000000 buckets = 28000000 |   295777.842949
+DEBUG [ht.get()]: iterations = 200000000 buckets = 28000000 |   323554.916320
+DEBUG [ht.get()]: iterations = 250000000 buckets = 28000000 |   405878.292340
+DEBUG [ht.get()]: iterations = 300000000 buckets = 28000000 |   470994.870387
+DEBUG [ht.get()]: iterations = 400000000 buckets = 28000000 |   627151.458277
+DEBUG [ht.get()]: iterations = 600000000 buckets = 28000000 |   914667.284931
+Writing htdb_slab database (a = 0.6)...
+Buckets: 42000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 42000000 |   45039.277329
+DEBUG [ht.get()]: iterations = 20000000 buckets = 42000000 |   60284.620573
+DEBUG [ht.get()]: iterations = 40000000 buckets = 42000000 |   90022.492915
+DEBUG [ht.get()]: iterations = 60000000 buckets = 42000000 |   118115.546650
+DEBUG [ht.get()]: iterations = 80000000 buckets = 42000000 |   146074.679365
+DEBUG [ht.get()]: iterations = 100000000 buckets = 42000000 |   176441.361739
+DEBUG [ht.get()]: iterations = 120000000 buckets = 42000000 |   206833.575651
+DEBUG [ht.get()]: iterations = 140000000 buckets = 42000000 |   238176.599064
+DEBUG [ht.get()]: iterations = 160000000 buckets = 42000000 |   264783.525390
+DEBUG [ht.get()]: iterations = 180000000 buckets = 42000000 |   292823.278798
+DEBUG [ht.get()]: iterations = 200000000 buckets = 42000000 |   322785.507291
+DEBUG [ht.get()]: iterations = 250000000 buckets = 42000000 |   396649.950056
+DEBUG [ht.get()]: iterations = 300000000 buckets = 42000000 |   468786.712297
+DEBUG [ht.get()]: iterations = 400000000 buckets = 42000000 |   618068.604255
+DEBUG [ht.get()]: iterations = 600000000 buckets = 42000000 |   906233.617856
+Writing htdb_slab database (a = 0.8)...
+Buckets: 56000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 56000000 |   45580.859067
+DEBUG [ht.get()]: iterations = 20000000 buckets = 56000000 |   60551.018523
+DEBUG [ht.get()]: iterations = 40000000 buckets = 56000000 |   90849.336604
+DEBUG [ht.get()]: iterations = 60000000 buckets = 56000000 |   118546.836675
+DEBUG [ht.get()]: iterations = 80000000 buckets = 56000000 |   147717.910427
+DEBUG [ht.get()]: iterations = 100000000 buckets = 56000000 |   176992.672242
+DEBUG [ht.get()]: iterations = 120000000 buckets = 56000000 |   207462.352822
+DEBUG [ht.get()]: iterations = 140000000 buckets = 56000000 |   235278.195661
+DEBUG [ht.get()]: iterations = 160000000 buckets = 56000000 |   263096.507529
+DEBUG [ht.get()]: iterations = 180000000 buckets = 56000000 |   296123.563822
+DEBUG [ht.get()]: iterations = 200000000 buckets = 56000000 |   321911.697385
+DEBUG [ht.get()]: iterations = 250000000 buckets = 56000000 |   395402.141755
+DEBUG [ht.get()]: iterations = 300000000 buckets = 56000000 |   471765.910492
+DEBUG [ht.get()]: iterations = 400000000 buckets = 56000000 |   615219.841675
+DEBUG [ht.get()]: iterations = 600000000 buckets = 56000000 |   920649.262552
+Writing htdb_slab database (a = 1.0)...
+Buckets: 70000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 70000000 |   46337.642683
+DEBUG [ht.get()]: iterations = 20000000 buckets = 70000000 |   61120.111795
+DEBUG [ht.get()]: iterations = 40000000 buckets = 70000000 |   90634.808824
+DEBUG [ht.get()]: iterations = 60000000 buckets = 70000000 |   120475.658143
+DEBUG [ht.get()]: iterations = 80000000 buckets = 70000000 |   151189.779060
+DEBUG [ht.get()]: iterations = 100000000 buckets = 70000000 |   178252.905357
+DEBUG [ht.get()]: iterations = 120000000 buckets = 70000000 |   207209.705931
+DEBUG [ht.get()]: iterations = 140000000 buckets = 70000000 |   238653.610624
+DEBUG [ht.get()]: iterations = 160000000 buckets = 70000000 |   266732.753543
+DEBUG [ht.get()]: iterations = 180000000 buckets = 70000000 |   294688.474357
+DEBUG [ht.get()]: iterations = 200000000 buckets = 70000000 |   323832.958412
+DEBUG [ht.get()]: iterations = 250000000 buckets = 70000000 |   397799.076157
+DEBUG [ht.get()]: iterations = 300000000 buckets = 70000000 |   471617.760629
+DEBUG [ht.get()]: iterations = 400000000 buckets = 70000000 |   615469.270347
+DEBUG [ht.get()]: iterations = 600000000 buckets = 70000000 |   910256.585388
+Writing htdb_slab database (a = 1.2)...
+Buckets: 84000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 84000000 |   47145.268486
+DEBUG [ht.get()]: iterations = 20000000 buckets = 84000000 |   61851.690050
+DEBUG [ht.get()]: iterations = 40000000 buckets = 84000000 |   91136.866408
+DEBUG [ht.get()]: iterations = 60000000 buckets = 84000000 |   119763.120373
+DEBUG [ht.get()]: iterations = 80000000 buckets = 84000000 |   149348.112930
+DEBUG [ht.get()]: iterations = 100000000 buckets = 84000000 |   179663.682963
+DEBUG [ht.get()]: iterations = 120000000 buckets = 84000000 |   207245.148128
+DEBUG [ht.get()]: iterations = 140000000 buckets = 84000000 |   240067.144430
+DEBUG [ht.get()]: iterations = 160000000 buckets = 84000000 |   265933.864883
+DEBUG [ht.get()]: iterations = 180000000 buckets = 84000000 |   294314.955508
+DEBUG [ht.get()]: iterations = 200000000 buckets = 84000000 |   325487.582800
+DEBUG [ht.get()]: iterations = 250000000 buckets = 84000000 |   400031.221105
+DEBUG [ht.get()]: iterations = 300000000 buckets = 84000000 |   474834.105471
+DEBUG [ht.get()]: iterations = 400000000 buckets = 84000000 |   618973.697621
+DEBUG [ht.get()]: iterations = 600000000 buckets = 84000000 |   905599.369395
+Writing htdb_slab database (a = 1.4)...
+Buckets: 98000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 98000000 |   47600.779586
+DEBUG [ht.get()]: iterations = 20000000 buckets = 98000000 |   62479.538696
+DEBUG [ht.get()]: iterations = 40000000 buckets = 98000000 |   92455.238384
+DEBUG [ht.get()]: iterations = 60000000 buckets = 98000000 |   121341.401510
+DEBUG [ht.get()]: iterations = 80000000 buckets = 98000000 |   150576.702213
+DEBUG [ht.get()]: iterations = 100000000 buckets = 98000000 |   178895.206298
+DEBUG [ht.get()]: iterations = 120000000 buckets = 98000000 |   208765.877431
+DEBUG [ht.get()]: iterations = 140000000 buckets = 98000000 |   239667.482032
+DEBUG [ht.get()]: iterations = 160000000 buckets = 98000000 |   270063.050160
+DEBUG [ht.get()]: iterations = 180000000 buckets = 98000000 |   297775.200570
+DEBUG [ht.get()]: iterations = 200000000 buckets = 98000000 |   324186.159273
+DEBUG [ht.get()]: iterations = 250000000 buckets = 98000000 |   401377.502770
+DEBUG [ht.get()]: iterations = 300000000 buckets = 98000000 |   470225.683024
+DEBUG [ht.get()]: iterations = 400000000 buckets = 98000000 |   616466.076655
+DEBUG [ht.get()]: iterations = 600000000 buckets = 98000000 |   906449.162027
+Writing htdb_slab database (a = 1.6)...
+Buckets: 112000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 112000000 |   48273.780796
+DEBUG [ht.get()]: iterations = 20000000 buckets = 112000000 |   63135.468682
+DEBUG [ht.get()]: iterations = 40000000 buckets = 112000000 |   92373.726090
+DEBUG [ht.get()]: iterations = 60000000 buckets = 112000000 |   120641.600771
+DEBUG [ht.get()]: iterations = 80000000 buckets = 112000000 |   153886.011841
+DEBUG [ht.get()]: iterations = 100000000 buckets = 112000000 |   180875.853080
+DEBUG [ht.get()]: iterations = 120000000 buckets = 112000000 |   209191.284328
+DEBUG [ht.get()]: iterations = 140000000 buckets = 112000000 |   238082.758169
+DEBUG [ht.get()]: iterations = 160000000 buckets = 112000000 |   268914.689452
+DEBUG [ht.get()]: iterations = 180000000 buckets = 112000000 |   297375.209538
+DEBUG [ht.get()]: iterations = 200000000 buckets = 112000000 |   326371.180137
+DEBUG [ht.get()]: iterations = 250000000 buckets = 112000000 |   398309.205516
+DEBUG [ht.get()]: iterations = 300000000 buckets = 112000000 |   477611.461966
+DEBUG [ht.get()]: iterations = 400000000 buckets = 112000000 |   619061.793703
+DEBUG [ht.get()]: iterations = 600000000 buckets = 112000000 |   922395.405640
+Writing htdb_slab database (a = 1.8)...
+Buckets: 126000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 126000000 |   49114.980566
+DEBUG [ht.get()]: iterations = 20000000 buckets = 126000000 |   64029.122936
+DEBUG [ht.get()]: iterations = 40000000 buckets = 126000000 |   93916.427523
+DEBUG [ht.get()]: iterations = 60000000 buckets = 126000000 |   123199.845190
+DEBUG [ht.get()]: iterations = 80000000 buckets = 126000000 |   151825.526736
+DEBUG [ht.get()]: iterations = 100000000 buckets = 126000000 |   180882.282729
+DEBUG [ht.get()]: iterations = 120000000 buckets = 126000000 |   211373.194862
+DEBUG [ht.get()]: iterations = 140000000 buckets = 126000000 |   239713.828990
+DEBUG [ht.get()]: iterations = 160000000 buckets = 126000000 |   268309.111544
+DEBUG [ht.get()]: iterations = 180000000 buckets = 126000000 |   300427.647731
+DEBUG [ht.get()]: iterations = 200000000 buckets = 126000000 |   330765.333761
+DEBUG [ht.get()]: iterations = 250000000 buckets = 126000000 |   401593.399509
+DEBUG [ht.get()]: iterations = 300000000 buckets = 126000000 |   479124.038192
+DEBUG [ht.get()]: iterations = 400000000 buckets = 126000000 |   618066.311605
+DEBUG [ht.get()]: iterations = 600000000 buckets = 126000000 |   914076.487131
+Writing htdb_slab database (a = 2.0)...
+Buckets: 140000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 140000000 |   49835.062471
+DEBUG [ht.get()]: iterations = 20000000 buckets = 140000000 |   64680.266560
+DEBUG [ht.get()]: iterations = 40000000 buckets = 140000000 |   94852.713202
+DEBUG [ht.get()]: iterations = 60000000 buckets = 140000000 |   123809.354565
+DEBUG [ht.get()]: iterations = 80000000 buckets = 140000000 |   153488.989325
+DEBUG [ht.get()]: iterations = 100000000 buckets = 140000000 |   182842.786285
+DEBUG [ht.get()]: iterations = 120000000 buckets = 140000000 |   209498.510627
+DEBUG [ht.get()]: iterations = 140000000 buckets = 140000000 |   241616.466194
+DEBUG [ht.get()]: iterations = 160000000 buckets = 140000000 |   270393.464994
+DEBUG [ht.get()]: iterations = 180000000 buckets = 140000000 |   301748.593617
+DEBUG [ht.get()]: iterations = 200000000 buckets = 140000000 |   326841.866165
+DEBUG [ht.get()]: iterations = 250000000 buckets = 140000000 |   403220.346512
+DEBUG [ht.get()]: iterations = 300000000 buckets = 140000000 |   476440.652196
+DEBUG [ht.get()]: iterations = 400000000 buckets = 140000000 |   626002.497269
+DEBUG [ht.get()]: iterations = 600000000 buckets = 140000000 |   924874.419310
+Writing htdb_slab database (a = 2.2)...
+Buckets: 154000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 154000000 |   50649.195829
+DEBUG [ht.get()]: iterations = 20000000 buckets = 154000000 |   65320.032804
+DEBUG [ht.get()]: iterations = 40000000 buckets = 154000000 |   94876.182650
+DEBUG [ht.get()]: iterations = 60000000 buckets = 154000000 |   123563.771120
+DEBUG [ht.get()]: iterations = 80000000 buckets = 154000000 |   152912.719681
+DEBUG [ht.get()]: iterations = 100000000 buckets = 154000000 |   182483.647169
+DEBUG [ht.get()]: iterations = 120000000 buckets = 154000000 |   213188.700608
+DEBUG [ht.get()]: iterations = 140000000 buckets = 154000000 |   240650.494076
+DEBUG [ht.get()]: iterations = 160000000 buckets = 154000000 |   273368.873408
+DEBUG [ht.get()]: iterations = 180000000 buckets = 154000000 |   299301.751670
+DEBUG [ht.get()]: iterations = 200000000 buckets = 154000000 |   328658.976678
+DEBUG [ht.get()]: iterations = 250000000 buckets = 154000000 |   403849.387245
+DEBUG [ht.get()]: iterations = 300000000 buckets = 154000000 |   476966.588256
+DEBUG [ht.get()]: iterations = 400000000 buckets = 154000000 |   621365.775493
+DEBUG [ht.get()]: iterations = 600000000 buckets = 154000000 |   912782.542085
+Writing htdb_slab database (a = 2.4)...
+Buckets: 168000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 168000000 |   51547.077842
+DEBUG [ht.get()]: iterations = 20000000 buckets = 168000000 |   66384.063399
+DEBUG [ht.get()]: iterations = 40000000 buckets = 168000000 |   95266.457943
+DEBUG [ht.get()]: iterations = 60000000 buckets = 168000000 |   124428.172275
+DEBUG [ht.get()]: iterations = 80000000 buckets = 168000000 |   157368.855407
+DEBUG [ht.get()]: iterations = 100000000 buckets = 168000000 |   182852.496436
+DEBUG [ht.get()]: iterations = 120000000 buckets = 168000000 |   213421.111938
+DEBUG [ht.get()]: iterations = 140000000 buckets = 168000000 |   240818.108350
+DEBUG [ht.get()]: iterations = 160000000 buckets = 168000000 |   273459.112599
+DEBUG [ht.get()]: iterations = 180000000 buckets = 168000000 |   303493.773867
+DEBUG [ht.get()]: iterations = 200000000 buckets = 168000000 |   331622.826356
+DEBUG [ht.get()]: iterations = 250000000 buckets = 168000000 |   402719.393915
+DEBUG [ht.get()]: iterations = 300000000 buckets = 168000000 |   482619.796465
+DEBUG [ht.get()]: iterations = 400000000 buckets = 168000000 |   627151.885308
+DEBUG [ht.get()]: iterations = 600000000 buckets = 168000000 |   911191.099241
+Writing htdb_slab database (a = 2.6)...
+Buckets: 182000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 182000000 |   51744.368988
+DEBUG [ht.get()]: iterations = 20000000 buckets = 182000000 |   67055.350373
+DEBUG [ht.get()]: iterations = 40000000 buckets = 182000000 |   96266.288119
+DEBUG [ht.get()]: iterations = 60000000 buckets = 182000000 |   125512.873336
+DEBUG [ht.get()]: iterations = 80000000 buckets = 182000000 |   154093.178222
+DEBUG [ht.get()]: iterations = 100000000 buckets = 182000000 |   183870.425998
+DEBUG [ht.get()]: iterations = 120000000 buckets = 182000000 |   212680.392341
+DEBUG [ht.get()]: iterations = 140000000 buckets = 182000000 |   241930.741705
+DEBUG [ht.get()]: iterations = 160000000 buckets = 182000000 |   273057.055056
+DEBUG [ht.get()]: iterations = 180000000 buckets = 182000000 |   300531.660199
+DEBUG [ht.get()]: iterations = 200000000 buckets = 182000000 |   331748.860244
+DEBUG [ht.get()]: iterations = 250000000 buckets = 182000000 |   404724.072731
+DEBUG [ht.get()]: iterations = 300000000 buckets = 182000000 |   476776.284177
+DEBUG [ht.get()]: iterations = 400000000 buckets = 182000000 |   626709.722229
+DEBUG [ht.get()]: iterations = 600000000 buckets = 182000000 |   916376.827248
+Writing htdb_slab database (a = 2.8)...
+Buckets: 196000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 196000000 |   52482.472912
+DEBUG [ht.get()]: iterations = 20000000 buckets = 196000000 |   66960.055192
+DEBUG [ht.get()]: iterations = 40000000 buckets = 196000000 |   96532.624168
+DEBUG [ht.get()]: iterations = 60000000 buckets = 196000000 |   126788.344184
+DEBUG [ht.get()]: iterations = 80000000 buckets = 196000000 |   155230.215441
+DEBUG [ht.get()]: iterations = 100000000 buckets = 196000000 |   183675.382206
+DEBUG [ht.get()]: iterations = 120000000 buckets = 196000000 |   216771.308425
+DEBUG [ht.get()]: iterations = 140000000 buckets = 196000000 |   246584.519239
+DEBUG [ht.get()]: iterations = 160000000 buckets = 196000000 |   272770.393923
+DEBUG [ht.get()]: iterations = 180000000 buckets = 196000000 |   302516.213991
+DEBUG [ht.get()]: iterations = 200000000 buckets = 196000000 |   330489.314453
+DEBUG [ht.get()]: iterations = 250000000 buckets = 196000000 |   402874.519766
+DEBUG [ht.get()]: iterations = 300000000 buckets = 196000000 |   477488.566586
+DEBUG [ht.get()]: iterations = 400000000 buckets = 196000000 |   625778.163021
+DEBUG [ht.get()]: iterations = 600000000 buckets = 196000000 |   930646.529921
+Writing htdb_slab database (a = 3.0)...
+Buckets: 210000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 210000000 |   52938.514157
+DEBUG [ht.get()]: iterations = 20000000 buckets = 210000000 |   67912.631851
+DEBUG [ht.get()]: iterations = 40000000 buckets = 210000000 |   97170.896954
+DEBUG [ht.get()]: iterations = 60000000 buckets = 210000000 |   127053.626349
+DEBUG [ht.get()]: iterations = 80000000 buckets = 210000000 |   156285.927478
+DEBUG [ht.get()]: iterations = 100000000 buckets = 210000000 |   187302.414301
+DEBUG [ht.get()]: iterations = 120000000 buckets = 210000000 |   215679.392611
+DEBUG [ht.get()]: iterations = 140000000 buckets = 210000000 |   244815.244490
+DEBUG [ht.get()]: iterations = 160000000 buckets = 210000000 |   279069.412903
+DEBUG [ht.get()]: iterations = 180000000 buckets = 210000000 |   303885.296855
+DEBUG [ht.get()]: iterations = 200000000 buckets = 210000000 |   330997.753923
+DEBUG [ht.get()]: iterations = 250000000 buckets = 210000000 |   401867.846086
+DEBUG [ht.get()]: iterations = 300000000 buckets = 210000000 |   487312.693418
+DEBUG [ht.get()]: iterations = 400000000 buckets = 210000000 |   631874.267366
+DEBUG [ht.get()]: iterations = 600000000 buckets = 210000000 |   919533.799880
+Writing htdb_slab database (a = 4.0)...
+Buckets: 280000000
+Wrote 70000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 280000000 |   56223.807546
+DEBUG [ht.get()]: iterations = 20000000 buckets = 280000000 |   70927.023240
+DEBUG [ht.get()]: iterations = 40000000 buckets = 280000000 |   100206.579944
+DEBUG [ht.get()]: iterations = 60000000 buckets = 280000000 |   130570.461727
+DEBUG [ht.get()]: iterations = 80000000 buckets = 280000000 |   159134.313614
+DEBUG [ht.get()]: iterations = 100000000 buckets = 280000000 |   188585.037628
+DEBUG [ht.get()]: iterations = 120000000 buckets = 280000000 |   217380.856106
+DEBUG [ht.get()]: iterations = 140000000 buckets = 280000000 |   248463.711911
+DEBUG [ht.get()]: iterations = 160000000 buckets = 280000000 |   278283.134553
+DEBUG [ht.get()]: iterations = 180000000 buckets = 280000000 |   307975.686242
+DEBUG [ht.get()]: iterations = 200000000 buckets = 280000000 |   337974.922467
+DEBUG [ht.get()]: iterations = 250000000 buckets = 280000000 |   408798.678966
+DEBUG [ht.get()]: iterations = 300000000 buckets = 280000000 |   485379.558975
+DEBUG [ht.get()]: iterations = 400000000 buckets = 280000000 |   626742.257417
+DEBUG [ht.get()]: iterations = 600000000 buckets = 280000000 |   932472.967154
+Preparing 80 million txs...
+Done.
+Writing LevelDB database...
+Wrote 80000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   440205.294575
+DEBUG [leveldb.Get()]: iterations = 20000000 |   656889.589616
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1278433.420934
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1901559.094809
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2537908.977543
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3138743.279713
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3758770.198738
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4401940.729258
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4982969.225967
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5644970.715946
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6299911.239402
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7786751.740342
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9407283.873734
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12441794.366705
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18568429.110438
+DEBUG [None]: iterations = 10000000 |   19716.744889
+DEBUG [None]: iterations = 20000000 |   24296.700276
+DEBUG [None]: iterations = 40000000 |   33504.632087
+DEBUG [None]: iterations = 60000000 |   42823.457962
+DEBUG [None]: iterations = 80000000 |   52047.437989
+DEBUG [None]: iterations = 100000000 |   61064.632168
+DEBUG [None]: iterations = 120000000 |   71072.685220
+DEBUG [None]: iterations = 140000000 |   79428.874526
+DEBUG [None]: iterations = 160000000 |   88694.758403
+DEBUG [None]: iterations = 180000000 |   98058.546539
+DEBUG [None]: iterations = 200000000 |   107187.435795
+DEBUG [None]: iterations = 250000000 |   130214.142670
+DEBUG [None]: iterations = 300000000 |   152889.416737
+DEBUG [None]: iterations = 400000000 |   198970.133550
+DEBUG [None]: iterations = 600000000 |   291963.411138
+Writing htdb_slab database (a = 0.4)...
+Buckets: 32000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 32000000 |   46691.933765
+DEBUG [ht.get()]: iterations = 20000000 buckets = 32000000 |   61147.547822
+DEBUG [ht.get()]: iterations = 40000000 buckets = 32000000 |   91511.645923
+DEBUG [ht.get()]: iterations = 60000000 buckets = 32000000 |   120023.449324
+DEBUG [ht.get()]: iterations = 80000000 buckets = 32000000 |   150400.283055
+DEBUG [ht.get()]: iterations = 100000000 buckets = 32000000 |   181109.276362
+DEBUG [ht.get()]: iterations = 120000000 buckets = 32000000 |   208085.470049
+DEBUG [ht.get()]: iterations = 140000000 buckets = 32000000 |   237642.578817
+DEBUG [ht.get()]: iterations = 160000000 buckets = 32000000 |   267064.475241
+DEBUG [ht.get()]: iterations = 180000000 buckets = 32000000 |   296580.319361
+DEBUG [ht.get()]: iterations = 200000000 buckets = 32000000 |   327153.053872
+DEBUG [ht.get()]: iterations = 250000000 buckets = 32000000 |   397951.532525
+DEBUG [ht.get()]: iterations = 300000000 buckets = 32000000 |   470176.159855
+DEBUG [ht.get()]: iterations = 400000000 buckets = 32000000 |   618926.173955
+DEBUG [ht.get()]: iterations = 600000000 buckets = 32000000 |   913874.173932
+Writing htdb_slab database (a = 0.6)...
+Buckets: 48000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 48000000 |   47228.865902
+DEBUG [ht.get()]: iterations = 20000000 buckets = 48000000 |   61968.397457
+DEBUG [ht.get()]: iterations = 40000000 buckets = 48000000 |   90909.523645
+DEBUG [ht.get()]: iterations = 60000000 buckets = 48000000 |   120625.364241
+DEBUG [ht.get()]: iterations = 80000000 buckets = 48000000 |   150837.833942
+DEBUG [ht.get()]: iterations = 100000000 buckets = 48000000 |   178647.104769
+DEBUG [ht.get()]: iterations = 120000000 buckets = 48000000 |   208827.946169
+DEBUG [ht.get()]: iterations = 140000000 buckets = 48000000 |   237023.204610
+DEBUG [ht.get()]: iterations = 160000000 buckets = 48000000 |   267546.806114
+DEBUG [ht.get()]: iterations = 180000000 buckets = 48000000 |   295219.439110
+DEBUG [ht.get()]: iterations = 200000000 buckets = 48000000 |   330340.601322
+DEBUG [ht.get()]: iterations = 250000000 buckets = 48000000 |   399668.767093
+DEBUG [ht.get()]: iterations = 300000000 buckets = 48000000 |   475992.471764
+DEBUG [ht.get()]: iterations = 400000000 buckets = 48000000 |   620039.222676
+DEBUG [ht.get()]: iterations = 600000000 buckets = 48000000 |   926125.033996
+Writing htdb_slab database (a = 0.8)...
+Buckets: 64000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 64000000 |   47849.290379
+DEBUG [ht.get()]: iterations = 20000000 buckets = 64000000 |   62611.378017
+DEBUG [ht.get()]: iterations = 40000000 buckets = 64000000 |   91579.442911
+DEBUG [ht.get()]: iterations = 60000000 buckets = 64000000 |   120824.335138
+DEBUG [ht.get()]: iterations = 80000000 buckets = 64000000 |   150709.217691
+DEBUG [ht.get()]: iterations = 100000000 buckets = 64000000 |   181671.400718
+DEBUG [ht.get()]: iterations = 120000000 buckets = 64000000 |   209984.680193
+DEBUG [ht.get()]: iterations = 140000000 buckets = 64000000 |   243003.162478
+DEBUG [ht.get()]: iterations = 160000000 buckets = 64000000 |   267417.145542
+DEBUG [ht.get()]: iterations = 180000000 buckets = 64000000 |   298388.504702
+DEBUG [ht.get()]: iterations = 200000000 buckets = 64000000 |   327310.406344
+DEBUG [ht.get()]: iterations = 250000000 buckets = 64000000 |   394147.078691
+DEBUG [ht.get()]: iterations = 300000000 buckets = 64000000 |   476056.452732
+DEBUG [ht.get()]: iterations = 400000000 buckets = 64000000 |   617360.601745
+DEBUG [ht.get()]: iterations = 600000000 buckets = 64000000 |   917915.313066
+Writing htdb_slab database (a = 1.0)...
+Buckets: 80000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 80000000 |   48701.491840
+DEBUG [ht.get()]: iterations = 20000000 buckets = 80000000 |   63236.420243
+DEBUG [ht.get()]: iterations = 40000000 buckets = 80000000 |   92816.566892
+DEBUG [ht.get()]: iterations = 60000000 buckets = 80000000 |   123738.680170
+DEBUG [ht.get()]: iterations = 80000000 buckets = 80000000 |   150549.395324
+DEBUG [ht.get()]: iterations = 100000000 buckets = 80000000 |   180707.035642
+DEBUG [ht.get()]: iterations = 120000000 buckets = 80000000 |   212398.584082
+DEBUG [ht.get()]: iterations = 140000000 buckets = 80000000 |   238832.874568
+DEBUG [ht.get()]: iterations = 160000000 buckets = 80000000 |   269229.707865
+DEBUG [ht.get()]: iterations = 180000000 buckets = 80000000 |   302404.637441
+DEBUG [ht.get()]: iterations = 200000000 buckets = 80000000 |   326816.590624
+DEBUG [ht.get()]: iterations = 250000000 buckets = 80000000 |   400750.523021
+DEBUG [ht.get()]: iterations = 300000000 buckets = 80000000 |   473696.847361
+DEBUG [ht.get()]: iterations = 400000000 buckets = 80000000 |   621640.145627
+DEBUG [ht.get()]: iterations = 600000000 buckets = 80000000 |   932001.435218
+Writing htdb_slab database (a = 1.2)...
+Buckets: 96000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 96000000 |   49899.965893
+DEBUG [ht.get()]: iterations = 20000000 buckets = 96000000 |   63977.228253
+DEBUG [ht.get()]: iterations = 40000000 buckets = 96000000 |   94686.072117
+DEBUG [ht.get()]: iterations = 60000000 buckets = 96000000 |   124597.736938
+DEBUG [ht.get()]: iterations = 80000000 buckets = 96000000 |   151796.350036
+DEBUG [ht.get()]: iterations = 100000000 buckets = 96000000 |   181978.510854
+DEBUG [ht.get()]: iterations = 120000000 buckets = 96000000 |   212613.271612
+DEBUG [ht.get()]: iterations = 140000000 buckets = 96000000 |   241225.192151
+DEBUG [ht.get()]: iterations = 160000000 buckets = 96000000 |   268037.923508
+DEBUG [ht.get()]: iterations = 180000000 buckets = 96000000 |   310783.540924
+DEBUG [ht.get()]: iterations = 200000000 buckets = 96000000 |   334293.951343
+DEBUG [ht.get()]: iterations = 250000000 buckets = 96000000 |   400062.817711
+DEBUG [ht.get()]: iterations = 300000000 buckets = 96000000 |   473678.030628
+DEBUG [ht.get()]: iterations = 400000000 buckets = 96000000 |   613825.039164
+DEBUG [ht.get()]: iterations = 600000000 buckets = 96000000 |   908513.964099
+Writing htdb_slab database (a = 1.4)...
+Buckets: 112000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 112000000 |   50456.629574
+DEBUG [ht.get()]: iterations = 20000000 buckets = 112000000 |   65372.972322
+DEBUG [ht.get()]: iterations = 40000000 buckets = 112000000 |   94738.685177
+DEBUG [ht.get()]: iterations = 60000000 buckets = 112000000 |   123084.614535
+DEBUG [ht.get()]: iterations = 80000000 buckets = 112000000 |   154618.103323
+DEBUG [ht.get()]: iterations = 100000000 buckets = 112000000 |   181947.179114
+DEBUG [ht.get()]: iterations = 120000000 buckets = 112000000 |   211911.591903
+DEBUG [ht.get()]: iterations = 140000000 buckets = 112000000 |   241802.256526
+DEBUG [ht.get()]: iterations = 160000000 buckets = 112000000 |   271403.412899
+DEBUG [ht.get()]: iterations = 180000000 buckets = 112000000 |   301343.771006
+DEBUG [ht.get()]: iterations = 200000000 buckets = 112000000 |   331733.382605
+DEBUG [ht.get()]: iterations = 250000000 buckets = 112000000 |   401427.953693
+DEBUG [ht.get()]: iterations = 300000000 buckets = 112000000 |   475549.054021
+DEBUG [ht.get()]: iterations = 400000000 buckets = 112000000 |   620071.582851
+DEBUG [ht.get()]: iterations = 600000000 buckets = 112000000 |   915968.964001
+Writing htdb_slab database (a = 1.6)...
+Buckets: 128000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 128000000 |   51586.508980
+DEBUG [ht.get()]: iterations = 20000000 buckets = 128000000 |   66193.847546
+DEBUG [ht.get()]: iterations = 40000000 buckets = 128000000 |   95357.878866
+DEBUG [ht.get()]: iterations = 60000000 buckets = 128000000 |   124503.720014
+DEBUG [ht.get()]: iterations = 80000000 buckets = 128000000 |   153775.657570
+DEBUG [ht.get()]: iterations = 100000000 buckets = 128000000 |   183145.510900
+DEBUG [ht.get()]: iterations = 120000000 buckets = 128000000 |   213889.495157
+DEBUG [ht.get()]: iterations = 140000000 buckets = 128000000 |   241282.709402
+DEBUG [ht.get()]: iterations = 160000000 buckets = 128000000 |   271245.614051
+DEBUG [ht.get()]: iterations = 180000000 buckets = 128000000 |   300431.137276
+DEBUG [ht.get()]: iterations = 200000000 buckets = 128000000 |   329637.520474
+DEBUG [ht.get()]: iterations = 250000000 buckets = 128000000 |   403587.589267
+DEBUG [ht.get()]: iterations = 300000000 buckets = 128000000 |   476852.300060
+DEBUG [ht.get()]: iterations = 400000000 buckets = 128000000 |   622395.187006
+DEBUG [ht.get()]: iterations = 600000000 buckets = 128000000 |   924090.952571
+Writing htdb_slab database (a = 1.8)...
+Buckets: 144000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 144000000 |   52151.448009
+DEBUG [ht.get()]: iterations = 20000000 buckets = 144000000 |   66727.193235
+DEBUG [ht.get()]: iterations = 40000000 buckets = 144000000 |   97459.449677
+DEBUG [ht.get()]: iterations = 60000000 buckets = 144000000 |   125977.881338
+DEBUG [ht.get()]: iterations = 80000000 buckets = 144000000 |   154549.200185
+DEBUG [ht.get()]: iterations = 100000000 buckets = 144000000 |   184851.129732
+DEBUG [ht.get()]: iterations = 120000000 buckets = 144000000 |   215272.711335
+DEBUG [ht.get()]: iterations = 140000000 buckets = 144000000 |   246172.047971
+DEBUG [ht.get()]: iterations = 160000000 buckets = 144000000 |   279057.311458
+DEBUG [ht.get()]: iterations = 180000000 buckets = 144000000 |   305349.868522
+DEBUG [ht.get()]: iterations = 200000000 buckets = 144000000 |   331446.164518
+DEBUG [ht.get()]: iterations = 250000000 buckets = 144000000 |   408498.268131
+DEBUG [ht.get()]: iterations = 300000000 buckets = 144000000 |   482055.331718
+DEBUG [ht.get()]: iterations = 400000000 buckets = 144000000 |   630178.385002
+DEBUG [ht.get()]: iterations = 600000000 buckets = 144000000 |   931114.343718
+Writing htdb_slab database (a = 2.0)...
+Buckets: 160000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 160000000 |   52176.430974
+DEBUG [ht.get()]: iterations = 20000000 buckets = 160000000 |   67722.983663
+DEBUG [ht.get()]: iterations = 40000000 buckets = 160000000 |   97597.724683
+DEBUG [ht.get()]: iterations = 60000000 buckets = 160000000 |   130432.818625
+DEBUG [ht.get()]: iterations = 80000000 buckets = 160000000 |   156471.209147
+DEBUG [ht.get()]: iterations = 100000000 buckets = 160000000 |   188117.757905
+DEBUG [ht.get()]: iterations = 120000000 buckets = 160000000 |   214909.318190
+DEBUG [ht.get()]: iterations = 140000000 buckets = 160000000 |   244190.453845
+DEBUG [ht.get()]: iterations = 160000000 buckets = 160000000 |   272817.938997
+DEBUG [ht.get()]: iterations = 180000000 buckets = 160000000 |   307274.849932
+DEBUG [ht.get()]: iterations = 200000000 buckets = 160000000 |   336328.210899
+DEBUG [ht.get()]: iterations = 250000000 buckets = 160000000 |   406375.474126
+DEBUG [ht.get()]: iterations = 300000000 buckets = 160000000 |   481519.228266
+DEBUG [ht.get()]: iterations = 400000000 buckets = 160000000 |   628680.941741
+DEBUG [ht.get()]: iterations = 600000000 buckets = 160000000 |   928200.909873
+Writing htdb_slab database (a = 2.2)...
+Buckets: 176000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 176000000 |   53341.591140
+DEBUG [ht.get()]: iterations = 20000000 buckets = 176000000 |   67922.704688
+DEBUG [ht.get()]: iterations = 40000000 buckets = 176000000 |   97187.992165
+DEBUG [ht.get()]: iterations = 60000000 buckets = 176000000 |   126623.843995
+DEBUG [ht.get()]: iterations = 80000000 buckets = 176000000 |   156792.790929
+DEBUG [ht.get()]: iterations = 100000000 buckets = 176000000 |   185689.779969
+DEBUG [ht.get()]: iterations = 120000000 buckets = 176000000 |   214637.685746
+DEBUG [ht.get()]: iterations = 140000000 buckets = 176000000 |   245235.705428
+DEBUG [ht.get()]: iterations = 160000000 buckets = 176000000 |   274253.940388
+DEBUG [ht.get()]: iterations = 180000000 buckets = 176000000 |   304181.121871
+DEBUG [ht.get()]: iterations = 200000000 buckets = 176000000 |   334871.413898
+DEBUG [ht.get()]: iterations = 250000000 buckets = 176000000 |   413494.600067
+DEBUG [ht.get()]: iterations = 300000000 buckets = 176000000 |   480059.017003
+DEBUG [ht.get()]: iterations = 400000000 buckets = 176000000 |   630044.104280
+DEBUG [ht.get()]: iterations = 600000000 buckets = 176000000 |   928026.011880
+Writing htdb_slab database (a = 2.4)...
+Buckets: 192000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 192000000 |   53981.474771
+DEBUG [ht.get()]: iterations = 20000000 buckets = 192000000 |   68716.533168
+DEBUG [ht.get()]: iterations = 40000000 buckets = 192000000 |   98322.930244
+DEBUG [ht.get()]: iterations = 60000000 buckets = 192000000 |   129892.544483
+DEBUG [ht.get()]: iterations = 80000000 buckets = 192000000 |   156199.596856
+DEBUG [ht.get()]: iterations = 100000000 buckets = 192000000 |   187701.912262
+DEBUG [ht.get()]: iterations = 120000000 buckets = 192000000 |   215202.635606
+DEBUG [ht.get()]: iterations = 140000000 buckets = 192000000 |   246337.858101
+DEBUG [ht.get()]: iterations = 160000000 buckets = 192000000 |   278772.905859
+DEBUG [ht.get()]: iterations = 180000000 buckets = 192000000 |   308913.884389
+DEBUG [ht.get()]: iterations = 200000000 buckets = 192000000 |   338528.303833
+DEBUG [ht.get()]: iterations = 250000000 buckets = 192000000 |   407264.457859
+DEBUG [ht.get()]: iterations = 300000000 buckets = 192000000 |   496961.967316
+DEBUG [ht.get()]: iterations = 400000000 buckets = 192000000 |   638487.934744
+DEBUG [ht.get()]: iterations = 600000000 buckets = 192000000 |   923322.587650
+Writing htdb_slab database (a = 2.6)...
+Buckets: 208000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 208000000 |   54956.897044
+DEBUG [ht.get()]: iterations = 20000000 buckets = 208000000 |   69724.262336
+DEBUG [ht.get()]: iterations = 40000000 buckets = 208000000 |   99392.354595
+DEBUG [ht.get()]: iterations = 60000000 buckets = 208000000 |   130992.604360
+DEBUG [ht.get()]: iterations = 80000000 buckets = 208000000 |   157820.696866
+DEBUG [ht.get()]: iterations = 100000000 buckets = 208000000 |   187009.488257
+DEBUG [ht.get()]: iterations = 120000000 buckets = 208000000 |   216452.737450
+DEBUG [ht.get()]: iterations = 140000000 buckets = 208000000 |   247879.776117
+DEBUG [ht.get()]: iterations = 160000000 buckets = 208000000 |   276508.413073
+DEBUG [ht.get()]: iterations = 180000000 buckets = 208000000 |   305074.417491
+DEBUG [ht.get()]: iterations = 200000000 buckets = 208000000 |   336474.152249
+DEBUG [ht.get()]: iterations = 250000000 buckets = 208000000 |   410448.911523
+DEBUG [ht.get()]: iterations = 300000000 buckets = 208000000 |   485146.147974
+DEBUG [ht.get()]: iterations = 400000000 buckets = 208000000 |   630906.861374
+DEBUG [ht.get()]: iterations = 600000000 buckets = 208000000 |   920767.836607
+Writing htdb_slab database (a = 2.8)...
+Buckets: 224000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 224000000 |   55670.377169
+DEBUG [ht.get()]: iterations = 20000000 buckets = 224000000 |   70141.416163
+DEBUG [ht.get()]: iterations = 40000000 buckets = 224000000 |   99918.459981
+DEBUG [ht.get()]: iterations = 60000000 buckets = 224000000 |   129639.351844
+DEBUG [ht.get()]: iterations = 80000000 buckets = 224000000 |   158805.050625
+DEBUG [ht.get()]: iterations = 100000000 buckets = 224000000 |   191525.763633
+DEBUG [ht.get()]: iterations = 120000000 buckets = 224000000 |   217558.223332
+DEBUG [ht.get()]: iterations = 140000000 buckets = 224000000 |   247920.814143
+DEBUG [ht.get()]: iterations = 160000000 buckets = 224000000 |   276411.978010
+DEBUG [ht.get()]: iterations = 180000000 buckets = 224000000 |   306203.794748
+DEBUG [ht.get()]: iterations = 200000000 buckets = 224000000 |   335441.679284
+DEBUG [ht.get()]: iterations = 250000000 buckets = 224000000 |   407802.302436
+DEBUG [ht.get()]: iterations = 300000000 buckets = 224000000 |   481985.063037
+DEBUG [ht.get()]: iterations = 400000000 buckets = 224000000 |   636160.798187
+DEBUG [ht.get()]: iterations = 600000000 buckets = 224000000 |   925977.195271
+Writing htdb_slab database (a = 3.0)...
+Buckets: 240000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 240000000 |   56323.157259
+DEBUG [ht.get()]: iterations = 20000000 buckets = 240000000 |   71077.680533
+DEBUG [ht.get()]: iterations = 40000000 buckets = 240000000 |   100869.919416
+DEBUG [ht.get()]: iterations = 60000000 buckets = 240000000 |   130462.116579
+DEBUG [ht.get()]: iterations = 80000000 buckets = 240000000 |   158799.042602
+DEBUG [ht.get()]: iterations = 100000000 buckets = 240000000 |   189209.240918
+DEBUG [ht.get()]: iterations = 120000000 buckets = 240000000 |   217734.046194
+DEBUG [ht.get()]: iterations = 140000000 buckets = 240000000 |   249678.547301
+DEBUG [ht.get()]: iterations = 160000000 buckets = 240000000 |   278479.243374
+DEBUG [ht.get()]: iterations = 180000000 buckets = 240000000 |   310030.799756
+DEBUG [ht.get()]: iterations = 200000000 buckets = 240000000 |   336338.726124
+DEBUG [ht.get()]: iterations = 250000000 buckets = 240000000 |   413301.742167
+DEBUG [ht.get()]: iterations = 300000000 buckets = 240000000 |   498493.800074
+DEBUG [ht.get()]: iterations = 400000000 buckets = 240000000 |   632407.040318
+DEBUG [ht.get()]: iterations = 600000000 buckets = 240000000 |   943622.662668
+Writing htdb_slab database (a = 4.0)...
+Buckets: 320000000
+Wrote 80000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 320000000 |   60097.490023
+DEBUG [ht.get()]: iterations = 20000000 buckets = 320000000 |   75031.818160
+DEBUG [ht.get()]: iterations = 40000000 buckets = 320000000 |   105374.660907
+DEBUG [ht.get()]: iterations = 60000000 buckets = 320000000 |   133818.927735
+DEBUG [ht.get()]: iterations = 80000000 buckets = 320000000 |   164546.728155
+DEBUG [ht.get()]: iterations = 100000000 buckets = 320000000 |   191380.590999
+DEBUG [ht.get()]: iterations = 120000000 buckets = 320000000 |   225863.280224
+DEBUG [ht.get()]: iterations = 140000000 buckets = 320000000 |   253389.420817
+DEBUG [ht.get()]: iterations = 160000000 buckets = 320000000 |   282072.787108
+DEBUG [ht.get()]: iterations = 180000000 buckets = 320000000 |   312394.435636
+DEBUG [ht.get()]: iterations = 200000000 buckets = 320000000 |   339884.773242
+DEBUG [ht.get()]: iterations = 250000000 buckets = 320000000 |   413925.098168
+DEBUG [ht.get()]: iterations = 300000000 buckets = 320000000 |   495207.975108
+DEBUG [ht.get()]: iterations = 400000000 buckets = 320000000 |   641356.205812
+DEBUG [ht.get()]: iterations = 600000000 buckets = 320000000 |   930925.413027
+Preparing 90 million txs...
+Done.
+Writing LevelDB database...
+Wrote 90000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   457947.874053
+DEBUG [leveldb.Get()]: iterations = 20000000 |   659254.798806
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1279017.814715
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1896208.646414
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2512665.967571
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3147367.481206
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3786481.573132
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4382091.435676
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4943553.082925
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5606079.610822
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6200058.004952
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7797690.354498
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9440071.515973
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12508305.954831
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18673563.905378
+DEBUG [None]: iterations = 10000000 |   21685.659920
+DEBUG [None]: iterations = 20000000 |   26266.733117
+DEBUG [None]: iterations = 40000000 |   35578.678473
+DEBUG [None]: iterations = 60000000 |   44980.509951
+DEBUG [None]: iterations = 80000000 |   54180.532437
+DEBUG [None]: iterations = 100000000 |   63910.250705
+DEBUG [None]: iterations = 120000000 |   72459.897254
+DEBUG [None]: iterations = 140000000 |   81774.167471
+DEBUG [None]: iterations = 160000000 |   91147.346610
+DEBUG [None]: iterations = 180000000 |   100532.788837
+DEBUG [None]: iterations = 200000000 |   109948.580674
+DEBUG [None]: iterations = 250000000 |   133183.719326
+DEBUG [None]: iterations = 300000000 |   156395.264116
+DEBUG [None]: iterations = 400000000 |   203553.069756
+DEBUG [None]: iterations = 600000000 |   295375.734214
+Writing htdb_slab database (a = 0.4)...
+Buckets: 36000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 36000000 |   48853.265283
+DEBUG [ht.get()]: iterations = 20000000 buckets = 36000000 |   64740.293217
+DEBUG [ht.get()]: iterations = 40000000 buckets = 36000000 |   93516.828372
+DEBUG [ht.get()]: iterations = 60000000 buckets = 36000000 |   122264.175882
+DEBUG [ht.get()]: iterations = 80000000 buckets = 36000000 |   151252.740325
+DEBUG [ht.get()]: iterations = 100000000 buckets = 36000000 |   181816.984249
+DEBUG [ht.get()]: iterations = 120000000 buckets = 36000000 |   209205.267133
+DEBUG [ht.get()]: iterations = 140000000 buckets = 36000000 |   243111.177828
+DEBUG [ht.get()]: iterations = 160000000 buckets = 36000000 |   268970.679014
+DEBUG [ht.get()]: iterations = 180000000 buckets = 36000000 |   297901.052327
+DEBUG [ht.get()]: iterations = 200000000 buckets = 36000000 |   328273.351123
+DEBUG [ht.get()]: iterations = 250000000 buckets = 36000000 |   402611.760480
+DEBUG [ht.get()]: iterations = 300000000 buckets = 36000000 |   475804.552752
+DEBUG [ht.get()]: iterations = 400000000 buckets = 36000000 |   623657.316710
+DEBUG [ht.get()]: iterations = 600000000 buckets = 36000000 |   913812.068037
+Writing htdb_slab database (a = 0.6)...
+Buckets: 54000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 54000000 |   49515.929115
+DEBUG [ht.get()]: iterations = 20000000 buckets = 54000000 |   64587.420561
+DEBUG [ht.get()]: iterations = 40000000 buckets = 54000000 |   94153.966154
+DEBUG [ht.get()]: iterations = 60000000 buckets = 54000000 |   122507.333258
+DEBUG [ht.get()]: iterations = 80000000 buckets = 54000000 |   152417.559735
+DEBUG [ht.get()]: iterations = 100000000 buckets = 54000000 |   180868.150273
+DEBUG [ht.get()]: iterations = 120000000 buckets = 54000000 |   210808.280664
+DEBUG [ht.get()]: iterations = 140000000 buckets = 54000000 |   240073.099553
+DEBUG [ht.get()]: iterations = 160000000 buckets = 54000000 |   269574.192576
+DEBUG [ht.get()]: iterations = 180000000 buckets = 54000000 |   298390.848055
+DEBUG [ht.get()]: iterations = 200000000 buckets = 54000000 |   330554.608332
+DEBUG [ht.get()]: iterations = 250000000 buckets = 54000000 |   405871.012472
+DEBUG [ht.get()]: iterations = 300000000 buckets = 54000000 |   480088.027502
+DEBUG [ht.get()]: iterations = 400000000 buckets = 54000000 |   621211.287384
+DEBUG [ht.get()]: iterations = 600000000 buckets = 54000000 |   909954.047741
+Writing htdb_slab database (a = 0.8)...
+Buckets: 72000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 72000000 |   50444.155743
+DEBUG [ht.get()]: iterations = 20000000 buckets = 72000000 |   65102.252969
+DEBUG [ht.get()]: iterations = 40000000 buckets = 72000000 |   94975.509250
+DEBUG [ht.get()]: iterations = 60000000 buckets = 72000000 |   123168.650801
+DEBUG [ht.get()]: iterations = 80000000 buckets = 72000000 |   152906.445952
+DEBUG [ht.get()]: iterations = 100000000 buckets = 72000000 |   182095.763022
+DEBUG [ht.get()]: iterations = 120000000 buckets = 72000000 |   212310.970997
+DEBUG [ht.get()]: iterations = 140000000 buckets = 72000000 |   240725.201326
+DEBUG [ht.get()]: iterations = 160000000 buckets = 72000000 |   272574.773016
+DEBUG [ht.get()]: iterations = 180000000 buckets = 72000000 |   300134.917906
+DEBUG [ht.get()]: iterations = 200000000 buckets = 72000000 |   331292.499880
+DEBUG [ht.get()]: iterations = 250000000 buckets = 72000000 |   403221.220485
+DEBUG [ht.get()]: iterations = 300000000 buckets = 72000000 |   470119.681987
+DEBUG [ht.get()]: iterations = 400000000 buckets = 72000000 |   619990.208373
+DEBUG [ht.get()]: iterations = 600000000 buckets = 72000000 |   940681.471218
+Writing htdb_slab database (a = 1.0)...
+Buckets: 90000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 90000000 |   51445.016796
+DEBUG [ht.get()]: iterations = 20000000 buckets = 90000000 |   66714.572824
+DEBUG [ht.get()]: iterations = 40000000 buckets = 90000000 |   97147.184434
+DEBUG [ht.get()]: iterations = 60000000 buckets = 90000000 |   124625.795072
+DEBUG [ht.get()]: iterations = 80000000 buckets = 90000000 |   155487.699111
+DEBUG [ht.get()]: iterations = 100000000 buckets = 90000000 |   183007.520252
+DEBUG [ht.get()]: iterations = 120000000 buckets = 90000000 |   214186.237281
+DEBUG [ht.get()]: iterations = 140000000 buckets = 90000000 |   241717.537881
+DEBUG [ht.get()]: iterations = 160000000 buckets = 90000000 |   272210.770731
+DEBUG [ht.get()]: iterations = 180000000 buckets = 90000000 |   302320.187060
+DEBUG [ht.get()]: iterations = 200000000 buckets = 90000000 |   330752.065594
+DEBUG [ht.get()]: iterations = 250000000 buckets = 90000000 |   407455.182823
+DEBUG [ht.get()]: iterations = 300000000 buckets = 90000000 |   475891.322719
+DEBUG [ht.get()]: iterations = 400000000 buckets = 90000000 |   629763.134001
+DEBUG [ht.get()]: iterations = 600000000 buckets = 90000000 |   945215.503917
+Writing htdb_slab database (a = 1.2)...
+Buckets: 108000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 108000000 |   52335.159296
+DEBUG [ht.get()]: iterations = 20000000 buckets = 108000000 |   67025.710049
+DEBUG [ht.get()]: iterations = 40000000 buckets = 108000000 |   96587.385174
+DEBUG [ht.get()]: iterations = 60000000 buckets = 108000000 |   125252.527562
+DEBUG [ht.get()]: iterations = 80000000 buckets = 108000000 |   155034.918449
+DEBUG [ht.get()]: iterations = 100000000 buckets = 108000000 |   183986.386714
+DEBUG [ht.get()]: iterations = 120000000 buckets = 108000000 |   214349.280659
+DEBUG [ht.get()]: iterations = 140000000 buckets = 108000000 |   242953.487615
+DEBUG [ht.get()]: iterations = 160000000 buckets = 108000000 |   272280.146533
+DEBUG [ht.get()]: iterations = 180000000 buckets = 108000000 |   303317.830938
+DEBUG [ht.get()]: iterations = 200000000 buckets = 108000000 |   331497.471241
+DEBUG [ht.get()]: iterations = 250000000 buckets = 108000000 |   404887.144145
+DEBUG [ht.get()]: iterations = 300000000 buckets = 108000000 |   477212.295565
+DEBUG [ht.get()]: iterations = 400000000 buckets = 108000000 |   629243.935875
+DEBUG [ht.get()]: iterations = 600000000 buckets = 108000000 |   920701.111097
+Writing htdb_slab database (a = 1.4)...
+Buckets: 125999999
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 125999999 |   53085.986382
+DEBUG [ht.get()]: iterations = 20000000 buckets = 125999999 |   69250.468695
+DEBUG [ht.get()]: iterations = 40000000 buckets = 125999999 |   97295.838501
+DEBUG [ht.get()]: iterations = 60000000 buckets = 125999999 |   126967.268463
+DEBUG [ht.get()]: iterations = 80000000 buckets = 125999999 |   159477.415572
+DEBUG [ht.get()]: iterations = 100000000 buckets = 125999999 |   186443.679575
+DEBUG [ht.get()]: iterations = 120000000 buckets = 125999999 |   217355.309090
+DEBUG [ht.get()]: iterations = 140000000 buckets = 125999999 |   247360.991066
+DEBUG [ht.get()]: iterations = 160000000 buckets = 125999999 |   275848.997575
+DEBUG [ht.get()]: iterations = 180000000 buckets = 125999999 |   308230.243012
+DEBUG [ht.get()]: iterations = 200000000 buckets = 125999999 |   334478.394528
+DEBUG [ht.get()]: iterations = 250000000 buckets = 125999999 |   407023.841690
+DEBUG [ht.get()]: iterations = 300000000 buckets = 125999999 |   484554.676554
+DEBUG [ht.get()]: iterations = 400000000 buckets = 125999999 |   633136.055167
+DEBUG [ht.get()]: iterations = 600000000 buckets = 125999999 |   929264.284594
+Writing htdb_slab database (a = 1.6)...
+Buckets: 144000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 144000000 |   53888.323712
+DEBUG [ht.get()]: iterations = 20000000 buckets = 144000000 |   68411.619147
+DEBUG [ht.get()]: iterations = 40000000 buckets = 144000000 |   99628.636643
+DEBUG [ht.get()]: iterations = 60000000 buckets = 144000000 |   127553.849557
+DEBUG [ht.get()]: iterations = 80000000 buckets = 144000000 |   156403.709276
+DEBUG [ht.get()]: iterations = 100000000 buckets = 144000000 |   186690.537700
+DEBUG [ht.get()]: iterations = 120000000 buckets = 144000000 |   216957.570412
+DEBUG [ht.get()]: iterations = 140000000 buckets = 144000000 |   245059.062107
+DEBUG [ht.get()]: iterations = 160000000 buckets = 144000000 |   274690.573656
+DEBUG [ht.get()]: iterations = 180000000 buckets = 144000000 |   307865.804917
+DEBUG [ht.get()]: iterations = 200000000 buckets = 144000000 |   335170.562014
+DEBUG [ht.get()]: iterations = 250000000 buckets = 144000000 |   408765.446703
+DEBUG [ht.get()]: iterations = 300000000 buckets = 144000000 |   480458.332920
+DEBUG [ht.get()]: iterations = 400000000 buckets = 144000000 |   627699.872017
+DEBUG [ht.get()]: iterations = 600000000 buckets = 144000000 |   923796.479564
+Writing htdb_slab database (a = 1.8)...
+Buckets: 162000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 162000000 |   55041.114641
+DEBUG [ht.get()]: iterations = 20000000 buckets = 162000000 |   69886.617971
+DEBUG [ht.get()]: iterations = 40000000 buckets = 162000000 |   98912.990399
+DEBUG [ht.get()]: iterations = 60000000 buckets = 162000000 |   128230.064724
+DEBUG [ht.get()]: iterations = 80000000 buckets = 162000000 |   158245.449999
+DEBUG [ht.get()]: iterations = 100000000 buckets = 162000000 |   185980.410986
+DEBUG [ht.get()]: iterations = 120000000 buckets = 162000000 |   216513.937318
+DEBUG [ht.get()]: iterations = 140000000 buckets = 162000000 |   250167.190659
+DEBUG [ht.get()]: iterations = 160000000 buckets = 162000000 |   275957.713006
+DEBUG [ht.get()]: iterations = 180000000 buckets = 162000000 |   305300.926206
+DEBUG [ht.get()]: iterations = 200000000 buckets = 162000000 |   333332.042072
+DEBUG [ht.get()]: iterations = 250000000 buckets = 162000000 |   404179.751771
+DEBUG [ht.get()]: iterations = 300000000 buckets = 162000000 |   485767.730958
+DEBUG [ht.get()]: iterations = 400000000 buckets = 162000000 |   629804.684594
+DEBUG [ht.get()]: iterations = 600000000 buckets = 162000000 |   923791.725657
+Writing htdb_slab database (a = 2.0)...
+Buckets: 180000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 180000000 |   55452.013214
+DEBUG [ht.get()]: iterations = 20000000 buckets = 180000000 |   70104.246973
+DEBUG [ht.get()]: iterations = 40000000 buckets = 180000000 |   100813.991698
+DEBUG [ht.get()]: iterations = 60000000 buckets = 180000000 |   128766.314760
+DEBUG [ht.get()]: iterations = 80000000 buckets = 180000000 |   158002.699340
+DEBUG [ht.get()]: iterations = 100000000 buckets = 180000000 |   189111.237659
+DEBUG [ht.get()]: iterations = 120000000 buckets = 180000000 |   217136.249499
+DEBUG [ht.get()]: iterations = 140000000 buckets = 180000000 |   248320.896051
+DEBUG [ht.get()]: iterations = 160000000 buckets = 180000000 |   275940.757227
+DEBUG [ht.get()]: iterations = 180000000 buckets = 180000000 |   306805.988804
+DEBUG [ht.get()]: iterations = 200000000 buckets = 180000000 |   340492.605496
+DEBUG [ht.get()]: iterations = 250000000 buckets = 180000000 |   412308.998515
+DEBUG [ht.get()]: iterations = 300000000 buckets = 180000000 |   482834.409197
+DEBUG [ht.get()]: iterations = 400000000 buckets = 180000000 |   628418.313555
+DEBUG [ht.get()]: iterations = 600000000 buckets = 180000000 |   941643.716054
+Writing htdb_slab database (a = 2.2)...
+Buckets: 198000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 198000000 |   56229.152548
+DEBUG [ht.get()]: iterations = 20000000 buckets = 198000000 |   71214.018656
+DEBUG [ht.get()]: iterations = 40000000 buckets = 198000000 |   100705.306671
+DEBUG [ht.get()]: iterations = 60000000 buckets = 198000000 |   129918.024151
+DEBUG [ht.get()]: iterations = 80000000 buckets = 198000000 |   159574.269559
+DEBUG [ht.get()]: iterations = 100000000 buckets = 198000000 |   189165.063620
+DEBUG [ht.get()]: iterations = 120000000 buckets = 198000000 |   218570.108829
+DEBUG [ht.get()]: iterations = 140000000 buckets = 198000000 |   249434.239781
+DEBUG [ht.get()]: iterations = 160000000 buckets = 198000000 |   280067.966433
+DEBUG [ht.get()]: iterations = 180000000 buckets = 198000000 |   306756.507814
+DEBUG [ht.get()]: iterations = 200000000 buckets = 198000000 |   337011.388511
+DEBUG [ht.get()]: iterations = 250000000 buckets = 198000000 |   411656.246198
+DEBUG [ht.get()]: iterations = 300000000 buckets = 198000000 |   490339.983360
+DEBUG [ht.get()]: iterations = 400000000 buckets = 198000000 |   647732.436229
+DEBUG [ht.get()]: iterations = 600000000 buckets = 198000000 |   922823.270987
+Writing htdb_slab database (a = 2.4)...
+Buckets: 216000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 216000000 |   57245.502865
+DEBUG [ht.get()]: iterations = 20000000 buckets = 216000000 |   72604.511572
+DEBUG [ht.get()]: iterations = 40000000 buckets = 216000000 |   101433.208503
+DEBUG [ht.get()]: iterations = 60000000 buckets = 216000000 |   131184.702388
+DEBUG [ht.get()]: iterations = 80000000 buckets = 216000000 |   162077.849903
+DEBUG [ht.get()]: iterations = 100000000 buckets = 216000000 |   189930.393240
+DEBUG [ht.get()]: iterations = 120000000 buckets = 216000000 |   221961.746763
+DEBUG [ht.get()]: iterations = 140000000 buckets = 216000000 |   252859.954506
+DEBUG [ht.get()]: iterations = 160000000 buckets = 216000000 |   281806.275683
+DEBUG [ht.get()]: iterations = 180000000 buckets = 216000000 |   309241.372034
+DEBUG [ht.get()]: iterations = 200000000 buckets = 216000000 |   337849.071709
+DEBUG [ht.get()]: iterations = 250000000 buckets = 216000000 |   413644.919286
+DEBUG [ht.get()]: iterations = 300000000 buckets = 216000000 |   486343.145870
+DEBUG [ht.get()]: iterations = 400000000 buckets = 216000000 |   630706.169102
+DEBUG [ht.get()]: iterations = 600000000 buckets = 216000000 |   926384.416910
+Writing htdb_slab database (a = 2.6)...
+Buckets: 234000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 234000000 |   57957.948396
+DEBUG [ht.get()]: iterations = 20000000 buckets = 234000000 |   73010.100145
+DEBUG [ht.get()]: iterations = 40000000 buckets = 234000000 |   102129.914592
+DEBUG [ht.get()]: iterations = 60000000 buckets = 234000000 |   131544.479344
+DEBUG [ht.get()]: iterations = 80000000 buckets = 234000000 |   161244.119923
+DEBUG [ht.get()]: iterations = 100000000 buckets = 234000000 |   191470.816896
+DEBUG [ht.get()]: iterations = 120000000 buckets = 234000000 |   220637.972139
+DEBUG [ht.get()]: iterations = 140000000 buckets = 234000000 |   249783.030686
+DEBUG [ht.get()]: iterations = 160000000 buckets = 234000000 |   279183.675891
+DEBUG [ht.get()]: iterations = 180000000 buckets = 234000000 |   308978.533270
+DEBUG [ht.get()]: iterations = 200000000 buckets = 234000000 |   342120.951148
+DEBUG [ht.get()]: iterations = 250000000 buckets = 234000000 |   412324.669098
+DEBUG [ht.get()]: iterations = 300000000 buckets = 234000000 |   490128.061161
+DEBUG [ht.get()]: iterations = 400000000 buckets = 234000000 |   632260.962779
+DEBUG [ht.get()]: iterations = 600000000 buckets = 234000000 |   936711.116893
+Writing htdb_slab database (a = 2.8)...
+Buckets: 251999999
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 251999999 |   59086.958995
+DEBUG [ht.get()]: iterations = 20000000 buckets = 251999999 |   74332.734814
+DEBUG [ht.get()]: iterations = 40000000 buckets = 251999999 |   103905.424637
+DEBUG [ht.get()]: iterations = 60000000 buckets = 251999999 |   134472.230556
+DEBUG [ht.get()]: iterations = 80000000 buckets = 251999999 |   164806.038525
+DEBUG [ht.get()]: iterations = 100000000 buckets = 251999999 |   194170.542840
+DEBUG [ht.get()]: iterations = 120000000 buckets = 251999999 |   225701.768934
+DEBUG [ht.get()]: iterations = 140000000 buckets = 251999999 |   252865.269476
+DEBUG [ht.get()]: iterations = 160000000 buckets = 251999999 |   283383.600162
+DEBUG [ht.get()]: iterations = 180000000 buckets = 251999999 |   314768.730465
+DEBUG [ht.get()]: iterations = 200000000 buckets = 251999999 |   341463.200425
+DEBUG [ht.get()]: iterations = 250000000 buckets = 251999999 |   424954.126810
+DEBUG [ht.get()]: iterations = 300000000 buckets = 251999999 |   491057.207395
+DEBUG [ht.get()]: iterations = 400000000 buckets = 251999999 |   637459.380104
+DEBUG [ht.get()]: iterations = 600000000 buckets = 251999999 |   940496.415440
+Writing htdb_slab database (a = 3.0)...
+Buckets: 270000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 270000000 |   60221.721032
+DEBUG [ht.get()]: iterations = 20000000 buckets = 270000000 |   74418.565497
+DEBUG [ht.get()]: iterations = 40000000 buckets = 270000000 |   104044.991352
+DEBUG [ht.get()]: iterations = 60000000 buckets = 270000000 |   135862.431068
+DEBUG [ht.get()]: iterations = 80000000 buckets = 270000000 |   163271.211610
+DEBUG [ht.get()]: iterations = 100000000 buckets = 270000000 |   194078.453844
+DEBUG [ht.get()]: iterations = 120000000 buckets = 270000000 |   227288.390772
+DEBUG [ht.get()]: iterations = 140000000 buckets = 270000000 |   252046.422803
+DEBUG [ht.get()]: iterations = 160000000 buckets = 270000000 |   286709.887915
+DEBUG [ht.get()]: iterations = 180000000 buckets = 270000000 |   311437.550028
+DEBUG [ht.get()]: iterations = 200000000 buckets = 270000000 |   341521.865018
+DEBUG [ht.get()]: iterations = 250000000 buckets = 270000000 |   415889.928813
+DEBUG [ht.get()]: iterations = 300000000 buckets = 270000000 |   489100.915883
+DEBUG [ht.get()]: iterations = 400000000 buckets = 270000000 |   633474.457353
+DEBUG [ht.get()]: iterations = 600000000 buckets = 270000000 |   931351.458404
+Writing htdb_slab database (a = 4.0)...
+Buckets: 360000000
+Wrote 90000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 360000000 |   64473.459856
+DEBUG [ht.get()]: iterations = 20000000 buckets = 360000000 |   78930.803970
+DEBUG [ht.get()]: iterations = 40000000 buckets = 360000000 |   109377.433864
+DEBUG [ht.get()]: iterations = 60000000 buckets = 360000000 |   138401.751709
+DEBUG [ht.get()]: iterations = 80000000 buckets = 360000000 |   167297.596647
+DEBUG [ht.get()]: iterations = 100000000 buckets = 360000000 |   198418.604407
+DEBUG [ht.get()]: iterations = 120000000 buckets = 360000000 |   228295.231907
+DEBUG [ht.get()]: iterations = 140000000 buckets = 360000000 |   255701.744891
+DEBUG [ht.get()]: iterations = 160000000 buckets = 360000000 |   286344.901049
+DEBUG [ht.get()]: iterations = 180000000 buckets = 360000000 |   320688.230747
+DEBUG [ht.get()]: iterations = 200000000 buckets = 360000000 |   344320.475225
+DEBUG [ht.get()]: iterations = 250000000 buckets = 360000000 |   424262.710974
+DEBUG [ht.get()]: iterations = 300000000 buckets = 360000000 |   495694.485104
+DEBUG [ht.get()]: iterations = 400000000 buckets = 360000000 |   643101.388558
+DEBUG [ht.get()]: iterations = 600000000 buckets = 360000000 |   968134.589731
+Preparing 100 million txs...
+Done.
+Writing LevelDB database...
+Wrote 100000000 values. Done.
+Performing reads for LevelDB and None...
+DEBUG [leveldb.Get()]: iterations = 10000000 |   466409.957620
+DEBUG [leveldb.Get()]: iterations = 20000000 |   659569.980618
+DEBUG [leveldb.Get()]: iterations = 40000000 |   1284618.231389
+DEBUG [leveldb.Get()]: iterations = 60000000 |   1896626.706897
+DEBUG [leveldb.Get()]: iterations = 80000000 |   2525998.283110
+DEBUG [leveldb.Get()]: iterations = 100000000 |   3155914.037006
+DEBUG [leveldb.Get()]: iterations = 120000000 |   3695417.018192
+DEBUG [leveldb.Get()]: iterations = 140000000 |   4393728.781040
+DEBUG [leveldb.Get()]: iterations = 160000000 |   4889258.294377
+DEBUG [leveldb.Get()]: iterations = 180000000 |   5617576.464409
+DEBUG [leveldb.Get()]: iterations = 200000000 |   6253402.428109
+DEBUG [leveldb.Get()]: iterations = 250000000 |   7956054.232755
+DEBUG [leveldb.Get()]: iterations = 300000000 |   9332080.954855
+DEBUG [leveldb.Get()]: iterations = 400000000 |   12494656.786464
+DEBUG [leveldb.Get()]: iterations = 600000000 |   18760030.512877
+DEBUG [None]: iterations = 10000000 |   23548.202292
+DEBUG [None]: iterations = 20000000 |   28267.370786
+DEBUG [None]: iterations = 40000000 |   37488.023731
+DEBUG [None]: iterations = 60000000 |   46802.584938
+DEBUG [None]: iterations = 80000000 |   56072.957143
+DEBUG [None]: iterations = 100000000 |   65342.445383
+DEBUG [None]: iterations = 120000000 |   74624.324239
+DEBUG [None]: iterations = 140000000 |   84043.808981
+DEBUG [None]: iterations = 160000000 |   93419.562396
+DEBUG [None]: iterations = 180000000 |   102682.646475
+DEBUG [None]: iterations = 200000000 |   112143.432065
+DEBUG [None]: iterations = 250000000 |   135160.100606
+DEBUG [None]: iterations = 300000000 |   158808.726647
+DEBUG [None]: iterations = 400000000 |   205107.229884
+DEBUG [None]: iterations = 600000000 |   298076.180958
+Writing htdb_slab database (a = 0.4)...
+Buckets: 40000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 40000000 |   51772.352497
+DEBUG [ht.get()]: iterations = 20000000 buckets = 40000000 |   66666.032949
+DEBUG [ht.get()]: iterations = 40000000 buckets = 40000000 |   95321.186579
+DEBUG [ht.get()]: iterations = 60000000 buckets = 40000000 |   124464.937710
+DEBUG [ht.get()]: iterations = 80000000 buckets = 40000000 |   153895.615736
+DEBUG [ht.get()]: iterations = 100000000 buckets = 40000000 |   183091.270063
+DEBUG [ht.get()]: iterations = 120000000 buckets = 40000000 |   214955.981087
+DEBUG [ht.get()]: iterations = 140000000 buckets = 40000000 |   242233.485835
+DEBUG [ht.get()]: iterations = 160000000 buckets = 40000000 |   270788.258044
+DEBUG [ht.get()]: iterations = 180000000 buckets = 40000000 |   298767.323346
+DEBUG [ht.get()]: iterations = 200000000 buckets = 40000000 |   331253.352019
+DEBUG [ht.get()]: iterations = 250000000 buckets = 40000000 |   407623.810149
+DEBUG [ht.get()]: iterations = 300000000 buckets = 40000000 |   477087.306737
+DEBUG [ht.get()]: iterations = 400000000 buckets = 40000000 |   630691.971050
+DEBUG [ht.get()]: iterations = 600000000 buckets = 40000000 |   932333.791182
+Writing htdb_slab database (a = 0.6)...
+Buckets: 60000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 60000000 |   51805.970938
+DEBUG [ht.get()]: iterations = 20000000 buckets = 60000000 |   66780.536686
+DEBUG [ht.get()]: iterations = 40000000 buckets = 60000000 |   99781.940466
+DEBUG [ht.get()]: iterations = 60000000 buckets = 60000000 |   124227.854971
+DEBUG [ht.get()]: iterations = 80000000 buckets = 60000000 |   155378.837923
+DEBUG [ht.get()]: iterations = 100000000 buckets = 60000000 |   188224.881236
+DEBUG [ht.get()]: iterations = 120000000 buckets = 60000000 |   214936.807683
+DEBUG [ht.get()]: iterations = 140000000 buckets = 60000000 |   243403.723819
+DEBUG [ht.get()]: iterations = 160000000 buckets = 60000000 |   271320.038900
+DEBUG [ht.get()]: iterations = 180000000 buckets = 60000000 |   300987.272075
+DEBUG [ht.get()]: iterations = 200000000 buckets = 60000000 |   330455.056747
+DEBUG [ht.get()]: iterations = 250000000 buckets = 60000000 |   403628.541731
+DEBUG [ht.get()]: iterations = 300000000 buckets = 60000000 |   481395.351594
+DEBUG [ht.get()]: iterations = 400000000 buckets = 60000000 |   625368.406386
+DEBUG [ht.get()]: iterations = 600000000 buckets = 60000000 |   917201.868279
+Writing htdb_slab database (a = 0.8)...
+Buckets: 80000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 80000000 |   52910.913449
+DEBUG [ht.get()]: iterations = 20000000 buckets = 80000000 |   67735.723402
+DEBUG [ht.get()]: iterations = 40000000 buckets = 80000000 |   96819.884358
+DEBUG [ht.get()]: iterations = 60000000 buckets = 80000000 |   126723.230912
+DEBUG [ht.get()]: iterations = 80000000 buckets = 80000000 |   155179.087129
+DEBUG [ht.get()]: iterations = 100000000 buckets = 80000000 |   184098.809242
+DEBUG [ht.get()]: iterations = 120000000 buckets = 80000000 |   215120.629751
+DEBUG [ht.get()]: iterations = 140000000 buckets = 80000000 |   246793.027592
+DEBUG [ht.get()]: iterations = 160000000 buckets = 80000000 |   272567.983191
+DEBUG [ht.get()]: iterations = 180000000 buckets = 80000000 |   301922.037815
+DEBUG [ht.get()]: iterations = 200000000 buckets = 80000000 |   330809.015866
+DEBUG [ht.get()]: iterations = 250000000 buckets = 80000000 |   407633.137231
+DEBUG [ht.get()]: iterations = 300000000 buckets = 80000000 |   476718.956060
+DEBUG [ht.get()]: iterations = 400000000 buckets = 80000000 |   625684.427108
+DEBUG [ht.get()]: iterations = 600000000 buckets = 80000000 |   915141.274797
+Writing htdb_slab database (a = 1.0)...
+Buckets: 100000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 100000000 |   54013.800256
+DEBUG [ht.get()]: iterations = 20000000 buckets = 100000000 |   68422.273502
+DEBUG [ht.get()]: iterations = 40000000 buckets = 100000000 |   98435.299159
+DEBUG [ht.get()]: iterations = 60000000 buckets = 100000000 |   127327.094566
+DEBUG [ht.get()]: iterations = 80000000 buckets = 100000000 |   157485.134602
+DEBUG [ht.get()]: iterations = 100000000 buckets = 100000000 |   184950.179662
+DEBUG [ht.get()]: iterations = 120000000 buckets = 100000000 |   216036.040708
+DEBUG [ht.get()]: iterations = 140000000 buckets = 100000000 |   245305.215355
+DEBUG [ht.get()]: iterations = 160000000 buckets = 100000000 |   274527.595599
+DEBUG [ht.get()]: iterations = 180000000 buckets = 100000000 |   305699.372027
+DEBUG [ht.get()]: iterations = 200000000 buckets = 100000000 |   332295.690170
+DEBUG [ht.get()]: iterations = 250000000 buckets = 100000000 |   411176.890639
+DEBUG [ht.get()]: iterations = 300000000 buckets = 100000000 |   480774.101018
+DEBUG [ht.get()]: iterations = 400000000 buckets = 100000000 |   633016.167203
+DEBUG [ht.get()]: iterations = 600000000 buckets = 100000000 |   920731.772460
+Writing htdb_slab database (a = 1.2)...
+Buckets: 120000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 120000000 |   54934.344179
+DEBUG [ht.get()]: iterations = 20000000 buckets = 120000000 |   69899.813497
+DEBUG [ht.get()]: iterations = 40000000 buckets = 120000000 |   99126.777391
+DEBUG [ht.get()]: iterations = 60000000 buckets = 120000000 |   129540.074908
+DEBUG [ht.get()]: iterations = 80000000 buckets = 120000000 |   157144.462057
+DEBUG [ht.get()]: iterations = 100000000 buckets = 120000000 |   187335.037499
+DEBUG [ht.get()]: iterations = 120000000 buckets = 120000000 |   217254.248106
+DEBUG [ht.get()]: iterations = 140000000 buckets = 120000000 |   246164.862009
+DEBUG [ht.get()]: iterations = 160000000 buckets = 120000000 |   284454.067483
+DEBUG [ht.get()]: iterations = 180000000 buckets = 120000000 |   305546.605778
+DEBUG [ht.get()]: iterations = 200000000 buckets = 120000000 |   333576.059979
+DEBUG [ht.get()]: iterations = 250000000 buckets = 120000000 |   416454.413290
+DEBUG [ht.get()]: iterations = 300000000 buckets = 120000000 |   488512.889478
+DEBUG [ht.get()]: iterations = 400000000 buckets = 120000000 |   639203.579394
+DEBUG [ht.get()]: iterations = 600000000 buckets = 120000000 |   935815.428933
+Writing htdb_slab database (a = 1.4)...
+Buckets: 140000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 140000000 |   55178.325926
+DEBUG [ht.get()]: iterations = 20000000 buckets = 140000000 |   70609.798149
+DEBUG [ht.get()]: iterations = 40000000 buckets = 140000000 |   99743.043895
+DEBUG [ht.get()]: iterations = 60000000 buckets = 140000000 |   129835.838704
+DEBUG [ht.get()]: iterations = 80000000 buckets = 140000000 |   159568.102662
+DEBUG [ht.get()]: iterations = 100000000 buckets = 140000000 |   189930.664402
+DEBUG [ht.get()]: iterations = 120000000 buckets = 140000000 |   218363.275132
+DEBUG [ht.get()]: iterations = 140000000 buckets = 140000000 |   245320.519135
+DEBUG [ht.get()]: iterations = 160000000 buckets = 140000000 |   277905.036450
+DEBUG [ht.get()]: iterations = 180000000 buckets = 140000000 |   308159.408178
+DEBUG [ht.get()]: iterations = 200000000 buckets = 140000000 |   336458.402568
+DEBUG [ht.get()]: iterations = 250000000 buckets = 140000000 |   410908.403380
+DEBUG [ht.get()]: iterations = 300000000 buckets = 140000000 |   483978.166748
+DEBUG [ht.get()]: iterations = 400000000 buckets = 140000000 |   632051.067036
+DEBUG [ht.get()]: iterations = 600000000 buckets = 140000000 |   930179.806767
+Writing htdb_slab database (a = 1.6)...
+Buckets: 160000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 160000000 |   56166.260033
+DEBUG [ht.get()]: iterations = 20000000 buckets = 160000000 |   71593.084279
+DEBUG [ht.get()]: iterations = 40000000 buckets = 160000000 |   100860.259708
+DEBUG [ht.get()]: iterations = 60000000 buckets = 160000000 |   131307.044105
+DEBUG [ht.get()]: iterations = 80000000 buckets = 160000000 |   159373.364890
+DEBUG [ht.get()]: iterations = 100000000 buckets = 160000000 |   189170.374699
+DEBUG [ht.get()]: iterations = 120000000 buckets = 160000000 |   218663.170822
+DEBUG [ht.get()]: iterations = 140000000 buckets = 160000000 |   246561.120701
+DEBUG [ht.get()]: iterations = 160000000 buckets = 160000000 |   277646.770492
+DEBUG [ht.get()]: iterations = 180000000 buckets = 160000000 |   304796.963031
+DEBUG [ht.get()]: iterations = 200000000 buckets = 160000000 |   341010.195233
+DEBUG [ht.get()]: iterations = 250000000 buckets = 160000000 |   415509.201400
+DEBUG [ht.get()]: iterations = 300000000 buckets = 160000000 |   482187.466785
+DEBUG [ht.get()]: iterations = 400000000 buckets = 160000000 |   630188.547279
+DEBUG [ht.get()]: iterations = 600000000 buckets = 160000000 |   926914.512802
+Writing htdb_slab database (a = 1.8)...
+Buckets: 180000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 180000000 |   57565.238464
+DEBUG [ht.get()]: iterations = 20000000 buckets = 180000000 |   72267.327998
+DEBUG [ht.get()]: iterations = 40000000 buckets = 180000000 |   102289.361384
+DEBUG [ht.get()]: iterations = 60000000 buckets = 180000000 |   131675.625011
+DEBUG [ht.get()]: iterations = 80000000 buckets = 180000000 |   160796.528709
+DEBUG [ht.get()]: iterations = 100000000 buckets = 180000000 |   189677.077908
+DEBUG [ht.get()]: iterations = 120000000 buckets = 180000000 |   219121.736287
+DEBUG [ht.get()]: iterations = 140000000 buckets = 180000000 |   249782.649839
+DEBUG [ht.get()]: iterations = 160000000 buckets = 180000000 |   279099.306352
+DEBUG [ht.get()]: iterations = 180000000 buckets = 180000000 |   313390.157702
+DEBUG [ht.get()]: iterations = 200000000 buckets = 180000000 |   336086.602697
+DEBUG [ht.get()]: iterations = 250000000 buckets = 180000000 |   409859.579114
+DEBUG [ht.get()]: iterations = 300000000 buckets = 180000000 |   484521.317303
+DEBUG [ht.get()]: iterations = 400000000 buckets = 180000000 |   633302.779391
+DEBUG [ht.get()]: iterations = 600000000 buckets = 180000000 |   926256.739960
+Writing htdb_slab database (a = 2.0)...
+Buckets: 200000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 200000000 |   58804.301725
+DEBUG [ht.get()]: iterations = 20000000 buckets = 200000000 |   73152.149055
+DEBUG [ht.get()]: iterations = 40000000 buckets = 200000000 |   102663.723183
+DEBUG [ht.get()]: iterations = 60000000 buckets = 200000000 |   132466.261712
+DEBUG [ht.get()]: iterations = 80000000 buckets = 200000000 |   164301.529516
+DEBUG [ht.get()]: iterations = 100000000 buckets = 200000000 |   191630.293468
+DEBUG [ht.get()]: iterations = 120000000 buckets = 200000000 |   221379.670840
+DEBUG [ht.get()]: iterations = 140000000 buckets = 200000000 |   250880.836120
+DEBUG [ht.get()]: iterations = 160000000 buckets = 200000000 |   283740.315459
+DEBUG [ht.get()]: iterations = 180000000 buckets = 200000000 |   308238.013149
+DEBUG [ht.get()]: iterations = 200000000 buckets = 200000000 |   337959.031089
+DEBUG [ht.get()]: iterations = 250000000 buckets = 200000000 |   419267.894416
+DEBUG [ht.get()]: iterations = 300000000 buckets = 200000000 |   485965.289364
+DEBUG [ht.get()]: iterations = 400000000 buckets = 200000000 |   635254.185897
+DEBUG [ht.get()]: iterations = 600000000 buckets = 200000000 |   935708.281157
+Writing htdb_slab database (a = 2.2)...
+Buckets: 220000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 220000000 |   59449.559904
+DEBUG [ht.get()]: iterations = 20000000 buckets = 220000000 |   75311.083411
+DEBUG [ht.get()]: iterations = 40000000 buckets = 220000000 |   103562.185005
+DEBUG [ht.get()]: iterations = 60000000 buckets = 220000000 |   134019.767632
+DEBUG [ht.get()]: iterations = 80000000 buckets = 220000000 |   162889.945515
+DEBUG [ht.get()]: iterations = 100000000 buckets = 220000000 |   191316.023783
+DEBUG [ht.get()]: iterations = 120000000 buckets = 220000000 |   221678.629771
+DEBUG [ht.get()]: iterations = 140000000 buckets = 220000000 |   254325.405031
+DEBUG [ht.get()]: iterations = 160000000 buckets = 220000000 |   280691.446775
+DEBUG [ht.get()]: iterations = 180000000 buckets = 220000000 |   310464.687593
+DEBUG [ht.get()]: iterations = 200000000 buckets = 220000000 |   339604.963429
+DEBUG [ht.get()]: iterations = 250000000 buckets = 220000000 |   412426.018491
+DEBUG [ht.get()]: iterations = 300000000 buckets = 220000000 |   485110.432271
+DEBUG [ht.get()]: iterations = 400000000 buckets = 220000000 |   635706.227185
+DEBUG [ht.get()]: iterations = 600000000 buckets = 220000000 |   933174.081357
+Writing htdb_slab database (a = 2.4)...
+Buckets: 240000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 240000000 |   60591.980448
+DEBUG [ht.get()]: iterations = 20000000 buckets = 240000000 |   75390.770544
+DEBUG [ht.get()]: iterations = 40000000 buckets = 240000000 |   104922.583013
+DEBUG [ht.get()]: iterations = 60000000 buckets = 240000000 |   134352.580158
+DEBUG [ht.get()]: iterations = 80000000 buckets = 240000000 |   164635.592103
+DEBUG [ht.get()]: iterations = 100000000 buckets = 240000000 |   192518.053663
+DEBUG [ht.get()]: iterations = 120000000 buckets = 240000000 |   224113.030628
+DEBUG [ht.get()]: iterations = 140000000 buckets = 240000000 |   253249.977144
+DEBUG [ht.get()]: iterations = 160000000 buckets = 240000000 |   282777.218566
+DEBUG [ht.get()]: iterations = 180000000 buckets = 240000000 |   312102.299842
+DEBUG [ht.get()]: iterations = 200000000 buckets = 240000000 |   341589.045630
+DEBUG [ht.get()]: iterations = 250000000 buckets = 240000000 |   415255.927522
+DEBUG [ht.get()]: iterations = 300000000 buckets = 240000000 |   488470.099481
+DEBUG [ht.get()]: iterations = 400000000 buckets = 240000000 |   643202.917068
+DEBUG [ht.get()]: iterations = 600000000 buckets = 240000000 |   940639.564126
+Writing htdb_slab database (a = 2.6)...
+Buckets: 260000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 260000000 |   61416.471376
+DEBUG [ht.get()]: iterations = 20000000 buckets = 260000000 |   75759.754038
+DEBUG [ht.get()]: iterations = 40000000 buckets = 260000000 |   107359.377054
+DEBUG [ht.get()]: iterations = 60000000 buckets = 260000000 |   135112.342135
+DEBUG [ht.get()]: iterations = 80000000 buckets = 260000000 |   165499.994738
+DEBUG [ht.get()]: iterations = 100000000 buckets = 260000000 |   194292.224388
+DEBUG [ht.get()]: iterations = 120000000 buckets = 260000000 |   225749.140904
+DEBUG [ht.get()]: iterations = 140000000 buckets = 260000000 |   255708.792728
+DEBUG [ht.get()]: iterations = 160000000 buckets = 260000000 |   282570.175390
+DEBUG [ht.get()]: iterations = 180000000 buckets = 260000000 |   312193.114033
+DEBUG [ht.get()]: iterations = 200000000 buckets = 260000000 |   342463.859140
+DEBUG [ht.get()]: iterations = 250000000 buckets = 260000000 |   429339.780719
+DEBUG [ht.get()]: iterations = 300000000 buckets = 260000000 |   489267.113915
+DEBUG [ht.get()]: iterations = 400000000 buckets = 260000000 |   637005.088560
+DEBUG [ht.get()]: iterations = 600000000 buckets = 260000000 |   930106.361399
+Writing htdb_slab database (a = 2.8)...
+Buckets: 280000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 280000000 |   62164.447054
+DEBUG [ht.get()]: iterations = 20000000 buckets = 280000000 |   77170.751093
+DEBUG [ht.get()]: iterations = 40000000 buckets = 280000000 |   107585.775040
+DEBUG [ht.get()]: iterations = 60000000 buckets = 280000000 |   136772.641111
+DEBUG [ht.get()]: iterations = 80000000 buckets = 280000000 |   166233.177906
+DEBUG [ht.get()]: iterations = 100000000 buckets = 280000000 |   196298.165439
+DEBUG [ht.get()]: iterations = 120000000 buckets = 280000000 |   225777.603167
+DEBUG [ht.get()]: iterations = 140000000 buckets = 280000000 |   255301.205863
+DEBUG [ht.get()]: iterations = 160000000 buckets = 280000000 |   286322.765939
+DEBUG [ht.get()]: iterations = 180000000 buckets = 280000000 |   314744.298851
+DEBUG [ht.get()]: iterations = 200000000 buckets = 280000000 |   346896.519043
+DEBUG [ht.get()]: iterations = 250000000 buckets = 280000000 |   420730.185244
+DEBUG [ht.get()]: iterations = 300000000 buckets = 280000000 |   491727.053502
+DEBUG [ht.get()]: iterations = 400000000 buckets = 280000000 |   638732.415980
+DEBUG [ht.get()]: iterations = 600000000 buckets = 280000000 |   940193.506923
+Writing htdb_slab database (a = 3.0)...
+Buckets: 300000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 300000000 |   63756.734220
+DEBUG [ht.get()]: iterations = 20000000 buckets = 300000000 |   78574.264276
+DEBUG [ht.get()]: iterations = 40000000 buckets = 300000000 |   109958.647133
+DEBUG [ht.get()]: iterations = 60000000 buckets = 300000000 |   137635.042713
+DEBUG [ht.get()]: iterations = 80000000 buckets = 300000000 |   167020.063158
+DEBUG [ht.get()]: iterations = 100000000 buckets = 300000000 |   197440.045095
+DEBUG [ht.get()]: iterations = 120000000 buckets = 300000000 |   225633.847500
+DEBUG [ht.get()]: iterations = 140000000 buckets = 300000000 |   256131.511254
+DEBUG [ht.get()]: iterations = 160000000 buckets = 300000000 |   287358.288656
+DEBUG [ht.get()]: iterations = 180000000 buckets = 300000000 |   314721.663288
+DEBUG [ht.get()]: iterations = 200000000 buckets = 300000000 |   341867.546998
+DEBUG [ht.get()]: iterations = 250000000 buckets = 300000000 |   426358.818007
+DEBUG [ht.get()]: iterations = 300000000 buckets = 300000000 |   495905.163822
+DEBUG [ht.get()]: iterations = 400000000 buckets = 300000000 |   639551.125329
+DEBUG [ht.get()]: iterations = 600000000 buckets = 300000000 |   937854.500978
+Writing htdb_slab database (a = 4.0)...
+Buckets: 400000000
+Wrote 100000000 values. Done.
+DEBUG [ht.get()]: iterations = 10000000 buckets = 400000000 |   68148.485803
+DEBUG [ht.get()]: iterations = 20000000 buckets = 400000000 |   82672.878311
+DEBUG [ht.get()]: iterations = 40000000 buckets = 400000000 |   113294.271036
+DEBUG [ht.get()]: iterations = 60000000 buckets = 400000000 |   142027.316368
+DEBUG [ht.get()]: iterations = 80000000 buckets = 400000000 |   171618.931423
+DEBUG [ht.get()]: iterations = 100000000 buckets = 400000000 |   201537.893734
+DEBUG [ht.get()]: iterations = 120000000 buckets = 400000000 |   235012.651050
+DEBUG [ht.get()]: iterations = 140000000 buckets = 400000000 |   261153.434469
+DEBUG [ht.get()]: iterations = 160000000 buckets = 400000000 |   293099.665560
+DEBUG [ht.get()]: iterations = 180000000 buckets = 400000000 |   319128.274972
+DEBUG [ht.get()]: iterations = 200000000 buckets = 400000000 |   352163.763752
+DEBUG [ht.get()]: iterations = 250000000 buckets = 400000000 |   419713.791940
+DEBUG [ht.get()]: iterations = 300000000 buckets = 400000000 |   501542.631600
+DEBUG [ht.get()]: iterations = 400000000 buckets = 400000000 |   651988.196896
+DEBUG [ht.get()]: iterations = 600000000 buckets = 400000000 |   948306.565822
+Finished 2014-08-27_00:11.
