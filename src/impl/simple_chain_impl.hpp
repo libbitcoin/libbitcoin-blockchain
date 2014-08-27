@@ -22,7 +22,6 @@
 
 #include <bitcoin/blockchain/blockchain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-#include "blockchain_common.hpp"
 
 namespace libbitcoin {
     namespace chain {
@@ -31,9 +30,7 @@ class simple_chain_impl
   : public simple_chain
 {
 public:
-    simple_chain_impl(
-        db_interface& interface,
-        blockchain_common_ptr common, leveldb_databases db);
+    simple_chain_impl(db_interface& interface);
     void append(block_detail_ptr incoming_block);
     int find_index(const hash_digest& search_block_hash);
     hash_number sum_difficulty(size_t begin_index);
@@ -41,12 +38,7 @@ public:
         block_detail_list& released_blocks);
 
 private:
-    bool clear_transaction_data(leveldb_transaction_batch& batch,
-        const transaction_type& remove_tx);
-
     db_interface& interface_;
-    blockchain_common_ptr common_;
-    leveldb_databases db_;
 };
 
     } // namespace chain

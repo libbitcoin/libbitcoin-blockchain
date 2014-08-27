@@ -22,7 +22,6 @@
 
 #include <bitcoin/validate.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
-#include "blockchain_common.hpp"
 #include "organizer_impl.hpp"
 
 namespace libbitcoin {

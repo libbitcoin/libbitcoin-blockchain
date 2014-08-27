@@ -25,15 +25,8 @@
 namespace libbitcoin {
     namespace chain {
 
-bool remove_debit(leveldb::WriteBatch& batch,
-    const transaction_input_type& input);
-bool remove_credit(leveldb::WriteBatch& batch,
-    const transaction_output_type& output, const output_point& outpoint);
-
-simple_chain_impl::simple_chain_impl(
-    db_interface& interface,
-    blockchain_common_ptr common, leveldb_databases db)
-  : interface_(interface), common_(common), db_(db)
+simple_chain_impl::simple_chain_impl(db_interface& interface)
+  : interface_(interface)
 {
 }
 
@@ -55,6 +48,7 @@ int simple_chain_impl::find_index(const hash_digest& search_block_hash)
 
 hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
 {
+#if 0
     hash_number total_work = 0;
     leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
     auto raw_height = to_little_endian(begin_index);
@@ -71,24 +65,8 @@ hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
         total_work += block_work(bits);
     }
     return total_work;
-}
-
-block_detail_ptr reconstruct_block(
-    db_interface& interface_, const size_t height)
-{
-    auto blk_result = interface_.blocks.get(height);
-    BITCOIN_ASSERT(blk_result);
-    block_detail_ptr block =
-        std::make_shared<block_detail>(blk_result.header());
-    const size_t txs_size = blk_result.transactions_size();
-    for (size_t i = 0; i < txs_size; ++i)
-    {
-        const index_type index = blk_result.transaction_index(i);
-        auto tx_result = interface_.transactions.get(index);
-        BITCOIN_ASSERT(tx_result);
-        block->actual_ptr()->transactions.push_back(tx_result.transaction());
-    }
-    return block;
+#endif
+    return hash_number();
 }
 
 bool simple_chain_impl::release(size_t begin_index,
@@ -103,65 +81,6 @@ bool simple_chain_impl::release(size_t begin_index,
             std::make_shared<block_detail>(interface_.pop());
         released_blocks.push_back(block);
     }
-    return true;
-}
-
-bool simple_chain_impl::clear_transaction_data(
-    leveldb_transaction_batch& batch, const transaction_type& remove_tx)
-{
-    const hash_digest& tx_hash = hash_transaction(remove_tx);
-    batch.tx.Delete(slice(tx_hash));
-    // Remove spends
-    // ... spends don't exist for coinbase txs.
-    if (!is_coinbase(remove_tx))
-        for (uint32_t input_index = 0; input_index < remove_tx.inputs.size();
-            ++input_index)
-        {
-            const transaction_input_type& input =
-                remove_tx.inputs[input_index];
-            // We could check if the spend matches the inpoint for safety.
-            //const input_point inpoint{tx_hash, input_index};
-            // Recreate the key...
-            data_chunk spent_key = create_spent_key(input.previous_output);
-            // ... Perform the delete.
-            batch.spend.Delete(slice(spent_key));
-            if (!remove_debit(batch.debit, input))
-                return false;
-        }
-    // Remove addresses
-    for (uint32_t output_index = 0; output_index < remove_tx.outputs.size();
-        ++output_index)
-    {
-        const transaction_output_type& output =
-            remove_tx.outputs[output_index];
-        if (!remove_credit(batch.credit, output, {tx_hash, output_index}))
-            return false;
-    }
-    return true;
-}
-
-bool remove_debit(leveldb::WriteBatch& batch,
-    const transaction_input_type& input)
-{
-    const output_point& outpoint = input.previous_output;
-    payment_address address;
-    // Not a Bitcoin address so skip this output.
-    if (!extract(address, input.script))
-        return true;
-    data_chunk addr_key = create_address_key(address, outpoint);
-    batch.Delete(slice(addr_key));
-    return true;
-}
-
-bool remove_credit(leveldb::WriteBatch& batch,
-    const transaction_output_type& output, const output_point& outpoint)
-{
-    payment_address address;
-    // Not a Bitcoin address so skip this output.
-    if (!extract(address, output.script))
-        return true;
-    data_chunk addr_key = create_address_key(address, outpoint);
-    batch.Delete(slice(addr_key));
     return true;
 }
 

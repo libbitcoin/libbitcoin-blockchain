@@ -21,7 +21,6 @@ libbitcoin_blockchain_la_SOURCES = \
     database/block_database.cpp \
 	impl/blockchain_impl.cpp \
 	impl/simple_chain_impl.cpp \
-	impl/blockchain_common.cpp \
 	impl/organizer_impl.cpp \
 	impl/validate_block_impl.cpp
 

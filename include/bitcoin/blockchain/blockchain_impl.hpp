@@ -22,7 +22,6 @@
 
 #include <atomic>
 #include <boost/interprocess/sync/file_lock.hpp>
-#include <leveldb/db.h>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
@@ -34,9 +33,6 @@
 namespace libbitcoin {
     namespace chain {
 
-class blockchain_common;
-typedef std::shared_ptr<blockchain_common> blockchain_common_ptr;
-
 class blockchain_impl
   : public blockchain
 {
@@ -47,7 +43,6 @@ public:
             reorganize_subscriber_type;
 
     BCB_API blockchain_impl(threadpool& pool, const std::string& prefix);
-    BCB_API ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
@@ -98,8 +93,6 @@ public:
 
 private:
     typedef std::atomic<size_t> seqlock_type;
-    typedef std::unique_ptr<leveldb::DB> database_ptr;
-    typedef std::unique_ptr<leveldb::Comparator> comparator_ptr;
     typedef std::unique_ptr<mmfile> mmfile_ptr;
     typedef std::unique_ptr<stealth_database> stealth_db_ptr;
 
@@ -148,32 +141,7 @@ private:
     // seqlock used for writes.
     seqlock_type seqlock_;
 
-    // Comparator to order blocks by height logically.
-    // Otherwise the last block in the database
-    // might not be the largest height in our blockchain.
-    comparator_ptr height_comparator_;
-    leveldb::Options open_options_;
-
     db_interface interface_;
-
-    // Blocks indexed by height.
-    //   block height -> block header + list(tx_hashes)
-    database_ptr db_block_;
-    // Block heights indexed by hash (a secondary lookup table).
-    //   block hash -> block height
-    database_ptr db_block_hash_;
-    // Transactions indexed by hash.
-    //   tx hash -> tx height + tx index + tx
-    database_ptr db_tx_;
-    // Lookup whether an output point is spent.
-    // Value is the input point spend.
-    //   outpoint -> inpoint spend
-    database_ptr db_spend_;
-
-    // Address to list of output points + values
-    database_ptr db_credit_;
-    // Address to list of spend input points.
-    database_ptr db_debit_;
 
     // Custom databases.
     // Stealth database. See <bitcoin/database/stealth_database.hpp>
@@ -181,7 +149,6 @@ private:
     mmfile_ptr stealth_file_;
     stealth_db_ptr db_stealth_;
 
-    blockchain_common_ptr common_;
     // Organize stuff
     orphans_pool_ptr orphans_;
     simple_chain_ptr chain_;

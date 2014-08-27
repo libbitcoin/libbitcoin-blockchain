@@ -21,9 +21,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
-#include <leveldb/cache.h>
-#include <leveldb/comparator.h>
-#include <leveldb/filter_policy.h>
 #include <bitcoin/blockchain/blockchain_impl.hpp>
 #include <bitcoin/constants.hpp>
 #include <bitcoin/transaction.hpp>
@@ -31,44 +28,13 @@
 #include <bitcoin/utility/logger.hpp>
 #include <bitcoin/utility/serializer.hpp>
 #include <bitcoin/format.hpp>
-#include "blockchain_common.hpp"
 #include "simple_chain_impl.hpp"
 #include "organizer_impl.hpp"
-#include "fetch_history.hpp"
 
 namespace libbitcoin {
     namespace chain {
 
 using std::placeholders::_1;
-
-class height_comparator
-  : public leveldb::Comparator
-{
-public:
-    int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const;
-
-    const char* Name() const;
-    void FindShortestSeparator(std::string*, const leveldb::Slice&) const {}
-    void FindShortSuccessor(std::string*) const {}
-};
-
-int height_comparator::Compare(
-    const leveldb::Slice& a, const leveldb::Slice& b) const
-{
-    uint32_t height_a = recreate_height(a), height_b = recreate_height(b);
-    if (height_a < height_b)
-        return -1;
-    else if (height_a > height_b)
-        return +1;
-    // a == b
-    return 0;
-}
-
-const char* height_comparator::Name() const
-{
-    // Named this way for historical reasons.
-    return "depth_comparator";
-}
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
   : ios_(pool.service()), strand_(pool), reorg_strand_(pool), seqlock_(0),
@@ -77,61 +43,16 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
     reorganize_subscriber_ =
         std::make_shared<reorganize_subscriber_type>(pool);
 }
-blockchain_impl::~blockchain_impl()
-{
-    delete open_options_.block_cache;
-    delete open_options_.filter_policy;
-}
 
 void blockchain_impl::start()
 {
     interface_.start();
 }
 
-void close(std::unique_ptr<leveldb::DB>& db)
-{
-    // delete the database, closing it.
-    db.reset();
-}
 void blockchain_impl::stop()
 {
     reorganize_subscriber_->relay(error::service_stopped,
         0, block_list(), block_list());
-    close(db_block_);
-    close(db_block_hash_);
-    close(db_tx_);
-    close(db_spend_);
-    close(db_credit_);
-    close(db_debit_);
-}
-
-bool open_db(const std::string& prefix, const std::string& db_name,
-    std::unique_ptr<leveldb::DB>& db, leveldb::Options open_options)
-{
-    using boost::filesystem::path;
-    path db_path = path(prefix) / db_name;
-    leveldb::DB* db_base_ptr = nullptr;
-
-    // LevelDB does not accept UNICODE strings for operating systems that
-    // support them, so we must explicity pass an non-UNICODE string for the
-    // name and home it works out.
-    // Also we must normalize the path name format
-    // (e.g. backslashes on Windows).
-    // http://www.boost.org/doc/libs/1_46_0/libs/filesystem/v3/doc/reference.html#generic-pathname-format
-    // Note: this change should have no effect on a POSIX system.
-    leveldb::Status status = leveldb::DB::Open(open_options, 
-        db_path.generic_string(), &db_base_ptr);
-
-    if (!status.ok())
-    {
-        log_fatal(LOG_BLOCKCHAIN) << "Internal error opening '"
-            << db_name << "' database: " << status.ToString();
-        return false;
-    }
-    BITCOIN_ASSERT(db_base_ptr);
-    // The cointainer ensures db_base_ptr is now managed.
-    db.reset(db_base_ptr);
-    return true;
 }
 
 void open_stealth_db(const std::string& prefix,
@@ -166,47 +87,14 @@ bool blockchain_impl::initialize(const std::string& prefix)
         // Database already opened elsewhere
         return false;
     }
-    // Create comparator for blocks database.
-    height_comparator_.reset(new height_comparator);
-    // Open LevelDB databases
-    const size_t cache_size = 1 << 20;
-    // block_cache, filter_policy and comparator must be deleted after use!
-    open_options_.block_cache = leveldb::NewLRUCache(cache_size / 2);
-    open_options_.write_buffer_size = cache_size / 4;
-    open_options_.filter_policy = leveldb::NewBloomFilterPolicy(10);
-    open_options_.compression = leveldb::kNoCompression;
-    open_options_.max_open_files = 256;
-    open_options_.create_if_missing = true;
-    // The blocks database options needs its height comparator too.
-    leveldb::Options blocks_open_options = open_options_;
-    blocks_open_options.comparator = height_comparator_.get();
-    if (!open_db(prefix, "block", db_block_, blocks_open_options))
-        return false;
-    if (!open_db(prefix, "block_hash", db_block_hash_, open_options_))
-        return false;
-    if (!open_db(prefix, "tx", db_tx_, open_options_))
-        return false;
-    if (!open_db(prefix, "spend", db_spend_, open_options_))
-        return false;
-    if (!open_db(prefix, "credit", db_credit_, open_options_))
-        return false;
-    if (!open_db(prefix, "debit", db_debit_, open_options_))
-        return false;
+
     // Open custom databases.
     open_stealth_db(prefix, stealth_file_, db_stealth_);
+
     // Initialize other components.
-    leveldb_databases databases{
-        db_block_.get(), db_block_hash_.get(), db_tx_.get(),
-        db_spend_.get(), db_credit_.get(), db_debit_.get()};
-    special_databases special_dbs{
-        db_stealth_.get()};
-    // G++ has an internal compiler error when you use the implicit * cast.
-    common_ = std::make_shared<blockchain_common>(interface_,
-        databases, special_dbs);
     // Validate and organisation components.
     orphans_ = std::make_shared<orphans_pool>(20);
-    chain_ = std::make_shared<simple_chain_impl>(
-        interface_, common_, databases);
+    chain_ = std::make_shared<simple_chain_impl>(interface_);
     auto reorg_handler = [this](
         const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& arrivals,
