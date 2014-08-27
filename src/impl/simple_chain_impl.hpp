@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_CHAIN_KEEPER_H
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_CHAIN_KEEPER_H
 
-#include <bitcoin/blockchain/blockchain_impl.hpp>
+#include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 
 namespace libbitcoin {

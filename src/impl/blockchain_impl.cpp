@@ -55,6 +55,7 @@ void blockchain_impl::stop()
         0, block_list(), block_list());
 }
 
+#if 0
 void open_stealth_db(const std::string& prefix,
     std::unique_ptr<mmfile>& file, std::unique_ptr<stealth_database>& db)
 {
@@ -114,6 +115,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
         interface_, orphans_, chain_, reorg_handler);
     return true;
 }
+#endif
 
 void blockchain_impl::start_write()
 {
@@ -359,6 +361,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
 void blockchain_impl::fetch_stealth(const stealth_prefix& prefix,
     fetch_handler_stealth handle_fetch, size_t from_height)
 {
+#if 0
     fetch(
         std::bind(&blockchain_impl::do_fetch_stealth,
             this, prefix, handle_fetch, from_height, _1));
@@ -388,6 +391,7 @@ bool blockchain_impl::do_fetch_stealth(const stealth_prefix& prefix,
     db_stealth_->scan(read_func, from_height);
     // Finish.
     return finish_fetch(slock, handle_fetch, std::error_code(), results);
+#endif
 }
 
 void blockchain_impl::subscribe_reorganize(

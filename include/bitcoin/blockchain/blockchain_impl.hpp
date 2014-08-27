@@ -26,7 +26,6 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
-#include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/utility/subscriber.hpp>
 #include <bitcoin/threadpool.hpp>
 
@@ -93,12 +92,8 @@ public:
 
 private:
     typedef std::atomic<size_t> seqlock_type;
-    typedef std::unique_ptr<mmfile> mmfile_ptr;
-    typedef std::unique_ptr<stealth_database> stealth_db_ptr;
 
     typedef std::function<bool (size_t)> perform_read_functor;
-
-    bool initialize(const std::string& prefix);
 
     void start_write();
 
@@ -142,12 +137,6 @@ private:
     seqlock_type seqlock_;
 
     db_interface interface_;
-
-    // Custom databases.
-    // Stealth database. See <bitcoin/database/stealth_database.hpp>
-    // https://wiki.unsystem.net/index.php/DarkWallet/Stealth#Database_file_format
-    mmfile_ptr stealth_file_;
-    stealth_db_ptr db_stealth_;
 
     // Organize stuff
     orphans_pool_ptr orphans_;

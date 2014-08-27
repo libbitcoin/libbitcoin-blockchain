@@ -66,7 +66,10 @@ public:
     history_database history;
     // These 2 databases need improvement.
     //history_scan_database scan;
-    //stealth_database stealth;
+    // Stealth database. See <bitcoin/database/stealth_database.hpp>
+    // https://wiki.unsystem.net/index.php/DarkWallet/Stealth#Database_file_format
+    //mmfile_ptr stealth_file_;
+    //stealth_db_ptr db_stealth_;
 
 private:
     void push_inputs(
