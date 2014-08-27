@@ -58,7 +58,7 @@ public:
 
     BCB_API void store(const block_type& block,
         store_block_handler handle_store);
-    BCB_API void import(const block_type& block, size_t height,
+    BCB_API void import(const block_type& block,
         import_block_handler handle_import);
 
     // fetch block header by height
@@ -120,8 +120,6 @@ private:
 
     void do_store(const block_type& block,
         store_block_handler handle_store);
-    void do_import(const block_type& block, size_t height,
-        import_block_handler handle_import);
 
     // Uses sequence looks to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then

@@ -234,20 +234,20 @@ void blockchain_impl::start_write()
     BITCOIN_ASSERT(seqlock_ % 2 == 1);
 }
 
-void blockchain_impl::store(const block_type& stored_block,
+void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
     strand_.randomly_queue(
         std::bind(&blockchain_impl::do_store,
-            this, stored_block, handle_store));
+            this, block, handle_store));
 }
-void blockchain_impl::do_store(const block_type& stored_block,
+void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
 {
     start_write();
     block_detail_ptr stored_detail =
-        std::make_shared<block_detail>(stored_block);
-    int height = chain_->find_index(hash_block_header(stored_block.header));
+        std::make_shared<block_detail>(block);
+    int height = chain_->find_index(hash_block_header(block.header));
     if (height != -1)
     {
         stop_write(handle_store, error::duplicate,
@@ -264,23 +264,16 @@ void blockchain_impl::do_store(const block_type& stored_block,
     stop_write(handle_store, stored_detail->errc(), stored_detail->info());
 }
 
-void blockchain_impl::import(const block_type& import_block,
-    size_t height, import_block_handler handle_import)
+void blockchain_impl::import(const block_type& block,
+    import_block_handler handle_import)
 {
-    strand_.randomly_queue(
-        &blockchain_impl::do_import,
-            this, import_block, height, handle_import);
-}
-void blockchain_impl::do_import(const block_type& import_block,
-    size_t height, import_block_handler handle_import)
-{
-    start_write();
-    if (!common_->save_block(height, import_block))
+    auto do_import = [this, block, handle_import]()
     {
-        stop_write(handle_import, error::operation_failed);
-        return;
-    }
-    stop_write(handle_import, std::error_code());
+        start_write();
+        interface_.push(block);
+        stop_write(handle_import, std::error_code());
+    };
+    strand_.randomly_queue(do_import);
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)

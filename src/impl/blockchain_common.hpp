@@ -81,6 +81,7 @@ public:
     blockchain_common(db_interface& interface,
         leveldb_databases db, special_databases special_dbs);
 
+private:
     bool save_block(uint32_t height, const block_type& serial_block);
 
     // Used by simple_chain when iterating through blocks.
@@ -88,7 +89,6 @@ public:
     bool deserialize_block(leveldb_block_info& blk_info,
         const std::string& raw_data, bool read_header, bool read_tx_hashes);
 
-private:
     bool save_transaction(leveldb_transaction_batch& batch,
         uint32_t block_height, uint32_t tx_index,
         const hash_digest& tx_hash, const transaction_type& block_tx);

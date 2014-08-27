@@ -42,8 +42,7 @@ void simple_chain_impl::append(block_detail_ptr incoming_block)
     const size_t last_height = interface_.blocks.last_height();
     BITCOIN_ASSERT(last_height != block_database::null_height);
     const block_type& actual_block = incoming_block->actual();
-    if (!common_->save_block(last_height + 1, actual_block))
-        log_fatal(LOG_BLOCKCHAIN) << "Saving block in organizer failed";
+    interface_.push(actual_block);
 }
 
 int simple_chain_impl::find_index(const hash_digest& search_block_hash)
@@ -97,36 +96,13 @@ bool simple_chain_impl::release(size_t begin_index,
 {
     const size_t last_height = interface_.blocks.last_height();
     BITCOIN_ASSERT(last_height != block_database::null_height);
-    for (size_t height = begin_index; height <= last_height; ++height)
+    BITCOIN_ASSERT(last_height > 0);
+    for (size_t height = last_height; height >= begin_index; --height)
     {
-        block_detail_ptr block = reconstruct_block(interface_, height);
+        block_detail_ptr block =
+            std::make_shared<block_detail>(interface_.pop());
+        released_blocks.push_back(block);
     }
-    //
-    leveldb_transaction_batch batch;
-    leveldb_iterator it(db_.block->NewIterator(leveldb::ReadOptions()));
-    auto raw_height = to_little_endian(begin_index);
-    for (it->Seek(slice(raw_height)); it->Valid(); it->Next())
-    {
-#if 0
-        block_detail_ptr block = reconstruct_block(interface_, height);
-        // Add to list of sliced blocks
-        released_blocks.push_back(blk);
-        // Make sure to delete hash secondary index too.
-        const hash_digest& block_hash = blk->hash();
-        // Delete block header...
-        batch.block.Delete(it->key());
-        // And it's secondary index.
-        batch.block_hash.Delete(slice_block_hash(block_hash));
-        // Remove txs + spends + addresses too
-        const auto& transactions = blk->actual().transactions;
-        for (const transaction_type& block_tx: transactions)
-            if (!clear_transaction_data(batch, block_tx))
-                return false;
-#endif
-    }
-    leveldb::WriteOptions options;
-    // Execute batches.
-    db_.write(batch);
     return true;
 }
 
