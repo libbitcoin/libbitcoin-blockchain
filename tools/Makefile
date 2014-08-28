@@ -1,5 +1,5 @@
 CXXFLAGS=$(shell pkg-config --cflags libbitcoin_blockchain) -ggdb
-LIBS=$(shell pkg-config --libs libbitcoin_blockchain) -lleveldb
+LIBS=$(shell pkg-config --libs libbitcoin_blockchain)
 
 default: all
 
@@ -78,8 +78,13 @@ spend_db.o: spend_db.cpp
 spend_db: spend_db.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db
+initchain.o: initchain.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+initchain: initchain.o
+	$(CXX) -o $@ $< $(LIBS)
+
+all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db
+	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain
 	rm -f *.o
