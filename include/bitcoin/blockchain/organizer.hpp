@@ -103,8 +103,10 @@ typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 class simple_chain
 {
 public:
+    static constexpr size_t null_height = std::numeric_limits<size_t>::max();
+
     virtual void append(block_detail_ptr incoming_block) = 0;
-    virtual int find_index(const hash_digest& search_block_hash) = 0;
+    virtual size_t find_height(const hash_digest& search_block_hash) = 0;
     virtual hash_number sum_difficulty(size_t begin_index) = 0;
     virtual bool release(size_t begin_index,
         block_detail_list& released_blocks) = 0;

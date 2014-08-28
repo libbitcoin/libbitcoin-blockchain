@@ -120,8 +120,8 @@ void blockchain_impl::do_store(const block_type& block,
     start_write();
     block_detail_ptr stored_detail =
         std::make_shared<block_detail>(block);
-    int height = chain_->find_index(hash_block_header(block.header));
-    if (height != -1)
+    size_t height = chain_->find_height(hash_block_header(block.header));
+    if (height != simple_chain::null_height)
     {
         stop_write(handle_store, error::duplicate,
             block_info{block_status::confirmed, static_cast<size_t>(height)});

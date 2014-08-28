@@ -163,10 +163,10 @@ void organizer::process(block_detail_ptr process_block)
 {
     // Trace the chain in the orphan pool
     block_detail_list orphan_chain = orphans_->trace(process_block);
-    int fork_index = chain_->find_index(
+    size_t fork_index = chain_->find_height(
         orphan_chain[0]->actual().header.previous_block_hash);
-    if (fork_index != -1)
-        replace_chain((size_t)fork_index, orphan_chain);
+    if (fork_index != simple_chain::null_height)
+        replace_chain(fork_index, orphan_chain);
     // Don't mark all orphan_chain as processed here because there might be
     // a winning fork from an earlier block
     process_block->mark_processed();

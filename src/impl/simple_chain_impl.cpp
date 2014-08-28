@@ -39,12 +39,12 @@ void simple_chain_impl::append(block_detail_ptr incoming_block)
     interface_.push(actual_block);
 }
 
-int simple_chain_impl::find_index(const hash_digest& search_block_hash)
+size_t simple_chain_impl::find_height(const hash_digest& search_block_hash)
 {
     auto result = interface_.blocks.get(search_block_hash);
     if (!result)
-        return -1;
-    return static_cast<int>(result.height());
+        return null_height;
+    return result.height();
 }
 
 hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
