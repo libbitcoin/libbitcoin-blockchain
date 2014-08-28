@@ -42,12 +42,13 @@ public:
             reorganize_subscriber_type;
 
     BCB_API blockchain_impl(threadpool& pool, const std::string& prefix);
+    BCB_API ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
-    BCB_API void start();
+    BCB_API bool start();
     BCB_API void stop();
 
     BCB_API void store(const block_type& block,
@@ -95,6 +96,8 @@ private:
 
     typedef std::function<bool (size_t)> perform_read_functor;
 
+    void initialize_lock(const std::string& prefix);
+
     void start_write();
 
     template <typename Handler, typename... Args>
@@ -131,11 +134,13 @@ private:
     async_strand strand_;
     // Queue for serializing reorganization handler calls.
     async_strand reorg_strand_;
+
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;
     // seqlock used for writes.
     seqlock_type seqlock_;
 
+    // Main database core.
     db_interface interface_;
 
     // Organize stuff

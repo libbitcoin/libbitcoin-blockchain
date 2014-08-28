@@ -42,55 +42,32 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
 {
     reorganize_subscriber_ =
         std::make_shared<reorganize_subscriber_type>(pool);
+    initialize_lock(prefix);
+}
+blockchain_impl::~blockchain_impl()
+{
 }
 
-void blockchain_impl::start()
+void blockchain_impl::initialize_lock(const std::string& prefix)
 {
-    interface_.start();
-}
-
-void blockchain_impl::stop()
-{
-    reorganize_subscriber_->relay(error::service_stopped,
-        0, block_list(), block_list());
-}
-
-#if 0
-void open_stealth_db(const std::string& prefix,
-    std::unique_ptr<mmfile>& file, std::unique_ptr<stealth_database>& db)
-{
-    using boost::filesystem::path;
-    path db_path = path(prefix) / "stealth.db";
-    file.reset(new mmfile(db_path.generic_string().c_str()));
-    db.reset(new stealth_database(*file));
-}
-
-bool blockchain_impl::initialize(const std::string& prefix)
-{
-    interface_.start();
-
     using boost::filesystem::path;
     // Try to lock the directory first
     path lock_path = path(prefix) / "db-lock";
 
-    // See related comments above
-    std::ofstream touch_file(
-        lock_path.generic_string(), std::ios::app);
-
+    std::ofstream touch_file(lock_path.generic_string(), std::ios::app);
     touch_file.close();
 
     // See related comments above, and
     // http://stackoverflow.com/questions/11352641/boostfilesystempath-and-fopen
     flock_ = lock_path.generic_string().c_str();
+}
 
+bool blockchain_impl::start()
+{
     if (!flock_.try_lock())
-    {
-        // Database already opened elsewhere
         return false;
-    }
 
-    // Open custom databases.
-    open_stealth_db(prefix, stealth_file_, db_stealth_);
+    interface_.start();
 
     // Initialize other components.
     // Validate and organisation components.
@@ -101,7 +78,7 @@ bool blockchain_impl::initialize(const std::string& prefix)
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced)
     {
-        // Post this operation without using the strand. Therefore
+        // Post this operation without using the same strand. Therefore
         // calling the reorganize callbacks won't prevent store() from
         // continuing.
         reorg_strand_.queue(
@@ -113,9 +90,15 @@ bool blockchain_impl::initialize(const std::string& prefix)
     };
     organize_ = std::make_shared<organizer_impl>(
         interface_, orphans_, chain_, reorg_handler);
+
     return true;
 }
-#endif
+
+void blockchain_impl::stop()
+{
+    reorganize_subscriber_->relay(error::service_stopped,
+        0, block_list(), block_list());
+}
 
 void blockchain_impl::start_write()
 {
