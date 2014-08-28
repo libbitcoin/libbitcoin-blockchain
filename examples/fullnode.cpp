@@ -81,7 +81,7 @@ void error_both(std::ofstream& file, log_level level,
 class fullnode
 {
 public:
-    fullnode();
+    fullnode(const std::string& db_prefix);
     void start();
     // Should only be called from the main thread.
     // It's an error to join() a thread from inside it.
@@ -121,7 +121,7 @@ private:
     bc::session session_;
 };
 
-fullnode::fullnode()
+fullnode::fullnode(const std::string& db_prefix)
     // Threadpools and the number of threads they spawn.
     // 6 threads spawned in total.
   : net_pool_(1), disk_pool_(4), mem_pool_(1),
@@ -129,7 +129,7 @@ fullnode::fullnode()
     hosts_(net_pool_), handshake_(net_pool_), network_(net_pool_),
     protocol_(net_pool_, hosts_, handshake_, network_),
     // Blockchain database service.
-    chain_(disk_pool_, "blockchain"),
+    chain_(disk_pool_, db_prefix),
     // Poll new blocks, and transaction memory pool.
     poller_(mem_pool_, chain_), txpool_(mem_pool_, chain_), txidx_(mem_pool_),
     // Session manager service. Convenience wrapper.
@@ -312,7 +312,7 @@ int main()
     log_fatal().set_output_function(
         std::bind(error_both, std::ref(errfile), _1, _2, _3));
 
-    fullnode app;
+    fullnode app("blockchain");
     app.start();
     while (true)
     {
