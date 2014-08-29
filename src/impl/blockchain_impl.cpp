@@ -134,7 +134,7 @@ void blockchain_impl::do_store(const block_type& block,
         return;
     }
     organize_->start();
-    stop_write(handle_store, stored_detail->errc(), stored_detail->info());
+    stop_write(handle_store, stored_detail->error(), stored_detail->info());
 }
 
 void blockchain_impl::import(const block_type& block,

@@ -72,11 +72,11 @@ const block_info& block_detail::info() const
     return info_;
 }
 
-void block_detail::set_errc(const std::error_code& ec)
+void block_detail::set_error(const std::error_code& ec)
 {
     ec_ = ec;
 }
-const std::error_code& block_detail::errc() const
+const std::error_code& block_detail::error() const
 {
     return ec_;
 }
@@ -246,9 +246,9 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
     for (auto it = orphan_start; it != orphan_chain.end(); ++it)
     {
         if (it == orphan_start)
-            (*it)->set_errc(invalid_reason);
+            (*it)->set_error(invalid_reason);
         else
-            (*it)->set_errc(error::previous_block_invalid);
+            (*it)->set_error(error::previous_block_invalid);
         (*it)->set_info({block_status::rejected, 0});
         orphans_->remove(*it);
         // Also erase from process_queue so we avoid trying to re-process

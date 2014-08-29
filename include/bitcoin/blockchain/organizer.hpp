@@ -66,8 +66,8 @@ public:
     const hash_digest& hash() const;
     void set_info(const block_info& replace_info);
     const block_info& info() const;
-    void set_errc(const std::error_code& ec);
-    const std::error_code& errc() const;
+    void set_error(const std::error_code& ec);
+    const std::error_code& error() const;
 private:
     std::shared_ptr<block_type> actual_block_;
     const hash_digest block_hash_;
