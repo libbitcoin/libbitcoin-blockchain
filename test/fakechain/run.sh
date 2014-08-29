@@ -21,7 +21,7 @@
 mkdir -p blockchain/
 rm -fr blockchain/*
 CWD=$(pwd)
-cd ../../examples/
+cd ../../tools/
 make -j2
 ./initchain $CWD/blockchain/
 cd $CWD

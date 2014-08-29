@@ -18,8 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain_impl.hpp>
-
+#include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
 using std::placeholders::_1;
@@ -295,7 +294,7 @@ void reorganize(
     blockchain& chain)
 {
     log_info() << "fork_point: " << fork_point;
-    big_number new_work = 0, old_work = 0;
+    hash_number new_work = 0, old_work = 0;
     for (size_t i = 0; i < new_blocks.size(); ++i)
     {
         size_t height = fork_point + i + 1;
@@ -311,7 +310,8 @@ void reorganize(
         log_info() << "<- " << hash_block_header(blk.header);
         old_work += block_work(blk.header.bits);
     }
-    BITCOIN_ASSERT(old_work < new_work);
+    // Use <= operator since we don't have a < defined.
+    BITCOIN_ASSERT(old_work <= new_work);
     chain.subscribe_reorganize(
         std::bind(reorganize, _1, _2, _3, _4, std::ref(chain)));
 }
@@ -321,9 +321,9 @@ void full_test()
     block_point root_block, *head_block = &root_block;
     // Init blockchain.
     threadpool pool(1);
-    blockchain_impl chain(pool);
-    auto blockchain_start = [](const std::error_code& ec) {};
-    chain.start("blockchain", blockchain_start);
+    blockchain_impl chain(pool, "blockchain");
+    bool chain_started = chain.start();
+    BITCOIN_ASSERT(chain_started);
     chain.subscribe_reorganize(
         std::bind(reorganize, _1, _2, _3, _4, std::ref(chain)));
     // Now create blocks and store them in the database.
