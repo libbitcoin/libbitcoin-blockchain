@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_slab_list_item.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\multimap_records.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\utility.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\disk_array.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_record.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_record_list_item.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_slab.ipp">
+      <Filter>include\bitcoin\blockchain\impl</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{79a8a2b4-6eb3-4cab-844e-acf6e0e814cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin">
+      <UniqueIdentifier>{89f3cbbd-4c5a-4487-b2a4-c93cd92b293a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain">
+      <UniqueIdentifier>{356d1865-6d0e-4ffc-8cf7-79ad3ecbe210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\database">
+      <UniqueIdentifier>{8e05b6b3-8348-4942-8e4e-b2ca14cd935e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\impl">
+      <UniqueIdentifier>{87788efd-4a32-4f32-86d1-73e33c4173e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{df47e8ff-c5fb-45eb-bca4-9b7b04cd0637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\database">
+      <UniqueIdentifier>{0f53f3ba-5415-4635-9b3c-f594ea8dab60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\impl">
+      <UniqueIdentifier>{799d9fca-10da-4b08-ae5f-65e1c47bb606}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
+      <Filter>include\bitcoin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\slab_allocator.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\spend_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\stealth_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\types.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\utility.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk_array.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\fsizes.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_scan_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_settings.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_shard.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_record.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_slab.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\linked_records.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\multimap_records.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record_allocator.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp">
+      <Filter>src\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\impl\validate_block_impl.hpp">
+      <Filter>src\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp">
+      <Filter>src\impl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\organizer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\db_interface.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\utility.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\block_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\history_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\history_scan_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\hsdb_settings.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\hsdb_shard.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\linked_records.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\multimap_records.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\record_allocator.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\slab_allocator.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\spend_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\impl\validate_block_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\impl\blockchain_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\impl\organizer_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\impl\simple_chain_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
