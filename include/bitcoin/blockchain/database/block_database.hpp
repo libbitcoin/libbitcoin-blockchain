@@ -56,9 +56,9 @@ public:
     BCB_API size_t transactions_size() const;
 
     /**
-     * Read a transaction_index where i < transactions_size().
+     * Read a transaction hash where i < transactions_size().
      */
-    BCB_API index_type transaction_index(size_t i) const;
+    BCB_API hash_digest transaction_hash(size_t i) const;
 
 private:
     const slab_type slab_;
@@ -101,8 +101,7 @@ public:
     /**
      * Store a block in the database.
      */
-    BCB_API void store(const block_header_type& header,
-        const transaction_index_list& tx_indexes);
+    BCB_API void store(const block_type& block);
 
     /**
      * Unlink all blocks upwards from (and including) from_height.

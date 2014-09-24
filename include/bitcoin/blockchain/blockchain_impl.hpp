@@ -63,8 +63,8 @@ public:
     BCB_API void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
     // fetch transaction hashes in block by hash
-    BCB_API void fetch_block_transaction_indexes(const hash_digest& hash,
-        fetch_handler_block_transaction_indexes handle_fetch);
+    BCB_API void fetch_block_transaction_hashes(const hash_digest& hash,
+        fetch_handler_block_transaction_hashes handle_fetch);
     // fetch height of block by hash
     BCB_API void fetch_block_height(const hash_digest& hash,
         fetch_handler_block_height handle_fetch);
@@ -129,7 +129,7 @@ private:
     bool do_fetch_stealth(const stealth_prefix& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height, size_t slock);
 
-    io_service& ios_;
+    boost::asio::io_service& ios_;
     // Queue for writes to the blockchain.
     async_strand strand_;
     // Queue for serializing reorganization handler calls.

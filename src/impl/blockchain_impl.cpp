@@ -205,9 +205,9 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_block_transaction_indexes(
+void blockchain_impl::fetch_block_transaction_hashes(
     const hash_digest& hash,
-    fetch_handler_block_transaction_indexes handle_fetch)
+    fetch_handler_block_transaction_hashes handle_fetch)
 {
     auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
@@ -215,14 +215,14 @@ void blockchain_impl::fetch_block_transaction_indexes(
         if (!result)
         {
             return finish_fetch(slock, handle_fetch,
-                error::not_found, index_list());
+                error::not_found, hash_list());
         }
         const size_t txs_size = result.transactions_size();
-        index_list indexes;
+        hash_list hashes;
         for (size_t i = 0; i < txs_size; ++i)
-            indexes.push_back(result.transaction_index(i));
+            hashes.push_back(result.transaction_hash(i));
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), indexes);
+            std::error_code(), hashes);
     };
 }
 

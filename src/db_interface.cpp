@@ -117,7 +117,7 @@ void db_interface::push(const block_type& block)
     }
     // Add block itself.
     BITCOIN_ASSERT(tx_indexes.size() == block.transactions.size());
-    blocks.store(block.header, tx_indexes);
+    blocks.store(block);
     // Synchronise everything...
     spends.sync();
     history.sync();
@@ -141,13 +141,12 @@ block_type db_interface::pop()
     // Loop backwards (in reverse to how we added).
     for (int i = txs_size - 1; i >= 0; --i)
     {
-        const index_type tx_index = block_result.transaction_index(i);
-        auto tx_result = transactions.get(tx_index);
+        const hash_digest tx_hash = block_result.transaction_hash(i);
+        auto tx_result = transactions.get(tx_hash);
         BITCOIN_ASSERT(tx_result);
         BITCOIN_ASSERT(tx_result.height() == block_height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
         const transaction_type tx = tx_result.transaction();
-        const hash_digest tx_hash = hash_transaction(tx);
         // Remove inputs
         if (!is_coinbase(tx))
             pop_inputs(tx_hash, tx.inputs);
