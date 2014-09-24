@@ -17,17 +17,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <bitcoin/blockchain/blockchain_impl.hpp>
 
 #include <fstream>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
-#include <bitcoin/blockchain/blockchain_impl.hpp>
-#include <bitcoin/constants.hpp>
-#include <bitcoin/transaction.hpp>
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/logger.hpp>
-#include <bitcoin/utility/serializer.hpp>
-#include <bitcoin/format.hpp>
+#include <bitcoin/bitcoin/constants.hpp>
+#include <bitcoin/bitcoin/format.hpp>
+#include <bitcoin/bitcoin/transaction.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
 #include "simple_chain_impl.hpp"
 #include "organizer_impl.hpp"
 

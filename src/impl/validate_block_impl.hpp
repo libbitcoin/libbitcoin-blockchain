@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 
-#include <bitcoin/validate.hpp>
+#include <bitcoin/bitcoin/validate.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include "organizer_impl.hpp"
 

@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DISK_ARRAY_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DISK_ARRAY_HPP
 
-#include <bitcoin/utility/mmfile.hpp>
+#include <bitcoin/bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {

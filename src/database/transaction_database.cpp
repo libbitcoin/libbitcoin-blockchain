@@ -19,8 +19,8 @@
  */
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 
-#include <bitcoin/satoshi_serialize.hpp>
-#include <bitcoin/transaction.hpp>
+#include <bitcoin/bitcoin/satoshi_serialize.hpp>
+#include <bitcoin/bitcoin/transaction.hpp>
 #include <bitcoin/blockchain/database/fsizes.hpp>
 
 namespace libbitcoin {

@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_RECORD_ALLOCATOR_HPP
 #define LIBBITCOIN_BLOCKCHAIN_RECORD_ALLOCATOR_HPP
 
-#include <bitcoin/utility/mmfile.hpp>
+#include <bitcoin/bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 

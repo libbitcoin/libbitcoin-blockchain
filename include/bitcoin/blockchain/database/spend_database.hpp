@@ -20,8 +20,8 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
 
-#include <bitcoin/error.hpp>
-#include <bitcoin/primitives.hpp>
+#include <bitcoin/bitcoin/error.hpp>
+#include <bitcoin/bitcoin/primitives.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 #include <bitcoin/blockchain/database/types.hpp>

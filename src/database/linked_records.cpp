@@ -19,8 +19,8 @@
  */
 #include <bitcoin/blockchain/database/linked_records.hpp>
 
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
 
 namespace libbitcoin {
     namespace chain {

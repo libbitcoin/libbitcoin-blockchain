@@ -22,10 +22,9 @@
 
 #include <memory>
 #include <boost/circular_buffer.hpp>
-#include <bitcoin/block.hpp>
-#include <bitcoin/primitives.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
-#include <bitcoin/utility/big_number.hpp>
+#include <bitcoin/bitcoin/block.hpp>
+#include <bitcoin/bitcoin/primitives.hpp>
+#include <bitcoin/bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
     namespace chain {

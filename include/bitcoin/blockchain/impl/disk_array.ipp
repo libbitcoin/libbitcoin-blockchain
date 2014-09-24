@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DISK_ARRAY_IPP
 #define LIBBITCOIN_BLOCKCHAIN_DISK_ARRAY_IPP
 
-#include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
 
 namespace libbitcoin {
     namespace chain {

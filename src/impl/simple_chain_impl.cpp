@@ -19,9 +19,9 @@
  */
 #include "simple_chain_impl.hpp"
 
-#include <bitcoin/format.hpp>
-#include <bitcoin/transaction.hpp>
-#include <bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin/format.hpp>
+#include <bitcoin/bitcoin/transaction.hpp>
+#include <bitcoin/bitcoin/utility/logger.hpp>
 
 namespace libbitcoin {
     namespace chain {

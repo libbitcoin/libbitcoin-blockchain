@@ -17,12 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <bitcoin/blockchain/database/stealth_database.hpp>
+
 #ifndef _MSC_VER
 #include <sys/mman.h>
 #endif
-#include <bitcoin/blockchain/database/stealth_database.hpp>
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
 
 namespace libbitcoin {
     namespace chain {

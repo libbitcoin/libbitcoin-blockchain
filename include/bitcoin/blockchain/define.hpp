@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 
-#include <bitcoin/define.hpp>
+#include <bitcoin/bitcoin/define.hpp>
 
 // Logger defines.
 #define LOG_HSDB        "history_scan_database"

@@ -21,8 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_HSDB_SETTINGS_HPP
 
 #include <functional>
-#include <bitcoin/types.hpp>
-#include <bitcoin/utility/mmfile.hpp>
+#include <bitcoin/bitcoin/types.hpp>
+#include <bitcoin/bitcoin/utility/mmfile.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 

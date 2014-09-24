@@ -19,8 +19,8 @@
  */
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {

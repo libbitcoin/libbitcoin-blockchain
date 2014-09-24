@@ -19,10 +19,10 @@
  */
 #include <bitcoin/blockchain/database/hsdb_shard.hpp>
 
-#include <bitcoin/stealth.hpp>
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/serializer.hpp>
-#include <bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin/stealth.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin/utility/logger.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {

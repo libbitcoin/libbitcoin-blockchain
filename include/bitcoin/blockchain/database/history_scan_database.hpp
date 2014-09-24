@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HISTORY_SCAN_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HISTORY_SCAN_DATABASE_HPP
 
-#include <bitcoin/primitives.hpp>
+#include <bitcoin/bitcoin/primitives.hpp>
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
 #include <bitcoin/blockchain/database/hsdb_shard.hpp>
 

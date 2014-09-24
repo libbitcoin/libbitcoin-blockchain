@@ -19,7 +19,7 @@
  */
 #include "organizer_impl.hpp"
 
-#include <bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin/utility/assert.hpp>
 #include "validate_block_impl.hpp"
 
 namespace libbitcoin {
