@@ -44,18 +44,14 @@ void test_block_exists(const db_interface& interface,
     {
         const transaction_type& tx = block0.transactions[i];
         const hash_digest tx_hash = hash_transaction(tx);
-        const index_type idx = r0.transaction_index(i);
-        BOOST_REQUIRE(r0_byhash.transaction_index(i) == idx);
-        auto r0_tx = interface.transactions.get(idx);
-        auto r0_tx_byhash = interface.transactions.get(tx_hash);
+        BOOST_REQUIRE(r0.transaction_hash(i) == tx_hash);
+        BOOST_REQUIRE(r0_byhash.transaction_hash(i) == tx_hash);
+        auto r0_tx = interface.transactions.get(tx_hash);
         BOOST_REQUIRE(r0_tx);
         BOOST_REQUIRE(r0_byhash);
         BOOST_REQUIRE(hash_transaction(r0_tx.transaction()) == tx_hash);
-        BOOST_REQUIRE(hash_transaction(r0_tx_byhash.transaction()) == tx_hash);
         BOOST_REQUIRE(r0_tx.height() == height);
-        BOOST_REQUIRE(r0_tx_byhash.height() == height);
         BOOST_REQUIRE(r0_tx.index() == i);
-        BOOST_REQUIRE(r0_tx_byhash.index() == i);
 
         if (!is_coinbase(tx))
         {
