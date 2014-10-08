@@ -37,7 +37,7 @@ void show_command_help(const std::string& command)
     else if (command == "store")
     {
         std::cout << "Usage: block_db " << command << " MAP ROWS "
-            << "HEADER_DATA [TX_INDEX...]" << std::endl;
+            << "BLOCK_DATA" << std::endl;
     }
     else if (command == "unlink")
     {
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
         {
             std::cout << "Transactions:" << std::endl;
             for (size_t i = 0; i < txs_size; ++i)
-                std::cout << "  " << result->transaction_index(i) << std::endl;
+                std::cout << "  " << result->transaction_hash(i) << std::endl;
         }
         else
         {
@@ -197,36 +197,22 @@ int main(int argc, char** argv)
     }
     else if (command == "store")
     {
-        if (args.empty())
+        if (args.size() != 1)
         {
             show_command_help(command);
             return -1;
         }
         data_chunk data = decode_hex(args[0]);
-        if (data.size() != 80)
+        if (data.size() < 80)
         {
-            std::cerr << "block_db: HEADER_DATA must be 80 bytes" << std::endl;
+            std::cerr << "block_db: BLOCK_DATA must be greater than 80 bytes"
+                << std::endl;
             return -1;
         }
-        block_header_type header;
-        satoshi_load(data.begin(), data.end(), header);
-        transaction_index_list idxs;
-        for (auto it = args.begin() + 1; it != args.end(); ++it)
-        {
-            const std::string arg = *it;
-            try
-            {
-                index_type tx_index = boost::lexical_cast<index_type>(arg);
-                idxs.push_back(tx_index);
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-                std::cout << "block_db: skipping malformed arg '"
-                    << arg << "'" << std::endl;
-            }
-        }
+        block_type block;
+        satoshi_load(data.begin(), data.end(), block);
         db.start();
-        db.store(header, idxs);
+        db.store(block);
         db.sync();
     }
     else if (command == "unlink")

@@ -1,9 +1,8 @@
 /*
 Create a new blockchain database.
 */
-#include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
 

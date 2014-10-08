@@ -1,6 +1,4 @@
-#include <bitcoin/utility/assert.hpp>
-#include <bitcoin/utility/mmfile.hpp>
-#include <bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
