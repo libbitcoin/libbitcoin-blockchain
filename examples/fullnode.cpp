@@ -95,11 +95,12 @@ private:
 
     // New connection has been started.
     // Subscribe to new transaction messages from the network.
-    void connection_started(const std::error_code& ec, channel_ptr node);
+    void connection_started(const std::error_code& ec,
+        network::channel_ptr node);
     // New transaction message from the network.
     // Attempt to validate it by storing it in the transaction pool.
     void recv_tx(const std::error_code& ec,
-        const transaction_type& tx, channel_ptr node);
+        const transaction_type& tx, network::channel_ptr node);
     // Result of store operation in transaction pool.
     void new_unconfirm_valid_tx(
         const std::error_code& ec, const index_list& unconfirmed,
@@ -108,10 +109,10 @@ private:
     // Threadpools
     threadpool net_pool_, disk_pool_, mem_pool_;
     // Services
-    hosts hosts_;
-    handshake handshake_;
-    network network_;
-    protocol protocol_;
+    network::hosts hosts_;
+    network::handshake handshake_;
+    network::network network_;
+    network::protocol protocol_;
     blockchain_impl chain_;
     poller poller_;
     transaction_pool txpool_;
@@ -195,7 +196,8 @@ void fullnode::handle_start(const std::error_code& ec)
         log_error() << "fullnode: " << ec.message();
 }
 
-void fullnode::connection_started(const std::error_code& ec, channel_ptr node)
+void fullnode::connection_started(const std::error_code& ec,
+    network::channel_ptr node)
 {
     if (ec)
     {
@@ -211,7 +213,7 @@ void fullnode::connection_started(const std::error_code& ec, channel_ptr node)
 }
 
 void fullnode::recv_tx(const std::error_code& ec,
-    const transaction_type& tx, channel_ptr node)
+    const transaction_type& tx, network::channel_ptr node)
 {
     if (ec)
     {
