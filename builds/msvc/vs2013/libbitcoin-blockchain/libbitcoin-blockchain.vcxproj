@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <ProjectGuid>{868DAB9E-FD33-497F-9468-C9000B3D7801}</ProjectGuid>
-    <ProjectName>libbitcoin_blockchain</ProjectName>
+    <ProjectName>libbitcoin-blockchain</ProjectName>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugDLL|Win32">

@@ -3,11 +3,11 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libbitcoin_blockchain
+Name: libbitcoin-blockchain
 Description:  Rewrite bitcoin, make it super-pluggable, very easy to do and hack everything at every level, and very configurable.
-URL: http://github.com/libbitcoin/libbitcoin_blockchain
+URL: http://github.com/libbitcoin/libbitcoin-blockchain
 Version: @PACKAGE_VERSION@
 Requires: libbitcoin
 Cflags: -I${includedir} -std=c++11
-Libs: -L${libdir} -lbitcoin_blockchain -lgmp
+Libs: -L${libdir} -lbitcoin-blockchain -lgmp
 

@@ -1,4 +1,4 @@
-AC_INIT([libbitcoin_blockchain], [0.4.0], [genjix@riseup.net])
+AC_INIT([libbitcoin-blockchain], [0.4.0], [genjix@riseup.net])
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG(C++)
 AC_CONFIG_AUX_DIR([build-aux])
@@ -24,6 +24,6 @@ AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
     [pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
 AC_SUBST([pkgconfigdir])
 
-AC_CONFIG_FILES([Makefile include/bitcoin/Makefile src/Makefile libbitcoin_blockchain.pc])
+AC_CONFIG_FILES([Makefile include/bitcoin/Makefile src/Makefile libbitcoin-blockchain.pc])
 AC_OUTPUT
 
