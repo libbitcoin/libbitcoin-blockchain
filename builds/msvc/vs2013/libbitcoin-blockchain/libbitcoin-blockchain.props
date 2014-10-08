@@ -8,12 +8,12 @@
   </PropertyGroup>
   
   <!-- Configuration -->
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCB_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DebugOrRelease)' == 'Release'">BITCOIN_DISABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
