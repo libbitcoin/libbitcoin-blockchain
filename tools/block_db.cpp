@@ -18,6 +18,8 @@ void show_help()
         << "Store a block" << std::endl;
     std::cout << "  unlink          "
         << "Unlink series of blocks from a height" << std::endl;
+    std::cout << "  last_height       "
+        << "Show last block height in current chain" << std::endl;
     std::cout << "  help            "
         << "Show help for commands" << std::endl;
 }
@@ -43,6 +45,11 @@ void show_command_help(const std::string& command)
     {
         std::cout << "Usage: block_db " << command << " MAP ROWS "
             << "FROM_HEIGHT" << std::endl;
+    }
+    else if (command == "last_height")
+    {
+        std::cout << "Usage: block_db " << command << " MAP ROWS "
+            << std::endl;
     }
     else
     {
