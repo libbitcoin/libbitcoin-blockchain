@@ -19,8 +19,7 @@
  */
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
@@ -74,6 +73,7 @@ slab_type slab_allocator::get(position_type position) const
 
 void slab_allocator::reserve(size_t space_needed)
 {
+    // See comment in hsdb_shard::reserve()
     const size_t required_size = sector_start_ + end_ + space_needed;
     reserve_space(file_, required_size);
     BITCOIN_ASSERT(file_.size() >= required_size);

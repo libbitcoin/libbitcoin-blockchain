@@ -20,8 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_IPP
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_IPP
 
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 #include "htdb_slab_list_item.ipp"
 

@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/database/utility.hpp>
 
 #include <fstream>
-#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {

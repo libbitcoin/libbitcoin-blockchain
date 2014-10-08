@@ -23,7 +23,7 @@ Debian/Ubuntu Instructions
   $ sudo make install
   $ sudo ldconfig
 
-libbitcoin_blockchain is now installed in /usr/local/.
+libbitcoin-blockchain is now installed in /usr/local/.
 
 Basic Installation
 ==================

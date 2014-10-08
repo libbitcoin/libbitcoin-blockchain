@@ -88,7 +88,7 @@ a9ce4f5 BCB_API define.hpp linkage stuff.
 4881936 hdb_shard stub
 06dc88a remove LDFLAG_LEVELDB reference from Makefile.
 5cb0d40 use autogen.sh
-a04f433 prepared libbitcoin_blockchain
+a04f433 prepared libbitcoin-blockchain
 fd573e3 leveldb in pkgconfig file
 9b5d98c now compiles.
 9ac70fb initial commit.

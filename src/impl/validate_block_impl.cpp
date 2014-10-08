@@ -19,11 +19,7 @@
  */
 #include "validate_block_impl.hpp"
 
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/format.hpp>
-#include <bitcoin/bitcoin/transaction.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {

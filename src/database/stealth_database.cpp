@@ -22,8 +22,7 @@
 #ifndef _MSC_VER
 #include <sys/mman.h>
 #endif
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {

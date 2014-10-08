@@ -21,8 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 
 #include <gmp.h>
-#include <bitcoin/bitcoin/format.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {

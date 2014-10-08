@@ -18,13 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/blockchain/database/slab_allocator.hpp>
-#include <bitcoin/blockchain/database/record_allocator.hpp>
-#include <bitcoin/blockchain/database/disk_array.hpp>
-#include <bitcoin/blockchain/database/linked_records.hpp>
-#include <bitcoin/blockchain/database/htdb_slab.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
-#include <bitcoin/blockchain/database/fsizes.hpp>
+#include <bitcoin/blockchain.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;

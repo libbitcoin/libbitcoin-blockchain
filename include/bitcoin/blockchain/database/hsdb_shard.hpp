@@ -21,8 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_HSDB_SHARD_HPP
 
 #include <functional>
-#include <bitcoin/bitcoin/types.hpp>
-#include <bitcoin/bitcoin/utility/mmfile.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
