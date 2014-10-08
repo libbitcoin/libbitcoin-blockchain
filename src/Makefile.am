@@ -1,9 +1,11 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -I$(srcdir)/../include ${libbitcoin_CFLAGS}
+AM_CPPFLAGS = \
+    -I$(srcdir)/../include \
+    ${bitcoin_CFLAGS}
 
 lib_LTLIBRARIES = libbitcoin-blockchain.la
-libbitcoin-blockchain_la_SOURCES = \
+libbitcoin_blockchain_la_SOURCES = \
     organizer.cpp \
 	db_interface.cpp \
     database/stealth_database.cpp \

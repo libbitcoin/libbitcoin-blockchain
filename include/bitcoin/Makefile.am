@@ -2,15 +2,15 @@ bitcoin_includedir = $(includedir)/bitcoin
 bitcoin_include_HEADERS = \
     blockchain.hpp
 
-bitcoin-blockchain_includedir = $(includedir)/bitcoin/blockchain
-bitcoin-blockchain_include_HEADERS = \
+bitcoin_blockchain_includedir = $(includedir)/bitcoin/blockchain
+bitcoin_blockchain_include_HEADERS = \
     blockchain/define.hpp \
     blockchain/blockchain_impl.hpp \
     blockchain/db_interface.hpp \
     blockchain/organizer.hpp
 
-bitcoin-blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
-bitcoin-blockchain_impl_include_HEADERS = \
+bitcoin_blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
+bitcoin_blockchain_impl_include_HEADERS = \
     blockchain/impl/disk_array.ipp \
     blockchain/impl/htdb_slab.ipp \
     blockchain/impl/htdb_slab_list_item.ipp \
@@ -19,8 +19,8 @@ bitcoin-blockchain_impl_include_HEADERS = \
     blockchain/impl/multimap_records.ipp \
     blockchain/impl/utility.ipp
 
-bitcoin-blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
-bitcoin-blockchain_database_include_HEADERS = \
+bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
+bitcoin_blockchain_database_include_HEADERS = \
     blockchain/database/history_scan_database.hpp \
     blockchain/database/hsdb_shard.hpp \
     blockchain/database/hsdb_settings.hpp \
