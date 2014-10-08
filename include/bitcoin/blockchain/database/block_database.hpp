@@ -20,8 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_DATABASE_HPP
 
-#include <bitcoin/bitcoin/error.hpp>
-#include <bitcoin/bitcoin/primitives.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>

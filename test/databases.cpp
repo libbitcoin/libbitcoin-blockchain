@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
 using namespace bc::chain;
 

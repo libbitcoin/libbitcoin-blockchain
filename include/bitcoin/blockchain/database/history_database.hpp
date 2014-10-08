@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HISTORY_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HISTORY_DATABASE_HPP
 
-#include <bitcoin/bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/multimap_records.hpp>
 #include <bitcoin/blockchain/database/types.hpp>

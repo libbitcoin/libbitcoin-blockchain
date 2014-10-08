@@ -19,7 +19,7 @@
  */
 #include <bitcoin/blockchain/organizer.hpp>
 
-#include <bitcoin/bitcoin/utility/assert.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {

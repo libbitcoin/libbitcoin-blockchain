@@ -19,8 +19,8 @@
  */
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
 using namespace bc::chain;
 

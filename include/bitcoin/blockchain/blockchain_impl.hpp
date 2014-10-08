@@ -22,9 +22,7 @@
 
 #include <atomic>
 #include <boost/interprocess/sync/file_lock.hpp>
-#include <bitcoin/bitcoin/blockchain.hpp>
-#include <bitcoin/bitcoin/threadpool.hpp>
-#include <bitcoin/bitcoin/utility/subscriber.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>

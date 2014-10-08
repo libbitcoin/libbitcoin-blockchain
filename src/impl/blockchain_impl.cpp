@@ -22,12 +22,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
-#include <bitcoin/bitcoin/constants.hpp>
-#include <bitcoin/bitcoin/format.hpp>
-#include <bitcoin/bitcoin/transaction.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/logger.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include "simple_chain_impl.hpp"
 #include "organizer_impl.hpp"
 

@@ -21,10 +21,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/logger.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
-#include <bitcoin/bitcoin/utility/hash.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {

@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_HPP
 #define LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_HPP
 
-#include <bitcoin/bitcoin/utility/mmfile.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>

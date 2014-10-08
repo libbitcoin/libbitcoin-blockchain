@@ -19,8 +19,7 @@
  */
 #include <fstream>
 #include <boost/test/unit_test.hpp>
-#include <bitcoin/blockchain/database/hsdb_settings.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain.hpp>
 
 using namespace libbitcoin;
 using namespace libbitcoin::chain;

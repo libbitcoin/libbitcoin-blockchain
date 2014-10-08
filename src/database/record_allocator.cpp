@@ -19,8 +19,7 @@
  */
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
@@ -85,6 +84,7 @@ void record_allocator::resize(const index_type size)
 
 void record_allocator::reserve()
 {
+    // See comment in hsdb_shard::reserve()
     const size_t required_size =
         sector_start_ + 4 + (end_ + 1) * record_size_;
     reserve_space(file_, required_size);

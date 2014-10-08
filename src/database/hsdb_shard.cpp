@@ -19,10 +19,7 @@
  */
 #include <bitcoin/blockchain/database/hsdb_shard.hpp>
 
-#include <bitcoin/bitcoin/stealth.hpp>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
-#include <bitcoin/bitcoin/utility/logger.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/utility.hpp>
 
 namespace libbitcoin {
@@ -92,6 +89,9 @@ void hsdb_shard::sort_rows()
 }
 void hsdb_shard::reserve(size_t space_needed)
 {
+    // This can be a problem in 32 bit builds. If entries_end_ needs to be 64
+    // bit then these others should probably be so as well. An overflow test
+    // on the addition would be a good precaution in either case.
     const size_t required_size = entries_end_ + space_needed;
     reserve_space(file_, required_size);
 }

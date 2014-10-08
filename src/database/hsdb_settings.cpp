@@ -19,8 +19,7 @@
  */
 #include <bitcoin/blockchain/database/hsdb_settings.hpp>
 
-#include <bitcoin/bitcoin/utility/assert.hpp>
-#include <bitcoin/bitcoin/utility/serializer.hpp>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {
