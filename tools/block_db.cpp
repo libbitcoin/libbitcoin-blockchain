@@ -181,6 +181,7 @@ int main(int argc, char** argv)
         }
         const block_header_type blk_header = result->header();
         // Show details.
+        std::cout << "height: " << result->height() << std::endl;
         std::cout << "hash: " << hash_block_header(blk_header) << std::endl;
         std::cout << "version: " << blk_header.version << std::endl;
         std::cout << "previous_block_hash: "
