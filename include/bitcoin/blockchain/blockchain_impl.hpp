@@ -68,9 +68,6 @@ public:
         fetch_handler_block_height handle_fetch);
     // fetch height of latest block
     BCB_API void fetch_last_height(fetch_handler_last_height handle_fetch);
-    // fetch transaction by index
-    BCB_API void fetch_transaction(const index_type index,
-        fetch_handler_transaction handle_fetch);
     // fetch transaction by hash
     BCB_API void fetch_transaction(const hash_digest& hash,
         fetch_handler_transaction handle_fetch);

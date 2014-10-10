@@ -67,15 +67,11 @@ transaction_type transaction_result::transaction() const
     return deserialize(slab_ + 8);
 }
 
-transaction_database::transaction_database(
-    const std::string& map_filename, const std::string& index_filename)
+transaction_database::transaction_database(const std::string& map_filename)
   : map_file_(map_filename), header_(map_file_, 0),
-    allocator_(map_file_, alloc_offset), map_(header_, allocator_),
-    index_file_(index_filename),
-    index_(index_file_, 0, sizeof(position_type))
+    allocator_(map_file_, alloc_offset), map_(header_, allocator_)
 {
     BITCOIN_ASSERT(map_file_.data());
-    BITCOIN_ASSERT(index_file_.data());
 }
 
 void transaction_database::initialize_new()
@@ -83,25 +79,12 @@ void transaction_database::initialize_new()
     map_file_.resize(initial_map_file_size);
     header_.initialize_new(number_buckets);
     allocator_.initialize_new();
-
-    index_file_.resize(min_records_fsize);
-    index_.initialize_new();
 }
 
 void transaction_database::start()
 {
     header_.start();
     allocator_.start();
-    index_.start();
-}
-
-transaction_result transaction_database::get(const index_type index) const
-{
-    if (index >= index_.size())
-        return transaction_result(nullptr);
-    const position_type position = read_position(index);
-    const slab_type slab = allocator_.get(position);
-    return transaction_result(slab);
 }
 
 transaction_result transaction_database::get(const hash_digest& hash) const
@@ -110,7 +93,7 @@ transaction_result transaction_database::get(const hash_digest& hash) const
     return transaction_result(slab);
 }
 
-index_type transaction_database::store(
+void transaction_database::store(
     const transaction_metainfo& info, const transaction_type& tx)
 {
     // Write block data.
@@ -123,30 +106,12 @@ index_type transaction_database::store(
         serial.write_4_bytes(info.index);
         satoshi_save(tx, serial.iterator());
     };
-    const position_type position = map_.store(key, value_size, write);
-    // Write index -> position mapping.
-    return write_position(position);
+    map_.store(key, value_size, write);
 }
 
 void transaction_database::sync()
 {
     allocator_.sync();
-    index_.sync();
-}
-
-index_type transaction_database::write_position(const position_type position)
-{
-    const index_type index = index_.allocate();
-    record_type record = index_.get(index);
-    auto serial = make_serializer(record);
-    serial.write_8_bytes(position);
-    return index;
-}
-
-position_type transaction_database::read_position(const index_type index) const
-{
-    record_type record = index_.get(index);
-    return from_little_endian<position_type>(record);
 }
 
     } // namespace chain

@@ -73,8 +73,7 @@ private:
 class transaction_database
 {
 public:
-    BCB_API transaction_database(
-        const std::string& map_filename, const std::string& index_filename);
+    BCB_API transaction_database(const std::string& map_filename);
 
     /**
      * Initialize a new transaction database.
@@ -87,12 +86,6 @@ public:
     BCB_API void start();
 
     /**
-     * Fetch transaction from its unique index. Does an intermediate
-     * lookup in another table to find its position on disk.
-     */
-    BCB_API transaction_result get(const index_type index) const;
-
-    /**
      * Fetch transaction from its hash.
      */
     BCB_API transaction_result get(const hash_digest& hash) const;
@@ -101,7 +94,7 @@ public:
      * Store a transaction in the database. Returns a unique index
      * which can be used to reference the transaction.
      */
-    BCB_API index_type store(
+    BCB_API void store(
         const transaction_metainfo& info, const transaction_type& tx);
 
     /**
@@ -113,20 +106,11 @@ public:
 private:
     typedef htdb_slab<hash_digest> map_type;
 
-    /// Write position of tx and return assigned index
-    index_type write_position(const position_type position);
-    /// Use intermediate records table to find tx position.
-    position_type read_position(const index_type index) const;
-
     /// The hashtable used for looking up txs by hash.
     mmfile map_file_;
     htdb_slab_header header_;
     slab_allocator allocator_;
     map_type map_;
-
-    /// Record table used for looking up tx position from a unique index.
-    mmfile index_file_;
-    record_allocator index_;
 };
 
     } // namespace chain

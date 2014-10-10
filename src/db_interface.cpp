@@ -38,7 +38,6 @@ db_paths::db_paths(const std::string& prefix)
     blocks_rows = path(prefix, "blocks_rows");
     spends = path(prefix, "spends");
     transaction_map = path(prefix, "tx_map");
-    transaction_index = path(prefix, "tx_index");
 
     history_lookup = path(prefix, "history_lookup");
     history_rows = path(prefix, "history_rows");
@@ -50,7 +49,6 @@ void db_paths::touch_all() const
     touch_file(blocks_rows);
     touch_file(spends);
     touch_file(transaction_map);
-    touch_file(transaction_index);
     touch_file(history_lookup);
     touch_file(history_rows);
 }
@@ -58,7 +56,7 @@ void db_paths::touch_all() const
 db_interface::db_interface(const db_paths& paths)
   : blocks(paths.blocks_lookup, paths.blocks_rows),
     spends(paths.spends),
-    transactions(paths.transaction_map, paths.transaction_index),
+    transactions(paths.transaction_map),
     history(paths.history_lookup, paths.history_rows)
 {
 }
@@ -97,7 +95,6 @@ bool is_special_duplicate(const transaction_metainfo& info)
 void db_interface::push(const block_type& block)
 {
     const size_t block_height = next_height(blocks.last_height());
-    transaction_index_list tx_indexes;
     for (size_t i = 0; i < block.transactions.size(); ++i)
     {
         const transaction_type& tx = block.transactions[i];
@@ -112,11 +109,9 @@ void db_interface::push(const block_type& block)
         // Add outputs
         push_outputs(tx_hash, block_height, tx.outputs);
         // Add transaction
-        index_type tx_index = transactions.store(info, tx);
-        tx_indexes.push_back(tx_index);
+        transactions.store(info, tx);
     }
     // Add block itself.
-    BITCOIN_ASSERT(tx_indexes.size() == block.transactions.size());
     blocks.store(block);
     // Synchronise everything...
     spends.sync();

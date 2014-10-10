@@ -254,23 +254,6 @@ void blockchain_impl::fetch_last_height(
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_transaction(const index_type index,
-    fetch_handler_transaction handle_fetch)
-{
-    auto do_fetch = [this, index, handle_fetch](size_t slock)
-    {
-        auto result = interface_.transactions.get(index);
-        if (!result)
-        {
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, transaction_type());
-        }
-        return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.transaction());
-    };
-    fetch(do_fetch);
-}
-
 void blockchain_impl::fetch_transaction(
     const hash_digest& hash,
     fetch_handler_transaction handle_fetch)
