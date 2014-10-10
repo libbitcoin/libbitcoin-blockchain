@@ -37,7 +37,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
 {
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
     const block_type& current_block = orphan_chain[orphan_index]->actual();
-    size_t height = fork_index + orphan_index + 1;
+    const size_t height = fork_index + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
     validate_block_impl validate(interface_, fork_index, orphan_chain,
         orphan_index, height, current_block);

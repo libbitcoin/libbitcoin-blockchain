@@ -195,6 +195,7 @@ void db_interface::pop_inputs(
     const hash_digest& tx_hash,
     const transaction_input_list& inputs)
 {
+    // Loop in reverse.
     for (int i = inputs.size() - 1; i >= 0; --i)
     {
         const transaction_input_type& input = inputs[i];
@@ -211,6 +212,7 @@ void db_interface::pop_inputs(
 void db_interface::pop_outputs(
     const transaction_output_list& outputs)
 {
+    // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)
     {
         const transaction_output_type& output = outputs[i];
