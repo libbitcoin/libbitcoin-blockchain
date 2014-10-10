@@ -63,6 +63,11 @@ block_db.o: block_db.cpp
 block_db: block_db.o
 	$(CXX) -o $@ $< $(LIBS)
 
+transaction_db.o: transaction_db.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+transaction_db: transaction_db.o
+	$(CXX) -o $@ $< $(LIBS)
+
 history_db.o: history_db.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 history_db: history_db.o
@@ -83,7 +88,7 @@ initchain.o: initchain.cpp
 initchain: initchain.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain
+all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain transaction_db
 
 clean:
 	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain
