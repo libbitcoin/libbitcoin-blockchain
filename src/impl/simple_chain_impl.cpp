@@ -63,7 +63,6 @@ bool simple_chain_impl::release(size_t begin_index,
 {
     const size_t last_height = interface_.blocks.last_height();
     BITCOIN_ASSERT(last_height != block_database::null_height);
-    BITCOIN_ASSERT(last_height > 0);
     for (size_t height = last_height; height >= begin_index; --height)
     {
         block_detail_ptr block =
