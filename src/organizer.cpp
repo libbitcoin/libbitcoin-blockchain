@@ -164,6 +164,7 @@ void organizer::process(block_detail_ptr process_block)
 {
     // Trace the chain in the orphan pool
     block_detail_list orphan_chain = orphans_->trace(process_block);
+    BITCOIN_ASSERT(orphan_chain.size() >= 1);
     size_t fork_index = chain_->find_height(
         orphan_chain[0]->actual().header.previous_block_hash);
     if (fork_index != simple_chain::null_height)
