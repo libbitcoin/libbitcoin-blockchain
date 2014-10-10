@@ -31,6 +31,16 @@ constexpr size_t initial_map_file_size = header_size + min_slab_fsize;
 
 constexpr position_type alloc_offset = header_size;
 
+// Record format:
+// main:
+//  [ header:80      ]
+//  [ height:4       ]
+//  [ number_txs:4   ]
+// hashes:
+//  [ [    ...     ] ]
+//  [ [ tx_hash:32 ] ]
+//  [ [    ...     ] ]
+
 template <typename Iterator>
 block_header_type deserialize(const Iterator first)
 {
@@ -64,14 +74,14 @@ size_t block_result::height() const
 size_t block_result::transactions_size() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_ + 80 + 2);
+    return from_little_endian<uint32_t>(slab_ + 80 + 4);
 }
 
 hash_digest block_result::transaction_hash(size_t i) const
 {
     BITCOIN_ASSERT(slab_);
     BITCOIN_ASSERT(i < transactions_size());
-    const uint8_t* first = slab_ + 80 + 2 + 4 + i * hash_size;
+    const uint8_t* first = slab_ + 80 + 4 + 4 + i * hash_size;
     auto deserial = make_deserializer_unsafe(first);
     return deserial.read_hash();
 }
@@ -125,12 +135,12 @@ void block_database::store(const block_type& block)
     // Write block data.
     const hash_digest key = hash_block_header(block.header);
     const size_t number_txs = block.transactions.size();
-    const size_t value_size = 80 + 2 + 4 + number_txs * hash_size;
+    const size_t value_size = 80 + 4 + 4 + number_txs * hash_size;
     auto write = [&](uint8_t* data)
     {
         satoshi_save(block.header, data);
         auto serial = make_serializer(data + 80);
-        serial.write_2_bytes(height);
+        serial.write_4_bytes(height);
         serial.write_4_bytes(number_txs);
         for (const transaction_type& tx: block.transactions)
         {
