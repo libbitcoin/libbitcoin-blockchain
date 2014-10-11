@@ -40,7 +40,7 @@ struct db_paths
     std::string blocks_lookup;
     std::string blocks_rows;
     std::string spends;
-    std::string transaction_map;
+    std::string transactions;
 
     std::string history_lookup;
     std::string history_rows;

@@ -37,7 +37,7 @@ db_paths::db_paths(const std::string& prefix)
     blocks_lookup = path(prefix, "blocks_lookup");
     blocks_rows = path(prefix, "blocks_rows");
     spends = path(prefix, "spends");
-    transaction_map = path(prefix, "tx_map");
+    transactions = path(prefix, "txs");
 
     history_lookup = path(prefix, "history_lookup");
     history_rows = path(prefix, "history_rows");
@@ -48,7 +48,7 @@ void db_paths::touch_all() const
     touch_file(blocks_lookup);
     touch_file(blocks_rows);
     touch_file(spends);
-    touch_file(transaction_map);
+    touch_file(transactions);
     touch_file(history_lookup);
     touch_file(history_rows);
 }
@@ -56,7 +56,7 @@ void db_paths::touch_all() const
 db_interface::db_interface(const db_paths& paths)
   : blocks(paths.blocks_lookup, paths.blocks_rows),
     spends(paths.spends),
-    transactions(paths.transaction_map),
+    transactions(paths.transactions),
     history(paths.history_lookup, paths.history_rows)
 {
 }
