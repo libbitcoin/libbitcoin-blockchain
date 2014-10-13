@@ -68,7 +68,7 @@ block_header_type block_result::header() const
 size_t block_result::height() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint16_t>(slab_ + 80);
+    return from_little_endian<uint32_t>(slab_ + 80);
 }
 
 size_t block_result::transactions_size() const
