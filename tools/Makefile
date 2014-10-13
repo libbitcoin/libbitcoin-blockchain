@@ -83,8 +83,8 @@ initchain.o: initchain.cpp
 initchain: initchain.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain transaction_db
+all: show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db spend_db initchain transaction_db
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db txdb spend_db initchain
+	rm -f show_shard show_hsdb_settings show_array show_records show_linked_records read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db block_db spend_db initchain
 	rm -f *.o
