@@ -244,20 +244,15 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
     const hash_digest h2 = hash_transaction(tx2);
 
     touch_file("tx_db_map");
-    touch_file("tx_db_index");
-    transaction_database db("tx_db_map", "tx_db_index");
+    transaction_database db("tx_db_map");
     db.initialize_new();
     db.start();
-    index_type idx1 = db.store(info1, tx1);
-    index_type idx2 = db.store(info2, tx2);
-    BOOST_REQUIRE(idx1 == 0);
-    BOOST_REQUIRE(idx2 == 1);
+    db.store(info1, tx1);
+    db.store(info2, tx2);
     auto res1 = db.get(h1);
     BOOST_REQUIRE(hash_transaction(res1.transaction()) == h1);
     auto res2 = db.get(h2);
     BOOST_REQUIRE(hash_transaction(res2.transaction()) == h2);
-    auto res_idx2 = db.get(idx2);
-    BOOST_REQUIRE(hash_transaction(res_idx2.transaction()) == h2);
     db.sync();
 }
 
