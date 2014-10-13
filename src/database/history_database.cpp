@@ -86,7 +86,7 @@ void history_database::add_row(
     map_.add_row(key, write);
 }
 
-void history_database::add_spend(
+bool history_database::add_spend(
     const short_hash& key, const output_point& previous,
     const input_point& spend, const size_t spend_height)
 {
@@ -104,12 +104,12 @@ void history_database::add_spend(
         serial.write_hash(spend.hash);
         serial.write_4_bytes(spend.index);
         serial.write_4_bytes(spend_height);
-        return;
+        return true;
     }
-    BITCOIN_ASSERT(false);
+    return false;
 }
 
-void history_database::delete_spend(
+bool history_database::delete_spend(
     const short_hash& key, const input_point& spend)
 {
     const index_type start = map_.lookup(key);
@@ -124,9 +124,9 @@ void history_database::delete_spend(
             continue;
         auto serial = make_serializer(data + spend_height_offset);
         serial.write_4_bytes(0);
-        return;
+        return true;
     }
-    BITCOIN_ASSERT(false);
+    return false;
 }
 
 void history_database::delete_last_row(const short_hash& key)

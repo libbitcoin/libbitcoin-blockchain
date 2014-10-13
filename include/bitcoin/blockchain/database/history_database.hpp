@@ -67,15 +67,17 @@ public:
 
     /**
      * Add a spend to an existing row.
+     * Returns false if the previous_output does not exist.
      */
-    BCB_API void add_spend(
+    BCB_API bool add_spend(
         const short_hash& key, const output_point& previous,
         const input_point& spend, const size_t spend_height);
 
     /**
      * Delete a spend.
+     * Returns false if the previous_output does not exist.
      */
-    BCB_API void delete_spend(
+    BCB_API bool delete_spend(
         const short_hash& key, const input_point& spend);
 
     /**
