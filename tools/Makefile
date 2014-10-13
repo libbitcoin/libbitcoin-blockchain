@@ -73,11 +73,6 @@ history_db.o: history_db.cpp
 history_db: history_db.o
 	$(CXX) -o $@ $< $(LIBS)
 
-txdb.o: txdb.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS)
-txdb: txdb.o
-	$(CXX) -o $@ $< $(LIBS)
-
 spend_db.o: spend_db.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 spend_db: spend_db.o
