@@ -7,7 +7,7 @@ using namespace bc::chain;
 
 void show_help()
 {
-    std::cout << "Usage: transaction_db COMMAND MAP ROWS [ARGS]" << std::endl;
+    std::cout << "Usage: transaction_db COMMAND MAP [ARGS]" << std::endl;
     std::cout << std::endl;
     std::cout << "The most commonly used transaction_db commands are:"
         << std::endl;
