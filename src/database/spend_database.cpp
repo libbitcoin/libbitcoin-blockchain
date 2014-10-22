@@ -32,8 +32,8 @@ constexpr position_type alloc_offset = header_size;
 constexpr size_t value_size = hash_size + 4;
 constexpr size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 
-// Modify a hash with an integer producing a new hash in a
-// deterministic way suitable for use in a hashtable.
+// Create a new hash from a hash + index (a point)
+// deterministically suitable for use in a hashtable.
 hash_digest tweak(hash_digest hash, const uint32_t index)
 {
     auto serial = make_serializer(hash.begin());
