@@ -108,10 +108,12 @@ bool validate_block_impl::fetch_transaction(transaction_type& tx,
     size_t& tx_height, const hash_digest& tx_hash)
 {
     auto result = interface_.transactions.get(tx_hash);
-    tx_height = result.height();
-    if (!result || tx_after_fork(tx_height, fork_index_))
+    if (!result || tx_after_fork(result.height(), fork_index_))
+    {
         return fetch_orphan_transaction(tx, tx_height, tx_hash);
+    }
     tx = result.transaction();
+    tx_height = result.height();
     return true;
 }
 
