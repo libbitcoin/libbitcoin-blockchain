@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 {
     if (argc != 3 && argc != 4)
     {
-        std::cerr << "Usage: show_records FILENAME RECORD_SIZE [OFFSET]"
+        std::cerr << "Usage: count_records FILENAME RECORD_SIZE [OFFSET]"
             << std::endl;
         return 0;
     }
@@ -20,17 +20,12 @@ int main(int argc, char** argv)
     mmfile file(filename);
     if (!file.data())
     {
-        std::cerr << "show_records: file failed to open." << std::endl;
+        std::cerr << "count_records: file failed to open." << std::endl;
         return -1;
     }
     record_allocator recs(file, offset, record_size);
     recs.start();
-    for (size_t i = 0; i < recs.size(); ++i)
-    {
-        record_type rec = recs.get(i);
-        data_chunk data(rec, rec + record_size);
-        std::cout << i << ": " << data << std::endl;
-    }
+    std::cout << recs.size() << std::endl;
     return 0;
 }
 
