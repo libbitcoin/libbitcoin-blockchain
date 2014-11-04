@@ -124,9 +124,11 @@ private:
     bool do_fetch_stealth(const stealth_prefix& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height, size_t slock);
 
+    bool stopped_ = false;
+
     boost::asio::io_service& ios_;
     // Queue for writes to the blockchain.
-    async_strand strand_;
+    async_strand write_strand_;
     // Queue for serializing reorganization handler calls.
     async_strand reorg_strand_;
 

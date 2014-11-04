@@ -32,7 +32,8 @@ namespace libbitcoin {
 using std::placeholders::_1;
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
-  : ios_(pool.service()), strand_(pool), reorg_strand_(pool), seqlock_(0),
+  : ios_(pool.service()),
+    write_strand_(pool), reorg_strand_(pool), seqlock_(0),
     interface_(db_paths(prefix))
 {
     reorganize_subscriber_ =
@@ -93,6 +94,7 @@ void blockchain_impl::stop()
 {
     reorganize_subscriber_->relay(error::service_stopped,
         0, block_list(), block_list());
+    stopped_ = true;
 }
 
 void blockchain_impl::start_write()
@@ -105,13 +107,17 @@ void blockchain_impl::start_write()
 void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
-    strand_.randomly_queue(
+    write_strand_.randomly_queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
 void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
 {
+    // Without this, when we try to stop, blockchain continue
+    // to process the queue which might be quite long.
+    if (stopped_)
+        return;
     start_write();
     block_detail_ptr stored_detail =
         std::make_shared<block_detail>(block);
@@ -141,7 +147,7 @@ void blockchain_impl::import(const block_type& block,
         interface_.push(block);
         stop_write(handle_import, std::error_code());
     };
-    strand_.randomly_queue(do_import);
+    write_strand_.randomly_queue(do_import);
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
