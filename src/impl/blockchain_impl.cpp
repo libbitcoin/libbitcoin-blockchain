@@ -92,8 +92,12 @@ bool blockchain_impl::start()
 
 void blockchain_impl::stop()
 {
-    reorganize_subscriber_->relay(error::service_stopped,
-        0, block_list(), block_list());
+    auto notify_stopped = [this]()
+    {
+        reorganize_subscriber_->relay(error::service_stopped,
+            0, block_list(), block_list());
+    };
+    write_strand_.randomly_queue(notify_stopped);
     stopped_ = true;
 }
 

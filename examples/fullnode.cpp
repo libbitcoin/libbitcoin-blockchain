@@ -168,6 +168,9 @@ void fullnode::stop()
     if (ec)
         log_error() << "Problem stopping session: " << ec.message();
 
+    // Safely close blockchain database.
+    chain_.stop();
+
     // Stop threadpools.
     net_pool_.stop();
     disk_pool_.stop();
@@ -176,9 +179,6 @@ void fullnode::stop()
     net_pool_.join();
     disk_pool_.join();
     mem_pool_.join();
-
-    // Safely close blockchain database.
-    chain_.stop();
 }
 
 blockchain& fullnode::chain()
