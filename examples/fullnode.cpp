@@ -331,6 +331,7 @@ int main()
         fetch_history(app.chain(), app.indexer(),
             payaddr, history_fetched);
     }
+    log_info() << "Shutting down...";
     app.stop();
 
     return 0;
