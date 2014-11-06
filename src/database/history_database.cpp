@@ -64,7 +64,7 @@ void history_database::start()
     rows_.start();
 }
 
-void history_database::add_row(
+void history_database::add_output(
     const short_hash& key, const output_point& outpoint,
     const uint32_t output_height, const uint64_t value)
 {

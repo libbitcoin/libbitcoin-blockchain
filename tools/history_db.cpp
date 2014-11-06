@@ -12,7 +12,7 @@ void show_help()
     std::cout << "The most commonly used history_db commands are:" << std::endl;
     std::cout << "  initialize_new  "
         << "Create a new history_database" << std::endl;
-    std::cout << "  add_row         "
+    std::cout << "  add_output         "
         << "Add a row to a key" << std::endl;
     std::cout << "  add_spend       "
         << "Add a spend to a row" << std::endl;
@@ -31,7 +31,7 @@ void show_command_help(const std::string& command)
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "" << std::endl;
     }
-    else if (command == "add_row")
+    else if (command == "add_output")
     {
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY OUTPUT HEIGHT VALUE" << std::endl;
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
         db.initialize_new();
         return 0;
     }
-    else if (command == "add_row")
+    else if (command == "add_output")
     {
         if (args.size() != 4)
         {
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
         if (!parse_uint(value, args[3]))
             return -1;
         db.start();
-        db.add_row(key, outpoint, output_height, value);
+        db.add_output(key, outpoint, output_height, value);
         db.sync();
         return 0;
     }

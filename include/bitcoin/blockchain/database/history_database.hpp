@@ -52,7 +52,7 @@ public:
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_row(
+    BCB_API void add_output(
         const short_hash& key, const output_point& outpoint,
         const uint32_t output_height, const uint64_t value);
 

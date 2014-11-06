@@ -187,7 +187,7 @@ void db_interface::push_outputs(
         payment_address address;
         if (!extract(address, output.script))
             continue;
-        history.add_row(address.hash(),
+        history.add_output(address.hash(),
             outpoint, block_height, output.value);
     }
 }

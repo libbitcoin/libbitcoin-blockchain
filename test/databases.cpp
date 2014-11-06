@@ -324,14 +324,14 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     history_database db("history_db_lookup", "history_db_rows");
     db.initialize_new();
     db.start();
-    db.add_row(key1, out11, out_h11, val11);
-    db.add_row(key1, out12, out_h12, val12);
-    db.add_row(key1, out13, out_h13, val13);
+    db.add_output(key1, out11, out_h11, val11);
+    db.add_output(key1, out12, out_h12, val12);
+    db.add_output(key1, out13, out_h13, val13);
     db.add_spend(key1, out11, spend11, spend_h11);
     db.add_spend(key1, out13, spend13, spend_h13);
 
-    db.add_row(key2, out21, out_h21, val21);
-    db.add_row(key2, out22, out_h22, val22);
+    db.add_output(key2, out21, out_h21, val21);
+    db.add_output(key2, out22, out_h22, val22);
 
     auto fetch_s1 = [=](const history_list& history)
     {
@@ -406,8 +406,8 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     auto res_no_sp = db.get(key2);
     no_spend(res_no_sp);
 
-    db.add_row(key3, out31, out_h31, val31);
-    db.add_row(key4, out31, out_h41, val41);
+    db.add_output(key3, out31, out_h31, val31);
+    db.add_output(key4, out31, out_h41, val41);
     auto has_one_row = [=](const history_list& history)
     {
         BOOST_REQUIRE(history.size() == 1);
