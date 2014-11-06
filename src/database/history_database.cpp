@@ -103,12 +103,12 @@ void history_database::delete_last_row(const short_hash& key)
 
 // Each row contains a start byte which signifies whether
 // it is an output or a spend.
-history_row_id marker_to_id(uint8_t marker)
+point_ident marker_to_id(uint8_t marker)
 {
     BITCOIN_ASSERT(marker == 0 || marker == 1);
     if (marker == 0)
-        return history_row_id::output;
-    return history_row_id::spend;
+        return point_ident::output;
+    return point_ident::spend;
 }
 
 history_list history_database::get(const short_hash& key,
