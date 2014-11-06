@@ -277,8 +277,7 @@ void fullnode::new_unconfirm_valid_tx(
     }
 }
 
-void history_fetched(const std::error_code& ec,
-    const blockchain::history_list& history, const index_type stop)
+void history_fetched(const std::error_code& ec, const history_list& history)
 {
     if (ec)
     {
@@ -288,15 +287,12 @@ void history_fetched(const std::error_code& ec,
     log_info() << "Query fine.";
     for (const auto& row: history)
     {
-        log_info() << "output: " << row.output
-            << "  height: " << row.output_height;
-        log_info() << "value:  " << row.value;
-        auto l = log_info();
-        l << "spend:  ";
-        if (row.spend.hash == null_hash)
-            l << "Unspent";
-        else
-            l << row.spend << "  height: " << row.spend_height;
+        if (row.id == point_ident::output)
+            std::cout << "OUTPUT: ";
+        else //if (row.id == point_ident::spend)
+            std::cout << "SPEND:  ";
+        std::cout << row.point.hash << ":" << row.point.index
+            << " " << row.height << " " << row.value << std::endl;
     }
 }
 
