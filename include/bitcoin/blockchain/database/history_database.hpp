@@ -57,8 +57,8 @@ public:
         const uint32_t output_height, const uint64_t value);
 
     /**
-     * Add a spend to an existing row.
-     * Returns false if the previous_output does not exist.
+     * Add another row value to the key. If key doesn't exist then
+     * it will be created.
      */
     BCB_API void add_spend(
         const short_hash& key, const output_point& previous,

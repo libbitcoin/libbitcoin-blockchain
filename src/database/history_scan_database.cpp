@@ -27,17 +27,6 @@
 namespace libbitcoin {
     namespace chain {
 
-uint64_t compute_input_checksum(const output_point& previous_output)
-{
-    constexpr size_t total_data_size = 32 + 4;
-    data_chunk data(total_data_size);
-    auto serial = make_serializer(data.begin());
-    serial.write_hash(previous_output.hash);
-    serial.write_4_bytes(previous_output.index);
-    const hash_digest checksum_hash = sha256_hash(data);
-    return from_little_endian<uint64_t>(checksum_hash.begin());
-}
-
 std::string settings_path(const std::string& prefix)
 {
     using boost::filesystem::path;
@@ -97,8 +86,23 @@ history_scan_database::history_scan_database(const std::string& prefix)
     }
 }
 
+void history_scan_database::add_output(
+    const address_bitset& key, const output_point& outpoint,
+    const uint32_t output_height, const uint64_t value)
+{
+    add(key, 0, outpoint, output_height, value);
+}
+
+void history_scan_database::add_spend(
+    const address_bitset& key, const output_point& previous,
+    const input_point& spend, const size_t spend_height)
+{
+    add(key, 1, spend, spend_height, spend_checksum(previous));
+}
+
 void history_scan_database::add(const address_bitset& key,
-    const point_type& point, uint32_t block_height, uint64_t value)
+    const uint8_t marker, const point_type& point,
+    uint32_t block_height, uint64_t value)
 {
     BITCOIN_ASSERT(key.size() >= settings_.sharded_bitsize);
     // Both add() and sync() must have identical lookup of shards.
@@ -110,12 +114,9 @@ void history_scan_database::add(const address_bitset& key,
 #endif
     data_chunk row_data(settings_.row_value_size);
     auto serial = make_serializer(row_data.begin());
-    if (point.ident == point_ident_type::input)
-        serial.write_byte(0);
-    else
-        serial.write_byte(1);
-    serial.write_hash(point.point.hash);
-    serial.write_4_bytes(point.point.index);
+    serial.write_byte(marker);
+    serial.write_hash(point.hash);
+    serial.write_4_bytes(point.index);
     serial.write_4_bytes(block_height);
     serial.write_8_bytes(value);
     BITCOIN_ASSERT(serial.iterator() ==
@@ -135,27 +136,36 @@ void history_scan_database::unlink(size_t height)
         shard.unlink(height);
 }
 
+// Each row contains a start byte which signifies whether
+// it is an output or a spend.
+inline point_ident marker_to_id(uint8_t marker)
+{
+    BITCOIN_ASSERT(marker == 0 || marker == 1);
+    if (marker == 0)
+        return point_ident::output;
+    return point_ident::spend;
+}
+
 void history_scan_database::scan(const address_bitset& key,
     read_function read_func, size_t from_height) const
 {
     BITCOIN_ASSERT(key.size() >= settings_.sharded_bitsize);
     const hsdb_shard& shard = lookup(key);
     address_bitset sub_key = drop_prefix(key);
-    auto read_wrapped = [this, &read_func](const uint8_t* data)
+    auto read_wrapped = [&read_func](const uint8_t* data)
     {
-        auto deserial = make_deserializer(
-            data, data + settings_.row_value_size);
-        point_type point;
-        if (deserial.read_byte() == 0)
-            point.ident = point_ident_type::input;
-        else
-            point.ident = point_ident_type::output;
-        point.point.hash = deserial.read_hash();
-        point.point.index = deserial.read_4_bytes();
-        uint32_t height = deserial.read_4_bytes();
-        // Checksum for input, value for output.
-        uint64_t value = deserial.read_8_bytes();
-        read_func(point, height, value);
+        auto deserial = make_deserializer_unsafe(data);
+        history_row row{
+            // output or spend?
+            marker_to_id(deserial.read_byte()),
+            // point
+            deserial.read_hash(),
+            deserial.read_4_bytes(),
+            // height
+            deserial.read_4_bytes(),
+            // value or checksum
+            deserial.read_8_bytes()};
+        read_func(row);
     };
     shard.scan(sub_key, read_wrapped, from_height);
 }
