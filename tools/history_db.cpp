@@ -239,9 +239,9 @@ int main(int argc, char** argv)
         auto history = db.get(key, limit, from_height);
         for (const auto& row: history)
         {
-            if (row.id == history_row_id::output)
+            if (row.id == point_ident::output)
                 std::cout << "OUTPUT: ";
-            else //if (row.id == history_row_id::spend)
+            else //if (row.id == point_ident::spend)
                 std::cout << "SPEND:  ";
             std::cout << row.point.hash << ":" << row.point.index
                 << " " << row.height << " " << row.value << std::endl;

@@ -337,31 +337,31 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     {
         BOOST_REQUIRE(history.size() == 5);
 
-        BOOST_REQUIRE(history[4].id == history_row_id::output);
+        BOOST_REQUIRE(history[4].id == point_ident::output);
         BOOST_REQUIRE(history[4].point.hash == out11.hash);
         BOOST_REQUIRE(history[4].point.index == out11.index);
         BOOST_REQUIRE(history[4].height == out_h11);
         BOOST_REQUIRE(history[4].value == val11);
 
-        BOOST_REQUIRE(history[3].id == history_row_id::output);
+        BOOST_REQUIRE(history[3].id == point_ident::output);
         BOOST_REQUIRE(history[3].point.hash == out12.hash);
         BOOST_REQUIRE(history[3].point.index == out12.index);
         BOOST_REQUIRE(history[3].height == out_h12);
         BOOST_REQUIRE(history[3].value == val12);
 
-        BOOST_REQUIRE(history[2].id == history_row_id::output);
+        BOOST_REQUIRE(history[2].id == point_ident::output);
         BOOST_REQUIRE(history[2].point.hash == out13.hash);
         BOOST_REQUIRE(history[2].point.index == out13.index);
         BOOST_REQUIRE(history[2].height == out_h13);
         BOOST_REQUIRE(history[2].value == val13);
 
-        BOOST_REQUIRE(history[1].id == history_row_id::spend);
+        BOOST_REQUIRE(history[1].id == point_ident::spend);
         BOOST_REQUIRE(history[1].point.hash == spend11.hash);
         BOOST_REQUIRE(history[1].point.index == spend11.index);
         BOOST_REQUIRE(history[1].height == spend_h11);
         BOOST_REQUIRE(history[1].previous_checksum == spend_checksum(out11));
 
-        BOOST_REQUIRE(history[0].id == history_row_id::spend);
+        BOOST_REQUIRE(history[0].id == point_ident::spend);
         BOOST_REQUIRE(history[0].point.hash == spend13.hash);
         BOOST_REQUIRE(history[0].point.index == spend13.index);
         BOOST_REQUIRE(history[0].height == spend_h13);
@@ -372,8 +372,8 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     auto no_spend = [=](const history_list& history)
     {
         BOOST_REQUIRE(history.size() == 2);
-        BOOST_REQUIRE(history[0].id == history_row_id::output);
-        BOOST_REQUIRE(history[1].id == history_row_id::output);
+        BOOST_REQUIRE(history[0].id == point_ident::output);
+        BOOST_REQUIRE(history[1].id == point_ident::output);
     };
     auto res_ns = db.get(key2);
     no_spend(res_ns);
@@ -382,19 +382,19 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     {
         BOOST_REQUIRE(history.size() == 3);
 
-        BOOST_REQUIRE(history[0].id == history_row_id::spend);
+        BOOST_REQUIRE(history[0].id == point_ident::spend);
         BOOST_REQUIRE(history[0].point.hash == spend22.hash);
         BOOST_REQUIRE(history[0].point.index == spend22.index);
         BOOST_REQUIRE(history[0].height == spend_h22);
         BOOST_REQUIRE(history[0].previous_checksum == spend_checksum(out22));
 
-        BOOST_REQUIRE(history[1].id == history_row_id::output);
+        BOOST_REQUIRE(history[1].id == point_ident::output);
         BOOST_REQUIRE(history[1].point.hash == out22.hash);
         BOOST_REQUIRE(history[1].point.index == out22.index);
         BOOST_REQUIRE(history[1].height == out_h22);
         BOOST_REQUIRE(history[1].value == val22);
 
-        BOOST_REQUIRE(history[2].id == history_row_id::output);
+        BOOST_REQUIRE(history[2].id == point_ident::output);
         BOOST_REQUIRE(history[2].point.hash == out21.hash);
         BOOST_REQUIRE(history[2].point.index == out21.index);
         BOOST_REQUIRE(history[2].height == out_h21);
