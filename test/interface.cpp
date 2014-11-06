@@ -67,14 +67,14 @@ void test_block_exists(const db_interface& interface,
                 payment_address address;
                 if (!extract(address, input.script))
                     continue;
-                auto r_history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash());
                 bool found = false;
-                for (const auto row: r_history.history)
+                for (const auto row: history)
                 {
-                    if (row.spend.hash == spend.hash &&
-                        row.spend.index == spend.index)
+                    if (row.point.hash == spend.hash &&
+                        row.point.index == spend.index)
                     {
-                        BOOST_REQUIRE(row.spend_height == height);
+                        BOOST_REQUIRE(row.height == height);
                         found = true;
                         break;
                     }
@@ -90,14 +90,14 @@ void test_block_exists(const db_interface& interface,
             payment_address address;
             if (!extract(address, output.script))
                 continue;
-            auto r_history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash());
             bool found = false;
-            for (const auto row: r_history.history)
+            for (const auto row: history)
             {
-                if (row.output.hash == outpoint.hash &&
-                    row.output.index == outpoint.index)
+                if (row.point.hash == outpoint.hash &&
+                    row.point.index == outpoint.index)
                 {
-                    BOOST_REQUIRE(row.output_height == height);
+                    BOOST_REQUIRE(row.height == height);
                     BOOST_REQUIRE(row.value == output.value);
                     found = true;
                     break;
@@ -131,12 +131,12 @@ void test_block_not_exists(
                 payment_address address;
                 if (!extract(address, input.script))
                     continue;
-                auto r_history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash());
                 bool found = false;
-                for (const auto row: r_history.history)
+                for (const auto row: history)
                 {
-                    if (row.spend.hash == spend.hash &&
-                        row.spend.index == spend.index)
+                    if (row.point.hash == spend.hash &&
+                        row.point.index == spend.index)
                     {
                         found = true;
                         break;
@@ -153,12 +153,12 @@ void test_block_not_exists(
             payment_address address;
             if (!extract(address, output.script))
                 continue;
-            auto r_history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash());
             bool found = false;
-            for (const auto row: r_history.history)
+            for (const auto row: history)
             {
-                if (row.output.hash == outpoint.hash &&
-                    row.output.index == outpoint.index)
+                if (row.point.hash == outpoint.hash &&
+                    row.point.index == outpoint.index)
                 {
                     found = true;
                     break;

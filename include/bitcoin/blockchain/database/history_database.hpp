@@ -28,15 +28,6 @@
 namespace libbitcoin {
     namespace chain {
 
-typedef blockchain::history_row history_row;
-typedef blockchain::history_list history_list;
-
-struct history_result
-{
-    history_list history;
-    index_type stop;
-};
-
 /**
  * history_database is a multimap where the key is the Bitcoin address hash,
  * which returns several rows giving the history for that address.
@@ -69,16 +60,9 @@ public:
      * Add a spend to an existing row.
      * Returns false if the previous_output does not exist.
      */
-    BCB_API bool add_spend(
+    BCB_API void add_spend(
         const short_hash& key, const output_point& previous,
         const input_point& spend, const size_t spend_height);
-
-    /**
-     * Delete a spend.
-     * Returns false if the previous_output does not exist.
-     */
-    BCB_API bool delete_spend(
-        const short_hash& key, const input_point& spend);
 
     /**
      * Delete the last row that was added to key.
@@ -90,8 +74,8 @@ public:
      * spends and the block heights associated with a Bitcoin address.
      * The returned history is a list of rows and a stop index.
      */
-    BCB_API history_result get(const short_hash& key,
-        const size_t limit=0, index_type start=0) const;
+    BCB_API history_list get(const short_hash& key,
+        const size_t limit=0, const size_t from_height=0) const;
 
     /**
      * Synchonise with disk.

@@ -142,11 +142,12 @@ block_type db_interface::pop()
         BITCOIN_ASSERT(tx_result.height() == block_height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
         const transaction_type tx = tx_result.transaction();
-        // Remove inputs
-        if (!is_coinbase(tx))
-            pop_inputs(tx_hash, tx.inputs);
+        // Do things in reverse so pop outputs before inputs.
         // Remove outputs
         pop_outputs(tx.outputs);
+        // Remove inputs
+        if (!is_coinbase(tx))
+            pop_inputs(tx.inputs);
         // Add transaction to result
         result.transactions.push_back(tx);
     }
@@ -192,20 +193,18 @@ void db_interface::push_outputs(
 }
 
 void db_interface::pop_inputs(
-    const hash_digest& tx_hash,
     const transaction_input_list& inputs)
 {
     // Loop in reverse.
     for (int i = inputs.size() - 1; i >= 0; --i)
     {
         const transaction_input_type& input = inputs[i];
-        const input_point spend{tx_hash, static_cast<uint32_t>(i)};
         spends.remove(input.previous_output);
         // Try to extract an address.
         payment_address address;
         if (!extract(address, input.script))
             continue;
-        history.delete_spend(address.hash(), spend);
+        history.delete_last_row(address.hash());
     }
 }
 

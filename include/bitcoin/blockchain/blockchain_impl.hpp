@@ -79,7 +79,8 @@ public:
         fetch_handler_spend handle_fetch);
     // fetch outputs, values and spends for an address.
     BCB_API void fetch_history(const payment_address& address,
-        fetch_handler_history handle_fetch, size_t from_height=0);
+        fetch_handler_history handle_fetch,
+        const size_t limit=0, const size_t from_height=0);
     // fetch stealth results.
     BCB_API void fetch_stealth(const stealth_prefix& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height=0);

@@ -79,7 +79,6 @@ private:
         const transaction_output_list& outputs);
 
     void pop_inputs(
-        const hash_digest& tx_hash,
         const transaction_input_list& inputs);
     void pop_outputs(
         const transaction_output_list& outputs);

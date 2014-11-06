@@ -318,13 +318,14 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 }
 
 void blockchain_impl::fetch_history(const payment_address& address,
-    fetch_handler_history handle_fetch, size_t from_height)
+    fetch_handler_history handle_fetch,
+    const size_t limit, const size_t from_height)
 {
-    auto do_fetch = [this, address, handle_fetch, from_height](size_t slock)
+    auto do_fetch = [=](size_t slock)
     {
-        auto result = interface_.history.get(address.hash());
-        return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.history, result.stop);
+        auto history = interface_.history.get(
+            address.hash(), limit, from_height);
+        return finish_fetch(slock, handle_fetch, std::error_code(), history);
     };
     fetch(do_fetch);
 }
