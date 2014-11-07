@@ -48,7 +48,8 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
     if (body.empty())
         return;
     std::ostringstream output;
-    output << level_repr(level);
+    const std::time_t unix_time = std::time(nullptr);
+    output << unix_time << " " << level_repr(level);
     if (!domain.empty())
         output << " [" << domain << "]";
     output << ": " << body;
