@@ -39,7 +39,8 @@ public:
         const std::error_code&, size_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
-    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix);
+    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
+        const db_active_heights &active_heights=db_active_heights{0});
     BCB_API ~blockchain_impl();
 
     // Non-copyable

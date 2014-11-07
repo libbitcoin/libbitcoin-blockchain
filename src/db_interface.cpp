@@ -53,11 +53,13 @@ void db_paths::touch_all() const
     touch_file(history_rows);
 }
 
-db_interface::db_interface(const db_paths& paths)
+db_interface::db_interface(const db_paths& paths,
+    const db_active_heights &active_heights)
   : blocks(paths.blocks_lookup, paths.blocks_rows),
     spends(paths.spends),
     transactions(paths.transactions),
-    history(paths.history_lookup, paths.history_rows)
+    history(paths.history_lookup, paths.history_rows),
+    active_heights_(active_heights)
 {
 }
 
@@ -144,10 +146,10 @@ block_type db_interface::pop()
         const transaction_type tx = tx_result.transaction();
         // Do things in reverse so pop outputs before inputs.
         // Remove outputs
-        pop_outputs(tx.outputs);
+        pop_outputs(block_height, tx.outputs);
         // Remove inputs
         if (!is_coinbase(tx))
-            pop_inputs(tx.inputs);
+            pop_inputs(block_height, tx.inputs);
         // Add transaction to result
         result.transactions.push_back(tx);
     }
@@ -166,6 +168,9 @@ void db_interface::push_inputs(
         const transaction_input_type& input = inputs[i];
         const input_point spend{tx_hash, i};
         spends.store(input.previous_output, spend);
+        // Skip history if not at the right level yet.
+        if (block_height < active_heights_.history)
+            continue;
         // Try to extract an address.
         payment_address address;
         if (!extract(address, input.script))
@@ -183,6 +188,9 @@ void db_interface::push_outputs(
     {
         const transaction_output_type& output = outputs[i];
         const output_point outpoint{tx_hash, i};
+        // Skip history if not at the right level yet.
+        if (block_height < active_heights_.history)
+            continue;
         // Try to extract an address.
         payment_address address;
         if (!extract(address, output.script))
@@ -193,6 +201,7 @@ void db_interface::push_outputs(
 }
 
 void db_interface::pop_inputs(
+    const size_t block_height,
     const transaction_input_list& inputs)
 {
     // Loop in reverse.
@@ -200,6 +209,9 @@ void db_interface::pop_inputs(
     {
         const transaction_input_type& input = inputs[i];
         spends.remove(input.previous_output);
+        // Skip history if not at the right level yet.
+        if (block_height < active_heights_.history)
+            continue;
         // Try to extract an address.
         payment_address address;
         if (!extract(address, input.script))
@@ -209,26 +221,22 @@ void db_interface::pop_inputs(
 }
 
 void db_interface::pop_outputs(
+    const size_t block_height,
     const transaction_output_list& outputs)
 {
     // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)
     {
         const transaction_output_type& output = outputs[i];
+        // Skip history if not at the right level yet.
+        if (block_height < active_heights_.history)
+            continue;
         // Try to extract an address.
         payment_address address;
         if (!extract(address, output.script))
             continue;
         history.delete_last_row(address.hash());
     }
-}
-
-void initialize_blockchain(const std::string& prefix)
-{
-    db_paths paths(prefix);
-    paths.touch_all();
-    db_interface interface(paths);
-    interface.initialize_new();
 }
 
     } // namespace chain

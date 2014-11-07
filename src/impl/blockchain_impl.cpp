@@ -31,10 +31,11 @@ namespace libbitcoin {
 
 using std::placeholders::_1;
 
-blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
+blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
+    const db_active_heights &active_heights)
   : ios_(pool.service()),
     write_strand_(pool), reorg_strand_(pool), seqlock_(0),
-    interface_(db_paths(prefix))
+    interface_(db_paths(prefix), active_heights)
 {
     reorganize_subscriber_ =
         std::make_shared<reorganize_subscriber_type>(pool);
