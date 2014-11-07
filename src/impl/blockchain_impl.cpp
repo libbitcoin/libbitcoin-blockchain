@@ -324,7 +324,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
     {
         auto result = interface_.history.get(address.hash());
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.history, result.stop);
+            std::error_code(), result.history);
     };
     fetch(do_fetch);
 }

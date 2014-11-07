@@ -22,14 +22,12 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/database/multimap_records.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
-
-typedef blockchain::history_row history_row;
-typedef blockchain::history_list history_list;
 
 struct history_result
 {
