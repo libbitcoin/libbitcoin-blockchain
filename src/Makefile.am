@@ -6,6 +6,9 @@ AM_CPPFLAGS = \
 
 lib_LTLIBRARIES = libbitcoin-blockchain.la
 libbitcoin_blockchain_la_SOURCES = \
+    blockchain.cpp \
+    transaction_pool.cpp \
+    validate.cpp \
     organizer.cpp \
 	db_interface.cpp \
     database/stealth_database.cpp \

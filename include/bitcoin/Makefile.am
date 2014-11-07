@@ -5,9 +5,12 @@ bitcoin_include_HEADERS = \
 bitcoin_blockchain_includedir = $(includedir)/bitcoin/blockchain
 bitcoin_blockchain_include_HEADERS = \
     blockchain/define.hpp \
+    blockchain/blockchain.hpp \
     blockchain/blockchain_impl.hpp \
     blockchain/db_interface.hpp \
-    blockchain/organizer.hpp
+    blockchain/organizer.hpp \
+    blockchain/transaction_pool.hpp \
+    blockchain/validate.hpp
 
 bitcoin_blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
 bitcoin_blockchain_impl_include_HEADERS = \

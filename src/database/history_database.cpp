@@ -140,15 +140,18 @@ history_result history_database::get(const short_hash& key,
     history_list history;
     auto read_row = [&history](const uint8_t* data)
     {
-        auto deserial = make_deserializer_unsafe(data);
-        return history_row{
-            deserial.read_hash(),
-            deserial.read_4_bytes(),
-            deserial.read_4_bytes(),
-            deserial.read_8_bytes(),
-            deserial.read_hash(),
-            deserial.read_4_bytes(),
-            deserial.read_4_bytes()};
+// TODO: fix serialization due to history_row definition change.
+//        auto deserial = make_deserializer_unsafe(data);
+//        return history_row{
+//            deserial.read_hash(),
+//            deserial.read_4_bytes(),
+//            deserial.read_4_bytes(),
+//            deserial.read_8_bytes(),
+//            deserial.read_hash(),
+//            deserial.read_4_bytes(),
+//            deserial.read_4_bytes()};
+
+    	return history_row{};
     };
     index_type stop = 0;
     if (!start)
