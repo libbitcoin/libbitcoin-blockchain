@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk_array.hpp" />
@@ -103,11 +104,14 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\validate_block_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_scan_database.cpp" />
@@ -127,6 +131,8 @@
     <ClCompile Include="..\..\..\..\src\impl\simple_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\impl\validate_block_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
+    <ClCompile Include="..\..\..\..\src\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\validate.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionSettings">
