@@ -1,4 +1,4 @@
-doc_DATA = README INSTALL COPYING
+doc_DATA = README.md INSTALL COPYING
 
 pkgconfig_DATA = libbitcoin-blockchain.pc
 
