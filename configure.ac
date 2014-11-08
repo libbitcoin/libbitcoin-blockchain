@@ -2,7 +2,7 @@
 AC_PREREQ([2.65])
 
 # Process command-line arguments and perform initialization and verification.
-AC_INIT([libbitcoin-blockchain], [2.5.0], [genjix@riseup.net])
+AC_INIT([libbitcoin-blockchain], [2.0.0], [genjix@riseup.net])
 
 # Do compilation tests.
 AC_LANG(C++)
@@ -14,7 +14,8 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Run macros for operation of generated Makefiles, enable non-recursive make.
-AM_INIT_AUTOMAKE([subdir-objects])
+# AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE()
 
 # Enable C and Posix extensions that may be disabled on certain platforms.
 AC_USE_SYSTEM_EXTENSIONS
@@ -91,7 +92,7 @@ AC_MSG_RESULT($with_tests)
 AX_BOOST_BASE([1.49],,
     [AC_MSG_ERROR([Boost 1.49 or later is required but was not found.])])
 
-# Require bitcoin, protobuf and czmqpp package min versions.
+# Require bitcoin min version.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.7.0])
 

@@ -15,4 +15,4 @@ Requires: libbitcoin >= 2.7.0
 Cflags: -I${includedir} -std=c++11
 
 # Our own lib and any we require that do not publish package configuration.
-Libs: -L${libdir} -lbitcoin-blockchain -lgmp
+Libs: -L${libdir} -lbitcoin-blockchain
