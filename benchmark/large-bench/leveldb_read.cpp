@@ -1,5 +1,6 @@
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/utility/timed_section.hpp>
+#include <leveldb/db.h>
+#include <bitcoin/bitcoin/utility/timed_section.hpp>
 #include "iterate.hpp"
 
 leveldb::Options create_open_options()

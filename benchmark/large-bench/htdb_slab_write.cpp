@@ -1,21 +1,6 @@
 #include <boost/lexical_cast.hpp>
 #include "iterate.hpp"
 
-leveldb::Options create_open_options()
-{
-    leveldb::Options options;
-    // Open LevelDB databases
-    const size_t cache_size = 1 << 20;
-    // block_cache, filter_policy and comparator must be deleted after use!
-    //options.block_cache = leveldb::NewLRUCache(cache_size / 2);
-    options.write_buffer_size = cache_size / 4;
-    //options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-    options.compression = leveldb::kNoCompression;
-    options.max_open_files = 256;
-    options.create_if_missing = true;
-    return options;
-}
-
 void show_usage()
 {
     std::cerr << "Usage: htdb_slab_write BUCKETS" << std::endl;

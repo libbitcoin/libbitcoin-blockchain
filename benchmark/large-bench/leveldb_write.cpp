@@ -1,3 +1,4 @@
+#include <leveldb/db.h>
 #include "iterate.hpp"
 
 leveldb::Options create_open_options()

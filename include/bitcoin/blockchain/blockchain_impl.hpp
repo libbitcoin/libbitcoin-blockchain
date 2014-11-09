@@ -39,7 +39,8 @@ public:
         const std::error_code&, size_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
-    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix);
+    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
+        const db_active_heights &active_heights=db_active_heights{0});
     BCB_API ~blockchain_impl();
 
     // Non-copyable
@@ -79,7 +80,8 @@ public:
         fetch_handler_spend handle_fetch);
     // fetch outputs, values and spends for an address.
     BCB_API void fetch_history(const payment_address& address,
-        fetch_handler_history handle_fetch, size_t from_height=0);
+        fetch_handler_history handle_fetch,
+        const size_t limit=0, const size_t from_height=0);
     // fetch stealth results.
     BCB_API void fetch_stealth(const stealth_prefix& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height=0);

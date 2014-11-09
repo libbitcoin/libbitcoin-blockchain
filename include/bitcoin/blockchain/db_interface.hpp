@@ -46,10 +46,18 @@ struct db_paths
     std::string history_rows;
 };
 
+constexpr size_t disabled_database = std::numeric_limits<size_t>::max();
+
+struct db_active_heights
+{
+    const size_t history;
+};
+
 class db_interface
 {
 public:
-    BCB_API db_interface(const db_paths& paths);
+    BCB_API db_interface(const db_paths& paths,
+        const db_active_heights &active_heights);
 
     BCB_API void initialize_new();
     BCB_API void start();
@@ -79,17 +87,14 @@ private:
         const transaction_output_list& outputs);
 
     void pop_inputs(
-        const hash_digest& tx_hash,
+        const size_t block_height,
         const transaction_input_list& inputs);
     void pop_outputs(
+        const size_t block_height,
         const transaction_output_list& outputs);
-};
 
-/**
- * Convenience function to create a new blockchain with a given
- * prefix and default paths.
- */
-BCB_API void initialize_blockchain(const std::string& prefix);
+    const db_active_heights active_heights_;
+};
 
     } // namespace chain
 } // namespace libbitcoin

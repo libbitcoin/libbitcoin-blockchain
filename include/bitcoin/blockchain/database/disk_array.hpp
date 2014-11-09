@@ -22,6 +22,7 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {

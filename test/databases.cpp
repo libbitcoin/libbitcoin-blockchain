@@ -324,87 +324,107 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     history_database db("history_db_lookup", "history_db_rows");
     db.initialize_new();
     db.start();
-    db.add_row(key1, out11, out_h11, val11);
-    db.add_row(key1, out12, out_h12, val12);
-    db.add_row(key1, out13, out_h13, val13);
+    db.add_output(key1, out11, out_h11, val11);
+    db.add_output(key1, out12, out_h12, val12);
+    db.add_output(key1, out13, out_h13, val13);
     db.add_spend(key1, out11, spend11, spend_h11);
     db.add_spend(key1, out13, spend13, spend_h13);
 
-    db.add_row(key2, out21, out_h21, val21);
-    db.add_row(key2, out22, out_h22, val22);
+    db.add_output(key2, out21, out_h21, val21);
+    db.add_output(key2, out22, out_h22, val22);
 
-    auto fetch_s1 = [=](const blockchain::history_list& history)
+    auto fetch_s1 = [=](const history_list& history)
     {
-        BOOST_REQUIRE(history.size() == 3);
-        BOOST_REQUIRE(history[2].output.hash == out11.hash);
-        BOOST_REQUIRE(history[2].output.index == out11.index);
-        BOOST_REQUIRE(history[2].output_height == out_h11);
-        BOOST_REQUIRE(history[2].value == val11);
-        BOOST_REQUIRE(history[2].spend.hash == spend11.hash);
-        BOOST_REQUIRE(history[2].spend.index == spend11.index);
-        BOOST_REQUIRE(history[2].spend_height == spend_h11);
+        BOOST_REQUIRE(history.size() == 5);
 
-        BOOST_REQUIRE(history[1].output.hash == out12.hash);
-        BOOST_REQUIRE(history[1].output.index == out12.index);
-        BOOST_REQUIRE(history[1].output_height == out_h12);
-        BOOST_REQUIRE(history[1].value == val12);
-        BOOST_REQUIRE(history[1].spend_height == 0);
+        BOOST_REQUIRE(history[4].id == point_ident::output);
+        BOOST_REQUIRE(history[4].point.hash == out11.hash);
+        BOOST_REQUIRE(history[4].point.index == out11.index);
+        BOOST_REQUIRE(history[4].height == out_h11);
+        BOOST_REQUIRE(history[4].value == val11);
 
-        BOOST_REQUIRE(history[0].output.hash == out13.hash);
-        BOOST_REQUIRE(history[0].output.index == out13.index);
-        BOOST_REQUIRE(history[0].output_height == out_h13);
-        BOOST_REQUIRE(history[0].value == val13);
-        BOOST_REQUIRE(history[0].spend.hash == spend13.hash);
-        BOOST_REQUIRE(history[0].spend.index == spend13.index);
-        BOOST_REQUIRE(history[0].spend_height == spend_h13);
+        BOOST_REQUIRE(history[3].id == point_ident::output);
+        BOOST_REQUIRE(history[3].point.hash == out12.hash);
+        BOOST_REQUIRE(history[3].point.index == out12.index);
+        BOOST_REQUIRE(history[3].height == out_h12);
+        BOOST_REQUIRE(history[3].value == val12);
+
+        BOOST_REQUIRE(history[2].id == point_ident::output);
+        BOOST_REQUIRE(history[2].point.hash == out13.hash);
+        BOOST_REQUIRE(history[2].point.index == out13.index);
+        BOOST_REQUIRE(history[2].height == out_h13);
+        BOOST_REQUIRE(history[2].value == val13);
+
+        BOOST_REQUIRE(history[1].id == point_ident::spend);
+        BOOST_REQUIRE(history[1].point.hash == spend11.hash);
+        BOOST_REQUIRE(history[1].point.index == spend11.index);
+        BOOST_REQUIRE(history[1].height == spend_h11);
+        BOOST_REQUIRE(history[1].previous_checksum == spend_checksum(out11));
+
+        BOOST_REQUIRE(history[0].id == point_ident::spend);
+        BOOST_REQUIRE(history[0].point.hash == spend13.hash);
+        BOOST_REQUIRE(history[0].point.index == spend13.index);
+        BOOST_REQUIRE(history[0].height == spend_h13);
+        BOOST_REQUIRE(history[0].previous_checksum == spend_checksum(out13));
     };
     auto res_s1 = db.get(key1);
-    fetch_s1(res_s1.history);
-    auto no_spend = [=](const blockchain::history_list& history)
+    fetch_s1(res_s1);
+    auto no_spend = [=](const history_list& history)
     {
-        BOOST_REQUIRE(history[0].spend_height == 0);
-        BOOST_REQUIRE(history[1].spend_height == 0);
+        BOOST_REQUIRE(history.size() == 2);
+        BOOST_REQUIRE(history[0].id == point_ident::output);
+        BOOST_REQUIRE(history[1].id == point_ident::output);
     };
     auto res_ns = db.get(key2);
-    no_spend(res_ns.history);
+    no_spend(res_ns);
     db.add_spend(key2, out22, spend22, spend_h22);
-    auto has_spend = [=](const blockchain::history_list& history)
+    auto has_spend = [=](const history_list& history)
     {
-        BOOST_REQUIRE(history[0].output.hash == out22.hash);
-        BOOST_REQUIRE(history[0].output.index == out22.index);
-        BOOST_REQUIRE(history[0].output_height == out_h22);
-        BOOST_REQUIRE(history[0].value == val22);
-        BOOST_REQUIRE(history[0].spend.hash == spend22.hash);
-        BOOST_REQUIRE(history[0].spend.index == spend22.index);
-        BOOST_REQUIRE(history[0].spend_height == spend_h22);
+        BOOST_REQUIRE(history.size() == 3);
 
-        BOOST_REQUIRE(history[1].spend_height == 0);
+        BOOST_REQUIRE(history[0].id == point_ident::spend);
+        BOOST_REQUIRE(history[0].point.hash == spend22.hash);
+        BOOST_REQUIRE(history[0].point.index == spend22.index);
+        BOOST_REQUIRE(history[0].height == spend_h22);
+        BOOST_REQUIRE(history[0].previous_checksum == spend_checksum(out22));
+
+        BOOST_REQUIRE(history[1].id == point_ident::output);
+        BOOST_REQUIRE(history[1].point.hash == out22.hash);
+        BOOST_REQUIRE(history[1].point.index == out22.index);
+        BOOST_REQUIRE(history[1].height == out_h22);
+        BOOST_REQUIRE(history[1].value == val22);
+
+        BOOST_REQUIRE(history[2].id == point_ident::output);
+        BOOST_REQUIRE(history[2].point.hash == out21.hash);
+        BOOST_REQUIRE(history[2].point.index == out21.index);
+        BOOST_REQUIRE(history[2].height == out_h21);
+        BOOST_REQUIRE(history[2].value == val21);
     };
     auto res_has_sp = db.get(key2);
-    has_spend(res_has_sp.history);
-    db.delete_spend(key2, spend22);
+    has_spend(res_has_sp);
+    db.delete_last_row(key2);
     auto res_no_sp = db.get(key2);
-    no_spend(res_no_sp.history);
+    no_spend(res_no_sp);
 
-    db.add_row(key3, out31, out_h31, val31);
-    db.add_row(key4, out31, out_h41, val41);
-    auto has_one_row = [=](const blockchain::history_list& history)
+    db.add_output(key3, out31, out_h31, val31);
+    db.add_output(key4, out31, out_h41, val41);
+    auto has_one_row = [=](const history_list& history)
     {
         BOOST_REQUIRE(history.size() == 1);
     };
     auto res_1r1 = db.get(key3);
-    has_one_row(res_1r1.history);
+    has_one_row(res_1r1);
     auto res_1r2 = db.get(key4);
-    has_one_row(res_1r2.history);
-    auto has_no_rows = [=](const blockchain::history_list& history)
+    has_one_row(res_1r2);
+    auto has_no_rows = [=](const history_list& history)
     {
         BOOST_REQUIRE(history.empty());
     };
     db.delete_last_row(key3);
     auto res_1nr1 = db.get(key3);
-    has_no_rows(res_1nr1.history);
+    has_no_rows(res_1nr1);
     auto res_1nr2 = db.get(key4);
-    has_one_row(res_1nr2.history);
+    has_one_row(res_1nr2);
 
     db.sync();
 }
