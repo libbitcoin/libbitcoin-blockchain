@@ -1,26 +1,8 @@
-All files in this repository fall under the license specified in LICENSE
-The project is licensed as AGPL with a lesser clause. It may be used within
-a proprietary project, but the core library and any changes to it must be
-published online. Source code for this library must always remain free for
-everybody to access.
-
-==========================
-Debian/Ubuntu Instructions
-==========================
-
-Note that you need g++ 4.7 or higher. For this reason Ubuntu 12.04 and older are not supported.
-Make sure you have installed libbitcoin beforehand according to its build
-instructions.
-
-  VVVVVVVVVVV
-> Start Here! <
-  ^^^^^^^^^^^
+Install:
 
   $ ./autogen.sh
   $ ./configure
   $ make
   $ sudo make install
   $ sudo ldconfig
-
-libbitcoin-blockchain is now installed in /usr/local/.
 
