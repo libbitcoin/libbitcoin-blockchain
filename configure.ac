@@ -14,8 +14,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Run macros for operation of generated Makefiles, enable non-recursive make.
-# AM_INIT_AUTOMAKE([subdir-objects])
-AM_INIT_AUTOMAKE()
+ AM_INIT_AUTOMAKE([subdir-objects])
 
 # Enable C and Posix extensions that may be disabled on certain platforms.
 AC_USE_SYSTEM_EXTENSIONS
@@ -138,5 +137,5 @@ AX_CHECK_COMPILE_FLAG([-fstack-protector-all],
 
 # Generate output files (recursive).
 #------------------------------------------------------------------------------
-AC_CONFIG_FILES([Makefile include/bitcoin/Makefile src/Makefile libbitcoin-blockchain.pc])
+AC_CONFIG_FILES([Makefile libbitcoin-blockchain.pc])
 AC_OUTPUT
