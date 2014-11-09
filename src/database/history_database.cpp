@@ -24,14 +24,14 @@
 namespace libbitcoin {
     namespace chain {
 
-constexpr size_t number_buckets = 10000;
+constexpr size_t number_buckets = 300000000;
 constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
 constexpr size_t initial_lookup_file_size = header_size + min_records_fsize;
 
 constexpr position_type alloc_offset = header_size;
 constexpr size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
 
-constexpr size_t value_size = 36 + 4 + 8 + 36 + 4;
+constexpr size_t value_size = 1 + 36 + 4 + 8;
 constexpr size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
 history_database::history_database(
@@ -64,69 +64,36 @@ void history_database::start()
     rows_.start();
 }
 
-constexpr size_t outpoint_size = hash_size + 4;
-constexpr position_type spend_offset = outpoint_size + 4 + 8;
-constexpr position_type spend_height_offset = spend_offset + outpoint_size;
-
-void history_database::add_row(
+void history_database::add_output(
     const short_hash& key, const output_point& outpoint,
     const uint32_t output_height, const uint64_t value)
 {
     auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
+        serial.write_byte(0);
         serial.write_hash(outpoint.hash);
         serial.write_4_bytes(outpoint.index);
         serial.write_4_bytes(output_height);
         serial.write_8_bytes(value);
-        // Skip writing spend since it doesn't exist yet.
-        serial.set_iterator(serial.iterator() + outpoint_size);
-        serial.write_4_bytes(0);
     };
     map_.add_row(key, write);
 }
 
-bool history_database::add_spend(
+void history_database::add_spend(
     const short_hash& key, const output_point& previous,
     const input_point& spend, const size_t spend_height)
 {
-    const index_type start = map_.lookup(key);
-    for (const index_type index: multimap_iterable(linked_rows_, start))
+    auto write = [&](uint8_t* data)
     {
-        const record_type data = linked_rows_.get(index);
-        auto deserial = make_deserializer_unsafe(data);
-        const output_point outpoint{
-            deserial.read_hash(),
-            deserial.read_4_bytes()};
-        if (outpoint != previous)
-            continue;
-        auto serial = make_serializer(data + spend_offset);
+        auto serial = make_serializer(data);
+        serial.write_byte(1);
         serial.write_hash(spend.hash);
         serial.write_4_bytes(spend.index);
         serial.write_4_bytes(spend_height);
-        return true;
-    }
-    return false;
-}
-
-bool history_database::delete_spend(
-    const short_hash& key, const input_point& spend)
-{
-    const index_type start = map_.lookup(key);
-    for (const index_type index: multimap_iterable(linked_rows_, start))
-    {
-        const record_type data = linked_rows_.get(index);
-        auto deserial = make_deserializer_unsafe(data + spend_offset);
-        const input_point inpoint{
-            deserial.read_hash(),
-            deserial.read_4_bytes()};
-        if (inpoint != spend)
-            continue;
-        auto serial = make_serializer(data + spend_height_offset);
-        serial.write_4_bytes(0);
-        return true;
-    }
-    return false;
+        serial.write_8_bytes(spend_checksum(previous));
+    };
+    map_.add_row(key, write);
 }
 
 void history_database::delete_last_row(const short_hash& key)
@@ -134,39 +101,55 @@ void history_database::delete_last_row(const short_hash& key)
     map_.delete_last_row(key);
 }
 
-history_result history_database::get(const short_hash& key,
-    const size_t limit, index_type start) const
+// Each row contains a start byte which signifies whether
+// it is an output or a spend.
+inline point_ident marker_to_id(uint8_t marker)
 {
-    history_list history;
-    auto read_row = [&history](const uint8_t* /*data*/)
-    {
-// TODO: fix serialization due to history_row definition change.
-//        auto deserial = make_deserializer_unsafe(data);
-//        return history_row{
-//            deserial.read_hash(),
-//            deserial.read_4_bytes(),
-//            deserial.read_4_bytes(),
-//            deserial.read_8_bytes(),
-//            deserial.read_hash(),
-//            deserial.read_4_bytes(),
-//            deserial.read_4_bytes()};
+    BITCOIN_ASSERT(marker == 0 || marker == 1);
+    if (marker == 0)
+        return point_ident::output;
+    return point_ident::spend;
+}
 
-    	return history_row();
+history_list history_database::get(const short_hash& key,
+    const size_t limit, const size_t from_height) const
+{
+    // Read the height value from the row.
+    auto read_height = [](const uint8_t* data)
+    {
+        constexpr position_type height_position = 1 + 36;
+        return from_little_endian<uint32_t>(data + height_position);
     };
-    index_type stop = 0;
-    if (!start)
-        start = map_.lookup(key);
+    // Read a row from the data into the history list.
+    history_list history;
+    auto read_row = [&history](const uint8_t* data)
+    {
+        auto deserial = make_deserializer_unsafe(data);
+        return history_row{
+            // output or spend?
+            marker_to_id(deserial.read_byte()),
+            // point
+            deserial.read_hash(),
+            deserial.read_4_bytes(),
+            // height
+            deserial.read_4_bytes(),
+            // value or checksum
+            deserial.read_8_bytes()};
+    };
+    const index_type start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
     {
+        // Stop once we reach the limit (if specified).
         if (limit && history.size() >= limit)
-        {
-            stop = index;
             break;
-        }
         const record_type data = linked_rows_.get(index);
+        // Skip rows below from_height (if specified).
+        if (from_height && read_height(data) < from_height)
+            continue;
+        // Read this row into the list.
         history.emplace_back(read_row(data));
     }
-    return history_result{std::move(history), stop};
+    return history;
 }
 
 void history_database::sync()

@@ -12,12 +12,10 @@ void show_help()
     std::cout << "The most commonly used history_db commands are:" << std::endl;
     std::cout << "  initialize_new  "
         << "Create a new history_database" << std::endl;
-    std::cout << "  add_row         "
+    std::cout << "  add_output         "
         << "Add a row to a key" << std::endl;
     std::cout << "  add_spend       "
         << "Add a spend to a row" << std::endl;
-    std::cout << "  delete_spend    "
-        << "Delete a spend from a row" << std::endl;
     std::cout << "  delete_last_row "
         << "Delete last row that was added for a key" << std::endl;
     std::cout << "  fetch           "
@@ -33,7 +31,7 @@ void show_command_help(const std::string& command)
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "" << std::endl;
     }
-    else if (command == "add_row")
+    else if (command == "add_output")
     {
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY OUTPUT HEIGHT VALUE" << std::endl;
@@ -43,11 +41,6 @@ void show_command_help(const std::string& command)
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY PREVIOUS SPEND HEIGHT" << std::endl;
     }
-    else if (command == "delete_spend")
-    {
-        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
-            << "KEY SPEND" << std::endl;
-    }
     else if (command == "delete_last_row")
     {
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
@@ -56,7 +49,7 @@ void show_command_help(const std::string& command)
     else if (command == "fetch")
     {
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
-            << "KEY [LIMIT] [START]" << std::endl;
+            << "KEY [LIMIT] [FROM_HEIGHT]" << std::endl;
     }
     else
     {
@@ -161,7 +154,7 @@ int main(int argc, char** argv)
         db.initialize_new();
         return 0;
     }
-    else if (command == "add_row")
+    else if (command == "add_output")
     {
         if (args.size() != 4)
         {
@@ -181,7 +174,7 @@ int main(int argc, char** argv)
         if (!parse_uint(value, args[3]))
             return -1;
         db.start();
-        db.add_row(key, outpoint, output_height, value);
+        db.add_output(key, outpoint, output_height, value);
         db.sync();
         return 0;
     }
@@ -206,23 +199,7 @@ int main(int argc, char** argv)
             return -1;
         db.start();
         db.add_spend(key, previous, spend, spend_height);
-        return 0;
-    }
-    else if (command == "delete_spend")
-    {
-        if (args.size() != 2)
-        {
-            show_command_help(command);
-            return -1;
-        }
-        short_hash key;
-        if (!parse_key(key, args[0]))
-            return -1;
-        input_point spend;
-        if (!parse_point(spend, args[1]))
-            return -1;
-        db.start();
-        db.delete_spend(key, spend);
+        db.sync();
         return 0;
     }
     else if (command == "delete_last_row")
@@ -254,23 +231,21 @@ int main(int argc, char** argv)
         if (args.size() >= 2)
             if (!parse_uint(limit, args[1]))
                 return -1;
-        index_type start = 0;
+        size_t from_height = 0;
         if (args.size() >= 3)
-            if (!parse_uint(start, args[2]))
+            if (!parse_uint(from_height, args[2]))
                 return -1;
         db.start();
-        auto result = db.get(key, limit, start);
-        for (const auto& row: result.history)
+        auto history = db.get(key, limit, from_height);
+        for (const auto& row: history)
         {
-            std::cout << row.output.hash << ":" << row.output.index
-                << " " << row.output_height << " " << row.value;
-            if (row.spend_height)
-                std::cout << " " << row.spend.hash << ":"
-                    << row.spend.index << " " << row.spend_height;
-            std::cout << std::endl;
+            if (row.id == point_ident::output)
+                std::cout << "OUTPUT: ";
+            else //if (row.id == point_ident::spend)
+                std::cout << "SPEND:  ";
+            std::cout << row.point.hash << ":" << row.point.index
+                << " " << row.height << " " << row.value << std::endl;
         }
-        if (result.stop)
-            std::cout << "Stop: " << result.stop << std::endl;
         return 0;
     }
     else

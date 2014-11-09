@@ -13,18 +13,16 @@ int main(int argc, char** argv)
 
     address_bitset key(std::string("1101101001"));
     key.resize(20 * 8);
-    db.add(key,
-        point_type{point_ident_type::output,
-            output_point{null_hash, 0}},
+    db.add_output(key,
+        output_point{null_hash, 0},
         110,
         4);
     std::cout << "db.sync()" << std::endl;
     db.sync(0);
 
-    auto read_row = [](
-        const point_type& point, uint32_t height, uint64_t value)
+    auto read_row = [](const history_row& row)
     {
-        std::cout << "Row... " << value << std::endl;
+        std::cout << "Row... " << row.value << std::endl;
     };
     address_bitset scan(std::string("101101001"));
     std::cout << "db.scan(" << scan << ")" << std::endl;

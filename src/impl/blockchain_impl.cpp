@@ -31,10 +31,11 @@ namespace libbitcoin {
 
 using std::placeholders::_1;
 
-blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix)
+blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
+    const db_active_heights &active_heights)
   : ios_(pool.service()),
     write_strand_(pool), reorg_strand_(pool), seqlock_(0),
-    interface_(db_paths(prefix))
+    interface_(db_paths(prefix), active_heights)
 {
     reorganize_subscriber_ =
         std::make_shared<reorganize_subscriber_type>(pool);
@@ -319,14 +320,13 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 
 void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch,
-    const size_t limit,
-    const size_t from_height)
+    const size_t limit, const size_t from_height)
 {
-    auto do_fetch = [this, address, handle_fetch, from_height](size_t slock)
+    auto do_fetch = [=](size_t slock)
     {
-        auto result = interface_.history.get(address.hash());
-        return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.history);
+        auto history = interface_.history.get(
+            address.hash(), limit, from_height);
+        return finish_fetch(slock, handle_fetch, std::error_code(), history);
     };
     fetch(do_fetch);
 }

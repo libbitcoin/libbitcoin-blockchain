@@ -25,18 +25,13 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 template <typename HashType>
 uint64_t remainder(const HashType& value, const uint64_t divisor);
-
-/**
- * Fast modulus calculation where divisor is a power of 2.
- */
-template <typename HashType>
-uint64_t remainder_fast(const HashType& value, const uint64_t divisor);
 
 BCB_API void touch_file(const std::string& filename);
 

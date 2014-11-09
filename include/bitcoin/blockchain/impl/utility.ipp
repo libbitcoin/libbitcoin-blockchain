@@ -37,16 +37,6 @@ uint64_t remainder(const HashType& value, const uint64_t divisor)
     return remainder;
 }
 
-template <typename HashType>
-uint64_t remainder_fast(const HashType& value, const uint64_t divisor)
-{
-    BITCOIN_ASSERT(divisor % 2 == 0);
-    // Only use the first 8 bytes of hash value for this calculation.
-    uint64_t hash_value = from_little_endian<uint64_t>(value.begin());
-    // x mod 2**n == x & (2**n - 1)
-    return hash_value & (divisor - 1);
-}
-
     } // namespace chain
 } // namespace libbitcoin
 

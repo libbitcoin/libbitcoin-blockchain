@@ -33,7 +33,7 @@
 namespace libbitcoin {
 namespace chain {
 
-enum class history_row_id
+enum class point_ident
 {
     output,
     spend
@@ -42,7 +42,7 @@ enum class history_row_id
 struct BCB_API history_row
 {
     /// Is this an output or spend
-    history_row_id id;
+	point_ident id;
     /// input/output point
     bc::point_type point;
     /// Block height of transaction
@@ -286,7 +286,7 @@ public:
      * @code
      *  struct history_row
      *  {
-     *      history_row_id id;
+     *      point_ident id;
      *      output_point point;
      *      size_t height;
      *      union
@@ -297,9 +297,9 @@ public:
      *  };
      * @endcode
      *
-     * If id == history_row_id::credit, then the row is an output,
+     * If id == point_ident::credit, then the row is an output,
      * and the value field in the union is valid.
-     * Else if id == history_row_id::debit, then use previous_checksum
+     * Else if id == point_ident::debit, then use previous_checksum
      * to match the spend with the previous output.
      *
      * Summing the list of values for unspent outpoints gives the balance

@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {

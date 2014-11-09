@@ -48,7 +48,8 @@ void log_to_both(std::ostream& device, std::ofstream& file, log_level level,
     if (body.empty())
         return;
     std::ostringstream output;
-    output << level_repr(level);
+    const std::time_t unix_time = std::time(nullptr);
+    output << unix_time << " " << level_repr(level);
     if (!domain.empty())
         output << " [" << domain << "]";
     output << ": " << body;
@@ -130,7 +131,7 @@ fullnode::fullnode(const std::string& db_prefix)
     hosts_(net_pool_), handshake_(net_pool_), network_(net_pool_),
     protocol_(net_pool_, hosts_, handshake_, network_),
     // Blockchain database service.
-    chain_(disk_pool_, db_prefix),
+    chain_(disk_pool_, db_prefix, {disabled_database}),
     // Poll new blocks, and transaction memory pool.
     poller_(mem_pool_, chain_), txpool_(mem_pool_, chain_), txidx_(mem_pool_),
     // Session manager service. Convenience wrapper.
@@ -277,8 +278,7 @@ void fullnode::new_unconfirm_valid_tx(
     }
 }
 
-void history_fetched(const std::error_code& ec,
-    const blockchain::history_list& history, const index_type stop)
+void history_fetched(const std::error_code& ec, const history_list& history)
 {
     if (ec)
     {
@@ -288,15 +288,12 @@ void history_fetched(const std::error_code& ec,
     log_info() << "Query fine.";
     for (const auto& row: history)
     {
-        log_info() << "output: " << row.output
-            << "  height: " << row.output_height;
-        log_info() << "value:  " << row.value;
-        auto l = log_info();
-        l << "spend:  ";
-        if (row.spend.hash == null_hash)
-            l << "Unspent";
-        else
-            l << row.spend << "  height: " << row.spend_height;
+        if (row.id == point_ident::output)
+            std::cout << "OUTPUT: ";
+        else //if (row.id == point_ident::spend)
+            std::cout << "SPEND:  ";
+        std::cout << row.point.hash << ":" << row.point.index
+            << " " << row.height << " " << row.value << std::endl;
     }
 }
 

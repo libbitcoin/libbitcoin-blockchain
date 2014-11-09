@@ -20,11 +20,10 @@
 #include <set>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/validate.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -706,6 +705,13 @@ bool validate_block::passes_checkpoints()
                          0x10, 0x03, 0x70, 0xc6, 0x46, 0x32, 0xa9, 0x83}})
         return false;
 
+    if (height_ == 329019 && block_hash !=
+            hash_digest{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x10, 0x3a, 0xdd, 0xb8, 0x05, 0x5a, 0x81, 0x6b,
+                         0xe8, 0x1a, 0xe9, 0x68, 0x3f, 0xb2, 0xbc, 0xf9,
+                         0xcc, 0x45, 0x29, 0x98, 0x64, 0xb0, 0x51, 0x55}})
+        return false;
+
     return true;
 #endif
 }
@@ -897,6 +903,6 @@ bool validate_block::connect_input(size_t index_in_parent,
     return true;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

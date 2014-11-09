@@ -1,6 +1,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
-#include <bitcoin/utility/timed_section.hpp>
+#include <bitcoin/bitcoin/utility/timed_section.hpp>
 using namespace bc;
 using namespace bc::chain;
 
