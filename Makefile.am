@@ -25,6 +25,10 @@ bitcoin_blockchain_include_HEADERS = \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate.hpp
 
+bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
+bitcoin_blockchain_database_include_HEADERS = \
+    include/bitcoin/blockchain/database/types.hpp
+
 #
 # libraries
 #
