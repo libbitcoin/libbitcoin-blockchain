@@ -318,7 +318,9 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 }
 
 void blockchain_impl::fetch_history(const payment_address& address,
-    fetch_handler_history handle_fetch, size_t from_height)
+    fetch_handler_history handle_fetch,
+    const size_t limit,
+    const size_t from_height)
 {
     auto do_fetch = [this, address, handle_fetch, from_height](size_t slock)
     {
