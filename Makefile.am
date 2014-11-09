@@ -25,28 +25,6 @@ bitcoin_blockchain_include_HEADERS = \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate.hpp
 
-bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
-bitcoin_blockchain_database_include_HEADERS = \
-    include/bitcoin/blockchain/database/history_scan_database.hpp \
-    include/bitcoin/blockchain/database/hsdb_shard.hpp \
-    include/bitcoin/blockchain/database/hsdb_settings.hpp \
-    include/bitcoin/blockchain/database/types.hpp \
-    include/bitcoin/blockchain/database/linked_records.hpp \
-    include/bitcoin/blockchain/database/utility.hpp \
-    include/bitcoin/blockchain/database/stealth_database.hpp \
-    include/bitcoin/blockchain/database/slab_allocator.hpp \
-    include/bitcoin/blockchain/database/record_allocator.hpp \
-    include/bitcoin/blockchain/database/disk_array.hpp \
-    include/bitcoin/blockchain/database/htdb_record.hpp \
-    include/bitcoin/blockchain/database/multimap_records.hpp \
-    include/bitcoin/blockchain/database/fsizes.hpp \
-    include/bitcoin/blockchain/database/mmfile.hpp \
-    include/bitcoin/blockchain/database/htdb_slab.hpp \
-    include/bitcoin/blockchain/database/transaction_database.hpp \
-    include/bitcoin/blockchain/database/spend_database.hpp \
-    include/bitcoin/blockchain/database/history_database.hpp \
-    include/bitcoin/blockchain/database/block_database.hpp
-
 #
 # libraries
 #
