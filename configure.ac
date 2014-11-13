@@ -100,6 +100,10 @@ PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.7.0])
 AS_IF([test x$with_tests != xno], [AX_BOOST_UNIT_TEST_FRAMEWORK])
 AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
 AM_COND_IF([WITH_TESTS], [AC_MSG_NOTICE([WITH_TESTS defined])])
+AM_CONDITIONAL([SET_BOOST_TEST_DYN_LINK], [test x$enable_shared != xno])
+AM_COND_IF([SET_BOOST_TEST_DYN_LINK],
+    [AC_MSG_NOTICE([BOOST_TEST_DYN_LINK defined])])
+
 
 # Set warning levels.
 #------------------------------------------------------------------------------
@@ -111,6 +115,10 @@ AX_CHECK_COMPILE_FLAG([-Wextra],
 
 AX_CHECK_COMPILE_FLAG([-Wno-missing-braces],
     [CXXFLAGS="$CXXFLAGS -Wno-missing-braces"])
+
+# This cleans up for boost headers.
+AX_CHECK_COMPILE_FLAG([-Wno-unused-local-typedefs],
+    [CXXFLAGS="$CXXFLAGS -Wno-unused-local-typedefs"])
 
 AX_CHECK_COMPILE_FLAG([-Wpedantic],
     [CXXFLAGS="$CXXFLAGS -Wpedantic"],
