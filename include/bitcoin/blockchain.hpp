@@ -38,6 +38,7 @@
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 #include <bitcoin/blockchain/database/spend_database.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
+#include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
