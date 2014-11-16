@@ -41,6 +41,8 @@ db_paths::db_paths(const std::string& prefix)
 
     history_lookup = path(prefix, "history_lookup");
     history_rows = path(prefix, "history_rows");
+    stealth_index = path(prefix, "stealth_index");
+    stealth_rows = path(prefix, "stealth_rows");
 }
 
 void db_paths::touch_all() const
@@ -59,6 +61,7 @@ db_interface::db_interface(const db_paths& paths,
     spends(paths.spends),
     transactions(paths.transactions),
     history(paths.history_lookup, paths.history_rows),
+    stealth(paths.stealth_index, paths.stealth_rows),
     active_heights_(active_heights)
 {
 }
@@ -69,6 +72,7 @@ void db_interface::initialize_new()
     spends.initialize_new();
     transactions.initialize_new();
     history.initialize_new();
+    stealth.initialize_new();
 }
 
 void db_interface::start()
@@ -77,6 +81,7 @@ void db_interface::start()
     spends.start();
     transactions.start();
     history.start();
+    stealth.start();
 }
 
 size_t next_height(const size_t current_height)
@@ -117,8 +122,9 @@ void db_interface::push(const block_type& block)
     blocks.store(block);
     // Synchronise everything...
     spends.sync();
-    history.sync();
     transactions.sync();
+    history.sync();
+    stealth.sync();
     // ... do block header last so if there's a crash midway
     // then on the next startup we'll try to redownload the
     // last block and it will fail because blockchain was left
@@ -153,6 +159,7 @@ block_type db_interface::pop()
         // Add transaction to result
         result.transactions.push_back(tx);
     }
+    stealth.unlink(block_height);
     blocks.unlink(block_height);
     // Since we looped backwards
     std::reverse(result.transactions.begin(), result.transactions.end());
@@ -197,6 +204,47 @@ void db_interface::push_outputs(
             continue;
         history.add_output(address.hash(),
             outpoint, block_height, output.value);
+    }
+}
+
+hash_digest read_ephemkey(const data_chunk& stealth_data)
+{
+    // Read ephemkey
+    BITCOIN_ASSERT(stealth_data.size() == 1 + 4 + 33);
+    hash_digest ephemkey;
+    std::copy(stealth_data.begin() + 6, stealth_data.end(), ephemkey.begin());
+    return ephemkey;
+}
+
+void db_interface::push_stealth_outputs(
+    const hash_digest& tx_hash,
+    const transaction_output_list& outputs)
+{
+    // Stealth cannot be in last output because there needs
+    // to be a matching following output.
+    const size_t last_possible = outputs.size() - 1;
+    for (size_t i = 0; i < last_possible; ++i)
+    {
+        const transaction_output_type& output = outputs[i];
+        const transaction_output_type& next_output = outputs[i + 1];
+        // Skip past output if not stealth data.
+        if (output.script.type() != payment_type::stealth_info)
+            continue;
+        // Try to extract an address.
+        payment_address address;
+        if (!extract(address, next_output.script))
+            continue;
+        // Stealth data.
+        BITCOIN_ASSERT(output.script.operations().size() == 2);
+        const data_chunk& stealth_data = output.script.operations()[1].data;
+        stealth_row row{
+            read_ephemkey(stealth_data),
+            address.hash(),
+            tx_hash
+        };
+        const stealth_bitfield bitfield =
+            calculate_stealth_bitfield(stealth_data);
+        stealth.store(bitfield, row);
     }
 }
 
