@@ -287,6 +287,20 @@ void db_interface::pop_outputs(
     }
 }
 
+void initialize_blockchain(const std::string& prefix)
+{
+    // Create paths.
+    db_paths paths(prefix);
+    paths.touch_all();
+    // Initialize databases.
+    db_interface interface(paths, {0});
+    interface.initialize_new();
+    // Add genesis block.
+    interface.start();
+    const block_type genesis = genesis_block();
+    interface.push(genesis);
+}
+
     } // namespace chain
 } // namespace libbitcoin
 

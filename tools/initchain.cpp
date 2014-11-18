@@ -14,13 +14,7 @@ int main(int argc, char** argv)
         return 1;
     }
     const std::string prefix = argv[1];
-    db_paths paths(prefix);
-    paths.touch_all();
-    db_interface interface(paths, {0});
-    interface.initialize_new();
-    interface.start();
-    const block_type genesis = genesis_block();
-    interface.push(genesis);
+    initialize_blockchain(prefix);
     return 0;
 }
 

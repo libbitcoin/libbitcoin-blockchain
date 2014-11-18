@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {

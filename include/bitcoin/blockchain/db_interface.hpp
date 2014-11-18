@@ -96,6 +96,12 @@ private:
     const db_active_heights active_heights_;
 };
 
+/**
+ * Convenience function to create a new blockchain with a given
+ * prefix and default paths.
+ */
+BCB_API void initialize_blockchain(const std::string& prefix);
+
     } // namespace chain
 } // namespace libbitcoin
 

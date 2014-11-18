@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(pushpop)
     initialize_blockchain(prefix);
 
     db_paths paths(prefix);
-    db_interface interface(paths);
+    db_interface interface(paths, {0});
     interface.start();
 
     BOOST_REQUIRE(interface.blocks.last_height() ==
