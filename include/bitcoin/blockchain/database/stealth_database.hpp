@@ -20,56 +20,67 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 
-#include <stdint.h>
-#include <functional>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/mmfile.hpp>
+#include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
     namespace chain {
-
-// https://wiki.unsystem.net/index.php/DarkWallet/Stealth#Database_file_format
 
 class stealth_database
 {
 public:
     typedef std::function<void (uint8_t*)> write_function;
-    typedef std::function<void (const uint8_t*)> read_function;
 
-    stealth_database(mmfile& file);
-    void store(write_function write);
-    void sync(uint32_t block_height);
+    BCB_API stealth_database(
+        const std::string& index_filename, const std::string& rows_filename);
 
-    // Linearly scans all entries from offset calculated using from_height.
-    // Repeatedly call read() with each entry until we reach the end.
-    void scan(read_function read, uint32_t from_height);
+    /**
+     * Initialize a new stealth database.
+     */
+    BCB_API void initialize_new();
+
+    /**
+     * You must call start() before using the database.
+     */
+    BCB_API void start();
+
+    /**
+     * Linearly scans all entries starting at from_height.
+     */
+    BCB_API stealth_list scan(
+        const stealth_prefix& prefix, const size_t from_height) const;
+
+    /**
+     * Add a stealth row to the database.
+     */
+    BCB_API void store(
+        const stealth_bitfield bitfield, const stealth_row& row);
+
+    /**
+     * Delete all rows after and including from_height.
+     */
+    BCB_API void unlink(const size_t from_height);
+
+    /**
+     * Synchronise storage with disk so things are consistent.
+     * Should be done at the end of every block write.
+     */
+    BCB_API void sync();
 
 private:
-    uint64_t calculate_entry_offset(uint32_t index);
-    void advise_kernel();
+    void write_index();
+    index_type read_index(const size_t from_height) const;
 
-    // sync() sub-methods
-    void add_header_entry_index(uint32_t block_height);
-    void modify_entries_count();
-    void reset();
+    index_type block_start_;
 
-    // scan() sub-methods
-    uint32_t read_start_entry_index(uint32_t from_height);
-    void read_entry(uint32_t entry_index, read_function read);
+    /// Table used for jumping to rows by height.
+    /// Resolves to a index within the rows.
+    mmfile index_file_;
+    record_allocator index_;
 
-    mmfile& file_;
-    // Sector offsets
-    uint64_t metadata_sector_ = 0;
-    uint64_t header_sector_;
-    uint64_t entries_sector_;
-    // Metadata
-    uint32_t version_;
-    uint32_t max_header_rows_;
-    uint32_t entries_count_;
-
-    // store() increments this
-    // sync() resets to 0
-    size_t entries_written_count_ = 0;
+    /// Actual row entries containing stealth tx data.
+    mmfile rows_file_;
+    record_allocator rows_;
 };
 
     } // namespace chain

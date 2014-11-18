@@ -14,4 +14,4 @@ $ sudo make install
 $ sudo ldconfig
 ```
 
-libbitcoin-node is now installed in `/usr/local/`.
+libbitcoin-blockchain is now installed in `/usr/local/`.

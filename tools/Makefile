@@ -83,6 +83,11 @@ spend_db.o: spend_db.cpp
 spend_db: spend_db.o
 	$(CXX) -o $@ $< $(LIBS)
 
+stealth_db.o: stealth_db.cpp
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
+stealth_db: stealth_db.o
+	$(CXX) -o $@ $< $(LIBS)
+
 initchain.o: initchain.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 initchain: initchain.o
@@ -91,12 +96,12 @@ initchain: initchain.o
 all: show_shard show_hsdb_settings show_array show_records show_linked_records \
     read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup \
     mmr_add_row mmr_delete_last_row history_db block_db spend_db initchain \
-    transaction_db count_records
+    transaction_db count_records stealth_db
 
 clean:
 	rm -f show_shard show_hsdb_settings show_array show_records \
         show_linked_records read_htdb_slab_value read_htdb_record_value \
         mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db \
-        block_db spend_db initchain count_records
+        block_db spend_db initchain count_records stealth_db
 	rm -f *.o
 

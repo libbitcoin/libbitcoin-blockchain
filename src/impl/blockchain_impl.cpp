@@ -334,37 +334,14 @@ void blockchain_impl::fetch_history(const payment_address& address,
 void blockchain_impl::fetch_stealth(const stealth_prefix& /*prefix*/,
     fetch_handler_stealth /*handle_fetch*/, size_t /*from_height*/)
 {
-#if 0
-    fetch(
-        std::bind(&blockchain_impl::do_fetch_stealth,
-            this, prefix, handle_fetch, from_height, _1));
-}
-bool blockchain_impl::do_fetch_stealth(const stealth_prefix& prefix,
-    fetch_handler_stealth handle_fetch, size_t from_height, size_t slock)
-{
-    stealth_list results;
-    auto read_func = [&results, prefix](const uint8_t* it)
+    auto do_fetch = [=](size_t slock)
     {
-        if (!stealth_match(prefix, it))
-            return;
-        constexpr size_t bitfield_size = sizeof(stealth_bitfield);
-        constexpr size_t row_size = bitfield_size + 33 + 21 + 32;
-        // Skip bitfield value since we don't need it.
-        auto deserial = make_deserializer(it + bitfield_size, it + row_size);
-        stealth_row row;
-        row.ephemkey = deserial.read_data(33);
-        uint8_t address_version = deserial.read_byte();
-        const short_hash address_hash = deserial.read_short_hash();
-        row.address.set(address_version, address_hash);
-        row.transaction_hash = deserial.read_hash();
-        BITCOIN_ASSERT(deserial.iterator() == it + row_size);
-        results.push_back(row);
+        const stealth_list stealth =
+            interface_.stealth.scan(prefix, from_height);
+        return finish_fetch(slock, handle_fetch,
+            std::error_code(), stealth);
     };
-    BITCOIN_ASSERT(db_stealth_);
-    db_stealth_->scan(read_func, from_height);
-    // Finish.
-    return finish_fetch(slock, handle_fetch, std::error_code(), results);
-#endif
+    fetch(do_fetch);
 }
 
 void blockchain_impl::subscribe_reorganize(

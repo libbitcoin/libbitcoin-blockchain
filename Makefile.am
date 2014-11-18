@@ -20,14 +20,46 @@ bitcoin_include_HEADERS = \
 
 bitcoin_blockchain_includedir = $(includedir)/bitcoin/blockchain
 bitcoin_blockchain_include_HEADERS = \
-    include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/blockchain.hpp \
+    include/bitcoin/blockchain/blockchain_impl.hpp \
+    include/bitcoin/blockchain/db_interface.hpp \
+    include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
-    include/bitcoin/blockchain/validate.hpp
+    include/bitcoin/blockchain/validate.hpp \
+    include/bitcoin/blockchain/organizer.hpp
 
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \
-    include/bitcoin/blockchain/database/types.hpp
+    include/bitcoin/blockchain/database/block_database.hpp \
+    include/bitcoin/blockchain/database/block_header_database.hpp \
+    include/bitcoin/blockchain/database/disk_array.hpp \
+    include/bitcoin/blockchain/database/fsizes.hpp \
+    include/bitcoin/blockchain/database/history_database.hpp \
+    include/bitcoin/blockchain/database/history_scan_database.hpp \
+    include/bitcoin/blockchain/database/hsdb_settings.hpp \
+    include/bitcoin/blockchain/database/hsdb_shard.hpp \
+    include/bitcoin/blockchain/database/htdb_record.hpp \
+    include/bitcoin/blockchain/database/htdb_slab.hpp \
+    include/bitcoin/blockchain/database/linked_records.hpp \
+    include/bitcoin/blockchain/database/mmfile.hpp \
+    include/bitcoin/blockchain/database/multimap_records.hpp \
+    include/bitcoin/blockchain/database/record_allocator.hpp \
+    include/bitcoin/blockchain/database/slab_allocator.hpp \
+    include/bitcoin/blockchain/database/spend_database.hpp \
+    include/bitcoin/blockchain/database/stealth_database.hpp \
+    include/bitcoin/blockchain/database/transaction_database.hpp \
+    include/bitcoin/blockchain/database/types.hpp \
+    include/bitcoin/blockchain/database/utility.hpp
+
+bitcoin_blockchain_impl_includedir = $(includedir)/bitcoin/blockchain/impl
+bitcoin_blockchain_impl_include_HEADERS = \
+    include/bitcoin/blockchain/impl/disk_array.ipp \
+    include/bitcoin/blockchain/impl/htdb_record.ipp \
+    include/bitcoin/blockchain/impl/htdb_record_list_item.ipp \
+    include/bitcoin/blockchain/impl/htdb_slab.ipp \
+    include/bitcoin/blockchain/impl/htdb_slab_list_item.ipp \
+    include/bitcoin/blockchain/impl/multimap_records.ipp \
+    include/bitcoin/blockchain/impl/utility.ipp
 
 #
 # libraries

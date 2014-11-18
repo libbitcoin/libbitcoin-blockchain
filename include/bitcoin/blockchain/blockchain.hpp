@@ -28,7 +28,6 @@
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -42,16 +41,23 @@ enum class point_ident
 struct BCB_API history_row
 {
     /// Is this an output or spend
-	point_ident id;
+    point_ident id;
     /// input/output point
-    bc::point_type point;
+    point_type point;
     /// Block height of transaction
     size_t height;
     union
     {
         /// If output, then satoshis value of output.
         uint64_t value;
-        /// If spend, then checksum hash of previous output_point
+        /**
+         * If spend, then checksum hash of previous output point
+         * To match up this row with the output, recompute the
+         * checksum from the output row with:
+         * @code
+         *  spend_checksum(row.point)
+         * @endcode
+         */
         uint64_t previous_checksum;
     };
 };
@@ -63,6 +69,17 @@ typedef std::vector<history_row> history_list;
  * output point without needing the whole previous outpoint.
  */
 BCB_API uint64_t spend_checksum(output_point outpoint);
+
+struct BCB_API stealth_row
+{
+    // No sign byte in public key.
+    hash_digest ephemkey;
+    // No version byte in address.
+    short_hash address;
+    hash_digest transaction_hash;
+};
+
+typedef std::vector<stealth_row> stealth_list;
 
 class blockchain
 {
@@ -99,13 +116,6 @@ public:
     typedef std::function<void (const std::error_code&, const history_list&)>
         fetch_handler_history;
 
-    struct BCB_API stealth_row
-    {
-        data_chunk ephemkey;
-        payment_address address;
-        hash_digest transaction_hash;
-    };
-    typedef std::vector<stealth_row> stealth_list;
     typedef std::function<void (const std::error_code&, const stealth_list&)>
         fetch_handler_stealth;
 
@@ -302,6 +312,12 @@ public:
      * Else if id == point_ident::debit, then use previous_checksum
      * to match the spend with the previous output.
      *
+     * To match up the spend row with the output, recompute the
+     * checksum from the output row with:
+     * @code
+     *  spend_checksum(row.point)
+     * @endcode
+     *
      * Summing the list of values for unspent outpoints gives the balance
      * for an address.
      *
@@ -310,7 +326,7 @@ public:
      * @code
      *  void handle_fetch(
      *      const std::error_code& ec,              // Status of operation
-     *      const blockchain::history_list& history // History
+     *      const history_list& history // History
      *  );
      * @endcode
      * @param[in]   limit           Limit number of returned entries.

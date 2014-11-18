@@ -44,6 +44,8 @@ struct db_paths
 
     std::string history_lookup;
     std::string history_rows;
+    std::string stealth_index;
+    std::string stealth_rows;
 };
 
 constexpr size_t disabled_database = std::numeric_limits<size_t>::max();
@@ -71,12 +73,7 @@ public:
 
     // Optional databases.
     history_database history;
-    // These 2 databases need improvement.
-    //history_scan_database scan;
-    // Stealth database. See <bitcoin/database/stealth_database.hpp>
-    // https://wiki.unsystem.net/index.php/DarkWallet/Stealth#Database_file_format
-    //mmfile_ptr stealth_file_;
-    //stealth_db_ptr db_stealth_;
+    stealth_database stealth;
 
 private:
     void push_inputs(
@@ -84,6 +81,9 @@ private:
         const transaction_input_list& inputs);
     void push_outputs(
         const hash_digest& tx_hash, const size_t block_height,
+        const transaction_output_list& outputs);
+    void push_stealth_outputs(
+        const hash_digest& tx_hash,
         const transaction_output_list& outputs);
 
     void pop_inputs(
