@@ -31,7 +31,6 @@ bitcoin_blockchain_include_HEADERS = \
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \
     include/bitcoin/blockchain/database/block_database.hpp \
-    include/bitcoin/blockchain/database/block_header_database.hpp \
     include/bitcoin/blockchain/database/disk_array.hpp \
     include/bitcoin/blockchain/database/fsizes.hpp \
     include/bitcoin/blockchain/database/history_database.hpp \
