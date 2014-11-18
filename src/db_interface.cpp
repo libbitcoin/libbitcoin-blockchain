@@ -53,6 +53,8 @@ void db_paths::touch_all() const
     touch_file(transactions);
     touch_file(history_lookup);
     touch_file(history_rows);
+    touch_file(stealth_index);
+    touch_file(stealth_rows);
 }
 
 db_interface::db_interface(const db_paths& paths,
