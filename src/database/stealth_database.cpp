@@ -62,7 +62,8 @@ stealth_list stealth_database::scan(
     {
         // see if prefix matches
         const record_type record = rows_.get(index);
-        if (!stealth_match(prefix, record))
+        const data_chunk bitfield_data(record, record + 4);
+        if (!match(bitfield_data, prefix))
             continue;
         // Add row to results.
         auto deserial = make_deserializer_unsafe(record + 4);
@@ -81,7 +82,7 @@ void stealth_database::store(
     const index_type idx = rows_.allocate();
     record_type record = rows_.get(idx);
     auto serial = make_serializer(record);
-    serial.write_4_bytes(bitfield);
+    serial.write_big_endian(bitfield);
     serial.write_hash(row.ephemkey);
     serial.write_short_hash(row.address);
     serial.write_hash(row.transaction_hash);
