@@ -29,12 +29,6 @@
 namespace libbitcoin {
     namespace chain {
 
-struct history_result
-{
-    history_list history;
-    index_type stop;
-};
-
 /**
  * history_database is a multimap where the key is the Bitcoin address hash,
  * which returns several rows giving the history for that address.
