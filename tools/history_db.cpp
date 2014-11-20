@@ -20,6 +20,8 @@ void show_help()
         << "Delete last row that was added for a key" << std::endl;
     std::cout << "  fetch           "
         << "Fetch rows for a key" << std::endl;
+    std::cout << "  statinfo        "
+        << "Show statistical info for the database" << std::endl;
     std::cout << "  help            "
         << "Show help for commands" << std::endl;
 }
@@ -50,6 +52,11 @@ void show_command_help(const std::string& command)
     {
         std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
             << "KEY [LIMIT] [FROM_HEIGHT]" << std::endl;
+    }
+    else if (command == "statinfo")
+    {
+        std::cout << "Usage: history_db " << command << " LOOKUP ROWS "
+            << std::endl;
     }
     else
     {
@@ -247,6 +254,19 @@ int main(int argc, char** argv)
                 << " " << row.height << " " << row.value << std::endl;
         }
         return 0;
+    }
+    else if (command == "statinfo")
+    {
+        if (!args.empty())
+        {
+            show_command_help(command);
+            return -1;
+        }
+        db.start();
+        auto info = db.statinfo();
+        std::cout << "Buckets: " << info.buckets << std::endl;
+        std::cout << "Unique addresses: " << info.addrs << std::endl;
+        std::cout << "Total rows: " << info.rows << std::endl;
     }
     else
     {

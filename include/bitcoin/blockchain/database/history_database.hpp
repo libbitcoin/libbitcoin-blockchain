@@ -29,6 +29,17 @@
 namespace libbitcoin {
     namespace chain {
 
+struct history_statinfo
+{
+    /// Number of buckets used in the hashtable.
+    /// load factor = addrs / buckets
+    const size_t buckets;
+    /// Total number of unique addresses in the database.
+    const size_t addrs;
+    /// Total number of rows across all addresses.
+    const size_t rows;
+};
+
 /**
  * history_database is a multimap where the key is the Bitcoin address hash,
  * which returns several rows giving the history for that address.
@@ -82,6 +93,11 @@ public:
      * Synchonise with disk.
      */
     BCB_API void sync();
+
+    /**
+     * Return statistical info about the database.
+     */
+    BCB_API history_statinfo statinfo() const;
 
 private:
     typedef htdb_record<short_hash> map_type;

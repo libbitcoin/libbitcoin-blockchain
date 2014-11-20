@@ -158,6 +158,15 @@ void history_database::sync()
     rows_.sync();
 }
 
+history_statinfo history_database::statinfo() const
+{
+    return {
+        header_.size(),
+        allocator_.size(),
+        rows_.size()
+    };
+}
+
     } // namespace chain
 } // namespace libbitcoin
 
