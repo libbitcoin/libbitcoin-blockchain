@@ -18,6 +18,8 @@ void show_help()
         << "Store a spend" << std::endl;
     std::cout << "  remove          "
         << "Remove a spend" << std::endl;
+    std::cout << "  statinfo        "
+        << "Show statistical info for the database" << std::endl;
     std::cout << "  help            "
         << "Show help for commands" << std::endl;
 }
@@ -43,6 +45,11 @@ void show_command_help(const std::string& command)
     {
         std::cout << "Usage: spend_db " << command << " FILE "
             << "OUTPOINT" << std::endl;
+    }
+    else if (command == "statinfo")
+    {
+        std::cout << "Usage: spend_db " << command << " FILE "
+            << std::endl;
     }
     else
     {
@@ -194,6 +201,18 @@ int main(int argc, char** argv)
         db.start();
         db.remove(outpoint);
         db.sync();
+    }
+    else if (command == "statinfo")
+    {
+        if (!args.empty())
+        {
+            show_command_help(command);
+            return -1;
+        }
+        db.start();
+        auto info = db.statinfo();
+        std::cout << "Buckets: " << info.buckets << std::endl;
+        std::cout << "Total rows: " << info.rows << std::endl;
     }
     else
     {

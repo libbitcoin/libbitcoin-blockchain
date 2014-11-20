@@ -52,6 +52,15 @@ private:
     const record_type record_;
 };
 
+struct spend_statinfo
+{
+    /// Number of buckets used in the hashtable.
+    /// load factor = rows / buckets
+    const size_t buckets;
+    /// Total number of spend rows.
+    const size_t rows;
+};
+
 /**
  * spend_database enables you to lookup the spend of an output point,
  * returning the input point. It is a simple map.
@@ -92,6 +101,11 @@ public:
      * Should be done at the end of every block write.
      */
     BCB_API void sync();
+
+    /**
+     * Return statistical info about the database.
+     */
+    BCB_API spend_statinfo statinfo() const;
 
 private:
     typedef htdb_record<hash_digest> map_type;

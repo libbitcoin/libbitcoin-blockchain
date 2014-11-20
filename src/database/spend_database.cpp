@@ -118,6 +118,14 @@ void spend_database::sync()
     allocator_.sync();
 }
 
+spend_statinfo spend_database::statinfo() const
+{
+    return {
+        header_.size(),
+        allocator_.size()
+    };
+}
+
     } // namespace chain
 } // namespace libbitcoin
 
