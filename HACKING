@@ -25,6 +25,11 @@ spend_database load factor:
 
   a = Buckets / Total rows
 
+The transaction_database should also be updated:
+  src/database/transaction_database.cpp
+But there is no tool to see the total number of txs due to how the
+database is implemented. However this number can be found on the internet.
+
 More info:
 https://wiki.unsystem.net/en/index.php/Libbitcoin/Blockchain/htdb_slab_Performance#Load_factor_performance
 
