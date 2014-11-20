@@ -1,0 +1,37 @@
+Code maintenance tasks:
+
+===============================
+Hashtable bucket sizes
+===============================
+
+Bucket values in:
+  src/database/history_database.cpp
+  src/database/spend_database.cpp
+are preset based on hashtable load factor calculated from the blockchain.
+Run the tools history_db and spend_db 'statinfo' commands to see the
+load factor based on the number of rows.
+
+history_database load factor:
+
+  $ cd blockchain/
+  $ history_db statinfo history_lookup history_rows
+
+  a = Buckets / Unique addresses
+
+spend_database load factor:
+
+  $ cd blockchain/
+  $ spend_db statinfo spends
+
+  a = Buckets / Total rows
+
+More info:
+https://wiki.unsystem.net/en/index.php/Libbitcoin/Blockchain/htdb_slab_Performance#Load_factor_performance
+
+===============================
+Checkpoints
+===============================
+
+Update in src/validate.cpp and the validate start height in
+src/impl/organizer_impl.cpp
+
