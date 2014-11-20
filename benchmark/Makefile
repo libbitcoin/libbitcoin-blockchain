@@ -3,16 +3,6 @@ LIBS=$(shell pkg-config --libs libbitcoin-blockchain) -lleveldb
 
 default: all
 
-hsdb_shard_bench.o: hsdb_shard_bench.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS)
-hsdb_shard_bench: hsdb_shard_bench.o
-	$(CXX) -o $@ $< $(LIBS)
-
-hsdb_bench.o: hsdb_bench.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS)
-hsdb_bench: hsdb_bench.o
-	$(CXX) -o $@ $< $(LIBS)
-
 htdb_record_bench.o: htdb_record_bench.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 htdb_record_bench: htdb_record_bench.o
@@ -38,8 +28,8 @@ drop_caches.o: drop_caches.c
 drop_caches: drop_caches.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
+all: htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
 
 clean:
-	rm -f hsdb_shard_bench hsdb_bench htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
+	rm -f htdb_slab_bench htdb_record_bench mmr_bench records_access drop_caches
 	rm -f *.o

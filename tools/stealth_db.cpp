@@ -114,7 +114,6 @@ int main(int argc, char** argv)
         }
         db.start();
         std::string prefix_str(args[0]);
-        std::reverse(prefix_str.begin(), prefix_str.end());
         stealth_prefix prefix(prefix_str);
         size_t from_height;
         if (!parse_uint(from_height, args[1]))
@@ -136,9 +135,8 @@ int main(int argc, char** argv)
         }
         // bitfield
         std::string prefix_str(args[0]);
-        std::reverse(prefix_str.begin(), prefix_str.end());
         stealth_prefix prefix(prefix_str);
-        const uint32_t bitfield = prefix.to_ulong();
+        const uint32_t bitfield = prefix.uint32();
         stealth_row row;
         // ephemkey
         row.ephemkey = decode_hash(args[1]);

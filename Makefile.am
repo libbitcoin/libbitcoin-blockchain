@@ -34,10 +34,6 @@ bitcoin_blockchain_database_include_HEADERS = \
     include/bitcoin/blockchain/database/disk_array.hpp \
     include/bitcoin/blockchain/database/fsizes.hpp \
     include/bitcoin/blockchain/database/history_database.hpp \
-    include/bitcoin/blockchain/database/history_scan_database.hpp \
-    include/bitcoin/blockchain/database/hsdb_settings.hpp \
-    include/bitcoin/blockchain/database/hsdb_shard.hpp \
-    include/bitcoin/blockchain/database/htdb_record.hpp \
     include/bitcoin/blockchain/database/htdb_slab.hpp \
     include/bitcoin/blockchain/database/linked_records.hpp \
     include/bitcoin/blockchain/database/mmfile.hpp \
@@ -72,9 +68,6 @@ libbitcoin_blockchain_la_SOURCES = \
     src/organizer.cpp \
     src/db_interface.cpp \
     src/database/stealth_database.cpp \
-    src/database/history_scan_database.cpp \
-    src/database/hsdb_shard.cpp \
-    src/database/hsdb_settings.cpp \
     src/database/slab_allocator.cpp \
     src/database/record_allocator.cpp \
     src/database/linked_records.cpp \

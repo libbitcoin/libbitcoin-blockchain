@@ -21,12 +21,11 @@
 #define LIBBITCOIN_BLOCKCHAIN_TYPES_HPP
 
 #include <cstdint>
-#include <boost/dynamic_bitset.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-typedef boost::dynamic_bitset<uint8_t> address_bitset;
+typedef stealth_prefix address_bitset;
 
 // A fixed offset location within the file.
 typedef uint64_t position_type;

@@ -3,16 +3,6 @@ LIBS=$(shell pkg-config --libs libbitcoin-blockchain)
 
 default: all
 
-show_shard.o: show_shard.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS)
-show_shard: show_shard.o
-	$(CXX) -o $@ $< $(LIBS)
-
-show_hsdb_settings.o: show_hsdb_settings.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS)
-show_hsdb_settings: show_hsdb_settings.o
-	$(CXX) -o $@ $< $(LIBS)
-
 show_linked_records.o: show_linked_records.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 show_linked_records: show_linked_records.o
@@ -93,13 +83,13 @@ initchain.o: initchain.cpp
 initchain: initchain.o
 	$(CXX) -o $@ $< $(LIBS)
 
-all: show_shard show_hsdb_settings show_array show_records show_linked_records \
+all: show_array show_records show_linked_records \
     read_htdb_slab_value read_htdb_record_value mmr_create mmr_lookup \
     mmr_add_row mmr_delete_last_row history_db block_db spend_db initchain \
     transaction_db count_records stealth_db
 
 clean:
-	rm -f show_shard show_hsdb_settings show_array show_records \
+	rm -f show_array show_records \
         show_linked_records read_htdb_slab_value read_htdb_record_value \
         mmr_create mmr_lookup mmr_add_row mmr_delete_last_row history_db \
         block_db spend_db initchain count_records stealth_db
