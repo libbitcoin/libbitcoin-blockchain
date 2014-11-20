@@ -299,10 +299,6 @@ void initialize_blockchain(const std::string& prefix)
     // Initialize databases.
     db_interface interface(paths, {0});
     interface.initialize_new();
-    // Add genesis block.
-    interface.start();
-    const block_type genesis = genesis_block();
-    interface.push(genesis);
 }
 
     } // namespace chain
