@@ -117,6 +117,8 @@ void db_interface::push(const block_type& block)
             push_inputs(tx_hash, block_height, tx.inputs);
         // Add outputs
         push_outputs(tx_hash, block_height, tx.outputs);
+        // Add stealth outputs
+        push_stealth_outputs(tx_hash, tx.outputs);
         // Add transaction
         transactions.store(info, tx);
     }
