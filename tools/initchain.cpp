@@ -14,6 +14,7 @@ int main(int argc, char** argv)
         return 1;
     }
     const std::string prefix = argv[1];
+    initialize_blockchain(prefix);
     // Add genesis block.
     db_paths paths(prefix);
     db_interface interface(paths, {0});
