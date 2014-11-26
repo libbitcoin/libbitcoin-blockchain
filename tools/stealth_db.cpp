@@ -37,7 +37,7 @@ void show_command_help(const std::string& command)
     else if (command == "store")
     {
         std::cout << "Usage: stealth_db " << command << " INDEX ROWS "
-            << "BITFIELD EPHEMKEY ADDRESS TXHASH" << std::endl;
+            << "SCRIPT EPHEMKEY ADDRESS TXHASH" << std::endl;
     }
     else if (command == "unlink")
     {
@@ -134,9 +134,8 @@ int main(int argc, char** argv)
             return -1;
         }
         // bitfield
-        std::string prefix_str(args[0]);
-        stealth_prefix prefix(prefix_str);
-        const uint32_t bitfield = prefix.uint32();
+        std::string script_str(args[0]);
+        script_type script = unpretty(script_str);
         stealth_row row;
         // ephemkey
         row.ephemkey = decode_hash(args[1]);
@@ -145,7 +144,7 @@ int main(int argc, char** argv)
         // tx hash
         row.transaction_hash = decode_hash(args[3]);
         db.start();
-        db.store(bitfield, row);
+        db.store(script, row);
         db.sync();
     }
     else if (command == "unlink")
