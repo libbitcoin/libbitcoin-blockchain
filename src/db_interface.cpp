@@ -247,9 +247,7 @@ void db_interface::push_stealth_outputs(
             address.hash(),
             tx_hash
         };
-        const stealth_bitfield bitfield =
-            calculate_stealth_bitfield(output.script);
-        stealth.store(bitfield, row);
+        stealth.store(output.script, row);
     }
 }
 

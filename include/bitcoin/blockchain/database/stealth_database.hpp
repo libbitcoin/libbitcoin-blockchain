@@ -55,7 +55,7 @@ public:
      * Add a stealth row to the database.
      */
     BCB_API void store(
-        const stealth_bitfield bitfield, const stealth_row& row);
+        const script_type& stealth_script, const stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.

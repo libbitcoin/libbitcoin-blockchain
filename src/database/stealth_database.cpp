@@ -51,6 +51,8 @@ void stealth_database::start()
     block_start_ = rows_.size();
 }
 
+constexpr size_t bitfield_size = 4;
+
 stealth_list stealth_database::scan(
     const stealth_prefix& prefix, const size_t from_height) const
 {
@@ -62,11 +64,12 @@ stealth_list stealth_database::scan(
     {
         // see if prefix matches
         const record_type record = rows_.get(index);
-        const data_chunk bitfield_data(record, record + 4);
-        if (!match(bitfield_data, prefix))
+        const data_slice bitfield(record, record + bitfield_size);
+        const stealth_prefix compare(prefix.size(), bitfield);
+        if (prefix != compare)
             continue;
         // Add row to results.
-        auto deserial = make_deserializer_unsafe(record + 4);
+        auto deserial = make_deserializer_unsafe(record + bitfield_size);
         result.push_back({
             deserial.read_hash(),
             deserial.read_short_hash(),
@@ -77,15 +80,22 @@ stealth_list stealth_database::scan(
 }
 
 void stealth_database::store(
-    const stealth_bitfield bitfield, const stealth_row& row)
+    const script_type& stealth_script, const stealth_row& row)
 {
+    // Create prefix.
+    stealth_prefix prefix = calculate_stealth_prefix(stealth_script);
+    BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
+    // Allocate new row.
     const index_type idx = rows_.allocate();
     record_type record = rows_.get(idx);
+    // Write data.
     auto serial = make_serializer(record);
-    serial.write_big_endian(bitfield);
+    serial.write_data(prefix.blocks());
     serial.write_hash(row.ephemkey);
     serial.write_short_hash(row.address);
     serial.write_hash(row.transaction_hash);
+    BITCOIN_ASSERT(serial.iterator() ==
+        record + bitfield_size + hash_size + short_hash_size + hash_size);
 }
 
 void stealth_database::unlink(const size_t from_height)
