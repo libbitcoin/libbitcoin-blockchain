@@ -214,9 +214,10 @@ void db_interface::push_outputs(
 hash_digest read_ephemkey(const data_chunk& stealth_data)
 {
     // Read ephemkey
-    BITCOIN_ASSERT(stealth_data.size() == 1 + 4 + 33);
     hash_digest ephemkey;
-    std::copy(stealth_data.begin() + 6, stealth_data.end(), ephemkey.begin());
+    BITCOIN_ASSERT(stealth_data.size() >= hash_size);
+    std::copy(stealth_data.begin(), stealth_data.begin() + hash_size,
+        ephemkey.begin());
     return ephemkey;
 }
 
