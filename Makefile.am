@@ -87,3 +87,36 @@ libbitcoin_blockchain_la_SOURCES = \
 libbitcoin_blockchain_la_CPPFLAGS = \
     -I$(srcdir)/include \
     ${bitcoin_CFLAGS}
+
+#
+# tests
+#
+if WITH_TESTS
+
+TESTS = test/libbitcoin_blockchain_test
+
+check_PROGRAMS = test/libbitcoin_blockchain_test
+
+test_libbitcoin_blockchain_test_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+if ENABLE_SHARED 
+test_libbitcoin_blockchain_test_CPPFLAGS += \
+    -DBOOST_TEST_DYN_LINK
+endif
+
+test_libbitcoin_blockchain_test_SOURCES = \
+    test/databases.cpp \
+    test/disk_objs.cpp \
+    test/htdb.cpp \
+    test/interface.cpp \
+    test/main.cpp
+
+test_libbitcoin_blockchain_test_LDADD = \
+    src/libbitcoin-blockchain.la \
+    -lleveldb
+    -lboost_unit_test_framework \
+    ${bitcoin_LIBS}
+
+endif
