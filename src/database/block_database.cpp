@@ -68,13 +68,13 @@ block_header_type block_result::header() const
 size_t block_result::height() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_ + 80);
+    return from_little_endian_unsafe<uint32_t>(slab_ + 80);
 }
 
 size_t block_result::transactions_size() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_ + 80 + 4);
+    return from_little_endian_unsafe<uint32_t>(slab_ + 80 + 4);
 }
 
 hash_digest block_result::transaction_hash(size_t i) const
@@ -182,7 +182,7 @@ void block_database::write_position(const position_type position)
 position_type block_database::read_position(const index_type index) const
 {
     record_type record = index_.get(index);
-    return from_little_endian<position_type>(record);
+    return from_little_endian_unsafe<position_type>(record);
 }
 
     } // namespace chain

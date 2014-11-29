@@ -50,7 +50,7 @@ index_type linked_records::insert(index_type next)
 index_type linked_records::next(index_type index) const
 {
     const uint8_t* data = allocator_.get(index);
-    return from_little_endian<index_type>(data);
+    return from_little_endian_unsafe<index_type>(data);
 }
 
 record_type linked_records::get(index_type index) const

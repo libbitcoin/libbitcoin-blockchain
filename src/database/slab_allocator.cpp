@@ -41,7 +41,7 @@ void slab_allocator::start()
 {
     BITCOIN_ASSERT(file_.size() >= 8);
     const slab_type data = file_.data() + sector_start_;
-    end_ = from_little_endian<uint64_t>(data);
+    end_ = from_little_endian_unsafe<uint64_t>(data);
 }
 
 position_type slab_allocator::allocate(size_t size)

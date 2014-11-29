@@ -36,7 +36,7 @@ index_type multimap_records<HashType>::lookup(const HashType& key) const
     const record_type start_info = map_.get(key);
     if (!start_info)
         return linked_rows_.empty;
-    const index_type first = from_little_endian<index_type>(start_info);
+    const index_type first = from_little_endian_unsafe<index_type>(start_info);
     return first;
 }
 
@@ -58,7 +58,8 @@ void multimap_records<HashType>::delete_last_row(const HashType& key)
 {
     record_type start_info = map_.get(key);
     BITCOIN_ASSERT(start_info);
-    const index_type old_begin = from_little_endian<index_type>(start_info);
+    const index_type old_begin = 
+        from_little_endian_unsafe<index_type>(start_info);
     BITCOIN_ASSERT(old_begin != linked_rows_.empty);
     const index_type new_begin = linked_rows_.next(old_begin);
     if (new_begin == linked_rows_.empty)
@@ -75,7 +76,8 @@ template <typename HashType>
 void multimap_records<HashType>::add_to_list(
     record_type start_info, write_function write)
 {
-    const index_type old_begin = from_little_endian<index_type>(start_info);
+    const index_type old_begin = 
+        from_little_endian_unsafe<index_type>(start_info);
     const index_type new_begin = linked_rows_.insert(old_begin);
     record_type record = linked_rows_.get(new_begin);
     write(record);

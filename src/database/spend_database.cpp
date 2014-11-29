@@ -62,7 +62,7 @@ hash_digest spend_result::hash() const
 uint32_t spend_result::index() const
 {
     BITCOIN_ASSERT(record_);
-    return from_little_endian<uint32_t>(record_ + hash_size);
+    return from_little_endian_unsafe<uint32_t>(record_ + hash_size);
 }
 
 spend_database::spend_database(const std::string& filename)

@@ -101,7 +101,7 @@ template <typename HashType>
 index_type htdb_record_list_item<HashType>::next_index() const
 {
     const uint8_t* next_data = raw_next_data();
-    return from_little_endian<index_type>(next_data);
+    return from_little_endian_unsafe<index_type>(next_data);
 }
 
 template <typename HashType>
