@@ -106,7 +106,7 @@ position_type htdb_slab_list_item<HashType>::next_position() const
     constexpr position_type next_begin = hash_size;
     const slab_type next_data = raw_data_ + next_begin;
     // Read the next position.
-    return from_little_endian<position_type>(next_data);
+    return from_little_endian_unsafe<position_type>(next_data);
 }
 
     } // namespace chain

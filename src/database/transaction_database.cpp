@@ -52,13 +52,13 @@ transaction_result::operator bool() const
 size_t transaction_result::height() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_);
+    return from_little_endian_unsafe<uint32_t>(slab_);
 }
 
 size_t transaction_result::index() const
 {
     BITCOIN_ASSERT(slab_);
-    return from_little_endian<uint32_t>(slab_ + 4);
+    return from_little_endian_unsafe<uint32_t>(slab_ + 4);
 }
 
 transaction_type transaction_result::transaction() const

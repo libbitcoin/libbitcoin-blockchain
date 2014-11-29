@@ -118,7 +118,7 @@ history_list history_database::get(const short_hash& key,
     auto read_height = [](const uint8_t* data)
     {
         constexpr position_type height_position = 1 + 36;
-        return from_little_endian<uint32_t>(data + height_position);
+        return from_little_endian_unsafe<uint32_t>(data + height_position);
     };
     // Read a row from the data into the history list.
     history_list history;

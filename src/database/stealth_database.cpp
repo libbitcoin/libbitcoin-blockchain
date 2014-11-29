@@ -128,7 +128,7 @@ index_type stealth_database::read_index(const size_t from_height) const
 {
     BITCOIN_ASSERT(from_height < index_.size());
     const record_type record = index_.get(from_height);
-    return from_little_endian<index_type>(record);
+    return from_little_endian_unsafe<index_type>(record);
 }
 
     } // namespace chain

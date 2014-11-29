@@ -63,7 +63,7 @@ ValueType disk_array<IndexType, ValueType>::read(
     const position_type position = item_position(index);
     const uint8_t* begin = data(position);
     // Deserialize value.
-    return from_little_endian<ValueType>(begin);
+    return from_little_endian_unsafe<ValueType>(begin);
 }
 
 template <typename IndexType, typename ValueType>
