@@ -114,7 +114,7 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/main.cpp
 
 test_libbitcoin_blockchain_test_LDADD = \
-    src/libbitcoin-blockchain.la \
+    libbitcoin-blockchain.la \
     -lleveldb \
     -lboost_unit_test_framework \
     ${bitcoin_LIBS}
