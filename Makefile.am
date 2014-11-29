@@ -34,6 +34,7 @@ bitcoin_blockchain_database_include_HEADERS = \
     include/bitcoin/blockchain/database/disk_array.hpp \
     include/bitcoin/blockchain/database/fsizes.hpp \
     include/bitcoin/blockchain/database/history_database.hpp \
+    include/bitcoin/blockchain/database/htdb_record.hpp \
     include/bitcoin/blockchain/database/htdb_slab.hpp \
     include/bitcoin/blockchain/database/linked_records.hpp \
     include/bitcoin/blockchain/database/mmfile.hpp \
