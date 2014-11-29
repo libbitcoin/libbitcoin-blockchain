@@ -98,7 +98,7 @@ TESTS = test/libbitcoin_blockchain_test
 check_PROGRAMS = test/libbitcoin_blockchain_test
 
 test_libbitcoin_blockchain_test_CPPFLAGS = \
-    -I${srcdir}/include \
+    -I$(srcdir)/include \
     ${bitcoin_CFLAGS}
 
 if ENABLE_SHARED 
