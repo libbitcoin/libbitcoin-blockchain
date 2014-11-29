@@ -87,12 +87,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk_array.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\fsizes.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_scan_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_shard.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_record.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_slab.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\linked_records.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\mmfile.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\multimap_records.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record_allocator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\slab_allocator.hpp" />

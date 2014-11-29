@@ -96,15 +96,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp">
       <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_scan_database.hpp">
-      <Filter>include\bitcoin\blockchain\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_settings.hpp">
-      <Filter>include\bitcoin\blockchain\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\hsdb_shard.hpp">
-      <Filter>include\bitcoin\blockchain\database</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_record.hpp">
       <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
@@ -137,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\mmfile.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
