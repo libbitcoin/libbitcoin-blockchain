@@ -101,11 +101,6 @@ test_libbitcoin_blockchain_test_CPPFLAGS = \
     -I$(srcdir)/include \
     ${bitcoin_CFLAGS}
 
-if ENABLE_SHARED 
-test_libbitcoin_blockchain_test_CPPFLAGS += \
-    -DBOOST_TEST_DYN_LINK
-endif
-
 test_libbitcoin_blockchain_test_SOURCES = \
     test/databases.cpp \
     test/disk_objs.cpp \
