@@ -54,7 +54,7 @@ void stealth_database::start()
 constexpr size_t bitfield_size = 4;
 
 stealth_list stealth_database::scan(
-    const stealth_prefix& prefix, const size_t from_height) const
+    const binary_type& prefix, const size_t from_height) const
 {
     if (from_height >= index_.size())
         return stealth_list();
@@ -65,7 +65,7 @@ stealth_list stealth_database::scan(
         // see if prefix matches
         const record_type record = rows_.get(index);
         const data_slice bitfield(record, record + bitfield_size);
-        const stealth_prefix compare(prefix.size(), bitfield);
+        const binary_type compare(prefix.size(), bitfield);
         if (prefix != compare)
             continue;
         // Add row to results.
@@ -83,7 +83,7 @@ void stealth_database::store(
     const script_type& stealth_script, const stealth_row& row)
 {
     // Create prefix.
-    stealth_prefix prefix = calculate_stealth_prefix(stealth_script);
+    binary_type prefix = calculate_stealth_prefix(stealth_script);
     BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
     // Allocate new row.
     const index_type idx = rows_.allocate();

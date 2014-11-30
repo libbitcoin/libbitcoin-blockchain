@@ -49,7 +49,7 @@ public:
      * Linearly scans all entries starting at from_height.
      */
     BCB_API stealth_list scan(
-        const stealth_prefix& prefix, const size_t from_height) const;
+        const binary_type& prefix, const size_t from_height) const;
 
     /**
      * Add a stealth row to the database.
