@@ -116,7 +116,6 @@ test_libbitcoin_blockchain_test_SOURCES = \
 test_libbitcoin_blockchain_test_LDADD = \
     libbitcoin-blockchain.la \
     -lleveldb \
-    -lpthread \
     -lboost_unit_test_framework \
     ${bitcoin_LIBS}
 
