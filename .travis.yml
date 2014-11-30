@@ -23,12 +23,11 @@ before_install:
     - sudo apt-get -qq install g++-4.8
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 50
     
-    # Install leveldb (test dependency).
+    # Test dependency.
     - sudo apt-get -qq install libleveldb-dev
 
 script:
 
     # Download and build libbitcoin-blockchain and all dependencies.
     - sudo ./install.sh CXXFLAGS="-Os -s" --disable-shared --enable-static --build-gmp --build-boost
-    
 
