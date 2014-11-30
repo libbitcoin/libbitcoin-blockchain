@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     block_type block0 = genesis_block();
     block0.transactions.push_back(random_tx(0));
     block0.transactions.push_back(random_tx(1));
-    const hash_digest h0 = hash_block_header(block0.header);
+    //const hash_digest h0 = hash_block_header(block0.header);
 
     block_type block1;
     block1.header = block0.header;
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     block1.transactions.push_back(random_tx(3));
     block1.transactions.push_back(random_tx(4));
     block1.transactions.push_back(random_tx(5));
-    const hash_digest h1 = hash_block_header(block1.header);
+    //const hash_digest h1 = hash_block_header(block1.header);
 
     block_type block2;
     block2.header = block0.header;
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     block3.transactions.push_back(random_tx(11));
     block3.transactions.push_back(random_tx(12));
     block3.transactions.push_back(random_tx(13));
-    const hash_digest h3 = hash_block_header(block3.header);
+    //const hash_digest h3 = hash_block_header(block3.header);
 
     block_type block4a;
     block4a.header = block0.header;
@@ -313,9 +313,9 @@ BOOST_AUTO_TEST_CASE(history_db_test)
 
     const short_hash key4 = decode_short_hash(
         "d60db39ca8ce4caf0f7d2b7d3111535d9543473f");
-    output_point out42{
-        decode_hash("aaaaaaaaaaacac3e715047256f7016d1"
-                    "d90aaa96944cac3e715047256f7016d1"), 0};
+    //output_point out42{
+    //    decode_hash("aaaaaaaaaaacac3e715047256f7016d1"
+    //                "d90aaa96944cac3e715047256f7016d1"), 0};
     const uint32_t out_h41 = 74448;
     const uint64_t val41 = 990;
 
