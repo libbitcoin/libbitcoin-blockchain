@@ -83,7 +83,7 @@ public:
         fetch_handler_history handle_fetch,
         const size_t limit=0, const size_t from_height=0);
     // fetch stealth results.
-    BCB_API void fetch_stealth(const stealth_prefix& prefix,
+    BCB_API void fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height=0);
 
     BCB_API void subscribe_reorganize(reorganize_handler handle_reorganize);
@@ -123,7 +123,7 @@ private:
         return true;
     }
 
-    bool do_fetch_stealth(const stealth_prefix& prefix,
+    bool do_fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height, size_t slock);
 
     bool stopped_ = false;

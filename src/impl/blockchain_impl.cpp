@@ -331,7 +331,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_stealth(const stealth_prefix& prefix,
+void blockchain_impl::fetch_stealth(const binary_type& prefix,
     fetch_handler_stealth handle_fetch, size_t from_height)
 {
     auto do_fetch = [=](size_t slock)

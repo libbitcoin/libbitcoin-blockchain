@@ -112,9 +112,6 @@
     <ClCompile Include="..\..\..\..\src\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\history_scan_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\hsdb_settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\hsdb_shard.cpp" />
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp" />
     <ClCompile Include="..\..\..\..\src\database\multimap_records.cpp" />
     <ClCompile Include="..\..\..\..\src\database\record_allocator.cpp" />

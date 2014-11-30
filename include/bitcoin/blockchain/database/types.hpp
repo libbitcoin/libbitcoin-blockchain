@@ -25,7 +25,7 @@
 namespace libbitcoin {
     namespace chain {
 
-typedef stealth_prefix address_bitset;
+typedef binary_type address_bitset;
 
 // A fixed offset location within the file.
 typedef uint64_t position_type;

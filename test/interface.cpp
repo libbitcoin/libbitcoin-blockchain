@@ -111,7 +111,7 @@ void test_block_exists(const db_interface& interface,
 void test_block_not_exists(
     const db_interface& interface, const block_type block0)
 {
-    const hash_digest blk_hash = hash_block_header(block0.header);
+    //const hash_digest blk_hash = hash_block_header(block0.header);
     //auto r0_byhash = interface.blocks.get(blk_hash);
     //BOOST_REQUIRE(!r0_byhash);
     for (size_t i = 0; i < block0.transactions.size(); ++i)

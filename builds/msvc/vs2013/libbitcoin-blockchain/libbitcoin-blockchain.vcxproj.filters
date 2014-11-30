@@ -155,15 +155,6 @@
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp">
       <Filter>src\database</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\history_scan_database.cpp">
-      <Filter>src\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\hsdb_settings.cpp">
-      <Filter>src\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\hsdb_shard.cpp">
-      <Filter>src\database</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp">
       <Filter>src\database</Filter>
     </ClCompile>

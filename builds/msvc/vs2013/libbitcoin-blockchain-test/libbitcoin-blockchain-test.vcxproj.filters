@@ -7,9 +7,6 @@
     <ClCompile Include="..\..\..\..\test\disk_objs.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\hsdb_settings.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\htdb.cpp">
       <Filter>src</Filter>
     </ClCompile>

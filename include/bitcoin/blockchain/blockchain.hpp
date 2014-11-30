@@ -370,7 +370,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_stealth(const stealth_prefix& prefix,
+    BCB_API virtual void fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, size_t from_height=0) = 0;
 
     /**
