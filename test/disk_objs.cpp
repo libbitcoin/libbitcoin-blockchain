@@ -38,11 +38,11 @@ BOOST_AUTO_TEST_CASE(slab)
 
     position_type position = data.allocate(100);
     BOOST_REQUIRE(position == 8);
-    slab_type slab = data.get(position);
+    //slab_type slab = data.get(position);
 
     slab_allocator::accessor_type position2 = data.allocate(100);
     BOOST_REQUIRE(position2 == 108);
-    slab = data.get(position2);
+    //slab = data.get(position2);
 
     BOOST_REQUIRE(file.size() >= 208);
 }
