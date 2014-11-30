@@ -29,5 +29,5 @@ before_install:
 script:
 
     # Download and build libbitcoin-blockchain and all dependencies.
-    - sudo ./install.sh CXXFLAGS="-Os -s" --disable-shared --enable-static --build-gmp --build-boost
+    - sudo ./install.sh CXXFLAGS='-Os -s' --disable-shared --enable-static --build-gmp --build-boost
 
