@@ -28,29 +28,29 @@ BOOST_AUTO_TEST_SUITE(databases_test)
 BOOST_AUTO_TEST_CASE(spend_db_test)
 {
     output_point key1{
-        decode_hash("4129e76f363f9742bc98dd3d40c99c90"
+        hash_literal("4129e76f363f9742bc98dd3d40c99c90"
                     "66e4d53b8e10e5097bd6f7b5059d7c53"), 110};
     output_point key2{
-        decode_hash("eefa5d23968584be9d8d064bcf99c246"
+        hash_literal("eefa5d23968584be9d8d064bcf99c246"
                     "66e4d53b8e10e5097bd6f7b5059d7c53"), 4};
     output_point key3{
-        decode_hash("4129e76f363f9742bc98dd3d40c99c90"
+        hash_literal("4129e76f363f9742bc98dd3d40c99c90"
                     "eefa5d23968584be9d8d064bcf99c246"), 8};
     output_point key4{
-        decode_hash("80d9e7012b5b171bf78e75b52d2d1495"
+        hash_literal("80d9e7012b5b171bf78e75b52d2d1495"
                     "80d9e7012b5b171bf78e75b52d2d1495"), 9};
 
     input_point val1{
-        decode_hash("4742b3eac32d35961f9da9d42d495ff1"
+        hash_literal("4742b3eac32d35961f9da9d42d495ff1"
                     "d90aba96944cac3e715047256f7016d1"), 0};
     input_point val2{
-        decode_hash("d90aba96944cac3e715047256f7016d1"
+        hash_literal("d90aba96944cac3e715047256f7016d1"
                     "d90aba96944cac3e715047256f7016d1"), 0};
     input_point val3{
-        decode_hash("3cc768bbaef30587c72c6eba8dbf6aee"
+        hash_literal("3cc768bbaef30587c72c6eba8dbf6aee"
                     "c4ef24172ae6fe357f2e24c2b0fa44d5"), 0};
     input_point val4{
-        decode_hash("4742b3eac32d35961f9da9d42d495ff1"
+        hash_literal("4742b3eac32d35961f9da9d42d495ff1"
                     "3cc768bbaef30587c72c6eba8dbf6aee"), 0};
 
     touch_file("spend_db");
@@ -258,63 +258,63 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
 
 BOOST_AUTO_TEST_CASE(history_db_test)
 {
-    const short_hash key1 = decode_short_hash(
+    const short_hash key1 = base16_literal(
         "a006500b7ddfd568e2b036c65a4f4d6aaa0cbd9b");
     output_point out11{
-        decode_hash("4129e76f363f9742bc98dd3d40c99c90"
+        hash_literal("4129e76f363f9742bc98dd3d40c99c90"
                     "66e4d53b8e10e5097bd6f7b5059d7c53"), 110};
     const uint32_t out_h11 = 110;
     const uint64_t val11 = 4;
     output_point out12{
-        decode_hash("eefa5d23968584be9d8d064bcf99c246"
+        hash_literal("eefa5d23968584be9d8d064bcf99c246"
                     "66e4d53b8e10e5097bd6f7b5059d7c53"), 4};
     const uint32_t out_h12 = 120;
     const uint64_t val12 = 8;
     output_point out13{
-        decode_hash("4129e76f363f9742bc98dd3d40c99c90"
+        hash_literal("4129e76f363f9742bc98dd3d40c99c90"
                     "eefa5d23968584be9d8d064bcf99c246"), 8};
     const uint32_t out_h13 = 222;
     const uint64_t val13 = 6;
 
     input_point spend11{
-        decode_hash("4742b3eac32d35961f9da9d42d495ff1"
+        hash_literal("4742b3eac32d35961f9da9d42d495ff1"
                     "d90aba96944cac3e715047256f7016d1"), 0};
     const uint32_t spend_h11 = 115;
     input_point spend13{
-        decode_hash("3cc768bbaef30587c72c6eba8dbf6aee"
+        hash_literal("3cc768bbaef30587c72c6eba8dbf6aee"
                     "c4ef24172ae6fe357f2e24c2b0fa44d5"), 0};
     const uint32_t spend_h13 = 320;
 
-    const short_hash key2 = decode_short_hash(
+    const short_hash key2 = base16_literal(
         "9c6b3bdaa612ceab88d49d4431ed58f26e69b90d");
     output_point out21{
-        decode_hash("80d9e7012b5b171bf78e75b52d2d1495"
+        hash_literal("80d9e7012b5b171bf78e75b52d2d1495"
                     "80d9e7012b5b171bf78e75b52d2d1495"), 9};
     const uint32_t out_h21 = 3982;
     const uint64_t val21 = 65;
     output_point out22{
-        decode_hash("4742b3eac32d35961f9da9d42d495ff1"
+        hash_literal("4742b3eac32d35961f9da9d42d495ff1"
                     "3cc768bbaef30587c72c6eba8dbf6aee"), 0};
     const uint32_t out_h22 = 78;
     const uint64_t val22 = 9;
 
     input_point spend22{
-        decode_hash("3cc768bbaef30587c72c6eba8dbfffff"
+        hash_literal("3cc768bbaef30587c72c6eba8dbfffff"
                     "c4ef24172ae6fe357f2e24c2b0fa44d5"), 0};
     const uint32_t spend_h22 = 900;
 
-    const short_hash key3 = decode_short_hash(
+    const short_hash key3 = base16_literal(
         "3eb84f6a98478e516325b70fecf9903e1ce7528b");
     output_point out31{
-        decode_hash("d90aba96944cac3e715047256f7016d1"
+        hash_literal("d90aba96944cac3e715047256f7016d1"
                     "d90aba96944cac3e715047256f7016d1"), 0};
     const uint32_t out_h31 = 378;
     const uint64_t val31 = 34;
 
-    const short_hash key4 = decode_short_hash(
+    const short_hash key4 = base16_literal(
         "d60db39ca8ce4caf0f7d2b7d3111535d9543473f");
     //output_point out42{
-    //    decode_hash("aaaaaaaaaaacac3e715047256f7016d1"
+    //    hash_literal("aaaaaaaaaaacac3e715047256f7016d1"
     //                "d90aaa96944cac3e715047256f7016d1"), 0};
     const uint32_t out_h41 = 74448;
     const uint64_t val41 = 990;

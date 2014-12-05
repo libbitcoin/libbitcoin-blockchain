@@ -41,7 +41,7 @@ uint64_t spend_checksum(output_point outpoint)
 {
     // Assuming outpoint hash is sufficiently random,
     // this method should work well for generating row checksums.
-    constexpr uint64_t divisor = std::pow(2, 63);
+    constexpr uint64_t divisor = uint64_t{1} << 63;
     auto serial = make_serializer(outpoint.hash.begin());
     serial.write_4_bytes(outpoint.index);
     return remainder_fast(outpoint.hash, divisor);
