@@ -109,6 +109,12 @@ void transaction_database::store(
     map_.store(key, value_size, write);
 }
 
+void transaction_database::remove(const hash_digest& hash)
+{
+    bool success = map_.unlink(hash);
+    BITCOIN_ASSERT(success);
+}
+
 void transaction_database::sync()
 {
     allocator_.sync();

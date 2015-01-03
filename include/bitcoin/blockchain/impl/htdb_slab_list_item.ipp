@@ -48,10 +48,15 @@ public:
     bool compare(const HashType& key) const;
     // The actual user data.
     slab_type data() const;
+
     // Position of next item in the chained list.
     position_type next_position() const;
+    // Write a new next position.
+    void write_next_position(position_type next);
 
 private:
+    uint8_t* raw_next_data() const;
+
     slab_allocator& allocator_;
     slab_type raw_data_;
 };
@@ -101,12 +106,26 @@ slab_type htdb_slab_list_item<HashType>::data() const
 template <typename HashType>
 position_type htdb_slab_list_item<HashType>::next_position() const
 {
+    const uint8_t* next_data = raw_next_data();
+    // Read the next position.
+    return from_little_endian_unsafe<position_type>(next_data);
+}
+
+template <typename HashType>
+void htdb_slab_list_item<HashType>::write_next_position(position_type next)
+{
+    uint8_t* next_data = raw_next_data();
+    auto serial = make_serializer(next_data);
+    serial.write_8_bytes(next);
+}
+
+template <typename HashType>
+uint8_t* htdb_slab_list_item<HashType>::raw_next_data() const
+{
     // Next position is after key data.
     static_assert(sizeof(position_type) == 8, "Internal error");
     constexpr position_type next_begin = hash_size;
-    const slab_type next_data = raw_data_ + next_begin;
-    // Read the next position.
-    return from_little_endian_unsafe<position_type>(next_data);
+    return raw_data_ + next_begin;
 }
 
     } // namespace chain

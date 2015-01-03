@@ -38,6 +38,11 @@ void show_command_help(const std::string& command)
         std::cout << "Usage: transaction_db " << command << " MAP "
             << "HEIGHT INDEX TXDATA" << std::endl;
     }
+    else if (command == "remove")
+    {
+        std::cout << "Usage: transaction_db " << command << " MAP "
+            << "HASH" << std::endl;
+    }
     else
     {
         std::cout << "No help available for " << command << std::endl;
@@ -136,6 +141,18 @@ int main(int argc, char** argv)
         satoshi_load(data.begin(), data.end(), tx);
         db.start();
         db.store(info, tx);
+        db.sync();
+    }
+    else if (command == "remove")
+    {
+        if (args.size() != 1)
+        {
+            show_command_help(command);
+            return -1;
+        }
+        hash_digest hash = decode_hash(args[0]);
+        db.start();
+        db.remove(hash);
         db.sync();
     }
     else

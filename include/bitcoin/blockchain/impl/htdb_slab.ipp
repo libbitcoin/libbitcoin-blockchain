@@ -69,6 +69,38 @@ slab_type htdb_slab<HashType>::get(const HashType& key) const
 }
 
 template <typename HashType>
+bool htdb_slab<HashType>::unlink(const HashType& key)
+{
+    // Find start item...
+    const position_type begin = read_bucket_value(key);
+    const htdb_slab_list_item<HashType> begin_item(allocator_, begin);
+    // If start item has the key then unlink from buckets.
+    if (begin_item.compare(key))
+    {
+        link(key, begin_item.next_position());
+        return true;
+    }
+    // Continue on...
+    position_type previous = begin;
+    position_type current = begin_item.next_position();
+    // Iterate through list...
+    while (current != header_.empty)
+    {
+        const htdb_slab_list_item<HashType> item(allocator_, current);
+        // Found match, unlink current item from previous.
+        if (item.compare(key))
+        {
+            release(item, previous);
+            return true;
+        }
+        previous = current;
+        current = item.next_position();
+    }
+    // Nothing found.
+    return false;
+}
+
+template <typename HashType>
 index_type htdb_slab<HashType>::bucket_index(const HashType& key) const
 {
     const index_type bucket = remainder(key, header_.size());
@@ -90,6 +122,15 @@ void htdb_slab<HashType>::link(
     const HashType& key, const position_type begin)
 {
     header_.write(bucket_index(key), begin);
+}
+
+template <typename HashType>
+template <typename ListItem>
+void htdb_slab<HashType>::release(
+    const ListItem& item, const position_type previous)
+{
+    ListItem previous_item(allocator_, previous);
+    previous_item.write_next_position(item.next_position());
 }
 
     } // namespace chain

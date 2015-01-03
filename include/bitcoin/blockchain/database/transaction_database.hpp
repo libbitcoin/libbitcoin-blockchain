@@ -98,6 +98,11 @@ public:
         const transaction_metainfo& info, const transaction_type& tx);
 
     /**
+     * Delete a transaction from database.
+     */
+    BCB_API void remove(const hash_digest& hash);
+
+    /**
      * Synchronise storage with disk so things are consistent.
      * Should be done at the end of every block write.
      */
