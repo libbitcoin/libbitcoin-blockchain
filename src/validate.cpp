@@ -803,7 +803,8 @@ bool validate_block::validate_inputs(const transaction_type& tx,
                 value_in, total_sigops))
         {
             log_warning(LOG_VALIDATE) << "Validate input "
-                << hash_transaction(tx) << ":" << input_index << " failed";
+                << encode_hex(hash_transaction(tx)) << ":"
+                << input_index << " failed";
             return false;
         }
     }
