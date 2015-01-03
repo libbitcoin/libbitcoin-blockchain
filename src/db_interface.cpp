@@ -154,7 +154,8 @@ block_type db_interface::pop()
         BITCOIN_ASSERT(tx_result.height() == block_height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
         const transaction_type tx = tx_result.transaction();
-        // Do things in reverse so pop outputs before inputs.
+        // Do things in reverse so pop txs, then outputs, then inputs.
+        transactions.remove(tx_hash);
         // Remove outputs
         pop_outputs(block_height, tx.outputs);
         // Remove inputs
