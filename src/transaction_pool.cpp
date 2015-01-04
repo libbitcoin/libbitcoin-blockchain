@@ -34,6 +34,9 @@ transaction_pool::transaction_pool(
   : strand_(pool), chain_(chain), pool_(2000)
 {
 }
+transaction_pool::~transaction_pool()
+{
+}
 
 void transaction_pool::set_capacity(size_t capacity)
 {

@@ -75,6 +75,7 @@ public:
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
     BCB_API transaction_pool(threadpool& pool, blockchain& chain);
+    BCB_API ~transaction_pool();
     BCB_API void start();
 
     /// Non-copyable class
