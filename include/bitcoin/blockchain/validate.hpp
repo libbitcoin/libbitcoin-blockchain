@@ -134,7 +134,6 @@ private:
 
     // accept_block()
     uint32_t work_required();
-    bool passes_checkpoints();
     bool coinbase_height_match();
 
     // connect_block()

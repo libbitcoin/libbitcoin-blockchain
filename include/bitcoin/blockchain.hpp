@@ -23,6 +23,7 @@
 // Publish only interface headers, not implementation.
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/blockchain_impl.hpp>
+#include <bitcoin/blockchain/checkpoints.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/validate.hpp>

@@ -22,6 +22,7 @@ bitcoin_blockchain_includedir = $(includedir)/bitcoin/blockchain
 bitcoin_blockchain_include_HEADERS = \
     include/bitcoin/blockchain/blockchain.hpp \
     include/bitcoin/blockchain/blockchain_impl.hpp \
+    include/bitcoin/blockchain/checkpoints.hpp \
     include/bitcoin/blockchain/db_interface.hpp \
     include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
@@ -64,6 +65,7 @@ lib_LTLIBRARIES = libbitcoin-blockchain.la
 
 libbitcoin_blockchain_la_SOURCES = \
     src/blockchain.cpp \
+    src/checkpoints.cpp \
     src/transaction_pool.cpp \
     src/validate.cpp \
     src/organizer.cpp \

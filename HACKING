@@ -37,6 +37,6 @@ https://wiki.unsystem.net/en/index.php/Libbitcoin/Blockchain/htdb_slab_Performan
 Checkpoints
 ===============================
 
-Update in src/validate.cpp and the validate start height in
-src/impl/organizer_impl.cpp
+Make sure to update the files include/bitcoin/blockchain/checkpoints.hpp
+and src/checkpoints.hpp on a regular basis.
 

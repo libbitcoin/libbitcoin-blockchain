@@ -20,6 +20,7 @@
 #include "organizer_impl.hpp"
 
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/checkpoints.hpp>
 #include "validate_block_impl.hpp"
 
 namespace libbitcoin {
@@ -50,7 +51,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
     if (ec)
         return ec;
     // Skip non-essential checks if before last checkpoint.
-    if (fork_index < 337444)
+    if (fork_index < block_validation_cutoff_height)
         return std::error_code();
     // Perform strict but slow tests - connect_block()
     return validate.connect_block();
