@@ -50,7 +50,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
     if (ec)
         return ec;
     // Skip non-essential checks if before last checkpoint.
-    if (fork_index < 330791)
+    if (fork_index < 337444)
         return std::error_code();
     // Perform strict but slow tests - connect_block()
     return validate.connect_block();
