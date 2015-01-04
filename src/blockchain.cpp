@@ -41,9 +41,13 @@ uint64_t spend_checksum(output_point outpoint)
 {
     // Assuming outpoint hash is sufficiently random,
     // this method should work well for generating row checksums.
+    // Maximum pow2 value for a uint64_t is 1 << 63
     constexpr uint64_t divisor = uint64_t{1} << 63;
+    static_assert(divisor == 9223372036854775808ull, "Wrong divisor value.");
+    // Write index onto outpoint hash.
     auto serial = make_serializer(outpoint.hash.begin());
     serial.write_4_bytes(outpoint.index);
+    // Collapse it into uint64_t
     return remainder_fast(outpoint.hash, divisor);
 }
 
