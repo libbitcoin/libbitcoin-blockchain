@@ -110,7 +110,12 @@ int main(int argc, char** argv)
             return -1;
         }
         db.start();
-        hash_digest hash = decode_hash(args[0]);
+        hash_digest hash;
+        if (!decode_hash(hash, args[0]))
+        {
+            std::cerr << "Couldn't read transaction hash." << std::endl;
+            return -1;
+        }
         auto result = db.get(hash);
         if (!result)
         {
@@ -122,7 +127,7 @@ int main(int argc, char** argv)
         auto tx = result.transaction();
         data_chunk data(satoshi_raw_size(tx));
         satoshi_save(tx, data.begin());
-        std::cout << "tx: " << data << std::endl;
+        std::cout << "tx: " << encode_base16(data) << std::endl;
     }
     else if (command == "store")
     {
@@ -150,7 +155,12 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        hash_digest hash = decode_hash(args[0]);
+        hash_digest hash;
+        if (!decode_hash(hash, args[0]))
+        {
+            std::cerr << "Couldn't read transaction hash." << std::endl;
+            return -1;
+        }
         db.start();
         db.remove(hash);
         db.sync();

@@ -68,12 +68,11 @@ bool parse_point(Point& point, const std::string& arg)
         return false;
     }
     const std::string& hex_string = strs[0];
-    if (hex_string.size() != 64)
+    if (!decode_hash(point.hash, hex_string))
     {
         std::cerr << "block_db: bad point provided." << std::endl;
         return false;
     }
-    point.hash = decode_hash(hex_string);
     const std::string& index_string = strs[1];
     try
     {
@@ -170,7 +169,12 @@ int main(int argc, char** argv)
         }
         catch (const boost::bad_lexical_cast&)
         {
-            hash_digest hash = decode_hash(args[0]);
+            hash_digest hash;
+            if (!decode_hash(hash, args[0]))
+            {
+                std::cerr << "Couldn't read index value." << std::endl;
+                return -1;
+            }
             result = new block_result(db.get(hash));
         }
         if (!(*result))
@@ -182,11 +186,12 @@ int main(int argc, char** argv)
         const block_header_type blk_header = result->header();
         // Show details.
         std::cout << "height: " << result->height() << std::endl;
-        std::cout << "hash: " << hash_block_header(blk_header) << std::endl;
+        std::cout << "hash: "
+            << encode_hash(hash_block_header(blk_header)) << std::endl;
         std::cout << "version: " << blk_header.version << std::endl;
         std::cout << "previous_block_hash: "
-            << blk_header.previous_block_hash << std::endl;
-        std::cout << "merkle: " << blk_header.merkle << std::endl;
+            << encode_hash(blk_header.previous_block_hash) << std::endl;
+        std::cout << "merkle: " << encode_hash(blk_header.merkle) << std::endl;
         std::cout << "timestamp: " << blk_header.timestamp << std::endl;
         std::cout << "bits: " << blk_header.bits << std::endl;
         std::cout << "nonce: " << blk_header.nonce << std::endl;
@@ -195,7 +200,8 @@ int main(int argc, char** argv)
         {
             std::cout << "Transactions:" << std::endl;
             for (size_t i = 0; i < txs_size; ++i)
-                std::cout << "  " << result->transaction_hash(i) << std::endl;
+                std::cout << "  " << encode_hash(result->transaction_hash(i))
+                    << std::endl;
         }
         else
         {

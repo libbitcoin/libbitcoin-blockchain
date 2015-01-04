@@ -51,7 +51,7 @@ int mmr_lookup(
         std::cout << "Index: " << index << std::endl;
         const record_type record = recs.get(index) + linked_record_offset;
         const data_chunk data(record, record + value_size);
-        std::cout << data << std::endl;
+        std::cout << encode_base16(data) << std::endl;
         std::cout << std::endl;
     }
     return 0;

@@ -114,7 +114,7 @@ int main(int argc, char** argv)
         }
         db.start();
         std::string prefix_str(args[0]);
-        stealth_prefix prefix(prefix_str);
+        binary_type prefix(prefix_str);
         size_t from_height;
         if (!parse_uint(from_height, args[1]))
             return -1;
@@ -122,8 +122,9 @@ int main(int argc, char** argv)
         stealth_list rows = db.scan(prefix, from_height);
         for (const auto row: rows)
         {
-            std::cout << row.ephemkey << " " << row.address
-                << " " << row.transaction_hash << std::endl;
+            std::cout << encode_base16(row.ephemkey) << " "
+                << encode_base16(row.address)
+                << " " << encode_hash(row.transaction_hash) << std::endl;
         }
     }
     else if (command == "store")
@@ -138,11 +139,23 @@ int main(int argc, char** argv)
         script_type script = unpretty(script_str);
         stealth_row row;
         // ephemkey
-        row.ephemkey = decode_hash(args[1]);
+        if (!decode_hash(row.ephemkey, args[1]))
+        {
+            std::cerr << "Unable to read ephemeral pubkey." << std::endl;
+            return -1;
+        }
         // address
-        row.address = decode_short_hash(args[2]);
+        if (!decode_base16(row.address, args[2]))
+        {
+            std::cerr << "Unable to read address hash." << std::endl;
+            return -1;
+        }
         // tx hash
-        row.transaction_hash = decode_hash(args[3]);
+        if (!decode_hash(row.transaction_hash, args[3]))
+        {
+            std::cerr << "Unable to read transaction hash." << std::endl;
+            return -1;
+        }
         db.start();
         db.store(script, row);
         db.sync();

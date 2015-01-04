@@ -63,7 +63,7 @@ int main(int argc, char** argv)
         return -2;
     }
     data_chunk data(record, record + value_size);
-    std::cout << data << std::endl;
+    std::cout << encode_base16(data) << std::endl;
     return 0;
 }
 

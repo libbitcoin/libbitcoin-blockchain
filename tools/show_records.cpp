@@ -29,7 +29,7 @@ int main(int argc, char** argv)
     {
         record_type rec = recs.get(i);
         data_chunk data(rec, rec + record_size);
-        std::cout << i << ": " << data << std::endl;
+        std::cout << i << ": " << encode_base16(data) << std::endl;
     }
     return 0;
 }

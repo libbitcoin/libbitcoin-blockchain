@@ -106,7 +106,7 @@ int main(int argc, char** argv)
         {
             chain_item& item = chain[item_idx];
             std::cout << "  " << item_idx << " (@" << item.rec_idx
-                << "): " << item.data << std::endl;
+                << "): " << encode_base16(item.data) << std::endl;
         }
     }
 }

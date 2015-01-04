@@ -57,7 +57,7 @@ int main(int argc, char** argv)
         return -1;
     }
     data_chunk data(slab, slab + value_size);
-    std::cout << data << std::endl;
+    std::cout << encode_base16(data) << std::endl;
     return 0;
 }
 

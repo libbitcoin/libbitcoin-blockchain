@@ -68,12 +68,11 @@ bool parse_point(Point& point, const std::string& arg)
         return false;
     }
     const std::string& hex_string = strs[0];
-    if (hex_string.size() != 64)
+    if (!decode_hash(point.hash, hex_string))
     {
         std::cerr << "spend_db: bad point provided." << std::endl;
         return false;
     }
-    point.hash = decode_hash(hex_string);
     const std::string& index_string = strs[1];
     try
     {
@@ -169,7 +168,8 @@ int main(int argc, char** argv)
             std::cout << "Not found!" << std::endl;
             return -1;
         }
-        std::cout << result.hash() << ":" << result.index() << std::endl;
+        std::cout << encode_hash(result.hash()) << ":"
+            << result.index() << std::endl;
     }
     else if (command == "store")
     {
