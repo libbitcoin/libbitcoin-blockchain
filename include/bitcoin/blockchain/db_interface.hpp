@@ -47,7 +47,7 @@ struct db_paths
     std::string stealth_rows;
 };
 
-constexpr size_t disabled_database = std::numeric_limits<size_t>::max();
+constexpr size_t disabled_database = bc::max_size_t;
 
 struct db_active_heights
 {
