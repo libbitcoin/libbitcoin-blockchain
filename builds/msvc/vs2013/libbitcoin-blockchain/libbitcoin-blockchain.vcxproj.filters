@@ -49,6 +49,9 @@
     <Filter Include="src\impl">
       <UniqueIdentifier>{799d9fca-10da-4b08-ae5f-65e1c47bb606}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\database\mman-win32">
+      <UniqueIdentifier>{2a5cbc8e-58bf-437f-b5ec-6c58d6e5a2ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
@@ -132,6 +135,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\mmfile.hpp">
       <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h">
+      <Filter>src\database\mman-win32</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\organizer.cpp">
@@ -196,6 +202,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\checkpoints.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\mman-win32\mman.c">
+      <Filter>src\database\mman-win32</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
