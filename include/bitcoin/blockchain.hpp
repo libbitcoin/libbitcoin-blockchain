@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_HPP
 
 // Publish only interface headers, not implementation.
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/blockchain_impl.hpp>
 #include <bitcoin/blockchain/checkpoints.hpp>
