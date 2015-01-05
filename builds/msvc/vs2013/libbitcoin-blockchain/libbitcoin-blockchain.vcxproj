@@ -104,6 +104,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate.hpp" />
+    <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
     <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\validate_block_impl.hpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp" />
+    <ClCompile Include="..\..\..\..\src\database\mman-win32\mman.c" />
     <ClCompile Include="..\..\..\..\src\database\mmfile.cpp" />
     <ClCompile Include="..\..\..\..\src\database\multimap_records.cpp" />
     <ClCompile Include="..\..\..\..\src\database\record_allocator.cpp" />
