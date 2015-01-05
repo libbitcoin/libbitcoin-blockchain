@@ -1,6 +1,7 @@
 /*
 Create a new blockchain database.
 */
+#include <iostream>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;

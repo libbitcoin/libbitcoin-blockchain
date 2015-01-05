@@ -1,3 +1,4 @@
+#include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/disk_array.hpp>
@@ -24,7 +25,7 @@ int show_array(const std::string& filename, position_type offset)
         std::cout << i << ": " << val_string << std::endl;
     }
     return 0;
-};
+}
 
 int main(int argc, char** argv)
 {
