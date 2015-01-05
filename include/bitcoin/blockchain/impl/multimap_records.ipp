@@ -64,7 +64,7 @@ void multimap_records<HashType>::delete_last_row(const HashType& key)
     const index_type new_begin = linked_rows_.next(old_begin);
     if (new_begin == linked_rows_.empty)
     {
-        bool success = map_.unlink(key);
+        DEBUG_ONLY(bool success =) map_.unlink(key);
         BITCOIN_ASSERT(success);
         return;
     }

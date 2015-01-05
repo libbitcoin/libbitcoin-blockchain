@@ -111,7 +111,7 @@ void transaction_database::store(
 
 void transaction_database::remove(const hash_digest& hash)
 {
-    bool success = map_.unlink(hash);
+    DEBUG_ONLY(bool success =) map_.unlink(hash);
     BITCOIN_ASSERT(success);
 }
 

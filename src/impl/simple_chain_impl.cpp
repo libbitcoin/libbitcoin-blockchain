@@ -31,7 +31,7 @@ simple_chain_impl::simple_chain_impl(db_interface& interface)
 
 void simple_chain_impl::append(block_detail_ptr incoming_block)
 {
-    const size_t last_height = interface_.blocks.last_height();
+    DEBUG_ONLY(const size_t last_height = interface_.blocks.last_height());
     BITCOIN_ASSERT(last_height != block_database::null_height);
     const block_type& actual_block = incoming_block->actual();
     interface_.push(actual_block);

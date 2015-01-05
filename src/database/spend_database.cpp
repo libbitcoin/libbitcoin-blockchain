@@ -109,7 +109,7 @@ void spend_database::store(
 void spend_database::remove(const output_point& outpoint)
 {
     const hash_digest key = tweak(outpoint.hash, outpoint.index);
-    bool success = map_.unlink(key);
+    DEBUG_ONLY(bool success =) map_.unlink(key);
     BITCOIN_ASSERT(success);
 }
 
