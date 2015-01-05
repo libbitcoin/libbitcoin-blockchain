@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     }
     const std::string map_filename = argv[2];
     string_list args;
-    for (size_t i = 3; i < argc; ++i)
+    for (int i = 3; i < argc; ++i)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {

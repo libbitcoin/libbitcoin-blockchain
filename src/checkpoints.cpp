@@ -31,7 +31,7 @@ inline bool checkpoint_test(
         return true;
     // Deserialize hash from hex string.
     hash_digest checkpoint_hash;
-    bool success = decode_hash(checkpoint_hash, checkpoint_hex);
+    DEBUG_ONLY(bool success =) decode_hash(checkpoint_hash, checkpoint_hex);
     BITCOIN_ASSERT_MSG(success, "Internal error: bad checkpoint hash!");
     // Both hashes should match.
     return current_hash == checkpoint_hash;

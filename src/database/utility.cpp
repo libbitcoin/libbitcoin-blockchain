@@ -40,7 +40,7 @@ void reserve_space(mmfile& file, size_t required_size)
     const size_t new_size = required_size * 3 / 2;
     // Only ever grow file. Never shrink it!
     BITCOIN_ASSERT(new_size > file.size());
-    bool success = file.resize(new_size);
+    DEBUG_ONLY(bool success =) file.resize(new_size);
     BITCOIN_ASSERT(success);
 }
 

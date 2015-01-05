@@ -202,7 +202,8 @@ void organizer::replace_chain(size_t fork_index,
         return;
     // Replace! Switch!
     block_detail_list replaced_slice;
-    bool slice_success = chain_->release(begin_index, replaced_slice);
+    DEBUG_ONLY(bool slice_success =) chain_->release(begin_index, 
+        replaced_slice);
     BITCOIN_ASSERT(slice_success);
     // We add the arriving blocks first to the main chain because if
     // we add the blocks being replaced back to the pool first then

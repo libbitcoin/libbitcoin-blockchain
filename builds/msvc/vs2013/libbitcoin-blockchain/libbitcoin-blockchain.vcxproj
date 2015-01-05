@@ -110,9 +110,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\blockchain.cpp" />
+    <ClCompile Include="..\..\..\..\src\checkpoints.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp" />
+    <ClCompile Include="..\..\..\..\src\database\mmfile.cpp" />
     <ClCompile Include="..\..\..\..\src\database\multimap_records.cpp" />
     <ClCompile Include="..\..\..\..\src\database\record_allocator.cpp" />
     <ClCompile Include="..\..\..\..\src\database\slab_allocator.cpp" />

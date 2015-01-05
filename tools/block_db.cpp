@@ -141,7 +141,7 @@ int main(int argc, char** argv)
     const std::string map_filename = argv[2];
     const std::string rows_filename = argv[3];
     string_list args;
-    for (size_t i = 4; i < argc; ++i)
+    for (int i = 4; i < argc; ++i)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
