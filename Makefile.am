@@ -90,6 +90,210 @@ libbitcoin_blockchain_la_CPPFLAGS = \
     -I$(srcdir)/include \
     ${bitcoin_CFLAGS}
 
+libbitcoin_blockchain_la_LIBADD = \
+    ${bitcoin_LIBS}
+
+#
+# tools
+#
+tools_list = \
+    tools/show_linked_records \
+    tools/show_records \
+    tools/count_records \
+    tools/read_htdb_record_value \
+    tools/read_htdb_slab_value \
+    tools/show_array \
+    tools/mmr_create \
+    tools/mmr_lookup \
+    tools/mmr_add_row \
+    tools/mmr_delete_last_row \
+    tools/block_db \
+    tools/transaction_db \
+    tools/history_db \
+    tools/spend_db \
+    tools/stealth_db \
+    tools/initchain
+
+tools_show_linked_records_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_show_linked_records_SOURCES = \
+    tools/show_linked_records.cpp
+
+tools_show_linked_records_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_show_records_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_show_records_SOURCES = \
+    tools/show_records.cpp
+
+tools_show_records_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_count_records_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_count_records_SOURCES = \
+    tools/count_records.cpp
+
+tools_count_records_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_read_htdb_record_value_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_read_htdb_record_value_SOURCES = \
+    tools/read_htdb_record_value.cpp
+
+tools_read_htdb_record_value_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_read_htdb_slab_value_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_read_htdb_slab_value_SOURCES = \
+    tools/read_htdb_slab_value.cpp
+
+tools_read_htdb_slab_value_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_show_array_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_show_array_SOURCES = \
+    tools/show_array.cpp
+
+tools_show_array_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_mmr_create_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_mmr_create_SOURCES = \
+    tools/mmr_create.cpp
+
+tools_mmr_create_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_mmr_lookup_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_mmr_lookup_SOURCES = \
+    tools/mmr_lookup.cpp
+
+tools_mmr_lookup_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_mmr_add_row_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_mmr_add_row_SOURCES = \
+    tools/mmr_add_row.cpp
+
+tools_mmr_add_row_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_mmr_delete_last_row_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_mmr_delete_last_row_SOURCES = \
+    tools/mmr_delete_last_row.cpp
+
+tools_mmr_delete_last_row_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_block_db_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_block_db_SOURCES = \
+    tools/block_db.cpp
+
+tools_block_db_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_transaction_db_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_transaction_db_SOURCES = \
+    tools/transaction_db.cpp
+
+tools_transaction_db_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_history_db_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_history_db_SOURCES = \
+    tools/history_db.cpp
+
+tools_history_db_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_spend_db_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_spend_db_SOURCES = \
+    tools/spend_db.cpp
+
+tools_spend_db_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_stealth_db_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_stealth_db_SOURCES = \
+    tools/stealth_db.cpp
+
+tools_stealth_db_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+tools_initchain_CPPFLAGS = \
+    -I${srcdir}/include \
+    ${bitcoin_CFLAGS}
+
+tools_initchain_SOURCES = \
+    tools/initchain.cpp
+
+tools_initchain_LDADD = \
+    libbitcoin-blockchain.la \
+    ${bitcoin_LIBS}
+
+bin_PROGRAMS = ${tools_list}
+
+tools: ${tools_list}
+
 #
 # tests
 #
@@ -112,7 +316,6 @@ test_libbitcoin_blockchain_test_SOURCES = \
 
 test_libbitcoin_blockchain_test_LDADD = \
     libbitcoin-blockchain.la \
-    -lleveldb \
     -lboost_unit_test_framework \
     ${bitcoin_LIBS}
 

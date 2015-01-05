@@ -1,3 +1,4 @@
+#include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
