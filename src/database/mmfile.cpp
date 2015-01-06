@@ -19,10 +19,6 @@
  */
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
-// Include before setting _GNU_SOURCE.
-#include <fcntl.h>
-#include <bitcoin/bitcoin/utility/assert.hpp>
-
 #ifdef _WIN32
     #include <io.h>
     #include "mman-win32/mman.h"
@@ -32,15 +28,19 @@
     #include <sys/mman.h>
     #define FILE_OPEN_PERMISSIONS S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 #endif
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <bitcoin/bitcoin/utility/assert.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 mmfile::mmfile(const std::string& filename)
 {
-    BITCOIN_ASSERT_MSG(sizeof (void*) == 8, "Not a 64 bit system!");
+    // There is no obvious reason this class should be restricted to 64 bit.
+    //BITCOIN_ASSERT_MSG(sizeof (void*) == 8, "Not a 64 bit system!");
+
     file_handle_ = open(filename.c_str(), O_RDWR, FILE_OPEN_PERMISSIONS);
     if (file_handle_ == -1)
         return;
@@ -89,7 +89,8 @@ bool mmfile::resize(size_t new_size)
 
     // Readjust memory map.
 
-// OSX mman and mman-win32 do not implement mremap or MREMAP_MAYMOVE.
+    // OSX mman and mman-win32 do not implement mremap or MREMAP_MAYMOVE.
+    // This may not be most efficient but it is a simple resolution.
 #ifndef MREMAP_MAYMOVE
     if (munmap(data_, size_) == -1)
         return false;

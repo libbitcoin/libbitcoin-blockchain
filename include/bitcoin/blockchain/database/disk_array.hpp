@@ -43,7 +43,9 @@ template <typename IndexType, typename ValueType>
 class disk_array
 {
 public:
-    static constexpr ValueType empty = std::numeric_limits<ValueType>::max();
+    // This VC++ workaround is OK because ValueType must be unsigned. 
+    //static constexpr ValueType empty = std::numeric_limits<ValueType>::max();
+    static constexpr ValueType empty = (ValueType)bc::max_uint64;
 
     /**
      * sector_start represents the offset within the file.
