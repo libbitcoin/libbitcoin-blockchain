@@ -41,4 +41,3 @@ uint64_t remainder(const HashType& value, const uint64_t divisor)
 } // namespace libbitcoin
 
 #endif
-

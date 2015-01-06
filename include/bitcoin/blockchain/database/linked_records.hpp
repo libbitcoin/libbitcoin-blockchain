@@ -34,7 +34,8 @@ namespace libbitcoin {
 class linked_records
 {
 public:
-    static constexpr index_type empty = std::numeric_limits<index_type>::max();
+    // std::numeric_limits<index_type>::max()
+    static constexpr index_type empty = bc::max_uint32;
 
     BCB_API linked_records(record_allocator& allocator);
 

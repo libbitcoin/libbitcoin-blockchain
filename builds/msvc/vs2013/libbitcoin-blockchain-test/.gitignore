@@ -1,0 +1,14 @@
+/chain/
+array
+block_db_lookup
+block_db_rows
+history_db_lookup
+history_db_rows
+htdb_records
+htdb_slab
+htdb_slabs
+lrs
+records
+slabs
+spend_db
+tx_db_map

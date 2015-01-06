@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 
     BOOST_REQUIRE(header.size() == buckets);
 
-    const position_type slab_start = htdb_slab_header_fsize(header.size());
+    const position_type slab_start = htdb_slab_header_fsize(buckets);
 
     slab_allocator alloc(file, slab_start);
     alloc.start();
