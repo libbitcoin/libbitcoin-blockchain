@@ -73,8 +73,13 @@ slab_type slab_allocator::get(position_type position) const
 
 void slab_allocator::reserve(size_t space_needed)
 {
+    // sector_start_ and end_ are uint64 but assigned to size_t.
+    BITCOIN_ASSERT(end_ < bc::max_size_t);
+    BITCOIN_ASSERT(sector_start_ < bc::max_size_t);
+
     // See comment in hsdb_shard::reserve()
-    const size_t required_size = sector_start_ + end_ + space_needed;
+    const size_t required_size = static_cast<size_t>(sector_start_) +
+        static_cast<size_t>(end_) + space_needed;
     reserve_space(file_, required_size);
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
