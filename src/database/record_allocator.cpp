@@ -84,12 +84,8 @@ void record_allocator::resize(const index_type size)
 
 void record_allocator::reserve()
 {
-    // sector_start_ is uint64 but assgined to size_t, which may be uint32.
-    BITCOIN_ASSERT(sector_start_ < bc::max_size_t);
-
     // See comment in hsdb_shard::reserve()
-    const size_t required_size = static_cast<size_t>(sector_start_) + 
-        4 + (end_ + 1) * record_size_;
+    const size_t required_size = sector_start_ + 4 + (end_ + 1) * record_size_;
     reserve_space(file_, required_size);
     BITCOIN_ASSERT(file_.size() >= required_size);
 }
