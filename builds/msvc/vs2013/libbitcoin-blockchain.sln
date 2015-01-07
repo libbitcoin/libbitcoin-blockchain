@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbitcoin-blockchain", "li
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbitcoin-blockchain-test", "libbitcoin-blockchain-test\libbitcoin-blockchain-test.vcxproj", "{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbitcoin-blockchain-tools", "libbitcoin-blockchain-tools\libbitcoin-blockchain-tools.vcxproj", "{B9CED930-2EC0-4639-9427-D8EDB9A677AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		StaticDebug|Win32 = StaticDebug|Win32
@@ -62,6 +64,31 @@ Global
 		{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}.StaticRelease|Win32.ActiveCfg = ReleaseSEXE|Win32
 		{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}.StaticRelease|Win32.Build.0 = ReleaseSEXE|Win32
 		{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}.StaticRelease|x64.ActiveCfg = ReleaseSEXE|x64
+		{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}.StaticRelease|x64.Build.0 = ReleaseSEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynDebug|Win32.ActiveCfg = DebugDEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynDebug|Win32.Build.0 = DebugDEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynDebug|x64.ActiveCfg = DebugDEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynDebug|x64.Build.0 = DebugDEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynRelease|Win32.ActiveCfg = DebugDEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynRelease|Win32.Build.0 = DebugDEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynRelease|x64.ActiveCfg = ReleaseDEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.DynRelease|x64.Build.0 = ReleaseDEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgDebug|Win32.ActiveCfg = DebugLEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgDebug|Win32.Build.0 = DebugLEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgDebug|x64.ActiveCfg = DebugLEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgDebug|x64.Build.0 = DebugLEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgRelease|Win32.ActiveCfg = ReleaseLEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgRelease|Win32.Build.0 = ReleaseLEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgRelease|x64.ActiveCfg = ReleaseLEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.LtcgRelease|x64.Build.0 = ReleaseLEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticDebug|Win32.ActiveCfg = DebugSEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticDebug|Win32.Build.0 = DebugSEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticDebug|x64.ActiveCfg = DebugSEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticDebug|x64.Build.0 = DebugSEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticRelease|Win32.ActiveCfg = ReleaseSEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticRelease|Win32.Build.0 = ReleaseSEXE|Win32
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticRelease|x64.ActiveCfg = ReleaseSEXE|x64
+		{B9CED930-2EC0-4639-9427-D8EDB9A677AC}.StaticRelease|x64.Build.0 = ReleaseSEXE|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
