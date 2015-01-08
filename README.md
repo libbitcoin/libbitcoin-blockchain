@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-blockchain.svg?branch=version2)](https://travis-ci.org/libbitcoin/libbitcoin-blockchain)
+[![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-blockchain.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-blockchain)
 
 # Libbitcoin Blockchain
 
