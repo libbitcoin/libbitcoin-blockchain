@@ -212,14 +212,12 @@ void db_interface::push_outputs(
     }
 }
 
-hash_digest read_ephemkey(const data_chunk& stealth_data)
+ec_point read_ephemkey(const data_chunk& stealth_data)
 {
     // Read ephemkey
-    hash_digest ephemkey;
-    BITCOIN_ASSERT(stealth_data.size() >= hash_size);
-    std::copy(stealth_data.begin(), stealth_data.begin() + hash_size,
-        ephemkey.begin());
-    return ephemkey;
+    BITCOIN_ASSERT(stealth_data.size() >= ec_compressed_size);
+    return ec_point(stealth_data.begin(),
+        stealth_data.begin() + ec_compressed_size);
 }
 
 void db_interface::push_stealth_outputs(

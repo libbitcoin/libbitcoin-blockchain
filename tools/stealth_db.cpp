@@ -140,7 +140,7 @@ int main(int argc, char** argv)
         script_type script = unpretty(script_str);
         stealth_row row;
         // ephemkey
-        if (!decode_hash(row.ephemkey, args[1]))
+        if (!decode_base16(row.ephemkey, args[1]))
         {
             std::cerr << "Unable to read ephemeral pubkey." << std::endl;
             return -1;
