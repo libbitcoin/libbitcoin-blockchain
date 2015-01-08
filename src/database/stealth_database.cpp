@@ -25,8 +25,8 @@ namespace libbitcoin {
     namespace chain {
 
 // ephemkey is without sign byte and address is without version byte.
-// [ prefix_bitfield:4 ][ ephemkey:32 ][ address:20 ][ tx_id:32 ]
-constexpr size_t row_size = 4 + 32 + 20 + 32;
+// [ prefix_bitfield:4 ][ ephemkey:33 ][ address:20 ][ tx_id:32 ]
+constexpr size_t row_size = 4 + 33 + 20 + 32;
 
 stealth_database::stealth_database(
     const std::string& index_filename, const std::string& rows_filename)
@@ -71,7 +71,7 @@ stealth_list stealth_database::scan(
         // Add row to results.
         auto deserial = make_deserializer_unsafe(record + bitfield_size);
         result.push_back({
-            deserial.read_hash(),
+            deserial.read_data(ec_compressed_size),
             deserial.read_short_hash(),
             deserial.read_hash()
         });
@@ -91,7 +91,7 @@ void stealth_database::store(
     // Write data.
     auto serial = make_serializer(record);
     serial.write_data(prefix.blocks());
-    serial.write_hash(row.ephemkey);
+    serial.write_data(row.ephemkey);
     serial.write_short_hash(row.address);
     serial.write_hash(row.transaction_hash);
     BITCOIN_ASSERT(serial.iterator() ==

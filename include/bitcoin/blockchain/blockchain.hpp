@@ -72,8 +72,7 @@ BCB_API uint64_t spend_checksum(output_point outpoint);
 
 struct BCB_API stealth_row
 {
-    // No sign byte in public key.
-    hash_digest ephemkey;
+    ec_point ephemkey;
     // No version byte in address.
     short_hash address;
     hash_digest transaction_hash;
