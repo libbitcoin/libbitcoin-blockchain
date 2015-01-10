@@ -123,9 +123,13 @@ int main(int argc, char** argv)
         stealth_list rows = db.scan(prefix, from_height);
         for (const auto row: rows)
         {
-            std::cout << encode_base16(row.ephemkey) << " "
-                << encode_base16(row.address)
-                << " " << encode_hash(row.transaction_hash) << std::endl;
+            std::cout << "Ephemkey: "
+                << encode_base16(row.ephemkey) << std::endl;
+            std::cout << "Address: "
+                << encode_base16(row.address) << std::endl;
+            std::cout << "Tx hash: "
+                << encode_hash(row.transaction_hash) << std::endl;
+            std::cout << std::endl;
         }
     }
     else if (command == "store")
