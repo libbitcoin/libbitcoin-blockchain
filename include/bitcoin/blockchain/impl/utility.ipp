@@ -20,21 +20,25 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 #define LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 
-#include <gmp.h>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 template <typename HashType>
+uint32_t remainder(const HashType& value, const uint32_t divisor)
+{
+    static_assert(sizeof(HashType) >= sizeof(uint32_t), "HashType too small.");
+    auto hash32 = from_big_endian_unsafe<uint32_t>(value.begin());
+    return hash32 % divisor;
+}
+
+template <typename HashType>
 uint64_t remainder(const HashType& value, const uint64_t divisor)
 {
-    mpz_t integ;
-    mpz_init(integ);
-    mpz_import(integ, value.size(), 1, 1, 1, 0, value.data());
-    uint64_t remainder = mpz_fdiv_ui(integ, divisor);
-    mpz_clear(integ);
-    return remainder;
+    static_assert(sizeof(HashType) >= sizeof(uint64_t), "HashType too small.");
+    auto hash64 = from_big_endian_unsafe<uint64_t>(value.begin());
+    return hash64 % divisor;
 }
 
     } // namespace chain

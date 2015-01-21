@@ -103,7 +103,8 @@ bool htdb_slab<HashType>::unlink(const HashType& key)
 template <typename HashType>
 index_type htdb_slab<HashType>::bucket_index(const HashType& key) const
 {
-    const index_type bucket = remainder(key, header_.size());
+    const index_type bucket = remainder(key, 
+        static_cast<uint32_t>(header_.size()));
     BITCOIN_ASSERT(bucket < header_.size());
     return bucket;
 }

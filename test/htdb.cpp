@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
     }
 }
 
-BOOST_AUTO_TEST_CASE(htdb_record_test)
+BOOST_AUTO_TEST_CASE(htdb_record_test_32)
 {
     constexpr size_t rec_buckets = 2;
     constexpr size_t header_size = htdb_record_header_fsize(rec_buckets);
@@ -176,6 +176,86 @@ BOOST_AUTO_TEST_CASE(htdb_record_test)
     BOOST_REQUIRE(header.read(1) == 2);
 
     tiny_hash invalid{{0x00, 0x01, 0x02, 0x03}};
+    BOOST_REQUIRE(!ht.unlink(invalid));
+}
+
+BOOST_AUTO_TEST_CASE(htdb_record_test_64)
+{
+    constexpr size_t rec_buckets = 2;
+    constexpr size_t header_size = htdb_record_header_fsize(rec_buckets);
+
+    touch_file("htdb_records");
+    mmfile file("htdb_records");
+    BITCOIN_ASSERT(file.data());
+    file.resize(header_size + min_records_fsize);
+
+    htdb_record_header header(file, 0);
+    header.initialize_new(rec_buckets);
+    header.start();
+
+    typedef byte_array<8> tiny_hash;
+    constexpr size_t record_size = record_fsize_htdb<tiny_hash>(8);
+    const position_type records_start = header_size;
+
+    record_allocator alloc(file, records_start, record_size);
+    alloc.initialize_new();
+    alloc.start();
+
+    htdb_record<tiny_hash> ht(header, alloc);
+
+    tiny_hash key{{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}};
+    auto write = [](uint8_t* data)
+    {
+        data[0] = 110;
+        data[1] = 110;
+        data[2] = 4;
+        data[3] = 88;
+        data[4] = 110;
+        data[5] = 110;
+        data[6] = 4;
+        data[7] = 88;
+    };
+    ht.store(key, write);
+
+    tiny_hash key1{{0xb0, 0x0b, 0xb0, 0x0b, 0xb0, 0x0b, 0xb0, 0x0b}};
+    auto write1 = [](uint8_t* data)
+    {
+        data[0] = 99;
+        data[1] = 98;
+        data[2] = 97;
+        data[3] = 96;
+        data[4] = 95;
+        data[5] = 94;
+        data[6] = 93;
+        data[7] = 92;
+    };
+    ht.store(key, write);
+    ht.store(key1, write1);
+    ht.store(key1, write);
+
+    alloc.sync();
+
+    BOOST_REQUIRE(header.read(0) == header.empty);
+    BOOST_REQUIRE(header.read(1) == 3);
+
+    htdb_record_list_item<tiny_hash> item(alloc, 3);
+    BOOST_REQUIRE(item.next_index() == 2);
+    htdb_record_list_item<tiny_hash> item1(alloc, 2);
+    BOOST_REQUIRE(item1.next_index() == 1);
+
+    // Should unlink record 1
+    BOOST_REQUIRE(ht.unlink(key));
+
+    BOOST_REQUIRE(header.read(1) == 3);
+    htdb_record_list_item<tiny_hash> item2(alloc, 2);
+    BOOST_REQUIRE(item2.next_index() == 0);
+
+    // Should unlink record 3 from buckets
+    BOOST_REQUIRE(ht.unlink(key1));
+
+    BOOST_REQUIRE(header.read(1) == 2);
+
+    tiny_hash invalid{{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}};
     BOOST_REQUIRE(!ht.unlink(invalid));
 }
 
