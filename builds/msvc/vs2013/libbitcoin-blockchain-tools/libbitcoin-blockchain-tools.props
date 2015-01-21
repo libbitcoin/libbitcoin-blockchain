@@ -12,7 +12,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <!--<DisableSpecificWarnings>4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>-->
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DebugOrRelease)' == 'Release'">BITCOIN_DISABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -31,19 +30,16 @@
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
     <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
     <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-mpir>static</Linkage-mpir>
     <Linkage-libbitcoin>static</Linkage-libbitcoin>
     <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
@@ -52,7 +48,6 @@
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-secp256k1  : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-mpir       : $(Linkage-mpir)" Importance="high"/>
     <Message Text="Linkage-libbitcoin : $(Linkage-libbitcoin)" Importance="high"/>
     <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
   </Target>
