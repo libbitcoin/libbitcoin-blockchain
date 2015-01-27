@@ -1,13 +1,13 @@
 // mman-win32 from code.google.com/p/mman-win32 (MIT License).
 
+#include "mman.h"
+
 #include <windows.h>
 #include <errno.h>
 #include <io.h>
 
-#include "mman.h"
-
 #ifndef FILE_MAP_EXECUTE
-#define FILE_MAP_EXECUTE    0x0020
+    #define FILE_MAP_EXECUTE    0x0020
 #endif
 
 static int __map_mman_error(const DWORD err, const int deferr)
@@ -58,7 +58,7 @@ static DWORD __map_mmap_prot_file(const int prot)
     return desiredAccess;
 }
 
-void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
+void* mmap(void* addr, size_t len, int prot, int flags, int fildes, oft__ off)
 {
     HANDLE mapping, handle;
 
@@ -69,18 +69,16 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
 #pragma warning(disable: 4293)
 #endif
 
-    const DWORD fileOffsetLow = (sizeof(off_t) <= sizeof(DWORD)) ?
+    const DWORD fileOffsetLow = (sizeof(oft__) <= sizeof(DWORD)) ?
         (DWORD)off : (DWORD)(off & 0xFFFFFFFFL);
-    const DWORD fileOffsetHigh = (sizeof(off_t) <= sizeof(DWORD)) ?
+    const DWORD fileOffsetHigh = (sizeof(oft__) <= sizeof(DWORD)) ?
         (DWORD)0 : (DWORD)((off >> 32) & 0xFFFFFFFFL);
     const DWORD protect = __map_mmap_prot_page(prot);
     const DWORD desiredAccess = __map_mmap_prot_file(prot);
-
-    const off_t maxSize = off + (off_t)len;
-
-    const DWORD maxSizeLow = (sizeof(off_t) <= sizeof(DWORD)) ?
+    const oft__ maxSize = off + (oft__)len;
+    const DWORD maxSizeLow = (sizeof(oft__) <= sizeof(DWORD)) ?
         (DWORD)maxSize : (DWORD)(maxSize & 0xFFFFFFFFL);
-    const DWORD maxSizeHigh = (sizeof(off_t) <= sizeof(DWORD)) ?
+    const DWORD maxSizeHigh = (sizeof(oft__) <= sizeof(DWORD)) ?
         (DWORD)0 : (DWORD)((maxSize >> 32) & 0xFFFFFFFFL);
 
 #ifdef _MSC_VER
@@ -184,8 +182,9 @@ int munlock(const void* addr, size_t len)
     return -1;
 }
 
-// www.gitorious.org/git-win32/mainline/source/9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
-int ftruncate(int fd, off_t size)
+// www.gitorious.org/git-win32/mainline/source/
+// 9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
+int ftruncate(int fd, oft__ size)
 {
     HANDLE handle;
     unsigned int curpos;

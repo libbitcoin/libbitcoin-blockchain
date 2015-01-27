@@ -3,8 +3,11 @@
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_                              
 
-#include <sys/types.h>
+// DO NOT USE off_t/_off_t AS THE SIZE VARIES.
+#include <stddef.h>
+typedef size_t oft__;
 
+// mman-win32 from code.google.com/p/mman-win32 (MIT License).
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,15 +32,16 @@ extern "C" {
 #define MS_SYNC         2
 #define MS_INVALIDATE   4
 
-void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off);
+void* mmap(void* addr, size_t len, int prot, int flags, int fildes, oft__ off);
 int   munmap(void* addr, size_t len);
 int   mprotect(void* addr, size_t len, int prot);
 int   msync(void* addr, size_t len, int flags);
 int   mlock(const void* addr, size_t len);
 int   munlock(const void* addr, size_t len);
 
-// www.gitorious.org/git-win32/mainline/source/9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
-int   ftruncate(int fd, off_t size);
+// www.gitorious.org/git-win32/mainline/source/
+// 9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
+int   ftruncate(int fd, oft__ size);
 
 #ifdef __cplusplus
 };
