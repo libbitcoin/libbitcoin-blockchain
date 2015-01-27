@@ -38,8 +38,9 @@ namespace libbitcoin {
 
 mmfile::mmfile(const std::string& filename)
 {
-    // There is no obvious reason this class should be restricted to 64 bit.
-    //BITCOIN_ASSERT_MSG(sizeof (void*) == 8, "Not a 64 bit system!");
+    // mmfile should be able to support 32 bit but because the blockchain 
+    // requires a larger file this is not validated or supported.
+    static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
 
     file_handle_ = open(filename.c_str(), O_RDWR, FILE_OPEN_PERMISSIONS);
     if (file_handle_ == -1)
