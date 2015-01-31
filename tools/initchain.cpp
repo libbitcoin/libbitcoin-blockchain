@@ -18,7 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <iostream>
+#include <boost/format.hpp>
+#include <boost/filesystem.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
+
+#define BS_INITCHAIN_DIR_NEW \
+    "Failed to create directory %1% with error, '%2%'.\n"
+#define BS_INITCHAIN_DIR_EXISTS \
+    "Failed because the directory %1% already exists.\n"
 
 using namespace bc;
 using namespace bc::chain;
@@ -32,6 +40,17 @@ int main(int argc, char** argv)
         return 1;
     }
     const std::string prefix = argv[1];
+
+    boost::system::error_code code;
+    if (!boost::filesystem::create_directories(prefix, code))
+    {
+        if (code.value() == 0)
+            std::cerr << boost::format(BS_INITCHAIN_DIR_EXISTS) % prefix;
+        else
+            std::cerr << boost::format(BS_INITCHAIN_DIR_NEW) % prefix % code.message();
+        return -1;
+    }
+
     initialize_blockchain(prefix);
     // Add genesis block.
     db_paths paths(prefix);
