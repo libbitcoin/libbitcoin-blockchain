@@ -25,9 +25,10 @@ bitcoin_blockchain_include_HEADERS = \
     include/bitcoin/blockchain/checkpoints.hpp \
     include/bitcoin/blockchain/db_interface.hpp \
     include/bitcoin/blockchain/define.hpp \
+    include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate.hpp \
-    include/bitcoin/blockchain/organizer.hpp
+    include/bitcoin/blockchain/version.hpp
 
 bitcoin_blockchain_database_includedir = $(includedir)/bitcoin/blockchain/database
 bitcoin_blockchain_database_include_HEADERS = \

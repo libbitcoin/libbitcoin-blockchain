@@ -104,6 +104,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
     <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
     <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp" />

@@ -138,6 +138,9 @@
     <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h">
       <Filter>src\database\mman-win32</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\organizer.cpp">

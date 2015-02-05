@@ -28,6 +28,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/validate.hpp>
+#include <bitcoin/blockchain/version.hpp>
 #include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/fsizes.hpp>
 
