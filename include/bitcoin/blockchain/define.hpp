@@ -48,5 +48,8 @@
     #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
+// TODO: generate the version value from libbitcoin-build.
+#define LIBBITCOIN_BLOCKCHAIN_VERSION "2.0.0"
+
 #endif
 
