@@ -34,11 +34,18 @@ constexpr size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 
 // Create a new hash from a hash + index (a point)
 // deterministically suitable for use in a hashtable.
-hash_digest tweak(hash_digest hash, const uint32_t index)
+// This technique could be replaced by simply using the output.hash.
+static hash_digest output_to_hash(const output_point& output)
 {
-    auto serial = make_serializer(hash.begin());
-    serial.write_4_bytes(index);
-    return hash;
+    data_chunk point(sizeof(output.index) + sizeof(output.hash));
+    const auto index = to_little_endian(output.index);
+    std::copy(output.hash.begin(), output.hash.end(), point.begin());
+    std::copy(index.begin(), index.end(), point.begin() + sizeof(output.hash));
+
+    // The index has a *very* low level of bit distribution evenness, 
+    // almost none, and we must preserve the presumed random bit distribution,
+    // so we need to re-hash here.
+    return sha256_hash(point);
 }
 
 spend_result::spend_result(const record_type record)
@@ -88,7 +95,7 @@ void spend_database::start()
 
 spend_result spend_database::get(const output_point& outpoint) const
 {
-    const hash_digest key = tweak(outpoint.hash, outpoint.index);
+    const hash_digest key = output_to_hash(outpoint);
     const record_type record = map_.get(key);
     return spend_result(record);
 }
@@ -96,7 +103,7 @@ spend_result spend_database::get(const output_point& outpoint) const
 void spend_database::store(
     const output_point& outpoint, const input_point& spend)
 {
-    const hash_digest key = tweak(outpoint.hash, outpoint.index);
+    const hash_digest key = output_to_hash(outpoint);
     auto write = [&spend](uint8_t* data)
     {
         auto serial = make_serializer(data);
@@ -108,7 +115,7 @@ void spend_database::store(
 
 void spend_database::remove(const output_point& outpoint)
 {
-    const hash_digest key = tweak(outpoint.hash, outpoint.index);
+    const hash_digest key = output_to_hash(outpoint);
     DEBUG_ONLY(bool success =) map_.unlink(key);
     BITCOIN_ASSERT(success);
 }
