@@ -77,7 +77,7 @@ spend_database::spend_database(const std::string& filename)
     allocator_(file_, alloc_offset, record_size),
     map_(header_, allocator_)
 {
-    BITCOIN_ASSERT(file_.data());
+    BITCOIN_ASSERT(file_.data() != nullptr);
 }
 
 void spend_database::initialize_new()

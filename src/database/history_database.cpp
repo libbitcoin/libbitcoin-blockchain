@@ -43,8 +43,8 @@ history_database::history_database(
     linked_rows_(rows_),
     map_(start_lookup_, linked_rows_)
 {
-    BITCOIN_ASSERT(lookup_file_.data());
-    BITCOIN_ASSERT(rows_file_.data());
+    BITCOIN_ASSERT(lookup_file_.data() != nullptr);
+    BITCOIN_ASSERT(rows_file_.data() != nullptr);
 }
 
 void history_database::initialize_new()

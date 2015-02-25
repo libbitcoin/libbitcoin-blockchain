@@ -61,25 +61,25 @@ block_result::operator bool() const
 
 block_header_type block_result::header() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return deserialize(slab_);
 }
 
 size_t block_result::height() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return from_little_endian_unsafe<uint32_t>(slab_ + 80);
 }
 
 size_t block_result::transactions_size() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return from_little_endian_unsafe<uint32_t>(slab_ + 80 + 4);
 }
 
 hash_digest block_result::transaction_hash(size_t i) const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     BITCOIN_ASSERT(i < transactions_size());
     const uint8_t* first = slab_ + 80 + 4 + 4 + i * hash_size;
     auto deserial = make_deserializer_unsafe(first);
@@ -93,8 +93,8 @@ block_database::block_database(
     index_file_(index_filename),
     index_(index_file_, 0, sizeof(position_type))
 {
-    BITCOIN_ASSERT(map_file_.data());
-    BITCOIN_ASSERT(index_file_.data());
+    BITCOIN_ASSERT(map_file_.data() != nullptr);
+    BITCOIN_ASSERT(index_file_.data() != nullptr);
 }
 
 void block_database::initialize_new()
