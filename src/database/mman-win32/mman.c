@@ -2,6 +2,7 @@
 
 #include "mman.h"
 
+#include <stdint.h>
 #include <windows.h>
 #include <errno.h>
 #include <io.h>
@@ -187,18 +188,26 @@ int munlock(const void* addr, size_t len)
 int ftruncate(int fd, oft__ size)
 {
     HANDLE handle;
-    unsigned int curpos;
+    DWORD position;
+    LARGE_INTEGER li;
 
     if (fd < 0)
         return -1;
 
+    // guard against overflow from unsigned to signed
+    if (size >= MAXINT64)
+        return -1;
+
+    // unsigned to signed, splits to high and low
+    li.QuadPart = (LONGLONG)size;
+
     handle = (HANDLE)_get_osfhandle(fd);
-    curpos = SetFilePointer(handle, 0, NULL, FILE_CURRENT);
-    if (curpos == 0xFFFFFFFF
-        || SetFilePointer(handle, size, NULL, FILE_BEGIN) == 0xFFFFFFFF
-        || !SetEndOfFile(handle))
+    position = SetFilePointer(handle, li.LowPart, &li.HighPart, FILE_BEGIN);
+
+    if (position == INVALID_SET_FILE_POINTER ||
+        SetEndOfFile(handle) == FALSE)
     {
-        int error = GetLastError();
+        DWORD error = GetLastError();
 
         switch (error)
         {

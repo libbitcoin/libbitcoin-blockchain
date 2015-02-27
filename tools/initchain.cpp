@@ -30,34 +30,39 @@
 
 using namespace bc;
 using namespace bc::chain;
+using namespace boost::filesystem;
+using namespace boost::system;
+using boost::format;
 
 // Create a new blockchain database.
 int main(int argc, char** argv)
 {
-    if (argc != 2)
-    {
-        std::cerr << "initchain: No directory specified." << std::endl;
-        return 1;
-    }
-    const std::string prefix = argv[1];
+    std::string prefix("blockchain");
 
-    boost::system::error_code code;
-    if (!boost::filesystem::create_directories(prefix, code))
+    if (argc == 2)
+        prefix = argv[1];
+
+    error_code code;
+    if (!create_directories(prefix, code))
     {
         if (code.value() == 0)
-            std::cerr << boost::format(BS_INITCHAIN_DIR_EXISTS) % prefix;
+            std::cerr << format(BS_INITCHAIN_DIR_EXISTS) % prefix;
         else
-            std::cerr << boost::format(BS_INITCHAIN_DIR_NEW) % prefix % code.message();
+            std::cerr << format(BS_INITCHAIN_DIR_NEW) % prefix % code.message();
+
         return -1;
     }
 
     initialize_blockchain(prefix);
+
     // Add genesis block.
     db_paths paths(prefix);
     db_interface interface(paths, {0});
+
     interface.start();
     const block_type genesis = genesis_block();
     interface.push(genesis);
+
     return 0;
 }
 

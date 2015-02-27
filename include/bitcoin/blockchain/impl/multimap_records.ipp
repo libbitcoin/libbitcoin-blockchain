@@ -57,7 +57,7 @@ template <typename HashType>
 void multimap_records<HashType>::delete_last_row(const HashType& key)
 {
     record_type start_info = map_.get(key);
-    BITCOIN_ASSERT(start_info);
+    BITCOIN_ASSERT(start_info != nullptr);
     const index_type old_begin = 
         from_little_endian_unsafe<index_type>(start_info);
     BITCOIN_ASSERT(old_begin != linked_rows_.empty);

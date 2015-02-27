@@ -38,7 +38,7 @@ constexpr size_t linked_record_offset = 4;
 
 constexpr size_t htdb_slab_header_fsize(size_t buckets)
 {
-    return 4 + 8 * buckets;
+    return 8 + 8 * buckets;
 }
 
 constexpr size_t htdb_record_header_fsize(size_t buckets)

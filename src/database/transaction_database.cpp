@@ -51,19 +51,19 @@ transaction_result::operator bool() const
 
 size_t transaction_result::height() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return from_little_endian_unsafe<uint32_t>(slab_);
 }
 
 size_t transaction_result::index() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return from_little_endian_unsafe<uint32_t>(slab_ + 4);
 }
 
 transaction_type transaction_result::transaction() const
 {
-    BITCOIN_ASSERT(slab_);
+    BITCOIN_ASSERT(slab_ != nullptr);
     return deserialize(slab_ + 8);
 }
 
@@ -71,7 +71,7 @@ transaction_database::transaction_database(const std::string& map_filename)
   : map_file_(map_filename), header_(map_file_, 0),
     allocator_(map_file_, alloc_offset), map_(header_, allocator_)
 {
-    BITCOIN_ASSERT(map_file_.data());
+    BITCOIN_ASSERT(map_file_.data() != nullptr);
 }
 
 void transaction_database::initialize_new()
