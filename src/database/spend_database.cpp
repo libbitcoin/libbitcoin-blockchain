@@ -19,7 +19,7 @@
  */
 #include <bitcoin/blockchain/database/spend_database.hpp>
 
-#include <bitcoin/blockchain/database/fsizes.hpp>
+#include <boost/filesystem.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -28,7 +28,7 @@ constexpr size_t number_buckets = 228110589;
 constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
 constexpr size_t initial_map_file_size = header_size + min_records_fsize;
 
-constexpr position_type alloc_offset = header_size;
+constexpr position_type allocator_offset = header_size;
 constexpr size_t value_size = hash_size + 4;
 constexpr size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 
@@ -72,19 +72,20 @@ uint32_t spend_result::index() const
     return from_little_endian_unsafe<uint32_t>(record_ + hash_size);
 }
 
-spend_database::spend_database(const std::string& filename)
-  : file_(filename), header_(file_, 0),
-    allocator_(file_, alloc_offset, record_size),
+spend_database::spend_database(const boost::filesystem::path& filename)
+  : file_(filename), 
+    header_(file_, 0),
+    allocator_(file_, allocator_offset, record_size),
     map_(header_, allocator_)
 {
     BITCOIN_ASSERT(file_.data() != nullptr);
 }
 
-void spend_database::initialize_new()
+void spend_database::create()
 {
     file_.resize(initial_map_file_size);
-    header_.initialize_new(number_buckets);
-    allocator_.initialize_new();
+    header_.create(number_buckets);
+    allocator_.create();
 }
 
 void spend_database::start()
@@ -129,7 +130,7 @@ spend_statinfo spend_database::statinfo() const
 {
     return {
         header_.size(),
-        allocator_.size()
+        allocator_.count()
     };
 }
 

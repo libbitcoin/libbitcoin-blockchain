@@ -20,16 +20,8 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-
-// Logger defines.
-#define LOG_HSDB        "history_scan_database"
-
-// Uncomment this to enable hsdb debug logging.
-#define HSDB_DEBUG
-// Lowers read performance.
-#define SLAB_DEBUG_ASSERTS
-#define RECORD_DEBUG_ASSERTS
 
 // Now we use the generic helper definitions in libbitcoin to
 // define BCB_API and BCB_INTERNAL.
@@ -47,6 +39,9 @@
     #define BCB_API      BC_HELPER_DLL_IMPORT
     #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
+
+typedef uint32_t index_type;
+typedef uint64_t position_type;
 
 #endif
 

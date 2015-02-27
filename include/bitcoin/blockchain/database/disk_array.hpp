@@ -21,7 +21,6 @@
 #define LIBBITCOIN_BLOCKCHAIN_DISK_ARRAY_HPP
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
@@ -57,7 +56,7 @@ public:
      * The space needed is sizeof(IndexType) + size * sizeof(ValueType)
      * Element items are initialised to disk_array::empty.
      */
-    void initialize_new(IndexType size);
+    void create(IndexType size);
 
     /**
      * Must be called before use. Loads the size from the file.
@@ -88,7 +87,7 @@ private:
     mmfile& file_;
     position_type sector_start_;
 
-    IndexType size_ = 0;
+    IndexType size_;
 };
 
     } // namespace chain

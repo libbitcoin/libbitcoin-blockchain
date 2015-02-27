@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -31,7 +32,7 @@ namespace libbitcoin {
 class mmfile
 {
 public:
-    BCB_API mmfile(const std::string& filename);
+    BCB_API mmfile(const boost::filesystem::path& filename);
     BCB_API mmfile(mmfile&& file);
     BCB_API ~mmfile();
 
@@ -41,6 +42,7 @@ public:
     BCB_API uint8_t* data();
     BCB_API const uint8_t* data() const;
     BCB_API size_t size() const;
+    BCB_API bool reserve(size_t required_size);
     BCB_API bool resize(size_t new_size);
 private:
     int file_handle_ = 0;

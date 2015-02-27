@@ -25,6 +25,9 @@
 namespace libbitcoin {
     namespace chain {
 
+// used by test
+constexpr size_t linked_record_offset = sizeof(index_type);
+
 /**
  * linked_records is a one-way linked list with a next value containing
  * the index of the next record.

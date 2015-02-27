@@ -37,7 +37,7 @@ public:
     htdb_record_list_item(
         record_allocator& allocator, const index_type index=0);
 
-    index_type initialize_new(const HashType& key, const index_type next);
+    index_type create(const HashType& key, const index_type next);
 
     // Does this match?
     bool compare(const HashType& key) const;
@@ -65,7 +65,7 @@ htdb_record_list_item<HashType>::htdb_record_list_item(
 }
 
 template <typename HashType>
-index_type htdb_record_list_item<HashType>::initialize_new(
+index_type htdb_record_list_item<HashType>::create(
     const HashType& key, const index_type next)
 {
     // Create new record.
@@ -73,8 +73,9 @@ index_type htdb_record_list_item<HashType>::initialize_new(
     //   [ next:4   ]
     //   [ value... ]
     index_ = allocator_.allocate();
-    // Write to slab.
-    auto serial = make_serializer(raw_data(0));
+    record_type data = allocator_.get(index_);
+    // Write record.
+    auto serial = make_serializer(data);
     serial.write_data(key);
     serial.write_4_bytes(next);
     return index_;

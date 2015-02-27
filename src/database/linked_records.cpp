@@ -37,11 +37,14 @@ index_type linked_records::create()
 
 index_type linked_records::insert(index_type next)
 {
+    static_assert(sizeof(index_type) == sizeof(uint32_t),
+        "index_type incorrect size");
+
     // Create new record.
     index_type record = allocator_.allocate();
-    uint8_t* data = allocator_.get(record);
+    record_type data = allocator_.get(record);
+
     // Write next value at first 4 bytes of record.
-    static_assert(sizeof(index_type) == 4, "index_type not 4 bytes");
     auto serial = make_serializer(data);
     serial.write_4_bytes(next);
     return record;
@@ -55,7 +58,7 @@ index_type linked_records::next(index_type index) const
 
 record_type linked_records::get(index_type index) const
 {
-    return allocator_.get(index) + 4;
+    return allocator_.get(index) + sizeof(index_type);
 }
 
     } // namespace chain

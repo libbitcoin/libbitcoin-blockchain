@@ -20,11 +20,11 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_DATABASE_HPP
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -73,12 +73,12 @@ private:
 class transaction_database
 {
 public:
-    BCB_API transaction_database(const std::string& map_filename);
+    BCB_API transaction_database(const boost::filesystem::path& map_filename);
 
     /**
      * Initialize a new transaction database.
      */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * You must call start() before using the database.

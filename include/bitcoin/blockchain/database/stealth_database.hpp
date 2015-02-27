@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
@@ -32,13 +33,13 @@ class stealth_database
 public:
     typedef std::function<void (uint8_t*)> write_function;
 
-    BCB_API stealth_database(
-        const std::string& index_filename, const std::string& rows_filename);
+    BCB_API stealth_database(const boost::filesystem::path& index_filename,
+        const boost::filesystem::path& rows_filename);
 
     /**
      * Initialize a new stealth database.
      */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * You must call start() before using the database.

@@ -28,14 +28,14 @@ namespace libbitcoin {
 template <typename IndexType, typename ValueType>
 disk_array<IndexType, ValueType>::disk_array(
     mmfile& file, position_type sector_start)
-  : file_(file), sector_start_(sector_start)
+  : file_(file), sector_start_(sector_start), size_(0)
 {
     static_assert(std::is_unsigned<ValueType>::value,
         "disk_array only works with unsigned types");
 }
 
 template <typename IndexType, typename ValueType>
-void disk_array<IndexType, ValueType>::initialize_new(
+void disk_array<IndexType, ValueType>::create(
     IndexType size)
 {
     auto serial = make_serializer(data(0));
@@ -47,10 +47,8 @@ void disk_array<IndexType, ValueType>::initialize_new(
 template <typename IndexType, typename ValueType>
 void disk_array<IndexType, ValueType>::start()
 {
-    const uint8_t* begin = data(0);
-    const uint8_t* end = data(sizeof(IndexType));
-    auto deserial = make_deserializer(begin, end);
-    size_ = deserial.read_little_endian<IndexType>();
+    BITCOIN_ASSERT(file_.size() >= sizeof(size_));
+    size_ = from_little_endian_unsafe<IndexType>(data(0));
 }
 
 template <typename IndexType, typename ValueType>
@@ -70,7 +68,7 @@ template <typename IndexType, typename ValueType>
 void disk_array<IndexType, ValueType>::write(
     IndexType index, ValueType value)
 {
-    BITCOIN_ASSERT_MSG(size_ != 0, "disk_array::start() wasn't called.");
+    BITCOIN_ASSERT_MSG(size_ > 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
     // Find our item.
     const position_type position = item_position(index);

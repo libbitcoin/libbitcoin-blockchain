@@ -21,8 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_IPP
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
 #include "htdb_record_list_item.ipp"
+#include "remainder.ipp"
 
 namespace libbitcoin {
     namespace chain {
@@ -41,7 +41,7 @@ void htdb_record<HashType>::store(const HashType& key, write_function write)
     const index_type old_begin = read_bucket_value(key);
     htdb_record_list_item<HashType> item(allocator_);
     const index_type new_begin =
-        item.initialize_new(key, old_begin);
+        item.create(key, old_begin);
     write(item.data());
     // Link record to header.
     link(key, new_begin);

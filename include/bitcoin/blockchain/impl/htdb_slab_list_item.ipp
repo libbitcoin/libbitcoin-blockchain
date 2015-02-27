@@ -40,7 +40,7 @@ public:
     htdb_slab_list_item(
         slab_allocator& allocator, const position_type position=0);
 
-    position_type initialize_new(
+    position_type create(
         const HashType& key, const size_t value_size,
         const position_type next);
 
@@ -69,7 +69,7 @@ htdb_slab_list_item<HashType>::htdb_slab_list_item(
 }
 
 template <typename HashType>
-position_type htdb_slab_list_item<HashType>::initialize_new(
+position_type htdb_slab_list_item<HashType>::create(
     const HashType& key, const size_t value_size, const position_type next)
 {
     const position_type info_size = key.size() + 8;
@@ -79,13 +79,13 @@ position_type htdb_slab_list_item<HashType>::initialize_new(
     //   [ next:8   ]
     //   [ value... ]
     const size_t slab_size = info_size + value_size;
-    const position_type position = allocator_.allocate(slab_size);
-    raw_data_ = allocator_.get(position);
+    const position_type slab = allocator_.allocate(slab_size);
+    raw_data_ = allocator_.get(slab);
     // Write to slab.
     auto serial = make_serializer(raw_data_);
     serial.write_data(key);
     serial.write_8_bytes(next);
-    return position;
+    return slab;
 }
 
 template <typename HashType>

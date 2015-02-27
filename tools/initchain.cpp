@@ -39,8 +39,13 @@ int main(int argc, char** argv)
 {
     std::string prefix("blockchain");
 
-    if (argc == 2)
+    if (argc > 1)
         prefix = argv[1];
+
+#ifndef NDEBUG
+    if (argc > 2 && std::string("--clean") == argv[2])
+        boost::filesystem::remove_all(prefix);
+#endif
 
     error_code code;
     if (!create_directories(prefix, code))

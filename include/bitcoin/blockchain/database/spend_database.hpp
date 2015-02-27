@@ -20,10 +20,10 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_SPEND_DATABASE_HPP
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -68,12 +68,12 @@ struct spend_statinfo
 class spend_database
 {
 public:
-    BCB_API spend_database(const std::string& filename);
+    BCB_API spend_database(const boost::filesystem::path& filename);
 
     /**
      * Initialize a new spend database.
      */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * You must call start() before using the database.

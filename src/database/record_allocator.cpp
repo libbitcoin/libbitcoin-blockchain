@@ -20,85 +20,103 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-record_allocator::record_allocator(
-    mmfile& file, position_type sector_start, size_t record_size)
-  : file_(file), sector_start_(sector_start), record_size_(record_size)
+record_allocator::record_allocator(mmfile& file, position_type sector_start,
+    size_t record_size)
+  : file_(file), start_(sector_start), record_size_(record_size), count_(0)
 {
 }
 
-void record_allocator::initialize_new()
+void record_allocator::create()
 {
-    BITCOIN_ASSERT(sizeof(end_) == 4);
-    end_ = 0;
+    // count_ = 0;
     sync();
 }
 
 void record_allocator::start()
 {
-    BITCOIN_ASSERT(file_.size() >= 4);
-    auto deserial = make_deserializer(data(0), data(4));
-    end_ = deserial.read_4_bytes();
-}
-
-index_type record_allocator::allocate()
-{
-    reserve();
-    const index_type record_index = end_;
-    ++end_;
-    BITCOIN_ASSERT(record_position(end_) <= file_.size());
-    return record_index;
+    read_count();
 }
 
 void record_allocator::sync()
 {
-    BITCOIN_ASSERT(record_position(end_) <= file_.size());
-    auto serial = make_serializer(data(0));
-    serial.write_4_bytes(end_);
+    write_count();
 }
 
-record_type record_allocator::get(index_type index) const
+index_type record_allocator::allocate(/* size_t records=1 */)
 {
-#ifdef RECORD_DEBUG_ASSERTS
-    // Disabled asserts to improve performance.
-    BITCOIN_ASSERT(index < end_);
-    BITCOIN_ASSERT(sector_start_ + record_position(end_) <= file_.size());
-#endif
-    // For some reason calling data(record_position(index)); is way slower...
-    return file_.data() + sector_start_ + record_position(index);
+    constexpr size_t records = 1;
+    auto record_index = count_;
+    reserve(records);
+    return record_index;
 }
 
-index_type record_allocator::size() const
+// logical record access
+record_type record_allocator::get(index_type record) const
 {
-    return end_;
+    return data(record_to_position(record));
 }
 
-void record_allocator::resize(const index_type size)
-{
-    end_ = size;
-}
-
-void record_allocator::reserve()
-{
-    // See comment in hsdb_shard::reserve()
-    const size_t required_size = sector_start_ + 4 + (end_ + 1) * record_size_;
-    reserve_space(file_, required_size);
-    BITCOIN_ASSERT(file_.size() >= required_size);
-}
-
+// File data access, by byte-wise position relative to file.
 uint8_t* record_allocator::data(const position_type position) const
 {
-    BITCOIN_ASSERT(sector_start_ + position <= file_.size());
-    return file_.data() + sector_start_ + position;
+    // For some reason calling data(start_ + position) is way slower.
+    BITCOIN_ASSERT(start_ + position <= file_.size());
+    return file_.data() + start_ + position;
 }
 
-position_type record_allocator::record_position(index_type index) const
+void record_allocator::reserve(size_t count)
 {
-    return 4 + index * record_size_;
+    // See comment in hsdb_shard::reserve()
+    const size_t required_size = start_ + record_to_position(count_ + count);
+    DEBUG_ONLY(const auto success =) file_.reserve(required_size);
+    BITCOIN_ASSERT(success);
+    count_ += count;
+}
+
+// Read the count value from the first chunk of the file.
+void record_allocator::read_count()
+{
+    BITCOIN_ASSERT(file_.size() >= sizeof(count_));
+    count_ = from_little_endian_unsafe<index_type>(data(0));
+}
+
+// Write the count value to the first chunk of the file.
+void record_allocator::write_count()
+{
+    BITCOIN_ASSERT(file_.size() >= sizeof(count_));
+    auto serial = make_serializer(data(0));
+    serial.write_little_endian(count_);
+}
+
+// A record allocator is a slab allocator where the record size is fixed.
+// These methods convert from logical record position to byte-wise position
+// relative to start.
+
+//index_type record_allocator::position_to_record(position_type position) const
+//{
+//    return (position - sizeof(index_type)) / record_size_;
+//}
+
+position_type record_allocator::record_to_position(index_type record) const
+{
+    // The position is relative to start, so we must add the size prefix.
+    return sizeof(index_type) + record * record_size_;
+}
+
+index_type record_allocator::count() const
+{
+    return count_;
+}
+
+void record_allocator::count(const index_type records)
+{
+    BITCOIN_ASSERT(records <= count_);
+    count_ = records;
 }
 
     } // namespace chain
