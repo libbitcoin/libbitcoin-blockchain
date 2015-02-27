@@ -40,45 +40,31 @@
 
 using boost::filesystem::path;
 
+// mmfile should be able to support 32 bit but because the blockchain 
+// requires a larger file this is not validated or supported.
+static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
+
 namespace libbitcoin {
     namespace chain {
 
 mmfile::mmfile(const path& filename)
 {
-    // mmfile should be able to support 32 bit but because the blockchain 
-    // requires a larger file this is not validated or supported.
-    static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
-
-    file_handle_ = open(filename.generic_string().c_str(), O_RDWR, 
-        FILE_OPEN_PERMISSIONS);
-    if (file_handle_ == -1)
-        return;
-
-    struct stat sbuf;
-    if (fstat(file_handle_, &sbuf) == -1)
-        return;
-
-    size_ = sbuf.st_size;
-    BITCOIN_ASSERT_MSG(size_ > 0, "File size cannot be 0 bytes.");
-
-    // You can static_cast void* pointers.
-    data_ = static_cast<uint8_t*>(mmap(
-        0, size_, PROT_READ | PROT_WRITE, MAP_SHARED, file_handle_, 0));
-    if (data_ == MAP_FAILED)
-        data_ = nullptr;
+    file_handle_ = open_file(filename);
+    size_ = file_size(file_handle_);
+    /* bool */ map(size_);
 }
 
 mmfile::mmfile(mmfile&& file)
   : file_handle_(file.file_handle_), data_(file.data_), size_(file.size_)
 {
-    file.file_handle_ = 0;
+    file.file_handle_ = -1;
     file.data_ = nullptr;
     file.size_ = 0;
 }
 
 mmfile::~mmfile()
 {
-    munmap(data_, size_);
+    unmap();
     close(file_handle_);
 }
 
@@ -96,12 +82,12 @@ size_t mmfile::size() const
 }
 
 // Grow file by 1.5x or keep it the same.
-bool mmfile::reserve(size_t required_size)
+bool mmfile::reserve(size_t size)
 {
-    if (required_size <= size_)
+    if (size <= size_)
         return true;
 
-    const size_t new_size = required_size * 3 / 2;
+    const size_t new_size = size * 3 / 2;
     return resize(new_size);
 }
 
@@ -112,24 +98,89 @@ bool mmfile::resize(size_t new_size)
         return false;
 
     // Readjust memory map.
-
-    // OSX mman and mman-win32 do not implement mremap or MREMAP_MAYMOVE.
-    // This may not be most efficient but it is a simple resolution.
-#ifndef MREMAP_MAYMOVE
-    if (munmap(data_, size_) == -1)
-        return false;
-
-    data_ = static_cast<uint8_t*>(mmap(
-        0, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, file_handle_, 0));
+#ifdef MREMAP_MAYMOVE
+    return remap(new_size);
 #else
-    data_ = static_cast<uint8_t*>(mremap(
-        data_, size_, new_size, MREMAP_MAYMOVE));
+    return (unmap() && map(new_size));
+#endif
+}
+
+// privates
+
+size_t mmfile::file_size(int file_handle)
+{
+    if (file_handle == -1)
+        return 0;
+
+    // This is required because off_t is defined as long, whcih is 32 bits in
+    // mavc and 64 bits in linux/osx, and stat contains off_t.
+#ifdef _WIN32
+    #ifdef _WIN64
+    struct _stat64 sbuf;
+    if (_fstat64(file_handle, &sbuf) == -1)
+        return 0;
+    #else
+    struct _stat32 sbuf;
+    if (_fstat32(file_handle, &sbuf) == -1)
+        return 0;
+    #endif
+#else
+    struct stat sbuf;
+    if (fstat(file_handle, &sbuf) == -1)
+        return 0;
 #endif
 
-    if (data_ == MAP_FAILED)
+    // Convert signed to unsigned size.
+    BITCOIN_ASSERT_MSG(sbuf.st_size > 0, "File size cannot be 0 bytes.");
+    return static_cast<size_t>(sbuf.st_size);
+}
+
+bool mmfile::map(size_t size)
+{
+    if (size == 0)
         return false;
 
-    size_ = new_size;
+    data_ = static_cast<uint8_t*>(mmap(0, size, PROT_READ | PROT_WRITE,
+        MAP_SHARED, file_handle_, 0));
+
+    return validate(size);
+}
+
+int mmfile::open_file(const path& filename)
+{
+    int handle = open(filename.generic_string().c_str(),
+        O_RDWR, FILE_OPEN_PERMISSIONS);
+    return handle;
+}
+
+#ifdef MREMAP_MAYMOVE
+bool mmfile::remap(size_t new_size)
+{
+    data_ = static_cast<uint8_t*>(mremap(data_, size_, new_size,
+        MREMAP_MAYMOVE));
+
+    return validate(size);
+}
+#endif
+
+bool mmfile::unmap()
+{
+    bool success = (munmap(data_, size_) != -1);
+    size_ = 0;
+    data_ = nullptr;
+    return success;
+}
+
+bool mmfile::validate(size_t size)
+{
+    if (data_ == MAP_FAILED)
+    {
+        size_ = 0;
+        data_ = nullptr;
+        return false;
+    }
+
+    size_ = size;
     return true;
 }
 

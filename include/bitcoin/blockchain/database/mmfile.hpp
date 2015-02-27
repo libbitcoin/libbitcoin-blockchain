@@ -42,9 +42,19 @@ public:
     BCB_API uint8_t* data();
     BCB_API const uint8_t* data() const;
     BCB_API size_t size() const;
-    BCB_API bool reserve(size_t required_size);
+    BCB_API bool reserve(size_t size);
     BCB_API bool resize(size_t new_size);
+
 private:
+    size_t file_size(int file_handle);
+    bool map(size_t size);
+    int open_file(const boost::filesystem::path& filename);
+#ifdef MREMAP_MAYMOVE
+    bool remap(size_t new_size);
+#endif
+    bool unmap();
+    bool validate(size_t size);
+
     int file_handle_ = 0;
     uint8_t* data_ = nullptr;
     size_t size_ = 0;
