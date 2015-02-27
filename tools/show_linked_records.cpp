@@ -19,12 +19,12 @@
  */
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/record_allocator.hpp>
+#include <bitcoin/blockchain.hpp>
+
+// Not published.
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
-#include <bitcoin/blockchain/database/fsizes.hpp>
+#include <bitcoin/blockchain/database/record_allocator.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     recs.start();
     linked_records lrs(recs);
     chain_list chains;
-    for (index_type rec_idx = 0; rec_idx < recs.size(); ++rec_idx)
+    for (index_type rec_idx = 0; rec_idx < recs.count(); ++rec_idx)
     {
         BITCOIN_ASSERT(record_size >= 4);
         const record_type rec = recs.get(rec_idx);

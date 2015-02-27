@@ -20,7 +20,6 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 
 #define BS_INITCHAIN_DIR_NEW \

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
@@ -14,9 +13,9 @@ void show_usage()
 template <size_t KeySize>
 void mmr_create(const size_t value_size,
     const std::string& map_filename, const std::string& rows_filename,
-    const size_t buckets)
+    const index_type buckets)
 {
-    const size_t header_fsize = htdb_record_header_fsize(buckets);
+    const auto header_fsize = htdb_record_header_fsize(buckets);
 
     touch_file(map_filename);
     mmfile ht_file(map_filename);
@@ -24,7 +23,7 @@ void mmr_create(const size_t value_size,
     ht_file.resize(header_fsize + min_records_fsize);
 
     htdb_record_header header(ht_file, 0);
-    header.initialize_new(buckets);
+    header.create(buckets);
     header.start();
 
     typedef byte_array<KeySize> hash_type;
@@ -33,7 +32,7 @@ void mmr_create(const size_t value_size,
     const position_type records_start = header_fsize;
 
     record_allocator alloc(ht_file, records_start, record_fsize);
-    alloc.initialize_new();
+    alloc.create();
     alloc.start();
 
     htdb_record<hash_type> ht(header, alloc);
@@ -44,7 +43,7 @@ void mmr_create(const size_t value_size,
     lrs_file.resize(min_records_fsize);
     const size_t lrs_record_size = linked_record_offset + value_size;
     record_allocator recs(lrs_file, 0, lrs_record_size);
-    recs.initialize_new();
+    recs.create();
 
     recs.start();
     linked_records lrs(recs);
@@ -63,9 +62,9 @@ int main(int argc, char** argv)
     const size_t value_size = boost::lexical_cast<size_t>(argv[2]);
     const std::string map_filename = argv[3];
     const std::string rows_filename = argv[4];
-    size_t buckets = 100;
+    index_type buckets = 100;
     if (argc == 6)
-        buckets = boost::lexical_cast<size_t>(argv[5]);
+        buckets = boost::lexical_cast<index_type>(argv[5]);
     if (key_size == 4)
         mmr_create<4>(value_size, map_filename, rows_filename, buckets);
     else if (key_size == 20)

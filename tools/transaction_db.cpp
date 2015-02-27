@@ -1,7 +1,6 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
@@ -100,7 +99,7 @@ int main(int argc, char** argv)
     transaction_database db(map_filename);
     if (command == "initialize_new")
     {
-        db.initialize_new();
+        db.create();
         return 0;
     }
     else if (command == "get")
