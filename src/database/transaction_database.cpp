@@ -19,8 +19,8 @@
  */
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/fsizes.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -67,18 +67,21 @@ transaction_type transaction_result::transaction() const
     return deserialize(slab_ + 8);
 }
 
-transaction_database::transaction_database(const std::string& map_filename)
-  : map_file_(map_filename), header_(map_file_, 0),
-    allocator_(map_file_, alloc_offset), map_(header_, allocator_)
+transaction_database::transaction_database(
+    const boost::filesystem::path& map_filename)
+  : map_file_(map_filename), 
+    header_(map_file_, 0),
+    allocator_(map_file_, alloc_offset), 
+    map_(header_, allocator_)
 {
     BITCOIN_ASSERT(map_file_.data() != nullptr);
 }
 
-void transaction_database::initialize_new()
+void transaction_database::create()
 {
     map_file_.resize(initial_map_file_size);
-    header_.initialize_new(number_buckets);
-    allocator_.initialize_new();
+    header_.create(number_buckets);
+    allocator_.create();
 }
 
 void transaction_database::start()
@@ -106,7 +109,7 @@ void transaction_database::store(
         serial.write_4_bytes(info.index);
         satoshi_save(tx, serial.iterator());
     };
-    map_.store(key, value_size, write);
+    map_.store(key, write, value_size);
 }
 
 void transaction_database::remove(const hash_digest& hash)

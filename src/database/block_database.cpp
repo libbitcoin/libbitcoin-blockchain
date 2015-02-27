@@ -19,8 +19,9 @@
  */
 #include <bitcoin/blockchain/database/block_database.hpp>
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/fsizes.hpp>
+#include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -29,7 +30,7 @@ constexpr size_t number_buckets = 600000;
 constexpr size_t header_size = htdb_slab_header_fsize(number_buckets);
 constexpr size_t initial_map_file_size = header_size + min_slab_fsize;
 
-constexpr position_type alloc_offset = header_size;
+constexpr position_type allocator_offset = header_size;
 
 // Record format:
 // main:
@@ -86,10 +87,12 @@ hash_digest block_result::transaction_hash(size_t i) const
     return deserial.read_hash();
 }
 
-block_database::block_database(
-    const std::string& map_filename, const std::string& index_filename)
-  : map_file_(map_filename), header_(map_file_, 0),
-    allocator_(map_file_, alloc_offset), map_(header_, allocator_),
+block_database::block_database(const boost::filesystem::path& map_filename,
+    const boost::filesystem::path& index_filename)
+  : map_file_(map_filename), 
+    header_(map_file_, 0),
+    allocator_(map_file_, allocator_offset),
+    map_(header_, allocator_),
     index_file_(index_filename),
     index_(index_file_, 0, sizeof(position_type))
 {
@@ -97,14 +100,14 @@ block_database::block_database(
     BITCOIN_ASSERT(index_file_.data() != nullptr);
 }
 
-void block_database::initialize_new()
+void block_database::create()
 {
     map_file_.resize(initial_map_file_size);
-    header_.initialize_new(number_buckets);
-    allocator_.initialize_new();
+    header_.create(number_buckets);
+    allocator_.create();
 
     index_file_.resize(min_records_fsize);
-    index_.initialize_new();
+    index_.create();
 }
 
 void block_database::start()
@@ -116,7 +119,7 @@ void block_database::start()
 
 block_result block_database::get(const size_t height) const
 {
-    if (height >= index_.size())
+    if (height >= index_.count())
         return block_result(nullptr);
     const position_type position = read_position(height);
     const slab_type slab = allocator_.get(position);
@@ -131,7 +134,7 @@ block_result block_database::get(const hash_digest& hash) const
 
 void block_database::store(const block_type& block)
 {
-    const size_t height = index_.size();
+    const size_t height = index_.count();
     // Write block data.
     const hash_digest key = hash_block_header(block.header);
     const size_t number_txs = block.transactions.size();
@@ -148,14 +151,14 @@ void block_database::store(const block_type& block)
             serial.write_hash(tx_hash);
         }
     };
-    const position_type position = map_.store(key, value_size, write);
+    const position_type position = map_.store(key, write, value_size);
     // Write height -> position mapping.
     write_position(position);
 }
 
 void block_database::unlink(const size_t from_height)
 {
-    index_.resize(from_height);
+    index_.count(from_height);
 }
 
 void block_database::sync()
@@ -166,16 +169,16 @@ void block_database::sync()
 
 size_t block_database::last_height() const
 {
-    if (index_.size() == 0)
+    if (index_.count() == 0)
         return null_height;
-    return index_.size() - 1;
+    return index_.count() - 1;
 }
 
 void block_database::write_position(const position_type position)
 {
-    const index_type height = index_.allocate();
-    record_type record = index_.get(height);
-    auto serial = make_serializer(record);
+    const index_type record = index_.allocate();
+    record_type data = index_.get(record);
+    auto serial = make_serializer(data);
     serial.write_8_bytes(position);
 }
 

@@ -24,7 +24,7 @@
 using namespace bc;
 using namespace bc::chain;
 
-BOOST_AUTO_TEST_SUITE(interface_test)
+BOOST_AUTO_TEST_SUITE(database_interface)
 
 void test_block_exists(const db_interface& interface,
     const size_t height, const block_type block0)

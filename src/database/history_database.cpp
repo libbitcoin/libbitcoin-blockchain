@@ -19,7 +19,7 @@
  */
 #include <bitcoin/blockchain/database/history_database.hpp>
 
-#include <bitcoin/blockchain/database/fsizes.hpp>
+#include <boost/filesystem.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -28,18 +28,20 @@ constexpr size_t number_buckets = 97210744;
 constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
 constexpr size_t initial_lookup_file_size = header_size + min_records_fsize;
 
-constexpr position_type alloc_offset = header_size;
+constexpr position_type allocator_offset = header_size;
 constexpr size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
 
 constexpr size_t value_size = 1 + 36 + 4 + 8;
 constexpr size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
-history_database::history_database(
-    const std::string& lookup_filename, const std::string& rows_filename)
-  : lookup_file_(lookup_filename), header_(lookup_file_, 0),
-    allocator_(lookup_file_, alloc_offset, alloc_record_size),
+history_database::history_database(const boost::filesystem::path& lookup_filename,
+    const boost::filesystem::path& rows_filename)
+  : lookup_file_(lookup_filename), 
+    header_(lookup_file_, 0),
+    allocator_(lookup_file_, allocator_offset, alloc_record_size),
     start_lookup_(header_, allocator_),
-    rows_file_(rows_filename), rows_(rows_file_, 0, row_record_size),
+    rows_file_(rows_filename), 
+    rows_(rows_file_, 0, row_record_size),
     linked_rows_(rows_),
     map_(start_lookup_, linked_rows_)
 {
@@ -47,14 +49,14 @@ history_database::history_database(
     BITCOIN_ASSERT(rows_file_.data() != nullptr);
 }
 
-void history_database::initialize_new()
+void history_database::create()
 {
     lookup_file_.resize(initial_lookup_file_size);
-    header_.initialize_new(number_buckets);
-    allocator_.initialize_new();
+    header_.create(number_buckets);
+    allocator_.create();
 
     rows_file_.resize(min_records_fsize);
-    rows_.initialize_new();
+    rows_.create();
 }
 
 void history_database::start()
@@ -125,7 +127,7 @@ history_list history_database::get(const short_hash& key,
     auto read_row = [&history](const uint8_t* data)
     {
         auto deserial = make_deserializer_unsafe(data);
-        return history_row{
+        return history_row {
             // output or spend?
             marker_to_id(deserial.read_byte()),
             // point
@@ -162,8 +164,8 @@ history_statinfo history_database::statinfo() const
 {
     return {
         header_.size(),
-        allocator_.size(),
-        rows_.size()
+        allocator_.count(),
+        rows_.count()
     };
 }
 

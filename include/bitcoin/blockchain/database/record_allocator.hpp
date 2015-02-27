@@ -20,15 +20,24 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_RECORD_ALLOCATOR_HPP
 #define LIBBITCOIN_BLOCKCHAIN_RECORD_ALLOCATOR_HPP
 
+#include <cstddef>
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
+#include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 typedef uint8_t* record_type;
+typedef disk_array<index_type, index_type> htdb_record_header;
+
+constexpr size_t min_records_fsize = sizeof(index_type);
+constexpr size_t htdb_record_header_fsize(size_t buckets)
+{
+    return sizeof(index_type) + min_records_fsize * buckets;
+}
 
 /**
  * The record allocator represents a collection of fixed size chunks of
@@ -38,15 +47,13 @@ typedef uint8_t* record_type;
 class record_allocator
 {
 public:
-    typedef index_type accessor_type;
-
     BCB_API record_allocator(
         mmfile& file, position_type sector_start, size_t record_size);
 
     /**
       * Create record allocator.
       */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * Prepare allocator for usage.
@@ -54,43 +61,54 @@ public:
     BCB_API void start();
 
     /**
-     * Allocate a record.
+     * Allocate a record and return its logical index.
+     * Call sync() after writing the record.
      */
-    BCB_API index_type allocate();
+    BCB_API index_type allocate(/* size_t records=1 */);
 
     /**
-     * Synchronise record allocator to disk.
+     * Synchronise to disk.
      */
     BCB_API void sync();
 
     /**
-     * Return a record.
+     * Return a record from its logical index.
      */
-    BCB_API record_type get(index_type index) const;
+    BCB_API record_type get(index_type record) const;
 
     /**
-     * The size of this container (number of records).
+     * The number of records in this container.
      */
-    BCB_API index_type size() const;
+    BCB_API index_type count() const;
 
     /**
-     * Readjust the size of this container. Need to call sync() after.
+     * Change the number of records of this container.
      */
-    BCB_API void resize(const index_type size);
+    BCB_API void count(const index_type records);
 
 private:
-    /// Ensure bytes for a new record are available (record_size_).
-    void reserve();
-    /// Accessor for data.
+    /// File data access, by byte-wise position relative to start.
     uint8_t* data(const position_type position) const;
-    /// Disk position of record.
-    position_type record_position(index_type index) const;
+
+    /// Ensure bytes for a new record are available.
+    void reserve(size_t count);
+
+    /// The record index of a disk position.
+    ///index_type position_to_record(position_type position) const;
+
+    /// The disk position of a record index.
+    position_type record_to_position(index_type record) const;
+
+    /// Read the count of the records from the file.
+    void read_count();
+
+    /// Write the count of the records from the file.
+    void write_count();
 
     mmfile& file_;
-    position_type sector_start_;
-
+    position_type start_;
+    index_type count_;
     const size_t record_size_;
-    index_type end_ = 0;
 };
 
     } // namespace chain

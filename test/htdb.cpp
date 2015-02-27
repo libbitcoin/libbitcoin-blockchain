@@ -49,13 +49,13 @@ void write_data()
     file.resize(header_size + min_slab_fsize);
 
     htdb_slab_header header(file, 0);
-    header.initialize_new(buckets);
+    header.create(buckets);
     header.start();
 
     const position_type slab_start = header_size;
 
     slab_allocator alloc(file, slab_start);
-    alloc.initialize_new();
+    alloc.create();
     alloc.start();
 
     htdb_slab<hash_digest> ht(header, alloc);
@@ -69,7 +69,7 @@ void write_data()
         {
             std::copy(value.begin(), value.end(), data);
         };
-        ht.store(key, value.size(), write);
+        ht.store(key, write, value.size());
     }
 
     alloc.sync();
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
     file.resize(header_size + min_records_fsize);
 
     htdb_record_header header(file, 0);
-    header.initialize_new(rec_buckets);
+    header.create(rec_buckets);
     header.start();
 
     typedef byte_array<4> tiny_hash;
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
     const position_type records_start = header_size;
 
     record_allocator alloc(file, records_start, record_size);
-    alloc.initialize_new();
+    alloc.create();
     alloc.start();
 
     htdb_record<tiny_hash> ht(header, alloc);
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_64)
     file.resize(header_size + min_records_fsize);
 
     htdb_record_header header(file, 0);
-    header.initialize_new(rec_buckets);
+    header.create(rec_buckets);
     header.start();
 
     typedef byte_array<8> tiny_hash;
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_64)
     const position_type records_start = header_size;
 
     record_allocator alloc(file, records_start, record_size);
-    alloc.initialize_new();
+    alloc.create();
     alloc.start();
 
     htdb_record<tiny_hash> ht(header, alloc);

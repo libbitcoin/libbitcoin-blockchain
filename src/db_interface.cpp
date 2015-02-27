@@ -20,29 +20,30 @@
 #include <bitcoin/blockchain/db_interface.hpp>
 
 #include <boost/filesystem.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
+
+using boost::filesystem::path;
 
 namespace libbitcoin {
     namespace chain {
 
-const std::string path(const std::string& prefix, const std::string& filename)
+// Write one byte so file is nonzero size.
+void touch_file(const path& file)
 {
-    using boost::filesystem::path;
-    path db_path = path(prefix) / filename;
-    return db_path.generic_string();
+    std::ofstream outfile(file.generic_string());
+    outfile.write("H", 1);
 }
 
-db_paths::db_paths(const std::string& prefix)
+db_paths::db_paths(const path& prefix)
 {
-    blocks_lookup = path(prefix, "blocks_lookup");
-    blocks_rows = path(prefix, "blocks_rows");
-    spends = path(prefix, "spends");
-    transactions = path(prefix, "txs");
-
-    history_lookup = path(prefix, "history_lookup");
-    history_rows = path(prefix, "history_rows");
-    stealth_index = path(prefix, "stealth_index");
-    stealth_rows = path(prefix, "stealth_rows");
+    blocks_lookup = prefix / "blocks_lookup";
+    blocks_rows = prefix / "blocks_rows";
+    spends = prefix / "spends";
+    transactions = prefix / "txs";
+    history_lookup = prefix / "history_lookup";
+    history_rows = prefix / "history_rows";
+    stealth_index = prefix / "stealth_index";
+    stealth_rows = prefix / "stealth_rows";
 }
 
 void db_paths::touch_all() const
@@ -68,13 +69,13 @@ db_interface::db_interface(const db_paths& paths,
 {
 }
 
-void db_interface::initialize_new()
+void db_interface::create()
 {
-    blocks.initialize_new();
-    spends.initialize_new();
-    transactions.initialize_new();
-    history.initialize_new();
-    stealth.initialize_new();
+    blocks.create();
+    spends.create();
+    transactions.create();
+    history.create();
+    stealth.create();
 }
 
 void db_interface::start()
@@ -291,14 +292,14 @@ void db_interface::pop_outputs(
     }
 }
 
-void initialize_blockchain(const std::string& prefix)
+void initialize_blockchain(const path& prefix)
 {
     // Create paths.
     db_paths paths(prefix);
     paths.touch_all();
     // Initialize databases.
     db_interface interface(paths, {0});
-    interface.initialize_new();
+    interface.create();
 }
 
     } // namespace chain

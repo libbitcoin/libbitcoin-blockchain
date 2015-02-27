@@ -24,13 +24,12 @@
  * Represents an interface to a blockchain backend.
  */
 
-#include <boost/utility.hpp>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
-namespace chain {
+    namespace chain {
 
 enum class point_ident
 {
@@ -453,7 +452,7 @@ typedef std::function<
 BCB_API void fetch_block_locator(blockchain& chain,
     blockchain_fetch_handler_block_locator handle_fetch);
 
-} // namespace chain
+    } // namespace chain
 } // namespace libbitcoin
 
 #endif

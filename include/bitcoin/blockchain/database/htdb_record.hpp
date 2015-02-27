@@ -20,14 +20,21 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_HPP
 
+#include <cstddef>
+#include <cstdint>
+#include <tuple>
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-typedef disk_array<index_type, index_type> htdb_record_header;
+template <typename HashType>
+constexpr size_t record_fsize_htdb(size_t value_size)
+{
+    return std::tuple_size<HashType>::value + sizeof(index_type)
+        + value_size;
+}
 
 /**
  * A hashtable mapping hashes to fixed sized values (records).
@@ -57,8 +64,8 @@ public:
     htdb_record(htdb_record_header& header, record_allocator& allocator);
 
     /**
-     * Store a value. The provided write() function must write
-     * the correct number of bytes (record_size - hash_size - 4).
+     * Store a value. The provided write() function must write the correct
+     * number of bytes (record_size - hash_size - sizeof(index_type)).
      */
     void store(const HashType& key, write_function write);
 

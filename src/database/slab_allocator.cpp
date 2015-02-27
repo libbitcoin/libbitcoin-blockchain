@@ -20,63 +20,78 @@
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
+#include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
 slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
-  : file_(file), sector_start_(sector_start)
+  : file_(file), start_(sector_start), size_(0)
 {
 }
 
-void slab_allocator::initialize_new()
+// This writes the byte size of the allocated space to the file.
+void slab_allocator::create()
 {
-    static_assert(sizeof(end_) == 8, "Internal error");
-    end_ = 8;
+    size_ = sizeof(position_type);
     sync();
 }
 
 void slab_allocator::start()
 {
-    BITCOIN_ASSERT(file_.size() >= 8);
-    const slab_type data = file_.data() + sector_start_;
-    end_ = from_little_endian_unsafe<uint64_t>(data);
-}
-
-position_type slab_allocator::allocate(size_t size)
-{
-    BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
-    reserve(size);
-    position_type slab_position = end_;
-    end_ += size;
-    return slab_position;
+    read_size();
 }
 
 void slab_allocator::sync()
 {
-    BITCOIN_ASSERT(end_ <= file_.size());
-    auto serial = make_serializer(get(0));
-    serial.write_8_bytes(end_);
+    write_size();
 }
 
+position_type slab_allocator::allocate(size_t bytes_needed)
+{
+    BITCOIN_ASSERT_MSG(size_ > 0, "slab_allocator::start() wasn't called.");
+    const auto slab_position = size_;
+    reserve(bytes_needed);
+    return slab_position;
+}
+
+// logical slab access
 slab_type slab_allocator::get(position_type position) const
 {
-#ifdef SLAB_DEBUG_ASSERTS
-    // Disabled asserts to improve performance.
-    BITCOIN_ASSERT_MSG(end_ != 0, "slab_allocator::start() wasn't called.");
-    BITCOIN_ASSERT(position < end_);
-    BITCOIN_ASSERT(sector_start_ + end_ <= file_.size());
-#endif
-    return file_.data() + sector_start_ + position;
+    BITCOIN_ASSERT_MSG(size_ > 0, "slab_allocator::start() wasn't called.");
+    BITCOIN_ASSERT(position < size_);
+    return data(position);
 }
 
-void slab_allocator::reserve(size_t space_needed)
+// File data access, by byte-wise position relative to start.
+uint8_t* slab_allocator::data(const position_type position) const
+{
+    BITCOIN_ASSERT(start_ + position <= file_.size());
+    return file_.data() + start_ + position;
+}
+
+void slab_allocator::reserve(size_t bytes_needed)
 {
     // See comment in hsdb_shard::reserve()
-    const size_t required_size = sector_start_ + end_ + space_needed;
-    reserve_space(file_, required_size);
-    BITCOIN_ASSERT(file_.size() >= required_size);
+    const size_t required_size = start_ + size_ + bytes_needed;
+    DEBUG_ONLY(const auto success =) file_.reserve(required_size);
+    BITCOIN_ASSERT(success);
+    size_ += bytes_needed;
+}
+
+// Read the size value from the first chunk of the file.
+void slab_allocator::read_size()
+{
+    BITCOIN_ASSERT(file_.size() >= sizeof(size_));
+    size_ = from_little_endian_unsafe<position_type>(data(0));
+}
+
+// Write the size value to the first chunk of the file.
+void slab_allocator::write_size()
+{
+    BITCOIN_ASSERT(size_ <= file_.size());
+    auto serial = make_serializer(data(0));
+    serial.write_little_endian(size_);
 }
 
     } // namespace chain

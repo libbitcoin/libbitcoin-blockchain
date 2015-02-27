@@ -1,6 +1,8 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain.hpp>
+
+// Not published.
 #include <bitcoin/blockchain/database/disk_array.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
@@ -16,7 +18,7 @@ int show_array(const std::string& filename, position_type offset)
     }
     disk_array<IndexType, ValueType> array(file, offset);
     array.start();
-    for (size_t i = 0; i < array.size(); ++i)
+    for (index_type i = 0; i < array.size(); ++i)
     {
         auto val = array.read(i);
         std::string val_string = boost::lexical_cast<std::string>(val);

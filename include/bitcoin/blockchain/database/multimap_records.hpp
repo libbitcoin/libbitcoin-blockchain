@@ -22,12 +22,17 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 
 namespace libbitcoin {
     namespace chain {
+
+template <typename HashType>
+constexpr size_t map_record_fsize_multimap()
+{
+    return record_fsize_htdb<HashType>(sizeof(index_type));
+}
 
 /**
  * Forward iterator for multimap record values.

@@ -23,7 +23,7 @@
 using namespace bc;
 using namespace bc::chain;
 
-BOOST_AUTO_TEST_SUITE(databases_test)
+BOOST_AUTO_TEST_SUITE(databases)
 
 BOOST_AUTO_TEST_CASE(spend_db_test)
 {
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
 
     touch_file("spend_db");
     spend_database db("spend_db");
-    db.initialize_new();
+    db.create();
     db.start();
     db.store(key1, val1);
     db.store(key2, val2);
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     touch_file("block_db_lookup");
     touch_file("block_db_rows");
     block_database db("block_db_lookup", "block_db_rows");
-    db.initialize_new();
+    db.create();
     db.start();
     BOOST_REQUIRE(db.last_height() == block_database::null_height);
     db.store(block0);
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
 
     touch_file("tx_db_map");
     transaction_database db("tx_db_map");
-    db.initialize_new();
+    db.create();
     db.start();
     db.store(info1, tx1);
     db.store(info2, tx2);
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     touch_file("history_db_lookup");
     touch_file("history_db_rows");
     history_database db("history_db_lookup", "history_db_rows");
-    db.initialize_new();
+    db.create();
     db.start();
     db.add_output(key1, out11, out_h11, val11);
     db.add_output(key1, out12, out_h12, val12);

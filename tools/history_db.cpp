@@ -1,7 +1,6 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
 using namespace bc::chain;
@@ -100,7 +99,7 @@ bool parse_key(short_hash& key, const std::string& arg)
     if (!payaddr.set_encoded(arg))
     {
         std::cerr << "history_db: bad KEY." << std::endl;
-        return -1;
+        return false;
     }
     key = payaddr.hash();
     return true;
@@ -158,7 +157,7 @@ int main(int argc, char** argv)
     history_database db(map_filename, rows_filename);
     if (command == "initialize_new")
     {
-        db.initialize_new();
+        db.create();
         return 0;
     }
     else if (command == "add_output")

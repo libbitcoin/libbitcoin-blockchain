@@ -74,7 +74,7 @@
     <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_slab.ipp" />
     <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_slab_list_item.ipp" />
     <None Include="..\..\..\..\include\bitcoin\blockchain\impl\multimap_records.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\utility.ipp" />
+    <None Include="..\..\..\..\include\bitcoin\blockchain\impl\remainder.ipp" />
     <None Include="packages.config">
       <FileType>Document</FileType>
     </None>
@@ -85,7 +85,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk_array.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\fsizes.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_record.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\htdb_slab.hpp" />
@@ -97,8 +96,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\spend_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\stealth_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\types.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\utility.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
@@ -124,7 +121,6 @@
     <ClCompile Include="..\..\..\..\src\database\spend_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\utility.cpp" />
     <ClCompile Include="..\..\..\..\src\db_interface.cpp" />
     <ClCompile Include="..\..\..\..\src\impl\blockchain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\impl\organizer_impl.cpp" />

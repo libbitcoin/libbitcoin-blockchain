@@ -1,6 +1,8 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain.hpp>
+
+// Not published.
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
@@ -26,7 +28,7 @@ int main(int argc, char** argv)
     }
     record_allocator recs(file, offset, record_size);
     recs.start();
-    std::cout << recs.size() << std::endl;
+    std::cout << recs.count() << std::endl;
     return 0;
 }
 

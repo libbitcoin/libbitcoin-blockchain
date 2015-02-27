@@ -1,6 +1,6 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 using namespace libbitcoin;
 using namespace libbitcoin::chain;

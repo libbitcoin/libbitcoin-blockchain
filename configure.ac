@@ -82,6 +82,17 @@ AC_ARG_WITH([tests],
 AC_MSG_RESULT([$with_tests])
 AM_CONDITIONAL([WITH_TESTS], [test x$with_tests != xno])
 
+# Implement --with-tools and declare WITH_TOOLS.
+#------------------------------------------------------------------------------
+AC_MSG_CHECKING(--with-tools option)
+AC_ARG_WITH([tools],
+    AS_HELP_STRING([--with-tools],
+        [Compile with tools. @<:@default=yes@:>@]),
+    [with_tools=$withval],
+    [with_tools=yes])
+AC_MSG_RESULT([$with_tools])
+AM_CONDITIONAL([WITH_TOOLS], [test x$with_tools != xno])
+
 # Implement --enable-ndebug option and define NDEBUG.
 #------------------------------------------------------------------------------
 AC_MSG_CHECKING(--enable-ndebug option)

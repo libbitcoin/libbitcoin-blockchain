@@ -20,11 +20,11 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HISTORY_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HISTORY_DATABASE_HPP
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/database/multimap_records.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -47,13 +47,13 @@ struct history_statinfo
 class history_database
 {
 public:
-    BCB_API history_database(
-        const std::string& lookup_filename, const std::string& rows_filename);
+    BCB_API history_database(const boost::filesystem::path& lookup_filename,
+        const boost::filesystem::path& rows_filename);
 
     /**
      * Initialize a new history database.
      */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * You must call start() before using the database.

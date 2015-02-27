@@ -23,7 +23,7 @@
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
-BOOST_AUTO_TEST_SUITE(disk_objs_test)
+BOOST_AUTO_TEST_SUITE(disk_objs)
 
 BOOST_AUTO_TEST_CASE(slab)
 {
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(slab)
     BITCOIN_ASSERT(file.data());
     file.resize(200);
     slab_allocator data(file, 0);
-    data.initialize_new();
+    data.create();
 
     data.start();
 
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(slab)
     BOOST_REQUIRE(position == 8);
     //slab_type slab = data.get(position);
 
-    slab_allocator::accessor_type position2 = data.allocate(100);
+    position_type position2 = data.allocate(100);
     BOOST_REQUIRE(position2 == 108);
     //slab = data.get(position2);
 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(array)
     file.resize(4 + 4 * 10);
 
     disk_array<uint32_t, uint32_t> array(file, 0);
-    array.initialize_new(10);
+    array.create(10);
     array.start();
 
     array.write(9, 110);
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(record)
     BITCOIN_ASSERT(file.data());
     file.resize(4);
     record_allocator recs(file, 0, 10);
-    recs.initialize_new();
+    recs.create();
 
     recs.start();
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
     file.resize(4);
     constexpr size_t record_size = linked_record_offset + 6;
     record_allocator recs(file, 0, record_size);
-    recs.initialize_new();
+    recs.create();
 
     recs.start();
     linked_records lrs(recs);
@@ -127,11 +127,11 @@ BOOST_AUTO_TEST_CASE(htdb_slab_tst)
     file.resize(4 + 8 * 100 + 8);
 
     htdb_slab_header header(file, 0);
-    header.initialize_new(100);
+    header.create(100);
     header.start();
 
     slab_allocator alloc(file, 4 + 8 * 100);
-    alloc.initialize_new();
+    alloc.create();
     alloc.start();
 
     typedef byte_array<4> tiny_hash;
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(htdb_slab_tst)
         data[2] = 4;
         data[3] = 99;
     };
-    ht.store(tiny_hash{{0xde, 0xad, 0xbe, 0xef}}, 8, write);
+    ht.store(tiny_hash{{0xde, 0xad, 0xbe, 0xef}}, write, 8);
     slab_type slab = ht.get(tiny_hash{{0xde, 0xad, 0xbe, 0xef}});
     BOOST_REQUIRE(slab);
     BOOST_REQUIRE(slab[0] == 110);

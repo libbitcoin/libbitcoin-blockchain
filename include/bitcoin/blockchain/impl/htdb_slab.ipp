@@ -21,8 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_IPP
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/utility.hpp>
 #include "htdb_slab_list_item.ipp"
+#include "remainder.ipp"
 
 namespace libbitcoin {
     namespace chain {
@@ -36,13 +36,13 @@ htdb_slab<HashType>::htdb_slab(
 
 template <typename HashType>
 position_type htdb_slab<HashType>::store(const HashType& key,
-    const size_t value_size, write_function write)
+    write_function write, const size_t value_size)
 {
     // Store current bucket value.
     const position_type old_begin = read_bucket_value(key);
     htdb_slab_list_item<HashType> item(allocator_);
     const position_type new_begin =
-        item.initialize_new(key, value_size, old_begin);
+        item.create(key, value_size, old_begin);
     write(item.data());
     // Link record to header.
     link(key, new_begin);

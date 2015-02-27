@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 #define LIBBITCOIN_BLOCKCHAIN_UTILITY_IPP
 
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {

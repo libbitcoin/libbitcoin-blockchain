@@ -20,11 +20,11 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_DATABASE_HPP
 
+#include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
@@ -74,13 +74,13 @@ class block_database
 public:
     static constexpr size_t null_height = bc::max_size_t;
 
-    BCB_API block_database(
-        const std::string& map_filename, const std::string& index_filename);
+    BCB_API block_database(const boost::filesystem::path& map_filename,
+        const boost::filesystem::path& index_filename);
 
     /**
      * Initialize a new transaction database.
      */
-    BCB_API void initialize_new();
+    BCB_API void create();
 
     /**
      * You must call start() before using the database.
@@ -124,6 +124,7 @@ private:
 
     /// Write position of tx.
     void write_position(const position_type position);
+
     /// Use intermediate records table to find blk position from height.
     position_type read_position(const index_type index) const;
 

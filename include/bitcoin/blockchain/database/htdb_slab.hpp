@@ -22,12 +22,10 @@
 
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
-#include <bitcoin/blockchain/database/types.hpp>
 
 namespace libbitcoin {
     namespace chain {
 
-typedef disk_array<index_type, position_type> htdb_slab_header;
 
 /**
  * A hashtable mapping hashes to variable sized values (slabs).
@@ -62,8 +60,8 @@ public:
      * The provided write() function must write exactly value_size bytes.
      * Returns the position of the inserted value in the slab_allocator.
      */
-    position_type store(const HashType& key,
-        const size_t value_size, write_function write);
+    position_type store(const HashType& key, write_function write,
+        const size_t value_size);
 
     /**
      * Return the slab for a given hash.

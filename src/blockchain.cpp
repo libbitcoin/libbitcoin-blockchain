@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+    namespace chain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -234,6 +234,6 @@ void fetch_block_locator(blockchain& chain, handler_locator handle_fetch)
     fetcher->start(handle_fetch);
 }
 
-} // namespace chain
+    } // namespace chain
 } // namespace libbitcoin
 
