@@ -78,7 +78,6 @@ libbitcoin_blockchain_la_SOURCES = \
     src/database/record_allocator.cpp \
     src/database/linked_records.cpp \
     src/database/multimap_records.cpp \
-    src/database/utility.cpp \
     src/database/mmfile.cpp \
     src/database/transaction_database.cpp \
     src/database/history_database.cpp \
