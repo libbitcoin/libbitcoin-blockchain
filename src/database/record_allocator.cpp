@@ -27,7 +27,7 @@ namespace libbitcoin {
 
 record_allocator::record_allocator(mmfile& file, position_type sector_start,
     size_t record_size)
-  : file_(file), start_(sector_start), record_size_(record_size), count_(0)
+  : file_(file), start_(sector_start), count_(0), record_size_(record_size)
 {
 }
 
