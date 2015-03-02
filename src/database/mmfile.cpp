@@ -19,6 +19,8 @@
  */
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
+#include <iostream>
+
 #ifdef _WIN32
     #include <io.h>
     #include "mman-win32/mman.h"
@@ -48,10 +50,17 @@ namespace libbitcoin {
     namespace chain {
 
 mmfile::mmfile(const path& filename)
+  : filename_(filename)
 {
+    // TODO: move to logging.
+    std::cout << "CALLED MAP: " + filename_.generic_string() << std::endl;
+
     file_handle_ = open_file(filename);
     size_ = file_size(file_handle_);
-    /* bool */ map(size_);
+    DEBUG_ONLY(const auto mapped =) map(size_);
+
+    // TODO: move to logging, include errno and path.
+    BITCOIN_ASSERT_MSG(mapped, "The file failed to map.");
 }
 
 mmfile::mmfile(mmfile&& file)
@@ -64,8 +73,34 @@ mmfile::mmfile(mmfile&& file)
 
 mmfile::~mmfile()
 {
-    unmap();
-    close(file_handle_);
+    // TODO: move to logging.
+    std::cout << "CALLED UNMAP: " + filename_.generic_string() << std::endl;
+
+    DEBUG_ONLY(const auto unmapped =) unmap();
+
+    // TODO: move to logging, include errno and path.
+    BITCOIN_ASSERT_MSG(unmapped, "The file failed to unmap.");
+
+#ifdef _WIN32
+    const auto handle = (HANDLE)_get_osfhandle(file_handle_);
+    DEBUG_ONLY(const auto synced =) FlushFileBuffers(handle);
+
+    // TODO: move to logging, include errno and path.
+    BITCOIN_ASSERT_MSG(synced != FALSE, "The file failed to sync.");
+#else
+    // Calling fsync() does not necessarily ensure that the entry in the 
+    // directory containing the file has also reached disk.For that an
+    // explicit fsync() on a file descriptor for the directory is also needed.
+    DEBUG_ONLY(const auto synced = ) fsync(file_handle_);
+
+    // TODO: move to logging, include errno and path.
+    BITCOIN_ASSERT_MSG(synced != -1, "The file failed to sync.");
+#endif
+
+    DEBUG_ONLY(const auto closed =) close(file_handle_);
+
+    // TODO: move to logging, include errno and path.
+    BITCOIN_ASSERT_MSG(closed != -1, "The file failed to close.");
 }
 
 uint8_t* mmfile::data()

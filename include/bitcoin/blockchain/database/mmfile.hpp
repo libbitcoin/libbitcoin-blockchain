@@ -58,6 +58,9 @@ private:
     int file_handle_ = 0;
     uint8_t* data_ = nullptr;
     size_t size_ = 0;
+
+    // for logging
+    boost::filesystem::path filename_;
 };
 
     } // namespace chain
