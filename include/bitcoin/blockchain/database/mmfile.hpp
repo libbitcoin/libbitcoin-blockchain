@@ -29,7 +29,6 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
-
 namespace libbitcoin {
     namespace chain {
 
