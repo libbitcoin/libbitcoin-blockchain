@@ -194,7 +194,7 @@ bool mmfile::remap(size_t new_size)
     data_ = static_cast<uint8_t*>(mremap(data_, size_, new_size,
         MREMAP_MAYMOVE));
 
-    return validate(size);
+    return validate(new_size);
 }
 #endif
 

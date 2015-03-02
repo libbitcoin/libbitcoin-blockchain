@@ -20,11 +20,15 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_MMFILE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_MMFILE_HPP
 
+#ifndef _WIN32
+#include <sys/mman.h>
+#endif
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
+
 
 namespace libbitcoin {
     namespace chain {
