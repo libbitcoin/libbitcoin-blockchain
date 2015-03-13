@@ -16,10 +16,10 @@ URL: https://github.com/libbitcoin/libbitcoin-blockchain
 Version: @PACKAGE_VERSION@
 
 # Our dependencies that publish package configuration.
-Requires: libbitcoin >= 2.8.0
+Requires: @bitcoin_PKG@
 
 # Our own include directory and any other compiler flags we require.
-Cflags: -I${includedir} -std=c++11
+Cflags: -I${includedir} 
 
-# Our own lib and any we require that do not publish package configuration.
-Libs: -L${libdir} -lbitcoin-blockchain  
+# Our own lib directory, lib and any that do not publish package configuration.
+Libs: -L${libdir} -lbitcoin-blockchain 

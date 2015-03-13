@@ -1,52 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\tools\block_db.cpp">
+    <ClCompile Include="..\..\..\..\tools\block_db\block_db.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\count_records.cpp">
+    <ClCompile Include="..\..\..\..\tools\count_records\count_records.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\history_db.cpp">
+    <ClCompile Include="..\..\..\..\tools\history_db\history_db.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\initchain.cpp">
+    <ClCompile Include="..\..\..\..\tools\initchain\initchain.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\mmr_add_row.cpp">
+    <ClCompile Include="..\..\..\..\tools\mmr_add_row\mmr_add_row.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\mmr_create.cpp">
+    <ClCompile Include="..\..\..\..\tools\mmr_create\mmr_create.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\mmr_delete_last_row.cpp">
+    <ClCompile Include="..\..\..\..\tools\mmr_delete_last_row\mmr_delete_last_row.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\mmr_lookup.cpp">
+    <ClCompile Include="..\..\..\..\tools\mmr_lookup\mmr_lookup.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\read_htdb_record_value.cpp">
+    <ClCompile Include="..\..\..\..\tools\read_htdb_record_value\read_htdb_record_value.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\read_htdb_slab_value.cpp">
+    <ClCompile Include="..\..\..\..\tools\read_htdb_slab_value\read_htdb_slab_value.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\show_array.cpp">
+    <ClCompile Include="..\..\..\..\tools\show_array\show_array.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\show_linked_records.cpp">
+    <ClCompile Include="..\..\..\..\tools\show_linked_records\show_linked_records.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\show_records.cpp">
+    <ClCompile Include="..\..\..\..\tools\show_records\show_records.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\spend_db.cpp">
+    <ClCompile Include="..\..\..\..\tools\spend_db\spend_db.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\stealth_db.cpp">
+    <ClCompile Include="..\..\..\..\tools\stealth_db\stealth_db.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\tools\transaction_db.cpp">
+    <ClCompile Include="..\..\..\..\tools\transaction_db\transaction_db.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
