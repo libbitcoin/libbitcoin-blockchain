@@ -48,6 +48,8 @@ int   ftruncate(int fd, oft__ size);
 };
 #endif
 
+#else
+typedef int make_iso_compiler_not_complain;
 #endif
 
 #endif
