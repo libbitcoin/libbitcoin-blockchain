@@ -138,7 +138,8 @@ AS_CASE([${CC}], [*clang*],
 AS_CASE([${with_tests}], [yes],
     [AX_BOOST_UNIT_TEST_FRAMEWORK
      AC_SUBST([boost_unit_test_framework_LIBS], [${BOOST_UNIT_TEST_FRAMEWORK_LIB}])
-     AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])])
+     AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
+    [AC_SUBST([boost_unit_test_framework_LIBS], [])])
 
 # Require bitcoin of at least version 2.8.0 and output ${bitcoin_CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
