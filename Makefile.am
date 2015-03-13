@@ -302,14 +302,14 @@ tools_transaction_db_transaction_db_SOURCES = \
 
 endif WITH_TOOLS
 
-# files => ${includedir}/blockchain
+# files => ${includedir}/bitcoin
 #------------------------------------------------------------------------------
-include_blockchaindir = ${includedir}/blockchain
-include_blockchain_HEADERS = \
+include_bitcoindir = ${includedir}/bitcoin
+include_bitcoin_HEADERS = \
     include/bitcoin/blockchain.hpp
 
-include_blockchain_blockchaindir = ${includedir}/blockchain/blockchain
-include_blockchain_blockchain_HEADERS = \
+include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
+include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/blockchain.hpp \
     include/bitcoin/blockchain/blockchain_impl.hpp \
     include/bitcoin/blockchain/checkpoints.hpp \
@@ -320,8 +320,8 @@ include_blockchain_blockchain_HEADERS = \
     include/bitcoin/blockchain/validate.hpp \
     include/bitcoin/blockchain/version.hpp
 
-include_blockchain_blockchain_databasedir = ${includedir}/blockchain/blockchain/database
-include_blockchain_blockchain_database_HEADERS = \
+include_bitcoin_blockchain_databasedir = ${includedir}/bitcoin/blockchain/database
+include_bitcoin_blockchain_database_HEADERS = \
     include/bitcoin/blockchain/database/block_database.hpp \
     include/bitcoin/blockchain/database/disk_array.hpp \
     include/bitcoin/blockchain/database/history_database.hpp \
@@ -336,8 +336,8 @@ include_blockchain_blockchain_database_HEADERS = \
     include/bitcoin/blockchain/database/stealth_database.hpp \
     include/bitcoin/blockchain/database/transaction_database.hpp
 
-include_blockchain_blockchain_impldir = ${includedir}/blockchain/blockchain/impl
-include_blockchain_blockchain_impl_HEADERS = \
+include_bitcoin_blockchain_impldir = ${includedir}/bitcoin/blockchain/impl
+include_bitcoin_blockchain_impl_HEADERS = \
     include/bitcoin/blockchain/impl/disk_array.ipp \
     include/bitcoin/blockchain/impl/htdb_record.ipp \
     include/bitcoin/blockchain/impl/htdb_record_list_item.ipp \
