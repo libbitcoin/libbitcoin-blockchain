@@ -1,13 +1,15 @@
-// mman-win32 from code.google.com/p/mman-win32 (MIT License).
+/* mman-win32 from code.google.com/p/mman-win32 (MIT License). */
 
-#ifndef _SYS_MMAN_H_
-#define _SYS_MMAN_H_                              
+#ifndef LIBBITCOIN_BLOCKCHAIN_MMAN_H
+#define LIBBITCOIN_BLOCKCHAIN_MMAN_H
 
-// DO NOT USE off_t/_off_t AS THE SIZE VARIES.
+#ifdef _WIN32
+
+/* DO NOT USE off_t/_off_t AS THE SIZE VARIES. */
 #include <stddef.h>
 typedef size_t oft__;
 
-// mman-win32 from code.google.com/p/mman-win32 (MIT License).
+/* mman-win32 from code.google.com/p/mman-win32 (MIT License). */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,12 +41,13 @@ int   msync(void* addr, size_t len, int flags);
 int   mlock(const void* addr, size_t len);
 int   munlock(const void* addr, size_t len);
 
-// www.gitorious.org/git-win32/mainline/source/
-// 9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
+/* www.gitorious.org/git-win32/mainline/source/9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c */
 int   ftruncate(int fd, oft__ size);
 
 #ifdef __cplusplus
 };
+#endif
+
 #endif
 
 #endif
