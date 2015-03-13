@@ -1,8 +1,8 @@
 /* mman-win32 from code.google.com/p/mman-win32 (MIT License). */
 
-#ifdef _WIN32
-
 #include "mman.h"
+
+#ifdef _WIN32
 
 #include <stdint.h>
 #include <windows.h>

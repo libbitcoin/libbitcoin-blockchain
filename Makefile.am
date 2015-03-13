@@ -74,8 +74,7 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/disk_objs.cpp \
     test/htdb.cpp \
     test/interface.cpp \
-    test/main.cpp \
-    test/fakechain/fake.cpp
+    test/main.cpp
 
 endif WITH_TESTS
 
