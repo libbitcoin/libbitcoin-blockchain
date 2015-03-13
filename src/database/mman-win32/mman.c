@@ -1,6 +1,8 @@
-// mman-win32 from code.google.com/p/mman-win32 (MIT License).
+/* mman-win32 from code.google.com/p/mman-win32 (MIT License). */
 
 #include "mman.h"
+
+#ifdef _WIN32
 
 #include <stdint.h>
 #include <windows.h>
@@ -16,7 +18,7 @@ static int __map_mman_error(const DWORD err, const int deferr)
     if (err == 0)
         return 0;
 
-    // TODO: implement
+    /* TODO: implement. */
 
     return err;
 }
@@ -183,8 +185,7 @@ int munlock(const void* addr, size_t len)
     return -1;
 }
 
-// www.gitorious.org/git-win32/mainline/source/
-// 9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c
+/* www.gitorious.org/git-win32/mainline/source/9ae6b7513158e0b1523766c9ad4a1ad286a96e2c:win32/ftruncate.c */
 int ftruncate(int fd, oft__ size)
 {
     HANDLE handle;
@@ -194,11 +195,11 @@ int ftruncate(int fd, oft__ size)
     if (fd < 0)
         return -1;
 
-    // guard against overflow from unsigned to signed
+    /* guard against overflow from unsigned to signed */
     if (size >= MAXINT64)
         return -1;
 
-    // unsigned to signed, splits to high and low
+    /* unsigned to signed, splits to high and low */
     li.QuadPart = (LONGLONG)size;
 
     handle = (HANDLE)_get_osfhandle(fd);
@@ -224,3 +225,5 @@ int ftruncate(int fd, oft__ size)
 
     return 0;
 }
+
+#endif
