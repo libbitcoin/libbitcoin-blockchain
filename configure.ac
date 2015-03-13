@@ -143,9 +143,10 @@ AS_CASE([${with_tests}], [yes],
 # Require bitcoin of at least version 2.8.0 and output ${bitcoin_CFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.8.0])
-AC_MSG_NOTICE([bitcoin_CFLAGS : ${bitcoin_CFLAGS}])
-AC_MSG_NOTICE([bitcoin_LIBS : ${bitcoin_LIBS}])
 AC_SUBST([bitcoin_PKG], ['libbitcoin >= 2.8.0'])
+AC_SUBST([bitcoin_CPPFLAGS], [${bitcoin_CFLAGS}])
+AC_MSG_NOTICE([bitcoin_CPPFLAGS : ${bitcoin_CPPFLAGS}])
+AC_MSG_NOTICE([bitcoin_LIBS : ${bitcoin_LIBS}])
 
 
 # Set flags.
