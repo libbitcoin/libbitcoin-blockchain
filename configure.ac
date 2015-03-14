@@ -141,7 +141,7 @@ AS_CASE([${with_tests}], [yes],
      AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
     [AC_SUBST([boost_unit_test_framework_LIBS], [])])
 
-# Require bitcoin of at least version 2.8.0 and output ${bitcoin_CFLAGS/LIBS/PKG}.
+# Require bitcoin of at least version 2.8.0 and output ${bitcoin_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 PKG_CHECK_MODULES([bitcoin], [libbitcoin >= 2.8.0])
 AC_SUBST([bitcoin_PKG], ['libbitcoin >= 2.8.0'])

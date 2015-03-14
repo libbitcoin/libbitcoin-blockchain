@@ -65,8 +65,7 @@ TESTS = test/libbitcoin_blockchain_test
 
 check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-test_libbitcoin_blockchain_test_LDFLAGS = -L${srcdir}/src
-test_libbitcoin_blockchain_test_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS} ${boost_unit_test_framework_LIBS}
+test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS} ${boost_unit_test_framework_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
     test/databases.cpp \
     test/disk_objs.cpp \
@@ -82,8 +81,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS = tools/block_db/block_db
 tools_block_db_block_db_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_block_db_block_db_LDFLAGS = -L${srcdir}/src
-tools_block_db_block_db_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_block_db_block_db_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_block_db_block_db_SOURCES = \
     tools/block_db/block_db.cpp
 
@@ -95,8 +93,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/count_records/count_records
 tools_count_records_count_records_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_count_records_count_records_LDFLAGS = -L${srcdir}/src
-tools_count_records_count_records_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_count_records_count_records_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_count_records_count_records_SOURCES = \
     tools/count_records/count_records.cpp
 
@@ -108,8 +105,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/history_db/history_db
 tools_history_db_history_db_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_history_db_history_db_LDFLAGS = -L${srcdir}/src
-tools_history_db_history_db_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_history_db_history_db_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_history_db_history_db_SOURCES = \
     tools/history_db/history_db.cpp
 
@@ -121,8 +117,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/initchain/initchain
 tools_initchain_initchain_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_initchain_initchain_LDFLAGS = -L${srcdir}/src
-tools_initchain_initchain_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_initchain_initchain_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_initchain_initchain_SOURCES = \
     tools/initchain/initchain.cpp
 
@@ -134,8 +129,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/mmr_add_row/mmr_add_row
 tools_mmr_add_row_mmr_add_row_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_mmr_add_row_mmr_add_row_LDFLAGS = -L${srcdir}/src
-tools_mmr_add_row_mmr_add_row_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_mmr_add_row_mmr_add_row_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_mmr_add_row_mmr_add_row_SOURCES = \
     tools/mmr_add_row/mmr_add_row.cpp
 
@@ -147,8 +141,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/mmr_create/mmr_create
 tools_mmr_create_mmr_create_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_mmr_create_mmr_create_LDFLAGS = -L${srcdir}/src
-tools_mmr_create_mmr_create_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_mmr_create_mmr_create_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_mmr_create_mmr_create_SOURCES = \
     tools/mmr_create/mmr_create.cpp
 
@@ -160,8 +153,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/mmr_delete_last_row/mmr_delete_last_row
 tools_mmr_delete_last_row_mmr_delete_last_row_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_mmr_delete_last_row_mmr_delete_last_row_LDFLAGS = -L${srcdir}/src
-tools_mmr_delete_last_row_mmr_delete_last_row_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_mmr_delete_last_row_mmr_delete_last_row_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_mmr_delete_last_row_mmr_delete_last_row_SOURCES = \
     tools/mmr_delete_last_row/mmr_delete_last_row.cpp
 
@@ -173,8 +165,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/mmr_lookup/mmr_lookup
 tools_mmr_lookup_mmr_lookup_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_mmr_lookup_mmr_lookup_LDFLAGS = -L${srcdir}/src
-tools_mmr_lookup_mmr_lookup_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_mmr_lookup_mmr_lookup_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_mmr_lookup_mmr_lookup_SOURCES = \
     tools/mmr_lookup/mmr_lookup.cpp
 
@@ -186,8 +177,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/read_htdb_record_value/read_htdb_record_value
 tools_read_htdb_record_value_read_htdb_record_value_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_read_htdb_record_value_read_htdb_record_value_LDFLAGS = -L${srcdir}/src
-tools_read_htdb_record_value_read_htdb_record_value_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_read_htdb_record_value_read_htdb_record_value_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_read_htdb_record_value_read_htdb_record_value_SOURCES = \
     tools/read_htdb_record_value/read_htdb_record_value.cpp
 
@@ -199,8 +189,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/read_htdb_slab_value/read_htdb_slab_value
 tools_read_htdb_slab_value_read_htdb_slab_value_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_read_htdb_slab_value_read_htdb_slab_value_LDFLAGS = -L${srcdir}/src
-tools_read_htdb_slab_value_read_htdb_slab_value_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_read_htdb_slab_value_read_htdb_slab_value_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_read_htdb_slab_value_read_htdb_slab_value_SOURCES = \
     tools/read_htdb_slab_value/read_htdb_slab_value.cpp
 
@@ -212,8 +201,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/show_array/show_array
 tools_show_array_show_array_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_show_array_show_array_LDFLAGS = -L${srcdir}/src
-tools_show_array_show_array_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_show_array_show_array_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_show_array_show_array_SOURCES = \
     tools/show_array/show_array.cpp
 
@@ -225,8 +213,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/show_linked_records/show_linked_records
 tools_show_linked_records_show_linked_records_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_show_linked_records_show_linked_records_LDFLAGS = -L${srcdir}/src
-tools_show_linked_records_show_linked_records_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_show_linked_records_show_linked_records_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_show_linked_records_show_linked_records_SOURCES = \
     tools/show_linked_records/show_linked_records.cpp
 
@@ -238,8 +225,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/show_records/show_records
 tools_show_records_show_records_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_show_records_show_records_LDFLAGS = -L${srcdir}/src
-tools_show_records_show_records_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_show_records_show_records_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_show_records_show_records_SOURCES = \
     tools/show_records/show_records.cpp
 
@@ -251,8 +237,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/spend_db/spend_db
 tools_spend_db_spend_db_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_spend_db_spend_db_LDFLAGS = -L${srcdir}/src
-tools_spend_db_spend_db_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_spend_db_spend_db_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_spend_db_spend_db_SOURCES = \
     tools/spend_db/spend_db.cpp
 
@@ -264,8 +249,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/stealth_db/stealth_db
 tools_stealth_db_stealth_db_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_stealth_db_stealth_db_LDFLAGS = -L${srcdir}/src
-tools_stealth_db_stealth_db_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_stealth_db_stealth_db_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_stealth_db_stealth_db_SOURCES = \
     tools/stealth_db/stealth_db.cpp
 
@@ -277,8 +261,7 @@ if WITH_TOOLS
 
 noinst_PROGRAMS += tools/transaction_db/transaction_db
 tools_transaction_db_transaction_db_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-tools_transaction_db_transaction_db_LDFLAGS = -L${srcdir}/src
-tools_transaction_db_transaction_db_LDADD = -lbitcoin-blockchain ${bitcoin_LIBS}
+tools_transaction_db_transaction_db_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS}
 tools_transaction_db_transaction_db_SOURCES = \
     tools/transaction_db/transaction_db.cpp
 
