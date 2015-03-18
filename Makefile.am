@@ -51,10 +51,14 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/database/stealth_database.cpp \
     src/database/transaction_database.cpp \
     src/database/mman-win32/mman.c \
+    src/database/mman-win32/mman.h \
     src/impl/blockchain_impl.cpp \
     src/impl/organizer_impl.cpp \
+    src/impl/organizer_impl.hpp \
     src/impl/simple_chain_impl.cpp \
-    src/impl/validate_block_impl.cpp
+    src/impl/simple_chain_impl.hpp \
+    src/impl/validate_block_impl.cpp \
+    src/impl/validate_block_impl.hpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
