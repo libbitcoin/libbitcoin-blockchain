@@ -189,6 +189,8 @@ void compare_blocks(const block_type& popped, const block_type& original)
     }
 }
 
+#ifdef DISABLED
+
 BOOST_AUTO_TEST_CASE(pushpop)
 {
     const std::string prefix = "chain";
@@ -296,6 +298,8 @@ BOOST_AUTO_TEST_CASE(pushpop)
     test_block_exists(interface, 1, block1);
     test_block_exists(interface, 0, block0);
 }
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 
