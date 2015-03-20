@@ -69,7 +69,7 @@ TESTS = test/libbitcoin_blockchain_test
 
 check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
-test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${bitcoin_LIBS} ${boost_unit_test_framework_LIBS}
+test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
     test/databases.cpp \
     test/disk_objs.cpp \
