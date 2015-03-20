@@ -64,8 +64,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
 #------------------------------------------------------------------------------
 if WITH_TESTS
 
-# Execute 'test/libbitcoin_blockchain_test' as a test.
-TESTS = test/libbitcoin_blockchain_test
+TESTS = libbitcoin_blockchain_test_runner.sh
 
 check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
