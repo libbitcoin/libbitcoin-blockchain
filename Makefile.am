@@ -5,13 +5,14 @@
 #
 ###############################################################################
 
-# Standard declarations.
+# Automake settings.
 #==============================================================================
-# look for macros in the m4 subdirectory
+# Look for macros in the m4 subdirectory.
+#------------------------------------------------------------------------------
 ACLOCAL_AMFLAGS = -I m4
 
 
-# Automake products.
+# Distribution, build and install products.
 #==============================================================================
 # files => ${pkgconfigdir}
 #------------------------------------------------------------------------------
@@ -313,4 +314,29 @@ include_bitcoin_blockchain_impl_HEADERS = \
     include/bitcoin/blockchain/impl/htdb_slab_list_item.ipp \
     include/bitcoin/blockchain/impl/multimap_records.ipp \
     include/bitcoin/blockchain/impl/remainder.ipp
+
+
+# Custom make targets.
+#==============================================================================
+# make target: tools
+#------------------------------------------------------------------------------
+target_tools = \
+    tools/block_db/block_db \
+    tools/count_records/count_records \
+    tools/history_db/history_db \
+    tools/initchain/initchain \
+    tools/mmr_add_row/mmr_add_row \
+    tools/mmr_create/mmr_create \
+    tools/mmr_delete_last_row/mmr_delete_last_row \
+    tools/mmr_lookup/mmr_lookup \
+    tools/read_htdb_record_value/read_htdb_record_value \
+    tools/read_htdb_slab_value/read_htdb_slab_value \
+    tools/show_array/show_array \
+    tools/show_linked_records/show_linked_records \
+    tools/show_records/show_records \
+    tools/spend_db/spend_db \
+    tools/stealth_db/stealth_db \
+    tools/transaction_db/transaction_db
+
+tools: ${target_tools}
 
