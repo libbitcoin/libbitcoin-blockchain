@@ -24,9 +24,9 @@
 using namespace libbitcoin;
 using namespace libbitcoin::chain;
 
-constexpr size_t total_txs = 200;
-constexpr size_t tx_size = 200;
-constexpr size_t buckets = 100;
+BC_CONSTEXPR size_t total_txs = 200;
+BC_CONSTEXPR size_t tx_size = 200;
+BC_CONSTEXPR size_t buckets = 100;
 
 BOOST_AUTO_TEST_SUITE(htdb)
 
@@ -41,7 +41,7 @@ data_chunk generate_random_bytes(
 
 void write_data()
 {
-    constexpr size_t header_size = htdb_slab_header_fsize(buckets);
+    BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(buckets);
 
     touch_file("htdb_slabs");
     mmfile file("htdb_slabs");
@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(htdb_slab_write_read)
 
 BOOST_AUTO_TEST_CASE(htdb_record_test_32)
 {
-    constexpr size_t rec_buckets = 2;
-    constexpr size_t header_size = htdb_record_header_fsize(rec_buckets);
+    BC_CONSTEXPR size_t rec_buckets = 2;
+    BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(rec_buckets);
 
     touch_file("htdb_records");
     mmfile file("htdb_records");
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
     header.start();
 
     typedef byte_array<4> tiny_hash;
-    constexpr size_t record_size = record_fsize_htdb<tiny_hash>(4);
+    BC_CONSTEXPR size_t record_size = record_fsize_htdb<tiny_hash>(4);
     const position_type records_start = header_size;
 
     record_allocator alloc(file, records_start, record_size);
@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
 
 BOOST_AUTO_TEST_CASE(htdb_record_test_64)
 {
-    constexpr size_t rec_buckets = 2;
-    constexpr size_t header_size = htdb_record_header_fsize(rec_buckets);
+    BC_CONSTEXPR size_t rec_buckets = 2;
+    BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(rec_buckets);
 
     touch_file("htdb_records");
     mmfile file("htdb_records");
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_64)
     header.start();
 
     typedef byte_array<8> tiny_hash;
-    constexpr size_t record_size = record_fsize_htdb<tiny_hash>(8);
+    BC_CONSTEXPR size_t record_size = record_fsize_htdb<tiny_hash>(8);
     const position_type records_start = header_size;
 
     record_allocator alloc(file, records_start, record_size);
