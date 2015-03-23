@@ -27,10 +27,10 @@ namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 600000;
-constexpr size_t header_size = htdb_slab_header_fsize(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_slab_fsize;
+BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(number_buckets);
+BC_CONSTEXPR size_t initial_map_file_size = header_size + min_slab_fsize;
 
-constexpr position_type allocator_offset = header_size;
+BC_CONSTEXPR position_type allocator_offset = header_size;
 
 // Record format:
 // main:

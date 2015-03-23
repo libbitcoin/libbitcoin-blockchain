@@ -33,8 +33,8 @@ namespace libbitcoin {
 typedef uint8_t* slab_type;
 typedef disk_array<index_type, position_type> htdb_slab_header;
 
-constexpr size_t min_slab_fsize = sizeof(position_type);
-constexpr size_t htdb_slab_header_fsize(size_t buckets)
+BC_CONSTEXPR size_t min_slab_fsize = sizeof(position_type);
+BC_CONSTFUNC size_t htdb_slab_header_fsize(size_t buckets)
 {
     return sizeof(position_type) + min_slab_fsize * buckets;
 }

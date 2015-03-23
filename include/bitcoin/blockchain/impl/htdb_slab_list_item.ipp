@@ -34,8 +34,8 @@ template <typename HashType>
 class htdb_slab_list_item
 {
 public:
-    static constexpr size_t hash_size = std::tuple_size<HashType>::value;
-    static constexpr position_type value_begin = hash_size + 8;
+    static BC_CONSTEXPR size_t hash_size = std::tuple_size<HashType>::value;
+    static BC_CONSTEXPR position_type value_begin = hash_size + 8;
 
     htdb_slab_list_item(
         slab_allocator& allocator, const position_type position=0);
@@ -124,7 +124,7 @@ uint8_t* htdb_slab_list_item<HashType>::raw_next_data() const
 {
     // Next position is after key data.
     static_assert(sizeof(position_type) == 8, "Internal error");
-    constexpr position_type next_begin = hash_size;
+    BC_CONSTEXPR position_type next_begin = hash_size;
     return raw_data_ + next_begin;
 }
 

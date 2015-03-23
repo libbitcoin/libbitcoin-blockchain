@@ -47,7 +47,7 @@ struct db_paths
     boost::filesystem::path stealth_rows;
 };
 
-constexpr size_t disabled_database = bc::max_size_t;
+BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
 
 struct db_active_heights
 {

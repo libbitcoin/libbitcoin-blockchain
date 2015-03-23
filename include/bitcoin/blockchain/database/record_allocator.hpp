@@ -33,8 +33,8 @@ namespace libbitcoin {
 typedef uint8_t* record_type;
 typedef disk_array<index_type, index_type> htdb_record_header;
 
-constexpr size_t min_records_fsize = sizeof(index_type);
-constexpr size_t htdb_record_header_fsize(size_t buckets)
+BC_CONSTEXPR size_t min_records_fsize = sizeof(index_type);
+BC_CONSTFUNC size_t htdb_record_header_fsize(size_t buckets)
 {
     return sizeof(index_type) + min_records_fsize * buckets;
 }

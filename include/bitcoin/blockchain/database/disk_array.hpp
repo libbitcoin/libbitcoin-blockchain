@@ -44,7 +44,7 @@ class disk_array
 public:
     // This VC++ workaround is OK because ValueType must be unsigned. 
     //static constexpr ValueType empty = std::numeric_limits<ValueType>::max();
-    static constexpr ValueType empty = (ValueType)bc::max_uint64;
+    static BC_CONSTEXPR ValueType empty = (ValueType)bc::max_uint64;
 
     /**
      * sector_start represents the offset within the file.

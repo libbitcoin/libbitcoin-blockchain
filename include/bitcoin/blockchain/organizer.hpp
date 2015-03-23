@@ -101,7 +101,7 @@ typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 class simple_chain
 {
 public:
-    static constexpr size_t null_height = bc::max_size_t;
+    static BC_CONSTEXPR size_t null_height = bc::max_size_t;
 
     virtual void append(block_detail_ptr incoming_block) = 0;
     virtual size_t find_height(const hash_digest& search_block_hash) = 0;

@@ -93,8 +93,8 @@ template <typename HashType>
 record_type htdb_record_list_item<HashType>::data() const
 {
     // Value data is at the end.
-    constexpr size_t hash_size = std::tuple_size<HashType>::value;
-    constexpr position_type value_begin = hash_size + 4;
+    BC_CONSTEXPR size_t hash_size = std::tuple_size<HashType>::value;
+    BC_CONSTEXPR position_type value_begin = hash_size + 4;
     return raw_data(value_begin);
 }
 
@@ -124,8 +124,8 @@ uint8_t* htdb_record_list_item<HashType>::raw_next_data() const
 {
     // Next position is after key data.
     BITCOIN_ASSERT(sizeof(index_type) == 4);
-    constexpr size_t hash_size = std::tuple_size<HashType>::value;
-    constexpr position_type next_begin = hash_size;
+    BC_CONSTEXPR size_t hash_size = std::tuple_size<HashType>::value;
+    BC_CONSTEXPR position_type next_begin = hash_size;
     return raw_data(next_begin);
 }
 

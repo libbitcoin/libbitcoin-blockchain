@@ -29,7 +29,7 @@ namespace libbitcoin {
     namespace chain {
 
 template <typename HashType>
-constexpr size_t map_record_fsize_multimap()
+BC_CONSTEXPR size_t map_record_fsize_multimap()
 {
     return record_fsize_htdb<HashType>(sizeof(index_type));
 }
