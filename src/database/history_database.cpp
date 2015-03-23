@@ -25,14 +25,14 @@ namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 97210744;
-constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
-constexpr size_t initial_lookup_file_size = header_size + min_records_fsize;
+BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
+BC_CONSTEXPR size_t initial_lookup_file_size = header_size + min_records_fsize;
 
-constexpr position_type allocator_offset = header_size;
-constexpr size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
+BC_CONSTEXPR position_type allocator_offset = header_size;
+BC_CONSTEXPR size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
 
 constexpr size_t value_size = 1 + 36 + 4 + 8;
-constexpr size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
+BC_CONSTEXPR size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
 history_database::history_database(const boost::filesystem::path& lookup_filename,
     const boost::filesystem::path& rows_filename)

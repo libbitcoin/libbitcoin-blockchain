@@ -72,7 +72,7 @@ typedef std::vector<index_type> transaction_index_list;
 class block_database
 {
 public:
-    static constexpr size_t null_height = bc::max_size_t;
+    static BC_CONSTEXPR size_t null_height = bc::max_size_t;
 
     BCB_API block_database(const boost::filesystem::path& map_filename,
         const boost::filesystem::path& index_filename);

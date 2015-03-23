@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
     mmfile file("lrs");
     BITCOIN_ASSERT(file.data());
     file.resize(4);
-    constexpr size_t record_size = linked_record_offset + 6;
+    BC_CONSTEXPR size_t record_size = linked_record_offset + 6;
     record_allocator recs(file, 0, record_size);
     recs.create();
 

@@ -26,7 +26,7 @@ namespace libbitcoin {
     namespace chain {
 
 // used by test
-constexpr size_t linked_record_offset = sizeof(index_type);
+BC_CONSTEXPR size_t linked_record_offset = sizeof(index_type);
 
 /**
  * linked_records is a one-way linked list with a next value containing
@@ -38,7 +38,7 @@ class linked_records
 {
 public:
     // std::numeric_limits<index_type>::max()
-    static constexpr index_type empty = bc::max_uint32;
+    static BC_CONSTEXPR index_type empty = bc::max_uint32;
 
     BCB_API linked_records(record_allocator& allocator);
 

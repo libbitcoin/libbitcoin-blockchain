@@ -25,12 +25,12 @@ namespace libbitcoin {
     namespace chain {
 
 constexpr size_t number_buckets = 228110589;
-constexpr size_t header_size = htdb_record_header_fsize(number_buckets);
-constexpr size_t initial_map_file_size = header_size + min_records_fsize;
+BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
+BC_CONSTEXPR size_t initial_map_file_size = header_size + min_records_fsize;
 
-constexpr position_type allocator_offset = header_size;
-constexpr size_t value_size = hash_size + 4;
-constexpr size_t record_size = record_fsize_htdb<hash_digest>(value_size);
+BC_CONSTEXPR position_type allocator_offset = header_size;
+BC_CONSTEXPR size_t value_size = hash_size + 4;
+BC_CONSTEXPR size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 
 // Create a new hash from a hash + index (a point)
 // deterministically suitable for use in a hashtable.

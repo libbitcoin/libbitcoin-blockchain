@@ -30,7 +30,7 @@ namespace libbitcoin {
     namespace chain {
 
 template <typename HashType>
-constexpr size_t record_fsize_htdb(size_t value_size)
+BC_CONSTFUNC size_t record_fsize_htdb(size_t value_size)
 {
     return std::tuple_size<HashType>::value + sizeof(index_type)
         + value_size;
