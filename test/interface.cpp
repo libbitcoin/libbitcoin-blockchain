@@ -189,6 +189,7 @@ void compare_blocks(const block_type& popped, const block_type& original)
     }
 }
 
+// This test causes Travis run failures for performance reasons.
 #ifdef DISABLED
 
 BOOST_AUTO_TEST_CASE(pushpop)
