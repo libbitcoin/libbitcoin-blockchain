@@ -24,6 +24,10 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoints.hpp>
 
+#ifdef WITH_CONSENSUS
+#include <bitcoin/consensus.hpp>
+#endif
+
 namespace libbitcoin {
     namespace chain {
 
@@ -38,6 +42,42 @@ using boost::posix_time::hours;
 
 constexpr size_t max_block_size = 1000000;
 constexpr size_t max_block_script_sig_operations = max_block_size / 50;
+
+// Validate script consensus conformance.
+static bool validate_consensus(const script_type& prevout_script,
+    const transaction_type& current_tx, size_t input_index,
+    bool bip16_enabled=true)
+{
+    BITCOIN_ASSERT(input_index < current_tx.inputs.size());
+    BITCOIN_ASSERT(input_index <= max_uint32);
+    const auto input_index32 = static_cast<uint32_t>(input_index);
+
+#ifdef WITH_CONSENSUS
+    using namespace bc::consensus;
+    auto previous_output_script = save_script(prevout_script);
+    data_chunk current_transaction(satoshi_raw_size(current_tx));
+    satoshi_save(current_tx, current_transaction.begin());
+    uint32_t flags = verify_flags_type::verify_flags_standard;
+    if (bip16_enabled)
+        flags |= verify_flags_type::verify_flags_p2sh;
+
+    const auto result = verify_script(current_transaction.data(), 
+        current_transaction.size(), previous_output_script.data(),
+        previous_output_script.size(), input_index32, flags);
+
+    BITCOIN_ASSERT(
+        (result == verify_result::verify_result_eval_true) || 
+        (result == verify_result::verify_result_eval_false));
+
+    return (result == verify_result::verify_result_eval_true);
+#else
+    auto previous_output_script = prevout_script;
+    const auto current_input_script = current_tx.inputs[input_index].script;
+
+    return previous_output_script.run(current_input_script, current_tx,
+        input_index32, bip16_enabled);
+#endif
+}
 
 validate_transaction::validate_transaction(
     blockchain& chain, const transaction_type& tx,
@@ -249,8 +289,7 @@ bool validate_transaction::connect_input(
         if (height_difference < coinbase_maturity)
             return false;
     }
-    script_type output_script = previous_output.script;
-    if (!output_script.run(input.script, tx, current_input))
+    if (!validate_consensus(previous_output.script, tx, current_input))
         return false;
     value_in += output_value;
     if (value_in > max_money())
@@ -684,8 +723,8 @@ size_t script_hash_signature_operations_count(
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const transaction_type& current_tx,
-    size_t input_index, uint64_t& value_in, size_t& total_sigops)
+    const transaction_type& current_tx, size_t input_index, uint64_t& value_in,
+    size_t& total_sigops)
 {
     // Lookup previous output
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
@@ -740,12 +779,10 @@ bool validate_block::connect_input(size_t index_in_parent,
     bool bip16_enabled =
         current_block_.header.timestamp >= bip16_switchover_timestamp;
     BITCOIN_ASSERT(!bip16_enabled || height_ >= bip16_switchover_height);
-    // Validate script
-    script_type output_script = previous_tx_out.script;
-    if (!output_script.run(input.script,
-            current_tx, input_index, bip16_enabled))
+    if (!validate_consensus(previous_tx_out.script, current_tx, input_index,
+        bip16_enabled))
     {
-        log_warning(LOG_VALIDATE) << "Input script evaluation failed";
+        log_warning(LOG_VALIDATE) << "Input script consensus validation failed";
         return false;
     }
     // Search for double spends
@@ -766,4 +803,3 @@ bool validate_block::connect_input(size_t index_in_parent,
 
     } // namespace chain
 } // namespace libbitcoin
-
