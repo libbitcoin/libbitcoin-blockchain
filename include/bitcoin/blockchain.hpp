@@ -18,7 +18,7 @@
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>
-#endif WITH_CONSENSUS
+#endif
 
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/blockchain_impl.hpp>
