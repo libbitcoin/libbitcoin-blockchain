@@ -6,9 +6,7 @@
 
 Note that you need g++ 4.8 or higher. For this reason Ubuntu 12.04 and older are not supported.
 
-Make sure you have installed [libbitcoin](https://github.com/libbitcoin/libbitcoin) beforehand according to its build instructions.
-
-To use Satoshi consensus code, install [libbitcoin-consensus](https://github.com/libbitcoin/libbitcoin-consensus). To use native consensus code, add `--without-consensus` to `configure`.
+Make sure you have installed [libbitcoin](https://github.com/libbitcoin/libbitcoin) and [libbitcoin-consensus](https://github.com/libbitcoin/libbitcoin-consensus) beforehand according to their respective build instructions.
 
 ```sh
 $ ./autogen.sh
@@ -19,3 +17,7 @@ $ sudo ldconfig
 ```
 
 libbitcoin-blockchain is now installed in `/usr/local/`.
+
+## Configure Options
+
+The default configuration requires `libbitcoin-consensus`. This ensures consensus parity with the Satoshi client. To eliminate the `libbitcoin-consensus` dependency use the `--without-consensus` option. This results in use of `libbitcoin` consensus checks.
