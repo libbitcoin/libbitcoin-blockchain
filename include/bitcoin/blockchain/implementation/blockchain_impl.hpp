@@ -36,7 +36,7 @@
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API blockchain_impl
   : public blockchain
@@ -54,8 +54,9 @@ public:
 
     bool start();
     bool stop();
-    void store(const block_type& block, store_block_handler handle_store);
-    void import(const block_type& block, import_block_handler handle_import);
+
+    void store(const chain::block& block, store_block_handler handle_store);
+    void import(const chain::block& block, import_block_handler handle_import);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,
@@ -85,11 +86,11 @@ public:
         fetch_handler_transaction_index handle_fetch);
 
     // fetch spend of an output point
-    void fetch_spend(const output_point& outpoint,
+    void fetch_spend(const chain::output_point& outpoint,
         fetch_handler_spend handle_fetch);
 
     // fetch outputs, values and spends for an address.
-    void fetch_history(const payment_address& address,
+    void fetch_history(const wallet::payment_address& address,
         fetch_handler_history handle_fetch,
         const uint64_t limit=0, const uint64_t from_height=0);
 
@@ -116,7 +117,7 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(const block_type& block, store_block_handler handle_store);
+    void do_store(const chain::block& block, store_block_handler handle_store);
 
     // Uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
@@ -159,7 +160,7 @@ private:
     organizer_impl organizer_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

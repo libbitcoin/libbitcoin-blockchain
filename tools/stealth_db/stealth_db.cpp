@@ -2,8 +2,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -140,7 +141,7 @@ int main(int argc, char** argv)
         }
         // bitfield
         std::string script_str(args[0]);
-        script_type script = unpretty(script_str);
+        chain::script script(script_str);
         stealth_row row;
         // ephemkey
         if (!decode_hash(row.ephemkey, args[1]))

@@ -22,7 +22,7 @@
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t number_buckets = 228110589;
 BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
@@ -35,7 +35,7 @@ BC_CONSTEXPR size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 // Create a new hash from a hash + index (a point)
 // deterministically suitable for use in a hashtable.
 // This technique could be replaced by simply using the output.hash.
-static hash_digest output_to_hash(const output_point& output)
+static hash_digest output_to_hash(const chain::output_point& output)
 {
     data_chunk point(sizeof(output.index) + sizeof(output.hash));
     const auto index = to_little_endian(output.index);
@@ -94,15 +94,15 @@ void spend_database::start()
     allocator_.start();
 }
 
-spend_result spend_database::get(const output_point& outpoint) const
+spend_result spend_database::get(const chain::output_point& outpoint) const
 {
     const auto key = output_to_hash(outpoint);
     const auto record = map_.get(key);
     return spend_result(record);
 }
 
-void spend_database::store(const output_point& outpoint,
-    const input_point& spend)
+void spend_database::store(const chain::output_point& outpoint,
+    const chain::input_point& spend)
 {
     const auto write = [&spend](uint8_t* data)
     {
@@ -115,7 +115,7 @@ void spend_database::store(const output_point& outpoint,
     map_.store(key, write);
 }
 
-void spend_database::remove(const output_point& outpoint)
+void spend_database::remove(const chain::output_point& outpoint)
 {
     const auto key = output_to_hash(outpoint);
     DEBUG_ONLY(bool success =) map_.unlink(key);
@@ -136,6 +136,5 @@ spend_statinfo spend_database::statinfo() const
     };
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

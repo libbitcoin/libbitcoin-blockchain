@@ -24,7 +24,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 uint32_t remainder(const HashType& value, const uint32_t divisor)
@@ -42,7 +42,7 @@ uint64_t remainder(const HashType& value, const uint64_t divisor)
     return hash64 % divisor;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

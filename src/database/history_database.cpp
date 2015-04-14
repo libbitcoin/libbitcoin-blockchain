@@ -22,7 +22,7 @@
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t number_buckets = 97210744;
 BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
@@ -67,7 +67,7 @@ void history_database::start()
 }
 
 void history_database::add_output(
-    const short_hash& key, const output_point& outpoint,
+    const short_hash& key, const chain::output_point& outpoint,
     const uint32_t output_height, const uint64_t value)
 {
     auto write = [&](uint8_t* data)
@@ -83,8 +83,8 @@ void history_database::add_output(
 }
 
 void history_database::add_spend(
-    const short_hash& key, const output_point& previous,
-    const input_point& spend, const size_t spend_height)
+    const short_hash& key, const chain::output_point& previous,
+    const chain::input_point& spend, const size_t spend_height)
 {
     auto write = [&](uint8_t* data)
     {
@@ -172,6 +172,5 @@ history_statinfo history_database::statinfo() const
     };
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

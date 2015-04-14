@@ -25,11 +25,12 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/block_info.hpp>
 
 // TODO: rename this file to avoid conflicts with master include.
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 enum class point_ident
 {
@@ -43,8 +44,7 @@ struct BCB_API history_row
     point_ident id;
 
     /// input/output point
-    point_type point;
-
+    chain::point point;
     /// Block height of transaction
     uint64_t height;
 
@@ -92,7 +92,7 @@ public:
     using fetch_handler = std::function<
         void (const std::error_code&, const Message&)>;
 
-    typedef fetch_handler<block_header_type> fetch_handler_block_header;
+    typedef fetch_handler<chain::block_header> fetch_handler_block_header;
 
     typedef fetch_handler<hash_list> fetch_handler_block_transaction_hashes;
 
@@ -100,14 +100,14 @@ public:
 
     typedef fetch_handler<uint64_t> fetch_handler_last_height;
 
-    typedef fetch_handler<block_locator_type> fetch_handler_block_locator;
+    typedef fetch_handler<message::block_locator> fetch_handler_block_locator;
 
-    typedef fetch_handler<transaction_type> fetch_handler_transaction;
+    typedef fetch_handler<chain::transaction> fetch_handler_transaction;
 
     typedef std::function<void (const std::error_code&, uint64_t, uint64_t)>
         fetch_handler_transaction_index;
 
-    typedef fetch_handler<input_point> fetch_handler_spend;
+    typedef fetch_handler<chain::input_point> fetch_handler_spend;
 
     typedef std::function<void (const std::error_code&, const history_list&)>
         fetch_handler_history;
@@ -115,7 +115,7 @@ public:
     typedef std::function<void (const std::error_code&, const stealth_list&)>
         fetch_handler_stealth;
 
-    typedef std::vector<std::shared_ptr<block_type>> block_list;
+    typedef std::vector<std::shared_ptr<chain::block>> block_list;
 
     typedef std::function<void (const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
@@ -151,7 +151,7 @@ public:
      *  );
      * @endcode
      */
-    virtual void store(const block_type& block,
+    virtual void store(const chain::block& block,
         store_block_handler handle_store) = 0;
 
     /**
@@ -167,7 +167,7 @@ public:
      *  );
      * @encode
      */
-    virtual void import(const block_type& import_block,
+    virtual void import(const chain::block& import_block,
         import_block_handler handle_import) = 0;
 
     /**
@@ -295,7 +295,7 @@ public:
      *  );
      * @endcode
      */
-    virtual void fetch_spend(const output_point& outpoint,
+    BCB_API virtual void fetch_spend(const chain::output_point& outpoint,
         fetch_handler_spend handle_fetch) = 0;
 
     /**
@@ -344,7 +344,7 @@ public:
      *                              Useful to filter entries or to fetch
      *                              the history in chunks.
      */
-    virtual void fetch_history(const payment_address& address,
+    virtual void fetch_history(const wallet::payment_address& address,
         fetch_handler_history handle_fetch, const uint64_t limit=0,
         const uint64_t from_height=0) = 0;
 
@@ -409,10 +409,9 @@ public:
  * Create checksum so spend can be matched with corresponding
  * output point without needing the whole previous outpoint.
  */
-BCB_API uint64_t spend_checksum(output_point outpoint);
+BCB_API uint64_t spend_checksum(chain::output_point outpoint);
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

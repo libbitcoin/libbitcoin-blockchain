@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+/*
+ * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,37 +17,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
 
-#include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// TODO: rename to block_locator_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&, const block_locator_type&)>
-    blockchain_fetch_handler_block_locator;
+BCB_API chain::block genesis_block();
 
-/**
- * Creates a block_locator object used to download the blockchain.
- *
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,      // Status of operation
- *      const block_locator_type& loc   // Block locator object
- *  );
- * @endcode
- */
-BCB_API void fetch_block_locator(blockchain& chain,
-    blockchain_fetch_handler_block_locator handle_fetch);
+BCB_API chain::index_list block_locator_indexes(int top_height);
+
+BCB_API uint64_t block_value(size_t height);
+
+BCB_API hash_number block_work(uint32_t bits);
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

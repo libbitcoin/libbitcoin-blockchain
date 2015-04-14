@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 organizer_impl::organizer_impl(threadpool& pool, db_interface& database,
     orphans_pool& orphans, simple_chain& chain,
@@ -117,5 +117,5 @@ std::error_code organizer_impl::verify(size_t fork_point,
     return ec;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

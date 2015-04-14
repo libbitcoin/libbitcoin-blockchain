@@ -24,11 +24,11 @@
 #include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 validate_block_impl::validate_block_impl(db_interface& database,
     size_t fork_index, const block_detail_list& orphan_chain,
-    size_t orphan_index, size_t height, const block_type& block,
+    size_t orphan_index, size_t height, const chain::block& block,
     const config::checkpoint::list& checks, stopped_callback stopped)
   : validate_block(height, block, checks, stopped),
     interface_(database),
@@ -39,7 +39,7 @@ validate_block_impl::validate_block_impl(db_interface& database,
 {
 }
 
-block_header_type validate_block_impl::fetch_block(size_t fetch_height) const
+chain::block_header validate_block_impl::fetch_block(size_t fetch_height) const
 {
     if (fetch_height > fork_index_)
     {
@@ -98,7 +98,7 @@ bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 }
 
 bool validate_block_impl::is_output_spent(
-    const output_point& outpoint) const
+    const chain::output_point& outpoint) const
 {
     const auto result = interface_.spends.get(outpoint);
     if (!result)
@@ -108,7 +108,7 @@ bool validate_block_impl::is_output_spent(
     return transaction_exists(result.hash());
 }
 
-bool validate_block_impl::fetch_transaction(transaction_type& tx,
+bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
     const auto result = interface_.transactions.get(tx_hash);
@@ -120,15 +120,16 @@ bool validate_block_impl::fetch_transaction(transaction_type& tx,
     return true;
 }
 
-bool validate_block_impl::fetch_orphan_transaction(transaction_type& tx,
+bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
+
         for (const auto& orphan_tx: orphan_block.transactions)
         {
-            if (hash_transaction(orphan_tx) == tx_hash)
+            if (orphan_tx.hash() == tx_hash)
             {
                 tx = orphan_tx;
                 tx_height = fork_index_ + orphan + 1;
@@ -136,10 +137,12 @@ bool validate_block_impl::fetch_orphan_transaction(transaction_type& tx,
             }
         }
     }
+
     return false;
 }
 
-bool validate_block_impl::is_output_spent(const output_point& previous_output,
+bool validate_block_impl::is_output_spent(
+    const chain::output_point& previous_output,
     size_t index_in_parent, size_t input_index) const
 {
     // Search for double spends. This must be done in both chain AND orphan.
@@ -154,7 +157,8 @@ bool validate_block_impl::is_output_spent(const output_point& previous_output,
     return false;
 }
 
-bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
+bool validate_block_impl::orphan_is_spent(
+    const chain::output_point& previous_output,
     size_t skip_tx, size_t skip_input) const
 {
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
@@ -170,10 +174,12 @@ bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
         {
             // TODO: too deep, move this section to subfunction.
             const auto& orphan_tx = transactions[tx_index];
+
             for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
                 ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
+
                 if (orphan == orphan_index_ && tx_index == skip_tx &&
                     input_index == skip_input)
                     continue;
@@ -187,5 +193,5 @@ bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
     return false;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

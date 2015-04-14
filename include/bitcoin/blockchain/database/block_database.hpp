@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API block_result
 {
@@ -42,7 +42,7 @@ public:
     /**
      * Read block header.
      */
-    block_header_type header() const;
+    chain::block_header header() const;
 
     /**
      * The height of this block in the blockchain.
@@ -100,7 +100,7 @@ public:
     /**
      * Store a block in the database.
      */
-    void store(const block_type& block);
+    void store(const chain::block& block);
 
     /**
      * Unlink all blocks upwards from (and including) from_height.
@@ -140,8 +140,7 @@ private:
     record_allocator index_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

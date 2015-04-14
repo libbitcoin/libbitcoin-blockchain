@@ -29,7 +29,7 @@
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 /**
  * If you're looking to validate a transaction, then use the simpler
@@ -39,22 +39,19 @@ class BCB_API validate_transaction
   : public std::enable_shared_from_this<validate_transaction>
 {
 public:
-    typedef std::function<void (const std::error_code&, const index_list&)>
+    typedef std::function<void (const std::error_code&, const chain::index_list&)>
         validate_handler;
 
-    validate_transaction(blockchain& chain, const transaction_type& tx,
+    validate_transaction(blockchain& chain, const chain::transaction& tx,
         const pool_buffer& pool, sequencer& strand);
     void start(validate_handler handle_validate);
 
-    static std::error_code check_transaction(const transaction_type& tx);
-    static bool connect_input(const transaction_type& tx, size_t current_input,
-        const transaction_type& previous_tx, size_t parent_height,
-        size_t last_block_height, uint64_t& value_in);
-    static bool tally_fees(const transaction_type& tx, uint64_t value_in,
+    static std::error_code check_transaction(const chain::transaction& tx);
+    static bool connect_input(const chain::transaction& tx,
+        size_t current_input, const chain::transaction& previous_tx,
+        size_t parent_height, size_t last_block_height, uint64_t& value_in);
+    static bool tally_fees(const chain::transaction& tx, uint64_t value_in,
         uint64_t& fees);
-    static bool validate_consensus(const script_type& prevout_script,
-        const transaction_type& current_tx, size_t input_index,
-        const block_header_type& header, const size_t height);
 
 private:
     std::error_code basic_checks() const;
@@ -62,10 +59,10 @@ private:
 
     void handle_duplicate_check(const std::error_code& ec);
     bool is_tx_in_pool(const hash_digest& hash) const;
-    bool is_spent_in_pool(const transaction_type& tx) const;
-    bool is_spent_in_pool(const output_point& outpoint) const;
-    bool is_spent_in_tx(const output_point& outpoint,
-        const transaction_type& tx) const;
+    bool is_spent_in_pool(const chain::transaction& tx) const;
+    bool is_spent_in_pool(const chain::output_point& outpoint) const;
+    bool is_spent_in_tx(const chain::output_point& outpoint,
+        const chain::transaction& tx) const;
     pool_buffer::const_iterator find_tx_in_pool(const hash_digest& hash) const;
 
     // Last height used for checking coinbase maturity.
@@ -78,7 +75,7 @@ private:
     // If previous_tx_index didn't find it then check in pool instead
     void search_pool_previous_tx();
     void handle_previous_tx(const std::error_code& ec,
-        const transaction_type& previous_tx, size_t parent_height);
+        const chain::transaction& previous_tx, size_t parent_height);
 
     // After running connect_input, we check whether this validated previous
     // output was not already spent by another input in the blockchain.
@@ -87,7 +84,7 @@ private:
     void check_fees();
 
     blockchain& blockchain_;
-    const transaction_type tx_;
+    const chain::transaction tx_;
     const pool_buffer& pool_;
     sequencer& strand_;
 
@@ -95,15 +92,14 @@ private:
     size_t last_block_height_;
     uint64_t value_in_;
     size_t current_input_;
-    index_list unconfirmed_;
+    chain::index_list unconfirmed_;
     validate_handler handle_validate_;
 };
 
 // TODO: define in validate_transaction (compat break).
 typedef std::shared_ptr<validate_transaction> validate_transaction_ptr;
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

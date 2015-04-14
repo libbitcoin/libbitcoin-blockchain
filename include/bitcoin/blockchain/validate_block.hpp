@@ -29,7 +29,7 @@
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API validate_block
 {
@@ -85,7 +85,7 @@ private:
     const stopped_callback stop_callback_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

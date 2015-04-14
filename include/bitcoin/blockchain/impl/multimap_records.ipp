@@ -23,7 +23,7 @@
 #include <string>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 multimap_records<HashType>::multimap_records(htdb_type& map,
@@ -109,9 +109,7 @@ void multimap_records<HashType>::create_new(const HashType& key,
     map_.store(key, write_start_info);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-
-

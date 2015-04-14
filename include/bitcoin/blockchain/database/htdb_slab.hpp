@@ -24,8 +24,7 @@
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
-
+namespace blockchain {
 
 /**
  * A hashtable mapping hashes to variable sized values (slabs).
@@ -88,10 +87,9 @@ private:
     slab_allocator& allocator_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #include <bitcoin/blockchain/impl/htdb_slab.ipp>
 
 #endif
-

@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/block.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -30,7 +31,7 @@
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 organizer::organizer(threadpool& pool, orphans_pool& orphans,
     simple_chain& chain)
@@ -235,5 +236,5 @@ void organizer::notify_stop()
         blockchain::block_list(), blockchain::block_list());
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

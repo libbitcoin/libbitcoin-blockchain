@@ -22,7 +22,7 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 struct low_thread_priority_fixture
 {
@@ -40,48 +40,51 @@ struct low_thread_priority_fixture
 };
 
 void test_block_exists(const db_interface& interface,
-    const size_t height, const block_type block0)
+    const size_t height, const chain::block block0)
 {
-    const hash_digest blk_hash = hash_block_header(block0.header);
+    const hash_digest blk_hash = block0.header.hash();
     auto r0 = interface.blocks.get(height);
     auto r0_byhash = interface.blocks.get(blk_hash);
     BOOST_REQUIRE(r0);
     BOOST_REQUIRE(r0_byhash);
-    BOOST_REQUIRE(hash_block_header(r0.header()) == blk_hash);
-    BOOST_REQUIRE(hash_block_header(r0_byhash.header()) == blk_hash);
+    BOOST_REQUIRE(r0.header().hash() == blk_hash);
+    BOOST_REQUIRE(r0_byhash.header().hash() == blk_hash);
     BOOST_REQUIRE(r0.height() == height);
     BOOST_REQUIRE(r0_byhash.height() == height);
     BOOST_REQUIRE(r0.transactions_size() == block0.transactions.size());
     BOOST_REQUIRE(r0_byhash.transactions_size() == block0.transactions.size());
     for (size_t i = 0; i < block0.transactions.size(); ++i)
     {
-        const transaction_type& tx = block0.transactions[i];
-        const hash_digest tx_hash = hash_transaction(tx);
+        const chain::transaction& tx = block0.transactions[i];
+        const hash_digest tx_hash = tx.hash();
         BOOST_REQUIRE(r0.transaction_hash(i) == tx_hash);
         BOOST_REQUIRE(r0_byhash.transaction_hash(i) == tx_hash);
         auto r0_tx = interface.transactions.get(tx_hash);
         BOOST_REQUIRE(r0_tx);
         BOOST_REQUIRE(r0_byhash);
-        BOOST_REQUIRE(hash_transaction(r0_tx.transaction()) == tx_hash);
+        BOOST_REQUIRE(r0_tx.transaction().hash() == tx_hash);
         BOOST_REQUIRE(r0_tx.height() == height);
         BOOST_REQUIRE(r0_tx.index() == i);
 
-        if (!is_coinbase(tx))
+        if (!tx.is_coinbase())
         {
             for (size_t j = 0; j < tx.inputs.size(); ++j)
             {
-                const transaction_input_type& input = tx.inputs[j];
-                input_point spend{tx_hash, static_cast<uint32_t>(j)};
+                const chain::transaction_input& input = tx.inputs[j];
+                chain::input_point spend{tx_hash, static_cast<uint32_t>(j)};
                 auto r0_spend = interface.spends.get(input.previous_output);
                 BOOST_REQUIRE(r0_spend);
                 BOOST_REQUIRE(r0_spend.hash() == spend.hash);
                 BOOST_REQUIRE(r0_spend.index() == spend.index);
 
-                payment_address address;
+                wallet::payment_address address;
+
                 if (!extract(address, input.script))
                     continue;
+
                 auto history = interface.history.get(address.hash());
                 bool found = false;
+
                 for (const auto row: history)
                 {
                     if (row.point.hash == spend.hash &&
@@ -92,19 +95,24 @@ void test_block_exists(const db_interface& interface,
                         break;
                     }
                 }
+
                 BOOST_REQUIRE(found);
             }
         }
+
         for (size_t j = 0; j < tx.outputs.size(); ++j)
         {
-            const transaction_output_type& output = tx.outputs[j];
-            output_point outpoint{tx_hash, static_cast<uint32_t>(j)};
+            const chain::transaction_output& output = tx.outputs[j];
+            chain::output_point outpoint{tx_hash, static_cast<uint32_t>(j)};
 
-            payment_address address;
+            wallet::payment_address address;
+
             if (!extract(address, output.script))
                 continue;
+
             auto history = interface.history.get(address.hash());
             bool found = false;
+
             for (const auto row: history)
             {
                 if (row.point.hash == outpoint.hash &&
@@ -122,30 +130,33 @@ void test_block_exists(const db_interface& interface,
 }
 
 void test_block_not_exists(
-    const db_interface& interface, const block_type block0)
+    const db_interface& interface, const chain::block block0)
 {
     //const hash_digest blk_hash = hash_block_header(block0.header);
     //auto r0_byhash = interface.blocks.get(blk_hash);
     //BOOST_REQUIRE(!r0_byhash);
     for (size_t i = 0; i < block0.transactions.size(); ++i)
     {
-        const transaction_type& tx = block0.transactions[i];
-        const hash_digest tx_hash = hash_transaction(tx);
+        const chain::transaction& tx = block0.transactions[i];
+        const hash_digest tx_hash = tx.hash();
 
-        if (!is_coinbase(tx))
+        if (!tx.is_coinbase())
         {
             for (size_t j = 0; j < tx.inputs.size(); ++j)
             {
-                const transaction_input_type& input = tx.inputs[j];
-                input_point spend{tx_hash, static_cast<uint32_t>(j)};
+                const chain::transaction_input& input = tx.inputs[j];
+                chain::input_point spend{tx_hash, static_cast<uint32_t>(j)};
                 auto r0_spend = interface.spends.get(input.previous_output);
                 BOOST_REQUIRE(!r0_spend);
 
-                payment_address address;
+                wallet::payment_address address;
+
                 if (!extract(address, input.script))
                     continue;
+
                 auto history = interface.history.get(address.hash());
                 bool found = false;
+
                 for (const auto row: history)
                 {
                     if (row.point.hash == spend.hash &&
@@ -155,19 +166,24 @@ void test_block_not_exists(
                         break;
                     }
                 }
+
                 BOOST_REQUIRE(!found);
             }
         }
+
         for (size_t j = 0; j < tx.outputs.size(); ++j)
         {
-            const transaction_output_type& output = tx.outputs[j];
-            output_point outpoint{tx_hash, static_cast<uint32_t>(j)};
+            const chain::transaction_output& output = tx.outputs[j];
+            chain::output_point outpoint{tx_hash, static_cast<uint32_t>(j)};
 
-            payment_address address;
+            wallet::payment_address address;
+
             if (!extract(address, output.script))
                 continue;
+
             auto history = interface.history.get(address.hash());
             bool found = false;
+
             for (const auto row: history)
             {
                 if (row.point.hash == outpoint.hash &&
@@ -177,28 +193,28 @@ void test_block_not_exists(
                     break;
                 }
             }
+
             BOOST_REQUIRE(!found);
         }
     }
 }
 
-block_type read_block(const std::string hex)
+chain::block read_block(const std::string hex)
 {
     data_chunk data = decode_hex(hex);
-    block_type result;
-    satoshi_load(data.begin(), data.end(), result);
+    chain::block result(data);
     return result;
 }
 
-void compare_blocks(const block_type& popped, const block_type& original)
+void compare_blocks(const chain::block& popped, const chain::block& original)
 {
-    BOOST_REQUIRE(hash_block_header(popped.header) ==
-        hash_block_header(original.header));
+    BOOST_REQUIRE(popped.header.hash() == original.header.hash());
     BOOST_REQUIRE(popped.transactions.size() == original.transactions.size());
+
     for (size_t i = 0; i < popped.transactions.size(); ++i)
     {
-        BOOST_REQUIRE(hash_transaction(popped.transactions[i]) ==
-            hash_transaction(original.transactions[i]));
+        BOOST_REQUIRE(popped.transactions[i].hash() ==
+            original.transactions[i].hash());
     }
 }
 

@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 typedef uint8_t* slab_type;
 typedef disk_array<index_type, position_type> htdb_slab_header;
@@ -93,8 +93,7 @@ private:
     position_type size_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_LIST_ITEM_IPP
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 /**
  * Item for htdb_slab. A chained list with the key included.
@@ -134,8 +134,7 @@ uint8_t* htdb_slab_list_item<HashType>::raw_next_data() const
     return raw_data_ + next_begin;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

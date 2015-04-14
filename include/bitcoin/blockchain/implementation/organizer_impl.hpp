@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API organizer_impl
   : public organizer
@@ -47,7 +47,7 @@ private:
     config::checkpoint::list checkpoints_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

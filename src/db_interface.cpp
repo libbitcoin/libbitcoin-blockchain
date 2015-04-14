@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using boost::filesystem::path;
 
@@ -122,7 +122,7 @@ bool is_special_duplicate(const transaction_metainfo& info)
         info.index == 0;
 }
 
-void db_interface::push(const block_type& block)
+void db_interface::push(const chain::block& block)
 {
     const auto block_height = next_height(blocks.last_height());
     for (size_t i = 0; i < block.transactions.size(); ++i)
@@ -134,10 +134,10 @@ void db_interface::push(const block_type& block)
         if (is_special_duplicate(info))
             continue;
 
-        const auto tx_hash = hash_transaction(tx);
+        const auto tx_hash = tx.hash();
 
         // Add inputs
-        if (!is_coinbase(tx))
+        if (!tx.is_coinbase())
             push_inputs(tx_hash, block_height, tx.inputs);
 
         // Add outputs
@@ -166,9 +166,9 @@ void db_interface::push(const block_type& block)
     blocks.sync();
 }
 
-block_type db_interface::pop()
+chain::block db_interface::pop()
 {
-    block_type result;
+    chain::block result;
     const auto block_height = blocks.last_height();
     auto block_result = blocks.get(block_height);
     BITCOIN_ASSERT(block_result);
@@ -185,6 +185,7 @@ block_type db_interface::pop()
         BITCOIN_ASSERT(tx_result);
         BITCOIN_ASSERT(tx_result.height() == block_height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
+
         const auto tx = tx_result.transaction();
 
         // Do things in reverse so pop txs, then outputs, then inputs.
@@ -194,7 +195,7 @@ block_type db_interface::pop()
         pop_outputs(block_height, tx.outputs);
 
         // Remove inputs
-        if (!is_coinbase(tx))
+        if (!tx.is_coinbase())
             pop_inputs(block_height, tx.inputs);
 
         // Add transaction to result
@@ -210,12 +211,12 @@ block_type db_interface::pop()
 }
 
 void db_interface::push_inputs(const hash_digest& tx_hash,
-    const size_t block_height, const transaction_input_list& inputs)
+    const size_t block_height, const chain::transaction_input_list& inputs)
 {
     for (uint32_t i = 0; i < inputs.size(); ++i)
     {
         const auto& input = inputs[i];
-        const input_point spend{tx_hash, i};
+        const chain::input_point spend{tx_hash, i};
         spends.store(input.previous_output, spend);
 
         // Skip history if not at the right level yet.
@@ -223,7 +224,7 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
             continue;
 
         // Try to extract an address.
-        payment_address address;
+        wallet::payment_address address;
         if (!extract(address, input.script))
             continue;
 
@@ -232,20 +233,20 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
     }
 }
 
-void db_interface::push_outputs(const hash_digest& tx_hash, 
-    const size_t block_height, const transaction_output_list& outputs)
+void db_interface::push_outputs(const hash_digest& tx_hash,
+    const size_t block_height, const chain::transaction_output_list& outputs)
 {
     for (uint32_t i = 0; i < outputs.size(); ++i)
     {
         const auto& output = outputs[i];
-        const output_point outpoint{tx_hash, i};
+        const chain::output_point outpoint{tx_hash, i};
 
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
             continue;
 
         // Try to extract an address.
-        payment_address address;
+        wallet::payment_address address;
         if (!extract(address, output.script))
             continue;
 
@@ -265,7 +266,7 @@ hash_digest read_ephemkey(const data_chunk& stealth_data)
 }
 
 void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
-    const transaction_output_list& outputs)
+    const chain::transaction_output_list& outputs)
 {
     // Stealth cannot be in last output because there needs
     // to be a matching following output.
@@ -276,11 +277,11 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
         const auto& next_output = outputs[i + 1];
 
         // Skip past output if not stealth data.
-        if (output.script.type() != payment_type::stealth_info)
+        if (output.script.type() != chain::payment_type::stealth_info)
             continue;
 
         // Try to extract an address.
-        payment_address address;
+        wallet::payment_address address;
         if (!extract(address, next_output.script))
             continue;
 
@@ -298,7 +299,7 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
 }
 
 void db_interface::pop_inputs(const size_t block_height,
-    const transaction_input_list& inputs)
+    const chain::transaction_input_list& inputs)
 {
     // Loop in reverse.
     for (int i = inputs.size() - 1; i >= 0; --i)
@@ -311,7 +312,7 @@ void db_interface::pop_inputs(const size_t block_height,
             continue;
 
         // Try to extract an address.
-        payment_address address;
+        wallet::payment_address address;
         if (!extract(address, input.script))
             continue;
 
@@ -320,7 +321,7 @@ void db_interface::pop_inputs(const size_t block_height,
 }
 
 void db_interface::pop_outputs(const size_t block_height,
-    const transaction_output_list& outputs)
+    const chain::transaction_output_list& outputs)
 {
     // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)
@@ -332,7 +333,7 @@ void db_interface::pop_outputs(const size_t block_height,
             continue;
 
         // Try to extract an address.
-        payment_address address;
+        wallet::payment_address address;
         if (!extract(address, output.script))
             continue;
 
@@ -340,6 +341,5 @@ void db_interface::pop_outputs(const size_t block_height,
     }
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

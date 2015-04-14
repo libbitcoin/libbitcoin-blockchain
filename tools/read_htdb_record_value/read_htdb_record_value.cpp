@@ -3,7 +3,7 @@
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 template <size_t N>
 record_type get_record(htdb_record_header& header, record_allocator& alloc,

@@ -2,7 +2,7 @@
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_usage()
 {
