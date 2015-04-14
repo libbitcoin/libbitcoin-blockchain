@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 // used by test
 BC_CONSTEXPR size_t linked_record_offset = sizeof(index_type);
@@ -66,8 +66,7 @@ private:
     record_allocator& allocator_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

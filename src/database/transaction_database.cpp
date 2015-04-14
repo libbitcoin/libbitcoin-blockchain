@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t number_buckets = 100000000;
 BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(number_buckets);
@@ -32,10 +32,10 @@ BC_CONSTEXPR size_t initial_map_file_size = header_size + min_slab_fsize;
 BC_CONSTEXPR position_type alloc_offset = header_size;
 
 template <typename Iterator>
-transaction_type deserialize(const Iterator first)
+chain::transaction deserialize(const Iterator first)
 {
-    transaction_type tx;
-    satoshi_load<Iterator, false>(first, nullptr, tx);
+    auto deserial = make_deserializer_unsafe(first);
+    chain::transaction tx(deserial);
     return tx;
 }
 
@@ -61,7 +61,7 @@ size_t transaction_result::index() const
     return from_little_endian_unsafe<uint32_t>(slab_ + 4);
 }
 
-transaction_type transaction_result::transaction() const
+chain::transaction transaction_result::transaction() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
     return deserialize(slab_ + 8);
@@ -97,17 +97,18 @@ transaction_result transaction_database::get(const hash_digest& hash) const
 }
 
 void transaction_database::store(
-    const transaction_metainfo& info, const transaction_type& tx)
+    const transaction_metainfo& info, const chain::transaction& tx)
 {
     // Write block data.
-    const hash_digest key = hash_transaction(tx);
-    const size_t value_size = 4 + 4 + satoshi_raw_size(tx);
+    const hash_digest key = tx.hash();
+    const size_t value_size = 4 + 4 + tx.satoshi_size();
     auto write = [&info, &tx](uint8_t* data)
     {
         auto serial = make_serializer(data);
         serial.write_4_bytes(info.height);
         serial.write_4_bytes(info.index);
-        satoshi_save(tx, serial.iterator());
+        data_chunk tx_data = tx;
+        serial.write_data(tx_data);
     };
     map_.store(key, write, value_size);
 }
@@ -123,6 +124,5 @@ void transaction_database::sync()
     allocator_.sync();
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

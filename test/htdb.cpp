@@ -22,7 +22,7 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 BC_CONSTEXPR size_t total_txs = 200;
 BC_CONSTEXPR size_t tx_size = 200;

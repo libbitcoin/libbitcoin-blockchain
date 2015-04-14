@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 BC_CONSTFUNC size_t record_fsize_htdb(size_t value_size)
@@ -94,10 +94,9 @@ private:
     record_allocator& allocator_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #include <bitcoin/blockchain/impl/htdb_record.ipp>
 
 #endif
-

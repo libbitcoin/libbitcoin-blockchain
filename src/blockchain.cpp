@@ -18,12 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block.hpp>
 
 #include <cstdint>
 #include <system_error>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 // Fast modulus calculation where divisor is a power of 2.
 static uint64_t remainder_fast(const hash_digest& value,
@@ -38,7 +39,7 @@ static uint64_t remainder_fast(const hash_digest& value,
     return hash_value & (divisor - 1);
 }
 
-uint64_t spend_checksum(output_point outpoint)
+uint64_t spend_checksum(chain::output_point outpoint)
 {
     // Assuming outpoint hash is sufficiently random, this method works well
     // for generating row checksums. Max pow2 value for a uint64_t is 1 << 63.
@@ -53,6 +54,5 @@ uint64_t spend_checksum(output_point outpoint)
     return remainder_fast(outpoint.hash, divisor);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

@@ -27,10 +27,10 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
     
 // TODO: rename to block_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&, const block_type&)>
+typedef std::function<void (const std::error_code&, const chain::block&)>
     blockchain_fetch_handler_block;
 
 /**
@@ -69,7 +69,7 @@ BCB_API void fetch_block(blockchain& chain, uint64_t height,
 BCB_API void fetch_block(blockchain& chain, const hash_digest& hash,
     blockchain_fetch_handler_block handle_fetch);
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

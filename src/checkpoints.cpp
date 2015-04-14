@@ -21,7 +21,7 @@
 #include <bitcoin/blockchain/checkpoints.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 inline bool checkpoint_test(const size_t current_height, 
     const hash_digest& current_hash, const size_t checkpoint_height,
@@ -98,6 +98,5 @@ bool passes_checkpoints(const size_t height, const hash_digest& block_hash)
     return true;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

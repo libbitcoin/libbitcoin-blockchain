@@ -20,9 +20,10 @@
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 simple_chain_impl::simple_chain_impl(db_interface& database)
   : interface_(database)
@@ -76,5 +77,5 @@ bool simple_chain_impl::release(size_t begin_index,
     return true;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

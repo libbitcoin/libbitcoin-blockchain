@@ -3,7 +3,7 @@
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/blockchain/database/htdb_slab.hpp>
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 template <size_t N>
 slab_type get_slab(htdb_slab_header& header, slab_allocator& alloc,

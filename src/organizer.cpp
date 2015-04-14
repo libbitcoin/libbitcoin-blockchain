@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/block.hpp>
 
 #include <cstddef>
 #include <system_error>
@@ -28,7 +29,7 @@
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 organizer::organizer(orphans_pool& orphans, simple_chain& chain)
   : orphans_(orphans), chain_(chain)
@@ -189,5 +190,5 @@ void organizer::notify_reorganize(size_t fork_point,
     reorganize_occured(fork_point, arrival_blocks, replaced_blocks);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

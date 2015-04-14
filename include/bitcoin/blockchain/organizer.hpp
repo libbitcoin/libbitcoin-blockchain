@@ -25,12 +25,13 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/block_info.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/orphans_pool.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 /**
  * Dependency graph:
@@ -58,11 +59,13 @@ namespace chain {
 class BCB_API organizer
 {
 public:
+
     organizer(orphans_pool& orphans, simple_chain& chain);
 
     void start();
 
 protected:
+
     virtual std::error_code verify(size_t fork_index,
         const block_detail_list& orphan_chain, size_t orphan_index) = 0;
     virtual void reorganize_occured(size_t fork_point,
@@ -70,6 +73,7 @@ protected:
         const blockchain::block_list& replaced) = 0;
 
 private:
+
     void process(block_detail_ptr process_block);
     void replace_chain(size_t fork_index, block_detail_list& orphan_chain);
     void clip_orphans(block_detail_list& orphan_chain, size_t orphan_index,
@@ -86,7 +90,7 @@ private:
 // TODO: define in organizer (compat break).
 typedef std::shared_ptr<organizer> organizer_ptr;
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

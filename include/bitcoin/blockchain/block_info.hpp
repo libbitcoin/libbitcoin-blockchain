@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -17,32 +17,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
-#define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
 
-#include <bitcoin/blockchain/block_detail.hpp>
+#include <string>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/db_interface.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class BCB_API simple_chain_impl
-  : public simple_chain
-{
-public:
-    simple_chain_impl(db_interface& database);
-    void append(block_detail_ptr incoming_block);
-    size_t find_height(const hash_digest& search_block_hash);
-    hash_number sum_difficulty(size_t begin_index);
-    bool release(size_t begin_index, block_detail_list& released_blocks);
+// A list of indices. Used for creating block_locator objects or
+// Storing list of unconfirmed input indexes in tx pool.
+//typedef std::vector<size_t> index_list;
 
-private:
-    db_interface& interface_;
+enum class block_status
+{
+    orphan,
+    confirmed,
+    rejected
+};
+
+struct BCB_API block_info
+{
+    block_status status;
+    size_t height;
 };
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
+

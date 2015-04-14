@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace blockchain {
 
 /**
  * Blocks before this height are not fully validated using slower
@@ -33,7 +33,7 @@ BC_CONSTEXPR size_t block_validation_cutoff_height = 360500;
 
 bool passes_checkpoints(size_t height, const hash_digest& block_hash);
 
-    } // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

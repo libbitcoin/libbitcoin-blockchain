@@ -2,8 +2,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -88,8 +89,8 @@ bool parse_point(Point& point, const std::string& arg)
 
 bool parse_key(short_hash& key, const std::string& arg)
 {
-    payment_address payaddr;
-    if (!payaddr.set_encoded(arg))
+    wallet::payment_address payaddr;
+    if (!payaddr.from_string(arg))
     {
         std::cerr << "block_db: bad KEY." << std::endl;
         return false;
@@ -183,11 +184,12 @@ int main(int argc, char** argv)
             delete result;
             return -1;
         }
-        const block_header_type blk_header = result->header();
+        const chain::block_header blk_header = result->header();
+
         // Show details.
         std::cout << "height: " << result->height() << std::endl;
         std::cout << "hash: "
-            << encode_hash(hash_block_header(blk_header)) << std::endl;
+            << encode_hash(blk_header.hash()) << std::endl;
         std::cout << "version: " << blk_header.version << std::endl;
         std::cout << "previous_block_hash: "
             << encode_hash(blk_header.previous_block_hash) << std::endl;
@@ -223,8 +225,7 @@ int main(int argc, char** argv)
                 << std::endl;
             return -1;
         }
-        block_type block;
-        satoshi_load(data.begin(), data.end(), block);
+        chain::block block(data);
         db.start();
         db.store(block);
         db.sync();

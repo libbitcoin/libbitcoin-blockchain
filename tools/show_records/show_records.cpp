@@ -4,8 +4,9 @@
 
 // Not published.
 #include <bitcoin/blockchain/database/record_allocator.hpp>
+
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 int main(int argc, char** argv)
 {

@@ -46,7 +46,8 @@
 static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
+
 
 using boost::format;
 using boost::filesystem::path;
@@ -233,5 +234,5 @@ bool mmfile::validate(size_t size)
     return true;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

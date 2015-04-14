@@ -3,7 +3,7 @@
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -95,13 +95,16 @@ bool parse_point(Point& point, const std::string& arg)
 
 bool parse_key(short_hash& key, const std::string& arg)
 {
-    payment_address payaddr;
-    if (!payaddr.set_encoded(arg))
+    wallet::payment_address payaddr;
+
+    if (!payaddr.from_string(arg))
     {
         std::cerr << "history_db: bad KEY." << std::endl;
         return false;
     }
+
     key = payaddr.hash();
+
     return true;
 }
 
@@ -170,7 +173,7 @@ int main(int argc, char** argv)
         short_hash key;
         if (!parse_key(key, args[0]))
             return -1;
-        output_point outpoint;
+        chain::output_point outpoint;
         if (!parse_point(outpoint, args[1]))
             return -1;
         uint32_t output_height;
@@ -194,10 +197,10 @@ int main(int argc, char** argv)
         short_hash key;
         if (!parse_key(key, args[0]))
             return -1;
-        output_point previous;
+        chain::output_point previous;
         if (!parse_point(previous, args[1]))
             return -1;
-        input_point spend;
+        chain::input_point spend;
         if (!parse_point(spend, args[2]))
             return -1;
         uint32_t spend_height;
