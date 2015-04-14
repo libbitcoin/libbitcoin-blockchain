@@ -25,7 +25,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 #ifdef ENABLE_TESTNET
 const static std::vector<checkpoint> markers =
@@ -104,6 +104,5 @@ size_t checkpoints::last() const
     return (checkpoints_.empty() ? 0 : checkpoints_.back().height_);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

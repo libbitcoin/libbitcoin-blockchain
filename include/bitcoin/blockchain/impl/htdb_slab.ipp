@@ -25,7 +25,7 @@
 #include "remainder.ipp"
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 htdb_slab<HashType>::htdb_slab(
@@ -134,8 +134,7 @@ void htdb_slab<HashType>::release(
     previous_item.write_next_position(item.next_position());
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

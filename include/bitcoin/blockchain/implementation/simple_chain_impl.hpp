@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API simple_chain_impl
   : public simple_chain
@@ -42,7 +42,7 @@ private:
     db_interface& interface_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

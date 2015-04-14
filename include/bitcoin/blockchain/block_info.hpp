@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
+/*
+ * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,44 +17,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_CHECKPOINTS_HPP
-#define LIBBITCOIN_BLOCKCHAIN_CHECKPOINTS_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
 
-#include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <string>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class checkpoints;
+// A list of indices. Used for creating block_locator objects or
+// Storing list of unconfirmed input indexes in tx pool.
+//typedef std::vector<size_t> index_list;
 
-class BCB_API checkpoint
+enum class block_status
 {
-public:
-    checkpoint(size_t height, const std::string& hash);
-    checkpoint(size_t height, const hash_digest& hash);
-    bool invalid(size_t height, const hash_digest& hash) const;
-
-private:
-    size_t height_;
-    hash_digest hash_;
-
-    friend class checkpoints;
+    orphan,
+    confirmed,
+    rejected
 };
 
-class BCB_API checkpoints
+struct BCB_API block_info
 {
-public:
-    checkpoints(const checkpoint& top);
-    bool invalid(size_t height, const hash_digest& hash) const;
-    size_t last() const;
-
-private:
-    std::vector<checkpoint> checkpoints_;
+    block_status status;
+    size_t height;
 };
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
+

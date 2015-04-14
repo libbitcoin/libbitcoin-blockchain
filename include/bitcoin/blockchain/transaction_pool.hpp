@@ -28,13 +28,13 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 struct BCB_API transaction_entry_info
 {
     typedef std::function<void (const std::error_code&)> confirm_handler;
     hash_digest hash;
-    transaction_type tx;
+    chain::transaction tx;
     confirm_handler handle_confirm;
 };
 
@@ -65,11 +65,15 @@ typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 class BCB_API transaction_pool
 {
 public:
+
     typedef std::function<void (const std::error_code&,
-        const index_list&)> validate_handler;
+        const chain::index_list&)> validate_handler;
+
     typedef std::function<void (const std::error_code&,
-        const transaction_type&)> fetch_handler;
+        const chain::transaction&)> fetch_handler;
+
     typedef std::function<void (bool)> exists_handler;
+
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
     transaction_pool(threadpool& pool, blockchain& chain,
@@ -115,7 +119,7 @@ public:
      *  );
      * @endcode
      */
-    void validate(const transaction_type& tx,
+    void validate(const chain::transaction& tx,
         validate_handler handle_validate);
 
     /**
@@ -149,7 +153,7 @@ public:
      *  );
      * @endcode
      */
-    void store(const transaction_type& tx,
+    void store(const chain::transaction& tx,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
     /**
@@ -183,17 +187,24 @@ public:
     void set_capacity(size_t capacity);
 
 private:
-    void do_validate(const transaction_type& tx,
+
+    void do_validate(const chain::transaction& tx,
         validate_handler handle_validate);
-    void validation_complete(const std::error_code& ec, 
-        const index_list& unconfirmed, const hash_digest& tx_hash,
+
+    void validation_complete(const std::error_code& ec,
+        const chain::index_list& unconfirmed, const hash_digest& tx_hash,
         validate_handler handle_validate);
+
     bool tx_exists(const hash_digest& tx_hash);
+
     void reorganize(const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
+
     void invalidate_pool();
+
     void delete_confirmed(const blockchain::block_list& new_blocks);
+
     void try_delete(const hash_digest& tx_hash);
 
     async_strand strand_;
@@ -201,8 +212,7 @@ private:
     pool_buffer buffer_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

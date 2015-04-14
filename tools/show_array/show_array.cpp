@@ -5,7 +5,7 @@
 // Not published.
 #include <bitcoin/blockchain/database/disk_array.hpp>
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 template <typename IndexType, typename ValueType>
 int show_array(const std::string& filename, position_type offset)

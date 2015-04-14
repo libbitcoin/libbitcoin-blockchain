@@ -23,11 +23,11 @@
 #include <bitcoin/blockchain/checkpoints.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
-validate_block_impl::validate_block_impl(db_interface& database,
+validate_block_impl::validate_block_impl(db_interface& interface,
     int fork_index, const block_detail_list& orphan_chain,
-    int orphan_index, size_t height, const block_type& current_block,
+    int orphan_index, size_t height, const chain::block& current_block,
     const checkpoints& checkpoints)
   : validate_block(height, current_block, checkpoints),
     interface_(database),
@@ -38,7 +38,7 @@ validate_block_impl::validate_block_impl(db_interface& database,
 {
 }
 
-block_header_type validate_block_impl::fetch_block(size_t fetch_height)
+chain::block_header validate_block_impl::fetch_block(size_t fetch_height)
 {
     if (fetch_height > fork_index_)
     {
@@ -97,7 +97,7 @@ bool validate_block_impl::transaction_exists(const hash_digest& tx_hash)
 }
 
 bool validate_block_impl::is_output_spent(
-    const output_point& outpoint)
+    const chain::output_point& outpoint)
 {
     const auto result = interface_.spends.get(outpoint);
     if (!result)
@@ -107,7 +107,7 @@ bool validate_block_impl::is_output_spent(
     return transaction_exists(result.hash());
 }
 
-bool validate_block_impl::fetch_transaction(transaction_type& tx,
+bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash)
 {
     const auto result = interface_.transactions.get(tx_hash);
@@ -119,15 +119,16 @@ bool validate_block_impl::fetch_transaction(transaction_type& tx,
     return true;
 }
 
-bool validate_block_impl::fetch_orphan_transaction(
-    transaction_type& tx, size_t& tx_height, const hash_digest& tx_hash)
+bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
+    size_t& tx_height, const hash_digest& tx_hash)
 {
     for (size_t orphan_iter = 0; orphan_iter <= orphan_index_; ++orphan_iter)
     {
         const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
-        for (const auto& orphan_tx: orphan_block.transactions)
+
+        for (const chain::transaction& orphan_tx: orphan_block.transactions)
         {
-            if (hash_transaction(orphan_tx) == tx_hash)
+            if (orphan_tx.hash() == tx_hash)
             {
                 tx = orphan_tx;
                 tx_height = fork_index_ + orphan_iter + 1;
@@ -135,10 +136,12 @@ bool validate_block_impl::fetch_orphan_transaction(
             }
         }
     }
+
     return false;
 }
 
-bool validate_block_impl::is_output_spent(const output_point& previous_output,
+bool validate_block_impl::is_output_spent(
+    const chain::output_point& previous_output,
     size_t index_in_parent, size_t input_index)
 {
     // Search for double spends. This must be done in both chain AND orphan.
@@ -153,24 +156,27 @@ bool validate_block_impl::is_output_spent(const output_point& previous_output,
     return false;
 }
 
-bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
+bool validate_block_impl::orphan_is_spent(
+    const chain::output_point& previous_output,
     size_t skip_tx, size_t skip_input)
 {
     for (size_t orphan_iter = 0; orphan_iter <= orphan_index_; ++orphan_iter)
     {
         const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
         BITCOIN_ASSERT(orphan_block.transactions.size() >= 1);
-        BITCOIN_ASSERT(is_coinbase(orphan_block.transactions[0]));
+        BITCOIN_ASSERT(orphan_block.transactions[0].is_coinbase());
 
         for (size_t tx_index = 0; tx_index < orphan_block.transactions.size();
             ++tx_index)
         {
             // TODO: too deep, move this section to subfunction.
             const auto& orphan_tx = orphan_block.transactions[tx_index];
+
             for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
                 ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
+
                 if (orphan_iter == orphan_index_ && tx_index == skip_tx &&
                     input_index == skip_input)
                     continue;
@@ -184,5 +190,5 @@ bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
     return false;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

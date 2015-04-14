@@ -25,8 +25,9 @@
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
+
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 struct chain_item
 {

@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_IPP
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 multimap_records<HashType>::multimap_records(
@@ -100,9 +100,7 @@ void multimap_records<HashType>::create_new(
     map_.store(key, write_start_info);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-
-

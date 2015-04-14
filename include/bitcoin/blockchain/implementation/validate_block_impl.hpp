@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API validate_block_impl
   : public validate_block
@@ -35,7 +35,7 @@ class BCB_API validate_block_impl
 public:
     validate_block_impl(db_interface& database, int fork_index,
         const block_detail_list& orphan_chain, int orphan_index,
-        size_t height, const block_type& current_block,
+        size_t height, const chain::block& current_block,
         const checkpoints& checkpoints);
 
 protected:
@@ -43,18 +43,18 @@ protected:
     uint64_t actual_timespan(size_t interval);
     uint64_t median_time_past();
     bool transaction_exists(const hash_digest& tx_hash);
-    bool is_output_spent(const output_point& outpoint);
-    bool fetch_transaction(transaction_type& tx,
+    bool is_output_spent(const chain::output_point& outpoint);
+    bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash);
-    bool is_output_spent(const output_point& previous_output,
+    bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index);
 
 private:
-    block_header_type fetch_block(size_t fetch_height);
+    chain::block_header fetch_block(size_t fetch_height);
 
-    bool fetch_orphan_transaction(transaction_type& tx,
+    bool fetch_orphan_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash);
-    bool orphan_is_spent(const output_point& previous_output,
+    bool orphan_is_spent(const chain::output_point& previous_output,
         size_t skip_tx, size_t skip_input);
 
     db_interface& interface_;
@@ -62,7 +62,7 @@ private:
     const block_detail_list& orphan_chain_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

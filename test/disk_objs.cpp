@@ -21,7 +21,7 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace libbitcoin;
-using namespace libbitcoin::chain;
+using namespace libbitcoin::blockchain;
 
 BOOST_AUTO_TEST_SUITE(disk_objs)
 

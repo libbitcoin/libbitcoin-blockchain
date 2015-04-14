@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 struct transaction_metainfo
 {
@@ -57,9 +57,10 @@ public:
     /**
      * Actual transaction itself.
      */
-    BCB_API transaction_type transaction() const;
+    BCB_API chain::transaction transaction() const;
 
 private:
+
     const slab_type slab_;
 };
 
@@ -95,7 +96,7 @@ public:
      * which can be used to reference the transaction.
      */
     BCB_API void store(
-        const transaction_metainfo& info, const transaction_type& tx);
+        const transaction_metainfo& info, const chain::transaction& tx);
 
     /**
      * Delete a transaction from database.
@@ -118,8 +119,7 @@ private:
     map_type map_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

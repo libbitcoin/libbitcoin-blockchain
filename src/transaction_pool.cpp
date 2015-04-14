@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -61,13 +61,13 @@ void transaction_pool::start()
             this, _1, _2, _3, _4));
 }
 
-void transaction_pool::validate(const transaction_type& tx,
+void transaction_pool::validate(const chain::transaction& tx,
     validate_handler handle_validate)
 {
     strand_.queue(&transaction_pool::do_validate,
         this, tx, handle_validate);
 }
-void transaction_pool::do_validate(const transaction_type& tx,
+void transaction_pool::do_validate(const chain::transaction& tx,
     validate_handler handle_validate)
 {
     // This must be allocated as a shared pointer reference in order for
@@ -80,9 +80,9 @@ void transaction_pool::do_validate(const transaction_type& tx,
             this, _1, _2, hash_transaction(tx), handle_validate));
 }
 
-void transaction_pool::validation_complete(
-    const std::error_code& ec, const index_list& unconfirmed,
-    const hash_digest& tx_hash, validate_handler handle_validate)
+void transaction_pool::validation_complete(const std::error_code& ec,
+    const chain::index_list& unconfirmed, const hash_digest& tx_hash,
+    validate_handler handle_validate)
 {
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
@@ -93,11 +93,11 @@ void transaction_pool::validation_complete(
     else if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handle_validate(ec, index_list());
+        handle_validate(ec, chain::index_list());
     }
     // Re-check as another transaction might have been added in the interim.
     else if (tx_exists(tx_hash))
-        handle_validate(error::duplicate, index_list());
+        handle_validate(error::duplicate, chain::index_list());
     else
         handle_validate(bc::error::success, unconfirmed);
 }
@@ -111,7 +111,7 @@ bool transaction_pool::tx_exists(const hash_digest& tx_hash)
     return false;
 }
 
-void transaction_pool::store(const transaction_type& tx,
+void transaction_pool::store(const chain::transaction& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     const auto store_transaction = [this, tx, handle_confirm]
@@ -126,14 +126,14 @@ void transaction_pool::store(const transaction_type& tx,
         }
 
         // We store a precomputed tx hash to make lookups faster.
-        buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
+        buffer_.push_back({ tx.hash(), tx, handle_confirm });
 
         log_debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
     };
 
     const auto wrap_validate = [this, store_transaction, handle_validate]
-        (const std::error_code& ec, const index_list& unconfirmed)
+        (const std::error_code& ec, const chain::index_list& unconfirmed)
     {
         if (!ec)
             store_transaction();
@@ -224,7 +224,7 @@ void transaction_pool::delete_confirmed(
 
     for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
-            try_delete(hash_transaction(new_tx));
+            try_delete(new_tx.hash());
 }
 
 void transaction_pool::try_delete(const hash_digest& tx_hash)
@@ -247,6 +247,5 @@ void transaction_pool::set_capacity(size_t capacity)
     buffer_.set_capacity(capacity);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

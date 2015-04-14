@@ -30,7 +30,7 @@
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class mmfile
 {
@@ -66,8 +66,7 @@ private:
     boost::filesystem::path filename_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-
