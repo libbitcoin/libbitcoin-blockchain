@@ -99,12 +99,11 @@ static bool validate_consensus(const script_type& prevout_script,
 
     return (result == bc::consensus::verify_result::verify_result_eval_true);
 #else
-    auto previous_output_script = prevout_script;
-    auto current_input_script = current_tx.inputs[input_index].script;
+    const auto current_input_script = current_tx.inputs[input_index].script;
 
     // TODO: expand support beyond BIP16 option.
-    return previous_output_script.run(current_input_script, current_tx,
-        input_index32, bip16_enabled);
+    return chain::script::verify(current_input_script, previous_output_script,
+        current_tx, input_index32, bip16_enabled);
 #endif
 }
 
