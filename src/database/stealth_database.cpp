@@ -88,7 +88,7 @@ void stealth_database::store(const chain::script& stealth_script,
     const stealth_row& row)
 {
     // Create prefix.
-    const auto prefix = calculate_stealth_prefix(stealth_script);
+    const auto prefix = wallet::calculate_stealth_prefix(stealth_script);
     BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
 
     // Allocate new row.
