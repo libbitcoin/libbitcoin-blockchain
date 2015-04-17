@@ -46,7 +46,7 @@ chain::block_header validate_block_impl::fetch_block(size_t fetch_height) const
         const auto fetch_index = fetch_height - fork_index_ - 1;
         BITCOIN_ASSERT(fetch_index <= orphan_index_);
         BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
-        return orphan_chain_[fetch_index]->actual().header;
+        return orphan_chain_[fetch_index]->actual().header();
     }
 
     // TODO: This is over-requesting, we only need the bits and timestamp.
@@ -58,7 +58,7 @@ chain::block_header validate_block_impl::fetch_block(size_t fetch_height) const
 uint32_t validate_block_impl::previous_block_bits() const
 {
     // Read block d - 1 and return bits
-    return fetch_block(height_ - 1).bits;
+    return fetch_block(height_ - 1).bits();
 }
 
 uint64_t validate_block_impl::actual_timespan(size_t interval) const
@@ -175,7 +175,7 @@ bool validate_block_impl::orphan_is_spent(
             // TODO: too deep, move this section to subfunction.
             const auto& orphan_tx = transactions[tx_index];
 
-            for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
+            for (size_t input_index = 0; input_index < orphan_tx.inputs().size();
                 ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];

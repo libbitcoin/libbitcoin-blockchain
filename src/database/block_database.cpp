@@ -141,15 +141,15 @@ void block_database::store(const chain::block& block)
     // Write block data.
     const auto write = [&](uint8_t* data)
     {
-        data_chunk header_data = block.header;
         auto serial = make_serializer(data);
+        data_chunk header_data = block.header();
         serial.write_data(header_data);
         serial.write_4_bytes(height);
         serial.write_4_bytes(number_txs32);
 
         for (const auto& tx: block.transactions)
         {
-            const auto tx_hash = hash_transaction(tx);
+            const auto tx_hash = tx.hash();
             serial.write_hash(tx_hash);
         }
     };

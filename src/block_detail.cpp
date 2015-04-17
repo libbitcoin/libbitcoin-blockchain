@@ -22,28 +22,31 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
-block_detail::block_detail(const block_type& actual_block)
-  : block_hash_(hash_block_header(actual_block.header)),
-    processed_(false), info_({ block_status::orphan, 0 }),
-    actual_block_(std::make_shared<block_type>(actual_block))
-{
-}
-block_detail::block_detail(const block_header_type& actual_block_header)
-  : block_detail(block_type{ actual_block_header, {} })
+block_detail::block_detail(const chain::block& actual_block)
+  : block_hash_(actual_block.header.hash()), processed_(false),
+    info_({ block_status::orphan, 0 }),
+    actual_block(std::make_shared<chain::block>(actual_block))
 {
 }
 
-block_type& block_detail::actual()
+block_detail::block_detail(const chain::block_header& actual_block_header)
+  : block_detail(chain::block{ actual_block_header, {} })
+{
+}
+
+chain::block& block_detail::actual()
 {
     return *actual_block_;
 }
-const block_type& block_detail::actual() const
+
+const chain::block& block_detail::actual() const
 {
     return *actual_block_;
 }
-std::shared_ptr<block_type> block_detail::actual_ptr() const
+
+std::shared_ptr<chain::block> block_detail::actual_ptr() const
 {
     return actual_block_;
 }
@@ -66,6 +69,7 @@ void block_detail::set_info(const block_info& replace_info)
 {
     info_ = replace_info;
 }
+
 const block_info& block_detail::info() const
 {
     return info_;
@@ -75,10 +79,83 @@ void block_detail::set_error(const std::error_code& code)
 {
     code_ = code;
 }
+
 const std::error_code& block_detail::error() const
 {
     return code_;
 }
 
-} // namespace chain
+orphans_pool::orphans_pool(size_t pool_size)
+  : pool_(pool_size)
+{
+}
+
+bool orphans_pool::add(block_detail_ptr incoming_block)
+{
+    BITCOIN_ASSERT(incoming_block);
+
+    const auto& incoming_header = incoming_block->actual().header;
+    for (auto current_block : pool_)
+    {
+        // No duplicates allowed.
+        const auto& actual = current_block->actual().header;
+        if (current_block->actual().header == incoming_header)
+            return false;
+    }
+
+    pool_.push_back(incoming_block);
+
+    return true;
+}
+
+block_detail_list orphans_pool::trace(block_detail_ptr end_block)
+{
+    BITCOIN_ASSERT(end_block);
+    block_detail_list traced_chain;
+    traced_chain.push_back(end_block);
+
+    for (auto found = true; found;)
+    {
+        const auto& actual = traced_chain.back()->actual();
+        const auto& previous_block_hash = actual.header.previous_block_hash;
+        found = false;
+
+        for (const auto current_block: pool_)
+        {
+            if (current_block->hash() == previous_block_hash)
+            {
+                found = true;
+                traced_chain.push_back(current_block);
+                break;
+            }
+        }
+    }
+
+    BITCOIN_ASSERT(traced_chain.size() > 0);
+    std::reverse(traced_chain.begin(), traced_chain.end());
+    return traced_chain;
+}
+
+block_detail_list orphans_pool::unprocessed()
+{
+    block_detail_list unprocessed_blocks;
+    for (const auto current_block: pool_)
+        if (!current_block->is_processed())
+            unprocessed_blocks.push_back(current_block);
+
+    // Earlier blocks come into pool first. Lets match that
+    // Helps avoid fragmentation, but isn't neccessary
+    std::reverse(unprocessed_blocks.begin(), unprocessed_blocks.end());
+    return unprocessed_blocks;
+}
+
+void orphans_pool::remove(block_detail_ptr remove_block)
+{
+    BITCOIN_ASSERT(remove_block);
+    auto it = std::find(pool_.begin(), pool_.end(), remove_block);
+    BITCOIN_ASSERT(it != pool_.end());
+    pool_.erase(it);
+}
+
+} // namespace blockchain
 } // namespace libbitcoin

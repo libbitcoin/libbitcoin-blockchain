@@ -74,8 +74,8 @@ void history_database::add_output(
     {
         auto serial = make_serializer(data);
         serial.write_byte(0);
-        serial.write_hash(outpoint.hash);
-        serial.write_4_bytes(outpoint.index);
+        data_chunk raw_outpoint = outpoint;
+        serial.write_data(raw_outpoint);
         serial.write_4_bytes(output_height);
         serial.write_8_bytes(value);
     };
@@ -90,8 +90,8 @@ void history_database::add_spend(
     {
         auto serial = make_serializer(data);
         serial.write_byte(1);
-        serial.write_hash(spend.hash);
-        serial.write_4_bytes(spend.index);
+        data_chunk raw_spend = spend;
+        serial.write_data(raw_spend);
         serial.write_4_bytes(spend_height);
         serial.write_8_bytes(spend_checksum(previous));
     };
@@ -131,8 +131,7 @@ history_list history_database::get(const short_hash& key,
             // output or spend?
             marker_to_id(deserial.read_byte()),
             // point
-            deserial.read_hash(),
-            deserial.read_4_bytes(),
+            chain::point(deserial),
             // height
             deserial.read_4_bytes(),
             // value or checksum

@@ -64,13 +64,13 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     // Test fetch.
     auto res1 = db.get(key1);
     BOOST_REQUIRE(res1);
-    BOOST_REQUIRE(res1.hash() == val1.hash && res1.index() == val1.index);
+    BOOST_REQUIRE(res1.hash() == val1.hash() && res1.index() == val1.index());
     auto res2 = db.get(key2);
     BOOST_REQUIRE(res2);
-    BOOST_REQUIRE(res2.hash() == val2.hash && res2.index() == val2.index);
+    BOOST_REQUIRE(res2.hash() == val2.hash() && res2.index() == val2.index());
     auto res3 = db.get(key3);
     BOOST_REQUIRE(res3);
-    BOOST_REQUIRE(res3.hash() == val3.hash && res3.index() == val3.index);
+    BOOST_REQUIRE(res3.hash() == val3.hash() && res3.index() == val3.index());
 
     // Record shouldnt exist yet.
     BOOST_REQUIRE(!db.get(key4));
@@ -85,87 +85,87 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     // Fetch it.
     auto res4 = db.get(key4);
     BOOST_REQUIRE(res4);
-    BOOST_REQUIRE(res4.hash() == val4.hash && res4.index() == val4.index);
+    BOOST_REQUIRE(res4.hash() == val4.hash() && res4.index() == val4.index());
     db.sync();
 }
 
 chain::transaction random_tx(size_t fudge)
 {
     chain::block genesis = genesis_block();
-    chain::transaction result = genesis.transactions[0];
-    result.inputs[0].previous_output.index = fudge;
+    chain::transaction result = genesis.transactions()[0];
+    result.inputs()[0].previous_output().index(fudge);
     return result;
 }
 
 BOOST_AUTO_TEST_CASE(block_db_test)
 {
     chain::block block0 = genesis_block();
-    block0.transactions.push_back(random_tx(0));
-    block0.transactions.push_back(random_tx(1));
+    block0.transactions().push_back(random_tx(0));
+    block0.transactions().push_back(random_tx(1));
     //const hash_digest h0 = hash_block_header(block0.header);
 
     chain::block block1;
-    block1.header = block0.header;
-    block1.header.nonce = 4;
-    block1.transactions.push_back(random_tx(2));
-    block1.transactions.push_back(random_tx(3));
-    block1.transactions.push_back(random_tx(4));
-    block1.transactions.push_back(random_tx(5));
+    block1.header(block0.header());
+    block1.header().nonce(4);
+    block1.transactions().push_back(random_tx(2));
+    block1.transactions().push_back(random_tx(3));
+    block1.transactions().push_back(random_tx(4));
+    block1.transactions().push_back(random_tx(5));
     //const hash_digest h1 = hash_block_header(block1.header);
 
     chain::block block2;
-    block2.header = block0.header;
-    block2.header.nonce = 110;
-    block2.transactions.push_back(random_tx(6));
-    block2.transactions.push_back(random_tx(7));
-    block2.transactions.push_back(random_tx(8));
-    block2.transactions.push_back(random_tx(9));
-    block2.transactions.push_back(random_tx(10));
-    const hash_digest h2 = block2.header.hash();
+    block2.header(block0.header());
+    block2.header().nonce(110);
+    block2.transactions().push_back(random_tx(6));
+    block2.transactions().push_back(random_tx(7));
+    block2.transactions().push_back(random_tx(8));
+    block2.transactions().push_back(random_tx(9));
+    block2.transactions().push_back(random_tx(10));
+    const hash_digest h2 = block2.header().hash();
 
     chain::block block3;
-    block3.header = block0.header;
-    block3.header.nonce = 88;
-    block3.transactions.push_back(random_tx(11));
-    block3.transactions.push_back(random_tx(12));
-    block3.transactions.push_back(random_tx(13));
+    block3.header(block0.header());
+    block3.header().nonce(88);
+    block3.transactions().push_back(random_tx(11));
+    block3.transactions().push_back(random_tx(12));
+    block3.transactions().push_back(random_tx(13));
     //const hash_digest h3 = hash_block_header(block3.header);
 
     chain::block block4a;
-    block4a.header = block0.header;
-    block4a.header.nonce = 63;
-    block4a.transactions.push_back(random_tx(14));
-    block4a.transactions.push_back(random_tx(15));
-    block4a.transactions.push_back(random_tx(16));
-    const hash_digest h4a = block4a.header.hash();
+    block4a.header(block0.header());
+    block4a.header().nonce(63);
+    block4a.transactions().push_back(random_tx(14));
+    block4a.transactions().push_back(random_tx(15));
+    block4a.transactions().push_back(random_tx(16));
+    const hash_digest h4a = block4a.header().hash();
 
     chain::block block5a;
-    block5a.header = block0.header;
-    block5a.header.nonce = 99;
-    block5a.transactions.push_back(random_tx(17));
-    block5a.transactions.push_back(random_tx(18));
-    block5a.transactions.push_back(random_tx(19));
-    block5a.transactions.push_back(random_tx(20));
-    block5a.transactions.push_back(random_tx(21));
-    const hash_digest h5a = block5a.header.hash();
+    block5a.header(block0.header());
+    block5a.header().nonce(99);
+    block5a.transactions().push_back(random_tx(17));
+    block5a.transactions().push_back(random_tx(18));
+    block5a.transactions().push_back(random_tx(19));
+    block5a.transactions().push_back(random_tx(20));
+    block5a.transactions().push_back(random_tx(21));
+    const hash_digest h5a = block5a.header().hash();
 
     chain::block block4b;
-    block4b.header = block0.header;
-    block4b.header.nonce = 633;
-    block4b.transactions.push_back(random_tx(22));
-    block4b.transactions.push_back(random_tx(23));
-    block4b.transactions.push_back(random_tx(24));
-    const hash_digest h4b = block4b.header.hash();
+    block4b.header(block0.header());
+    block4b.header().nonce(633);
+    block4b.transactions().push_back(random_tx(22));
+    block4b.transactions().push_back(random_tx(23));
+    block4b.transactions().push_back(random_tx(24));
+    const hash_digest h4b = block4b.header().hash();
 
     chain::block block5b;
-    block5b.header = block0.header;
-    block5b.header.nonce = 222;
-    block5b.transactions.push_back(random_tx(25));
-    block5b.transactions.push_back(random_tx(26));
-    block5b.transactions.push_back(random_tx(27));
-    block5b.transactions.push_back(random_tx(28));
-    block5b.transactions.push_back(random_tx(29));
-    const hash_digest h5b = block5b.header.hash();
+    block5b.header(block0.header());
+    block5b.header().nonce(222);
+    block5b.transactions().push_back(random_tx(25));
+    block5b.transactions().push_back(random_tx(26));
+    block5b.transactions().push_back(random_tx(27));
+    block5b.transactions().push_back(random_tx(28));
+    block5b.transactions().push_back(random_tx(29));
+    const hash_digest h5b = block5b.header().hash();
 
     touch_file("block_db_lookup");
     touch_file("block_db_rows");
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
 
     for (size_t i = 0; i < res_h2.transactions_size(); ++i)
         BOOST_REQUIRE(res_h2.transaction_hash(i) ==
-            block2.transactions[i].hash());
+            block2.transactions()[i].hash());
 
     // Try a fork event.
     db.store(block4a);
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(block_db_test)
 
     for (size_t i = 0; i < res5b.transactions_size(); ++i)
         BOOST_REQUIRE(res5b.transaction_hash(i) ==
-            block5b.transactions[i].hash());
+            block5b.transactions()[i].hash());
 
     // Test also fetch by hash.
     auto res_h5b = db.get(h5b);
@@ -358,32 +358,32 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history.size() == 5);
 
         BOOST_REQUIRE(history[4].id == point_ident::output);
-        BOOST_REQUIRE(history[4].point.hash == out11.hash);
-        BOOST_REQUIRE(history[4].point.index == out11.index);
+        BOOST_REQUIRE(history[4].point.hash() == out11.hash());
+        BOOST_REQUIRE(history[4].point.index() == out11.index());
         BOOST_REQUIRE(history[4].height == out_h11);
         BOOST_REQUIRE(history[4].value == val11);
 
         BOOST_REQUIRE(history[3].id == point_ident::output);
-        BOOST_REQUIRE(history[3].point.hash == out12.hash);
-        BOOST_REQUIRE(history[3].point.index == out12.index);
+        BOOST_REQUIRE(history[3].point.hash() == out12.hash());
+        BOOST_REQUIRE(history[3].point.index() == out12.index());
         BOOST_REQUIRE(history[3].height == out_h12);
         BOOST_REQUIRE(history[3].value == val12);
 
         BOOST_REQUIRE(history[2].id == point_ident::output);
-        BOOST_REQUIRE(history[2].point.hash == out13.hash);
-        BOOST_REQUIRE(history[2].point.index == out13.index);
+        BOOST_REQUIRE(history[2].point.hash() == out13.hash());
+        BOOST_REQUIRE(history[2].point.index() == out13.index());
         BOOST_REQUIRE(history[2].height == out_h13);
         BOOST_REQUIRE(history[2].value == val13);
 
         BOOST_REQUIRE(history[1].id == point_ident::spend);
-        BOOST_REQUIRE(history[1].point.hash == spend11.hash);
-        BOOST_REQUIRE(history[1].point.index == spend11.index);
+        BOOST_REQUIRE(history[1].point.hash() == spend11.hash());
+        BOOST_REQUIRE(history[1].point.index() == spend11.index());
         BOOST_REQUIRE(history[1].height == spend_h11);
         BOOST_REQUIRE(history[1].previous_checksum == spend_checksum(out11));
 
         BOOST_REQUIRE(history[0].id == point_ident::spend);
-        BOOST_REQUIRE(history[0].point.hash == spend13.hash);
-        BOOST_REQUIRE(history[0].point.index == spend13.index);
+        BOOST_REQUIRE(history[0].point.hash() == spend13.hash());
+        BOOST_REQUIRE(history[0].point.index() == spend13.index());
         BOOST_REQUIRE(history[0].height == spend_h13);
         BOOST_REQUIRE(history[0].previous_checksum == spend_checksum(out13));
     };
@@ -403,20 +403,20 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history.size() == 3);
 
         BOOST_REQUIRE(history[0].id == point_ident::spend);
-        BOOST_REQUIRE(history[0].point.hash == spend22.hash);
-        BOOST_REQUIRE(history[0].point.index == spend22.index);
+        BOOST_REQUIRE(history[0].point.hash() == spend22.hash());
+        BOOST_REQUIRE(history[0].point.index() == spend22.index());
         BOOST_REQUIRE(history[0].height == spend_h22);
         BOOST_REQUIRE(history[0].previous_checksum == spend_checksum(out22));
 
         BOOST_REQUIRE(history[1].id == point_ident::output);
-        BOOST_REQUIRE(history[1].point.hash == out22.hash);
-        BOOST_REQUIRE(history[1].point.index == out22.index);
+        BOOST_REQUIRE(history[1].point.hash() == out22.hash());
+        BOOST_REQUIRE(history[1].point.index() == out22.index());
         BOOST_REQUIRE(history[1].height == out_h22);
         BOOST_REQUIRE(history[1].value == val22);
 
         BOOST_REQUIRE(history[2].id == point_ident::output);
-        BOOST_REQUIRE(history[2].point.hash == out21.hash);
-        BOOST_REQUIRE(history[2].point.index == out21.index);
+        BOOST_REQUIRE(history[2].point.hash() == out21.hash());
+        BOOST_REQUIRE(history[2].point.index() == out21.index());
         BOOST_REQUIRE(history[2].height == out_h21);
         BOOST_REQUIRE(history[2].value == val21);
     };

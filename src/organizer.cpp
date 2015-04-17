@@ -82,8 +82,10 @@ void organizer::process(block_detail_ptr process_block)
     // Trace the chain in the orphan pool
     auto orphan_chain = orphans_.trace(process_block);
     BITCOIN_ASSERT(orphan_chain.size() >= 1);
+
     const auto& hash = orphan_chain[0]->actual().header.previous_block_hash;
     const auto fork_index = chain_.find_height(hash);
+
     if (fork_index != simple_chain::null_height)
         replace_chain(fork_index, orphan_chain);
 
