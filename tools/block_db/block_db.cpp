@@ -190,13 +190,13 @@ int main(int argc, char** argv)
         std::cout << "height: " << result->height() << std::endl;
         std::cout << "hash: "
             << encode_hash(blk_header.hash()) << std::endl;
-        std::cout << "version: " << blk_header.version << std::endl;
+        std::cout << "version: " << blk_header.version() << std::endl;
         std::cout << "previous_block_hash: "
-            << encode_hash(blk_header.previous_block_hash) << std::endl;
-        std::cout << "merkle: " << encode_hash(blk_header.merkle) << std::endl;
-        std::cout << "timestamp: " << blk_header.timestamp << std::endl;
-        std::cout << "bits: " << blk_header.bits << std::endl;
-        std::cout << "nonce: " << blk_header.nonce << std::endl;
+            << encode_hash(blk_header.previous_block_hash()) << std::endl;
+        std::cout << "merkle: " << encode_hash(blk_header.merkle()) << std::endl;
+        std::cout << "timestamp: " << blk_header.timestamp() << std::endl;
+        std::cout << "bits: " << blk_header.bits() << std::endl;
+        std::cout << "nonce: " << blk_header.nonce() << std::endl;
         const size_t txs_size = result->transactions_size();
         if (txs_size)
         {

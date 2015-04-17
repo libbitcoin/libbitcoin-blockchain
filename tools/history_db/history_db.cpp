@@ -75,15 +75,17 @@ bool parse_point(Point& point, const std::string& arg)
         return false;
     }
     const std::string& hex_string = strs[0];
-    if (!decode_hash(point.hash, hex_string))
+    hash_digest hash;
+    if (!decode_hash(hash, hex_string))
     {
         std::cerr << "history_db: bad point provided." << std::endl;
         return false;
     }
+    point.hash(hash);
     const std::string& index_string = strs[1];
     try
     {
-        point.index = boost::lexical_cast<uint32_t>(index_string);
+        point.index(boost::lexical_cast<uint32_t>(index_string));
     }
     catch (const boost::bad_lexical_cast&)
     {
@@ -252,8 +254,9 @@ int main(int argc, char** argv)
                 std::cout << "OUTPUT: ";
             else //if (row.id == point_ident::spend)
                 std::cout << "SPEND:  ";
-            std::cout << encode_hash(row.point.hash) << ":" << row.point.index
-                << " " << row.height << " " << row.value << std::endl;
+            std::cout << encode_hash(row.point.hash()) << ":"
+                << row.point.index() << " " << row.height << " " << row.value
+                << std::endl;
         }
         return 0;
     }

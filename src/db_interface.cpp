@@ -125,9 +125,9 @@ bool is_special_duplicate(const transaction_metainfo& info)
 void db_interface::push(const chain::block& block)
 {
     const auto block_height = next_height(blocks.last_height());
-    for (size_t i = 0; i < block.transactions.size(); ++i)
+    for (size_t i = 0; i < block.transactions().size(); ++i)
     {
-        const auto& tx = block.transactions[i];
+        const auto& tx = block.transactions()[i];
         const transaction_metainfo info{block_height, i};
 
         // Skip special duplicate transactions.
@@ -199,14 +199,14 @@ chain::block db_interface::pop()
             pop_inputs(block_height, tx.inputs);
 
         // Add transaction to result
-        result.transactions.push_back(tx);
+        result.transactions().push_back(tx);
     }
 
     stealth.unlink(block_height);
     blocks.unlink(block_height);
 
     // Since we looped backwards
-    std::reverse(result.transactions.begin(), result.transactions.end());
+    std::reverse(result.transactions().begin(), result.transactions().end());
     return result;
 }
 
@@ -225,7 +225,7 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
 
         // Try to extract an address.
         wallet::payment_address address;
-        if (!extract(address, input.script))
+        if (!extract(address, input.script()))
             continue;
 
         history.add_spend(address.hash(),
@@ -247,7 +247,7 @@ void db_interface::push_outputs(const hash_digest& tx_hash,
 
         // Try to extract an address.
         wallet::payment_address address;
-        if (!extract(address, output.script))
+        if (!extract(address, output.script()))
             continue;
 
         history.add_output(address.hash(),
@@ -277,12 +277,12 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
         const auto& next_output = outputs[i + 1];
 
         // Skip past output if not stealth data.
-        if (output.script.type() != chain::payment_type::stealth_info)
+        if (output.script().type() != chain::payment_type::stealth_info)
             continue;
 
         // Try to extract an address.
         wallet::payment_address address;
-        if (!extract(address, next_output.script))
+        if (!extract(address, next_output.script()))
             continue;
 
         // Stealth data.
@@ -294,7 +294,7 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
             address.hash(),
             tx_hash
         };
-        stealth.store(output.script, row);
+        stealth.store(output.script(), row);
     }
 }
 
@@ -313,7 +313,8 @@ void db_interface::pop_inputs(const size_t block_height,
 
         // Try to extract an address.
         wallet::payment_address address;
-        if (!extract(address, input.script))
+
+        if (!extract(address, input.script()))
             continue;
 
         history.delete_last_row(address.hash());
@@ -334,7 +335,8 @@ void db_interface::pop_outputs(const size_t block_height,
 
         // Try to extract an address.
         wallet::payment_address address;
-        if (!extract(address, output.script))
+
+        if (!extract(address, output.script()))
             continue;
 
         history.delete_last_row(address.hash());
