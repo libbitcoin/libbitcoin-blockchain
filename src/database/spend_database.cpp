@@ -37,10 +37,10 @@ BC_CONSTEXPR size_t record_size = record_fsize_htdb<hash_digest>(value_size);
 // This technique could be replaced by simply using the output.hash.
 static hash_digest output_to_hash(const chain::output_point& output)
 {
-    data_chunk point(sizeof(output.index) + sizeof(output.hash));
-    const auto index = to_little_endian(output.index);
-    std::copy(output.hash.begin(), output.hash.end(), point.begin());
-    std::copy(index.begin(), index.end(), point.begin() + sizeof(output.hash));
+    data_chunk point(sizeof(output.index()) + sizeof(output.hash()));
+    const auto index = to_little_endian(output.index());
+    std::copy(output.hash().begin(), output.hash().end(), point.begin());
+    std::copy(index.begin(), index.end(), point.begin() + sizeof(output.hash()));
 
     // The index has a *very* low level of bit distribution evenness, 
     // almost none, and we must preserve the presumed random bit distribution,
@@ -107,8 +107,8 @@ void spend_database::store(const chain::output_point& outpoint,
     const auto write = [&spend](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        serial.write_data(spend.hash);
-        serial.write_4_bytes(spend.index);
+        data_chunk raw_spend = spend;
+        serial.write_data(raw_spend);
     };
 
     const auto key = output_to_hash(outpoint);
