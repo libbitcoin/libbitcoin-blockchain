@@ -20,6 +20,7 @@
 #include <bitcoin/blockchain/db_interface.hpp>
 
 #include <boost/filesystem.hpp>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
@@ -29,7 +30,7 @@ using boost::filesystem::path;
 
 void touch_file(const path& filepath)
 {
-    auto file = bc::ofstream(filepath.string());
+    bc::ofstream file(filepath.string());
     if (!file.good())
     {
         // TODO: handle error.

@@ -19,7 +19,6 @@
  */
 #include <bitcoin/blockchain/blockchain_impl.hpp>
 
-#include <fstream>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -52,7 +51,7 @@ void blockchain_impl::initialize_lock(const std::string& prefix)
     auto lock_path = path(prefix) / "db-lock";
 
     // Touch the lock file (open/close).
-    auto lock_file = bc::ofstream(lock_path.string(), std::ios::app);
+    bc::ofstream lock_file(lock_path.string(), std::ios::app);
     lock_file.close();
 
     // See related comments above, and

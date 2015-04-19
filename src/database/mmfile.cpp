@@ -33,7 +33,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <fcntl.h>
-#include <fstream>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
