@@ -53,7 +53,7 @@ mmfile::mmfile(const path& filename)
   : filename_(filename)
 {
     // TODO: move to logging.
-    std::cout << "CALLED MAP: " + filename_.generic_string() << std::endl;
+    bc::cout << "CALLED MAP: " + filename_.string() << std::endl;
 
     file_handle_ = open_file(filename);
     size_ = file_size(file_handle_);
@@ -74,7 +74,7 @@ mmfile::mmfile(mmfile&& file)
 mmfile::~mmfile()
 {
     // TODO: move to logging.
-    std::cout << "CALLED UNMAP: " + filename_.generic_string() << std::endl;
+    bc::cout << "CALLED UNMAP: " + filename_.string() << std::endl;
 
     DEBUG_ONLY(const auto unmapped =) unmap();
 
@@ -183,8 +183,13 @@ bool mmfile::map(size_t size)
 
 int mmfile::open_file(const path& filename)
 {
-    int handle = open(filename.generic_string().c_str(),
-        O_RDWR, FILE_OPEN_PERMISSIONS);
+#ifdef _WIN32
+    int handle = _wopen(filename.wstring().c_str(), O_RDWR,
+        FILE_OPEN_PERMISSIONS);
+#else
+    int handle = open(filename.string().c_str(), O_RDWR,
+        FILE_OPEN_PERMISSIONS);
+#endif
     return handle;
 }
 

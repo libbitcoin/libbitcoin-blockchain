@@ -22,16 +22,21 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
-using boost::filesystem::path;
-
 namespace libbitcoin {
     namespace chain {
 
-// Write one byte so file is nonzero size.
-void touch_file(const path& file)
+using boost::filesystem::path;
+
+void touch_file(const path& filepath)
 {
-    std::ofstream outfile(file.generic_string());
-    outfile.write("H", 1);
+    auto file = bc::ofstream(filepath.string());
+    if (!file.good())
+    {
+        // TODO: handle error.
+    }
+
+    // Write one byte so file is nonzero size.
+    file.write("H", 1);
 }
 
 db_paths::db_paths(const path& prefix)

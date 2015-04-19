@@ -30,6 +30,7 @@ namespace libbitcoin {
     namespace chain {
 
 using std::placeholders::_1;
+using boost::filesystem::path;
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights)
@@ -47,16 +48,16 @@ blockchain_impl::~blockchain_impl()
 
 void blockchain_impl::initialize_lock(const std::string& prefix)
 {
-    using boost::filesystem::path;
     // Try to lock the directory first
-    path lock_path = path(prefix) / "db-lock";
+    auto lock_path = path(prefix) / "db-lock";
 
-    std::ofstream touch_file(lock_path.generic_string(), std::ios::app);
-    touch_file.close();
+    // Touch the lock file (open/close).
+    auto lock_file = bc::ofstream(lock_path.string(), std::ios::app);
+    lock_file.close();
 
     // See related comments above, and
     // http://stackoverflow.com/questions/11352641/boostfilesystempath-and-fopen
-    flock_ = lock_path.generic_string().c_str();
+    flock_ = lock_path.string().c_str();
 }
 
 bool blockchain_impl::start()
