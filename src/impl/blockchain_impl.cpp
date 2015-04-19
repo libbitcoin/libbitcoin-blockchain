@@ -161,7 +161,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
     // Implements the seqlock counter logic.
     auto try_read = [this, perform_read]
         {
-            size_t slock = seqlock_;
+            uint64_t slock = seqlock_;
             if (slock % 2 == 1)
                 return false;
             if (perform_read(slock))
