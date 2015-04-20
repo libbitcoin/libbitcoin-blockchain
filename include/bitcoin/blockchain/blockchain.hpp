@@ -44,7 +44,7 @@ struct BCB_API history_row
     /// input/output point
     point_type point;
     /// Block height of transaction
-    size_t height;
+    uint64_t height;
     union
     {
         /// If output, then satoshis value of output.
@@ -97,9 +97,9 @@ public:
     typedef fetch_handler<hash_list>
         fetch_handler_block_transaction_hashes;
 
-    typedef fetch_handler<size_t> fetch_handler_block_height;
+    typedef fetch_handler<uint64_t> fetch_handler_block_height;
 
-    typedef fetch_handler<size_t> fetch_handler_last_height;
+    typedef fetch_handler<uint64_t> fetch_handler_last_height;
 
     typedef fetch_handler<block_locator_type>
         fetch_handler_block_locator;
@@ -107,7 +107,7 @@ public:
     typedef fetch_handler<transaction_type> fetch_handler_transaction;
 
     typedef std::function<
-        void (const std::error_code&, size_t, size_t)>
+        void (const std::error_code&, uint64_t, uint64_t)>
             fetch_handler_transaction_index;
 
     typedef fetch_handler<input_point> fetch_handler_spend;
@@ -120,7 +120,7 @@ public:
 
     typedef std::vector<std::shared_ptr<block_type>> block_list;
     typedef std::function<void (
-        const std::error_code&, size_t, 
+        const std::error_code&, uint64_t,
             const block_list&, const block_list&)> reorganize_handler;
 
     BCB_API virtual ~blockchain() {};
@@ -171,7 +171,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_block_header(size_t height,
+    BCB_API virtual void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch) = 0;
 
     /**
@@ -213,7 +213,7 @@ public:
      * @code
      *  void handle_fetch(
      *      const std::error_code& ec, // Status of operation
-     *      size_t block_height        // Height of block
+     *      uint64_t block_height      // Height of block
      *  );
      * @endcode
      */
@@ -227,7 +227,7 @@ public:
      * @code
      *  void handle_fetch(
      *      const std::error_code& ec, // Status of operation
-     *      size_t block_height        // Height of last block
+     *      uint64_t block_height      // Height of last block
      *  );
      * @endcode
      */
@@ -258,9 +258,9 @@ public:
      * @code
      *  void handle_fetch(
      *      const std::error_code& ec, // Status of operation
-     *      size_t block_height,       // Height of block containing
+     *      uint64_t block_height,     // Height of block containing
      *                                 // the transaction.
-     *      size_t index               // Index of transaction within
+     *      uint64_t index             // Index of transaction within
      *                                 // the block.
      *  );
      * @endcode
@@ -297,7 +297,7 @@ public:
      *  {
      *      point_ident id;
      *      output_point point;
-     *      size_t height;
+     *      uint64_t height;
      *      union
      *      {
      *          uint64_t value;
@@ -334,8 +334,8 @@ public:
      *                              the history in chunks.
      */
     BCB_API virtual void fetch_history(const payment_address& address,
-        fetch_handler_history handle_fetch,
-        const size_t limit=0, const size_t from_height=0) = 0;
+        fetch_handler_history handle_fetch, const uint64_t limit=0,
+        const uint64_t from_height=0) = 0;
 
     /**
      * Fetch possible stealth results. These results can then be iterated
@@ -370,7 +370,7 @@ public:
      * @endcode
      */
     BCB_API virtual void fetch_stealth(const binary_type& prefix,
-        fetch_handler_stealth handle_fetch, size_t from_height=0) = 0;
+        fetch_handler_stealth handle_fetch, uint64_t from_height=0) = 0;
 
     /**
      * Be notified of the next blockchain change.
@@ -382,7 +382,7 @@ public:
      * @code
      *  void handle_reorganize(
      *      const std::error_code& ec,   // Status of operation
-     *      size_t fork_point,           // Index where blockchain forks
+     *      uint64_t fork_point,         // Index where blockchain forks
      *      const block_list& added,     // New blocks added to blockchain
      *      const block_list& removed    // Blocks removed (empty if none)
      *  );
@@ -413,7 +413,7 @@ typedef std::function<void (const std::error_code&, const block_type&)>
  *  );
  * @endcode
  */
-BCB_API void fetch_block(blockchain& chain, size_t height,
+BCB_API void fetch_block(blockchain& chain, uint64_t height,
     blockchain_fetch_handler_block handle_fetch);
 
 /**

@@ -19,7 +19,6 @@
  */
 #include <bitcoin/blockchain/blockchain_impl.hpp>
 
-#include <fstream>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -30,6 +29,7 @@ namespace libbitcoin {
     namespace chain {
 
 using std::placeholders::_1;
+using boost::filesystem::path;
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights)
@@ -47,16 +47,16 @@ blockchain_impl::~blockchain_impl()
 
 void blockchain_impl::initialize_lock(const std::string& prefix)
 {
-    using boost::filesystem::path;
     // Try to lock the directory first
-    path lock_path = path(prefix) / "db-lock";
+    auto lock_path = path(prefix) / "db-lock";
 
-    std::ofstream touch_file(lock_path.generic_string(), std::ios::app);
-    touch_file.close();
+    // Touch the lock file (open/close).
+    bc::ofstream lock_file(lock_path.string(), std::ios::app);
+    lock_file.close();
 
     // See related comments above, and
     // http://stackoverflow.com/questions/11352641/boostfilesystempath-and-fopen
-    flock_ = lock_path.generic_string().c_str();
+    flock_ = lock_path.string().c_str();
 }
 
 bool blockchain_impl::start()
@@ -177,7 +177,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
         });
 }
 
-void blockchain_impl::fetch_block_header(size_t height,
+void blockchain_impl::fetch_block_header(uint64_t height,
     fetch_handler_block_header handle_fetch)
 {
     auto do_fetch = [this, height, handle_fetch](size_t slock)
@@ -320,7 +320,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 
 void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch,
-    const size_t limit, const size_t from_height)
+    const uint64_t limit, const uint64_t from_height)
 {
     auto do_fetch = [=](size_t slock)
     {
@@ -332,7 +332,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
 }
 
 void blockchain_impl::fetch_stealth(const binary_type& prefix,
-    fetch_handler_stealth handle_fetch, size_t from_height)
+    fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
     auto do_fetch = [=](size_t slock)
     {

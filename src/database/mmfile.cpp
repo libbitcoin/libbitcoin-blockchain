@@ -33,7 +33,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <fcntl.h>
-#include <fstream>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -52,15 +51,13 @@ namespace libbitcoin {
 mmfile::mmfile(const path& filename)
   : filename_(filename)
 {
-    // TODO: move to logging.
-    std::cout << "CALLED MAP: " + filename_.generic_string() << std::endl;
-
+    log_info(LOG_BLOCKCHAIN) << "Mapping: " << filename_;
     file_handle_ = open_file(filename);
     size_ = file_size(file_handle_);
-    DEBUG_ONLY(const auto mapped =) map(size_);
-
-    // TODO: move to logging, include errno and path.
-    BITCOIN_ASSERT_MSG(mapped, "The file failed to map.");
+    const auto mapped = map(size_);
+    if (!mapped)
+        log_fatal(LOG_BLOCKCHAIN) << "The file failed to map: " << filename_
+            << " error: " << errno;
 }
 
 mmfile::mmfile(mmfile&& file)
@@ -73,34 +70,32 @@ mmfile::mmfile(mmfile&& file)
 
 mmfile::~mmfile()
 {
-    // TODO: move to logging.
-    std::cout << "CALLED UNMAP: " + filename_.generic_string() << std::endl;
-
-    DEBUG_ONLY(const auto unmapped =) unmap();
-
-    // TODO: move to logging, include errno and path.
-    BITCOIN_ASSERT_MSG(unmapped, "The file failed to unmap.");
+    log_info(LOG_BLOCKCHAIN) << "Unmapping: " << filename_;
+    const auto unmapped = unmap();
+    if (!unmapped)
+        log_error(LOG_BLOCKCHAIN) << "The file failed to unmap: " << filename_
+            << " error: " << errno;
 
 #ifdef _WIN32
     const auto handle = (HANDLE)_get_osfhandle(file_handle_);
-    DEBUG_ONLY(const auto synced =) FlushFileBuffers(handle);
-
-    // TODO: move to logging, include errno and path.
-    BITCOIN_ASSERT_MSG(synced != FALSE, "The file failed to sync.");
+    const auto flushed = FlushFileBuffers(handle) != FALSE;
+    if (!flushed)
+        log_error(LOG_BLOCKCHAIN) << "The file failed to flush: " << filename_
+            << " error: " << GetLastError();
 #else
     // Calling fsync() does not necessarily ensure that the entry in the 
-    // directory containing the file has also reached disk.For that an
+    // directory containing the file has also reached disk. For that an
     // explicit fsync() on a file descriptor for the directory is also needed.
-    DEBUG_ONLY(const auto synced = ) fsync(file_handle_);
-
-    // TODO: move to logging, include errno and path.
-    BITCOIN_ASSERT_MSG(synced != -1, "The file failed to sync.");
+    const auto flushed = fsync(file_handle_) != -1;
+    if (!flushed)
+        log_error(LOG_BLOCKCHAIN) << "The file failed to flush: " << filename_
+            << " error: " << errno;
 #endif
 
-    DEBUG_ONLY(const auto closed =) close(file_handle_);
-
-    // TODO: move to logging, include errno and path.
-    BITCOIN_ASSERT_MSG(closed != -1, "The file failed to close.");
+    const auto closed = close(file_handle_) != -1;
+    if (!closed)
+        log_error(LOG_BLOCKCHAIN) << "The file failed to close: " << filename_
+            << " error: " << errno;
 }
 
 uint8_t* mmfile::data()
@@ -183,8 +178,13 @@ bool mmfile::map(size_t size)
 
 int mmfile::open_file(const path& filename)
 {
-    int handle = open(filename.generic_string().c_str(),
-        O_RDWR, FILE_OPEN_PERMISSIONS);
+#ifdef _WIN32
+    int handle = _wopen(filename.wstring().c_str(), O_RDWR,
+        FILE_OPEN_PERMISSIONS);
+#else
+    int handle = open(filename.string().c_str(), O_RDWR,
+        FILE_OPEN_PERMISSIONS);
+#endif
     return handle;
 }
 

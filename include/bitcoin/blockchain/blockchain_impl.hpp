@@ -36,7 +36,7 @@ class blockchain_impl
 public:
     // Used by internal components so need public definition here
     typedef subscriber<
-        const std::error_code&, size_t, const block_list&, const block_list&>
+        const std::error_code&, uint64_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
     BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
@@ -56,7 +56,7 @@ public:
         import_block_handler handle_import);
 
     // fetch block header by height
-    BCB_API void fetch_block_header(size_t height,
+    BCB_API void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch);
     // fetch block header by hash
     BCB_API void fetch_block_header(const hash_digest& hash,
@@ -81,17 +81,17 @@ public:
     // fetch outputs, values and spends for an address.
     BCB_API void fetch_history(const payment_address& address,
         fetch_handler_history handle_fetch,
-        const size_t limit=0, const size_t from_height=0);
+        const uint64_t limit=0, const uint64_t from_height=0);
     // fetch stealth results.
     BCB_API void fetch_stealth(const binary_type& prefix,
-        fetch_handler_stealth handle_fetch, size_t from_height=0);
+        fetch_handler_stealth handle_fetch, uint64_t from_height=0);
 
     BCB_API void subscribe_reorganize(reorganize_handler handle_reorganize);
 
 private:
     typedef std::atomic<size_t> seqlock_type;
 
-    typedef std::function<bool (size_t)> perform_read_functor;
+    typedef std::function<bool(uint64_t)> perform_read_functor;
 
     void initialize_lock(const std::string& prefix);
 
@@ -115,7 +115,7 @@ private:
     void fetch(perform_read_functor perform_read);
 
     template <typename Handler, typename... Args>
-    bool finish_fetch(size_t slock, Handler handler, Args&&... args)
+    bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
     {
         if (slock != seqlock_)
             return false;
@@ -124,7 +124,8 @@ private:
     }
 
     bool do_fetch_stealth(const binary_type& prefix,
-        fetch_handler_stealth handle_fetch, size_t from_height, size_t slock);
+        fetch_handler_stealth handle_fetch, uint64_t from_height,
+        uint64_t slock);
 
     bool stopped_ = false;
 
