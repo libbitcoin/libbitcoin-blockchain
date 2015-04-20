@@ -106,8 +106,7 @@ private:
             return;
         block_.transactions.resize(tx_hashes.size());
         count_ = 0;
-        for (size_t tx_index = 0;
-            tx_index < tx_hashes.size(); ++tx_index)
+        for (size_t tx_index = 0; tx_index < tx_hashes.size(); ++tx_index)
         {
             fetch_tx(tx_hashes[tx_index], tx_index);
         }
@@ -205,7 +204,7 @@ private:
             return;
         }
         auto this_ptr = shared_from_this();
-        size_t height = indexes_.back();
+        auto height = indexes_.back();
         indexes_.pop_back();
         chain_.fetch_block_header(height,
             std::bind(&fetch_locator::append, this_ptr, _1, _2, height));
@@ -216,7 +215,7 @@ private:
     {
         if (stop_on_error(ec))
             return;
-        hash_digest block_hash = hash_block_header(blk_header);
+        auto block_hash = hash_block_header(blk_header);
         locator_.push_back(block_hash);
         // Continue the loop.
         loop();
