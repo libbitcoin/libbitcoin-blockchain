@@ -160,7 +160,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
     // Implements the seqlock counter logic.
     auto try_read = [this, perform_read]
         {
-            uint64_t slock = seqlock_;
+            size_t slock = seqlock_;
             if (slock % 2 == 1)
                 return false;
             if (perform_read(slock))
@@ -177,7 +177,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
         });
 }
 
-void blockchain_impl::fetch_block_header(size_t height,
+void blockchain_impl::fetch_block_header(uint64_t height,
     fetch_handler_block_header handle_fetch)
 {
     auto do_fetch = [this, height, handle_fetch](size_t slock)
@@ -320,7 +320,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
 
 void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch,
-    const size_t limit, const size_t from_height)
+    const uint64_t limit, const uint64_t from_height)
 {
     auto do_fetch = [=](size_t slock)
     {
@@ -332,7 +332,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
 }
 
 void blockchain_impl::fetch_stealth(const binary_type& prefix,
-    fetch_handler_stealth handle_fetch, size_t from_height)
+    fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
     auto do_fetch = [=](size_t slock)
     {

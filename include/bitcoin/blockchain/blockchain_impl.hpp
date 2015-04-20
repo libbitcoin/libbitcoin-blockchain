@@ -89,7 +89,7 @@ public:
     BCB_API void subscribe_reorganize(reorganize_handler handle_reorganize);
 
 private:
-    typedef std::atomic<uint64_t> seqlock_type;
+    typedef std::atomic<size_t> seqlock_type;
 
     typedef std::function<bool(uint64_t)> perform_read_functor;
 
