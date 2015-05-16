@@ -141,6 +141,7 @@ private:
     seqlock_type seqlock_;
 
     // Main database core.
+    db_paths db_paths_;
     db_interface interface_;
 
     // Organize stuff
