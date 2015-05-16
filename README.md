@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-blockchain.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-blockchain)
 
+[![Coverage Status](https://coveralls.io/repos/libbitcoin/libbitcoin-blockchain/badge.svg)](https://coveralls.io/r/libbitcoin/libbitcoin-blockchain)
+
 # Libbitcoin Blockchain
 
 *Fast Bitcoin blockchain database based on libbitcoin*
