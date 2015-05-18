@@ -19,6 +19,8 @@
  */
 #include <bitcoin/blockchain/validate.hpp>
 
+#include <cstddef>
+#include <cstdint>
 #include <set>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -43,30 +45,46 @@ using boost::posix_time::hours;
 constexpr size_t max_block_size = 1000000;
 constexpr size_t max_block_script_sig_operations = max_block_size / 50;
 
-// Validate script consensus conformance.
+enum validation_options : uint32_t
+{
+    none,
+    p2sh
+    // dersig
+};
+
+// Determine if BIP16 compliance is required for this block.
+static bool is_bip_16_enabled(const block_header_type& header, size_t height)
+{
+    // Block 170060 contains an invalid BIP 16 transaction before switchover date.
+    bool bip16_enabled = header.timestamp >= bip16_switchover_timestamp;
+    BITCOIN_ASSERT(!bip16_enabled || height >= bip16_switchover_height);
+    return bip16_enabled;
+}
+
+// Validate script consensus conformance based on flags provided.
 static bool validate_consensus(const script_type& prevout_script,
     const transaction_type& current_tx, size_t input_index,
-    bool bip16_enabled=true)
+    uint32_t options)
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
     BITCOIN_ASSERT(input_index <= max_uint32);
     const auto input_index32 = static_cast<uint32_t>(input_index);
+    bool bip16_enabled = ((options & validation_options::p2sh) != 0);
 
 #ifdef WITH_CONSENSUS
     using namespace bc::consensus;
     auto previous_output_script = save_script(prevout_script);
     data_chunk current_transaction(satoshi_raw_size(current_tx));
     satoshi_save(current_tx, current_transaction.begin());
-    uint32_t flags = verify_flags_type::verify_flags_standard;
-    if (bip16_enabled)
-        flags |= verify_flags_type::verify_flags_p2sh;
 
-    const auto result = verify_script(current_transaction.data(), 
+    // TODO: expand support beyond BIP16 option.
+    const auto flags = (bip16_enabled ? verify_flags_p2sh : verify_flags_none);
+    const auto result = verify_script(current_transaction.data(),
         current_transaction.size(), previous_output_script.data(),
         previous_output_script.size(), input_index32, flags);
 
     BITCOIN_ASSERT(
-        (result == verify_result::verify_result_eval_true) || 
+        (result == verify_result::verify_result_eval_true) ||
         (result == verify_result::verify_result_eval_false));
 
     return (result == verify_result::verify_result_eval_true);
@@ -74,9 +92,30 @@ static bool validate_consensus(const script_type& prevout_script,
     auto previous_output_script = prevout_script;
     const auto current_input_script = current_tx.inputs[input_index].script;
 
+    // TODO: expand support beyond BIP16 option.
     return previous_output_script.run(current_input_script, current_tx,
         input_index32, bip16_enabled);
 #endif
+}
+
+// Validate script consensus conformance, calculating p2sh based on block/height.
+static bool validate_consensus(const script_type& prevout_script,
+    const transaction_type& current_tx, size_t input_index,
+    const block_header_type& header, const size_t height)
+{
+    uint32_t options = validation_options::none;
+    if (is_bip_16_enabled(header, height))
+        options = validation_options::p2sh;
+
+    return validate_consensus(prevout_script, current_tx, input_index, options);
+}
+
+// Validate script consensus conformance, defaulting to p2sh.
+static bool validate_consensus(const script_type& prevout_script,
+    const transaction_type& current_tx, size_t input_index)
+{
+    return validate_consensus(prevout_script, current_tx, input_index, 
+        validation_options::p2sh);
 }
 
 validate_transaction::validate_transaction(
@@ -773,14 +812,8 @@ bool validate_block::connect_input(size_t index_in_parent,
             return false;
         }
     }
-    // Pay to script hash BIP 16 scripts
-    // block 170060 contains an invalid BIP 16 transaction
-    // before the switchover date.
-    bool bip16_enabled =
-        current_block_.header.timestamp >= bip16_switchover_timestamp;
-    BITCOIN_ASSERT(!bip16_enabled || height_ >= bip16_switchover_height);
     if (!validate_consensus(previous_tx_out.script, current_tx, input_index,
-        bip16_enabled))
+        current_block_.header, height_))
     {
         log_warning(LOG_VALIDATE) << "Input script consensus validation failed";
         return false;
