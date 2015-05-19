@@ -24,7 +24,20 @@
 using namespace bc;
 using namespace bc::chain;
 
-BOOST_AUTO_TEST_SUITE(database_interface)
+struct low_thread_priority_fixture
+{
+    low_thread_priority_fixture()
+    {
+        set_thread_priority(thread_priority::lowest);
+    }
+
+    ~low_thread_priority_fixture()
+    {
+        set_thread_priority(thread_priority::normal);
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(database_interface, low_thread_priority_fixture)
 
 void test_block_exists(const db_interface& interface,
     const size_t height, const block_type block0)
@@ -189,9 +202,11 @@ void compare_blocks(const block_type& popped, const block_type& original)
     }
 }
 
-// This test causes Travis run failures for performance reasons.
 BOOST_AUTO_TEST_CASE(pushpop)
 {
+    // This test causes Travis run failures for performance reasons.
+    set_thread_priority(thread_priority::low);
+
     const std::string prefix = "chain";
     boost::filesystem::create_directory(prefix);
     initialize_blockchain(prefix);
