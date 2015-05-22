@@ -37,16 +37,29 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <bitcoin/bitcoin/utility/assert.hpp>
-
-using boost::filesystem::path;
 
 // mmfile should be able to support 32 bit but because the blockchain 
 // requires a larger file this is not validated or supported.
 static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
+
+using boost::format;
+using boost::filesystem::path;
+
+static void handle_error(const char* context, const path& filename)
+{
+    const static auto form = "The file failed to %1%: %2% error: %3%";
+#ifdef _WIN32
+    const auto message = format(form) % context % filename % errno;
+#else
+    const auto message = format(form) % context % filename % GetLastError();
+#endif
+    log_error(LOG_BLOCKCHAIN) << message.str();
+}
 
 mmfile::mmfile(const path& filename)
   : filename_(filename)
@@ -56,8 +69,7 @@ mmfile::mmfile(const path& filename)
     size_ = file_size(file_handle_);
     const auto mapped = map(size_);
     if (!mapped)
-        log_fatal(LOG_BLOCKCHAIN) << "The file failed to map: " << filename_
-            << " error: " << errno;
+        handle_error("map", filename_);
 }
 
 mmfile::mmfile(mmfile&& file)
@@ -73,29 +85,23 @@ mmfile::~mmfile()
     log_info(LOG_BLOCKCHAIN) << "Unmapping: " << filename_;
     const auto unmapped = unmap();
     if (!unmapped)
-        log_error(LOG_BLOCKCHAIN) << "The file failed to unmap: " << filename_
-            << " error: " << errno;
+        handle_error("unmap", filename_);
 
 #ifdef _WIN32
     const auto handle = (HANDLE)_get_osfhandle(file_handle_);
     const auto flushed = FlushFileBuffers(handle) != FALSE;
-    if (!flushed)
-        log_error(LOG_BLOCKCHAIN) << "The file failed to flush: " << filename_
-            << " error: " << GetLastError();
 #else
     // Calling fsync() does not necessarily ensure that the entry in the 
     // directory containing the file has also reached disk. For that an
     // explicit fsync() on a file descriptor for the directory is also needed.
     const auto flushed = fsync(file_handle_) != -1;
-    if (!flushed)
-        log_error(LOG_BLOCKCHAIN) << "The file failed to flush: " << filename_
-            << " error: " << errno;
 #endif
+    if (!flushed)
+        handle_error("flush", filename_);
 
     const auto closed = close(file_handle_) != -1;
     if (!closed)
-        log_error(LOG_BLOCKCHAIN) << "The file failed to close: " << filename_
-            << " error: " << errno;
+        handle_error("close", filename_);
 }
 
 uint8_t* mmfile::data()
@@ -126,6 +132,9 @@ bool mmfile::resize(size_t new_size)
     // Resize underlying file.
     if (ftruncate(file_handle_, new_size) == -1)
         return false;
+
+    const auto message = format("Resizing: %1% [%2%]") % filename_ % new_size;
+    log_info(LOG_BLOCKCHAIN) << message.str();
 
     // Readjust memory map.
 #ifdef MREMAP_MAYMOVE
@@ -219,5 +228,5 @@ bool mmfile::validate(size_t size)
     return true;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
