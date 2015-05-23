@@ -26,6 +26,8 @@
     "Failed to create directory %1% with error, '%2%'.\n"
 #define BS_INITCHAIN_DIR_EXISTS \
     "Failed because the directory %1% already exists.\n"
+#define BS_INITCHAIN_FAIL \
+    "Failed to initialize blockchain files.\n"
 
 using namespace bc;
 using namespace bc::chain;
@@ -57,7 +59,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    initialize_blockchain(prefix);
+    if (!initialize_blockchain(prefix))
+    {
+        std::cerr << BS_INITCHAIN_FAIL;
+        return -1;
+    }
 
     // Add genesis block.
     db_paths paths(prefix);
