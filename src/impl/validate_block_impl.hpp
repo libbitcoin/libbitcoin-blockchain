@@ -26,7 +26,7 @@
 #include "organizer_impl.hpp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class validate_block_impl
   : public validate_block
@@ -60,7 +60,7 @@ private:
     const block_detail_list& orphan_chain_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

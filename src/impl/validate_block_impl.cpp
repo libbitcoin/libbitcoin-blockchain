@@ -22,7 +22,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 validate_block_impl::validate_block_impl(
     db_interface& database, int fork_index,
@@ -187,5 +187,5 @@ bool validate_block_impl::orphan_is_spent(
     return false;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin

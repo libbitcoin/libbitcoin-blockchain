@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/validate.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -216,6 +216,6 @@ void transaction_pool::try_delete(const hash_digest& tx_hash)
         }
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

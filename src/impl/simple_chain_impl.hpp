@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/organizer.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class simple_chain_impl
   : public simple_chain
@@ -40,7 +40,7 @@ private:
     db_interface& interface_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

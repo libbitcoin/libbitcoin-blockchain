@@ -24,14 +24,14 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 using boost::filesystem::path;
 
 bool touch_file(const path& filepath)
 {
     bc::ofstream file(filepath.string());
-    if (!file.good())
+    if (file.bad())
         return false;
 
     // Write one byte so file is nonzero size.
@@ -311,6 +311,6 @@ void db_interface::pop_outputs(
     }
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

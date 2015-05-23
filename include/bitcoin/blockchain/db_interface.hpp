@@ -29,7 +29,7 @@
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct db_paths
 {
@@ -102,7 +102,7 @@ private:
  */
 BCB_API bool initialize_blockchain(const boost::filesystem::path& prefix);
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

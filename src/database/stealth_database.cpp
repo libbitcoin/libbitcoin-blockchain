@@ -22,7 +22,7 @@
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 // ephemkey is without sign byte and address is without version byte.
 // [ prefix_bitfield:4 ][ ephemkey:32 ][ address:20 ][ tx_id:32 ]
@@ -132,6 +132,6 @@ index_type stealth_database::read_index(const size_t from_height) const
     return from_little_endian_unsafe<index_type>(record);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

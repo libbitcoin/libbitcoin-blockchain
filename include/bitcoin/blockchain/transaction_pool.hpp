@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct BCB_API transaction_entry_info
 {
@@ -205,7 +205,7 @@ private:
     pool_buffer buffer_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

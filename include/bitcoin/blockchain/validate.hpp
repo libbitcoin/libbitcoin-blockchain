@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 /**
  * If you're looking to validate a transaction, then use the simpler
@@ -143,7 +143,7 @@ private:
     const block_type& current_block_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif
