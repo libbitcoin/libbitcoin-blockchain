@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -22,19 +22,17 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 block_detail::block_detail(const block_type& actual_block)
-  : block_hash_(hash_block_header(actual_block.header))
+  : block_hash_(hash_block_header(actual_block.header)),
+    processed_(false), info_({ block_status::orphan, 0 }),
+    actual_block_(std::make_shared<block_type>(actual_block))
 {
-    actual_block_ = std::make_shared<block_type>(actual_block);
 }
-block_detail::block_detail(const block_header_type& header)
-  : block_hash_(hash_block_header(header))
+block_detail::block_detail(const block_header_type& actual_block_header)
+  : block_detail(block_type{ actual_block_header, {} })
 {
-    block_type blk;
-    blk.header = header;
-    actual_block_ = std::make_shared<block_type>(blk);
 }
 
 block_type& block_detail::actual()
@@ -278,6 +276,5 @@ void organizer::notify_reorganize(
     reorganize_occured(fork_point, arrival_blocks, replaced_blocks);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
-
