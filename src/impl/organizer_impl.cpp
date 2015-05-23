@@ -26,10 +26,9 @@
 namespace libbitcoin {
     namespace chain {
 
-organizer_impl::organizer_impl(db_interface& interface,
-    orphans_pool_ptr orphans, simple_chain_ptr chain,
-    reorganize_handler handler)
-  : organizer(orphans, chain), interface_(interface), handler_(handler)
+organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
+    simple_chain& chain, reorganize_handler handler)
+  : organizer(orphans, chain), interface_(database), handler_(handler)
 {
 }
 

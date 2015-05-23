@@ -49,7 +49,7 @@ static file_lock init_lock(const std::string& prefix)
 
 static std::shared_ptr<organizer_impl> organizer_factory(
     async_strand& reorganize_strand, db_interface& database,
-    orphans_pool_ptr orphans, simple_chain_ptr chain,
+    orphans_pool& orphans, simple_chain& chain,
     blockchain_impl::reorganize_subscriber_type::ptr reorganize_subscriber)
 {
     BITCOIN_ASSERT(chain);
@@ -80,7 +80,7 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     orphans_(std::make_shared<orphans_pool>(200)),
     chain_(std::make_shared<simple_chain_impl>(interface_)),
     reorganize_subscriber_(std::make_shared<reorganize_subscriber_type>(pool)),
-    organize_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
+    organize_(organizer_factory(reorg_strand_, interface_, *orphans_, *chain_,
         reorganize_subscriber_))
 {
 }

@@ -138,7 +138,7 @@ void orphans_pool::remove(block_detail_ptr remove_block)
     pool_.erase(it);
 }
 
-organizer::organizer(orphans_pool_ptr orphans, simple_chain_ptr chain)
+organizer::organizer(orphans_pool& orphans, simple_chain& chain)
   : orphans_(orphans), chain_(chain)
 {
 }
@@ -146,7 +146,7 @@ organizer::organizer(orphans_pool_ptr orphans, simple_chain_ptr chain)
 void organizer::start()
 {
     // Load unprocessed blocks
-    process_queue_ = orphans_->unprocessed();
+    process_queue_ = orphans_.unprocessed();
     // As we loop, we pop blocks off and process them
     while (!process_queue_.empty())
     {
@@ -161,9 +161,9 @@ void organizer::start()
 void organizer::process(block_detail_ptr process_block)
 {
     // Trace the chain in the orphan pool
-    block_detail_list orphan_chain = orphans_->trace(process_block);
+    block_detail_list orphan_chain = orphans_.trace(process_block);
     BITCOIN_ASSERT(orphan_chain.size() >= 1);
-    size_t fork_index = chain_->find_height(
+    size_t fork_index = chain_.find_height(
         orphan_chain[0]->actual().header.previous_block_hash);
     if (fork_index != simple_chain::null_height)
         replace_chain(fork_index, orphan_chain);
@@ -195,12 +195,12 @@ void organizer::replace_chain(size_t fork_index,
     // All remaining blocks in orphan_chain should all be valid now
     // Compare the difficulty of the 2 forks (original and orphan)
     const size_t begin_index = fork_index + 1;
-    hash_number main_work = chain_->sum_difficulty(begin_index);
+    hash_number main_work = chain_.sum_difficulty(begin_index);
     if (orphan_work <= main_work)
         return;
     // Replace! Switch!
     block_detail_list replaced_slice;
-    DEBUG_ONLY(bool slice_success =) chain_->release(begin_index, 
+    DEBUG_ONLY(bool slice_success =) chain_.release(begin_index, 
         replaced_slice);
     BITCOIN_ASSERT(slice_success);
     // We add the arriving blocks first to the main chain because if
@@ -214,17 +214,17 @@ void organizer::replace_chain(size_t fork_index,
     size_t arrival_index = fork_index;
     for (block_detail_ptr arrival_block: orphan_chain)
     {
-        orphans_->remove(arrival_block);
+        orphans_.remove(arrival_block);
         ++arrival_index;
         arrival_block->set_info({block_status::confirmed, arrival_index});
-        chain_->append(arrival_block);
+        chain_.append(arrival_block);
     }
     // Now add the old blocks back to the pool
     for (block_detail_ptr replaced_block: replaced_slice)
     {
         replaced_block->mark_processed();
         replaced_block->set_info({block_status::orphan, 0});
-        orphans_->add(replaced_block);
+        orphans_.add(replaced_block);
     }
     notify_reorganize(fork_index, orphan_chain, replaced_slice);
 }
@@ -251,7 +251,7 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
         else
             (*it)->set_error(error::previous_block_invalid);
         (*it)->set_info({block_status::rejected, 0});
-        orphans_->remove(*it);
+        orphans_.remove(*it);
         // Also erase from process_queue so we avoid trying to re-process
         // invalid blocks and remove try to remove non-existant blocks.
         lazy_remove(process_queue_, *it);

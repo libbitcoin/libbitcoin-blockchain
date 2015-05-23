@@ -113,7 +113,7 @@ typedef std::shared_ptr<simple_chain> simple_chain_ptr;
 class organizer
 {
 public:
-    organizer(orphans_pool_ptr orphans, simple_chain_ptr chain);
+    organizer(orphans_pool& orphans, simple_chain& chain);
 
     void start();
 
@@ -134,8 +134,8 @@ private:
         const block_detail_list& orphan_chain,
         const block_detail_list& replaced_slice);
 
-    orphans_pool_ptr orphans_;
-    simple_chain_ptr chain_;
+    orphans_pool& orphans_;
+    simple_chain& chain_;
     block_detail_list process_queue_;
 };
 

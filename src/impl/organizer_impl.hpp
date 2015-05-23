@@ -32,9 +32,8 @@ class organizer_impl
 public:
     typedef blockchain::reorganize_handler reorganize_handler;
 
-    organizer_impl(db_interface& interface,
-        orphans_pool_ptr orphans, simple_chain_ptr chain,
-        reorganize_handler handler);
+    organizer_impl(db_interface& database, orphans_pool& orphans,
+        simple_chain& chain, reorganize_handler handler);
 
 protected:
     std::error_code verify(size_t fork_index,
