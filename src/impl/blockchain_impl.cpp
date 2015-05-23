@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -29,7 +29,7 @@
 #include "organizer_impl.hpp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
@@ -165,22 +165,19 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
 {
     // Implements the seqlock counter logic.
     const auto try_read = [this, perform_read]
-        {
-            size_t slock = seqlock_;
-            if (slock % 2 == 1)
-                return false;
-            if (perform_read(slock))
-                return true;
-            return false;
-        };
+    {
+        size_t slock = seqlock_;
+        return ((slock % 2 != 1) && perform_read(slock));
+    };
+
     // Initiate async read operation.
     ios_.post([this, try_read]
-        {
-            // Sleeping inside seqlock loop is fine since we
-            // need to finish write op before we can read anyway.
-            while (!try_read())
-                std::this_thread::sleep_for(std::chrono::microseconds(100000));
-        });
+    {
+        // Sleeping inside seqlock loop is fine since we
+        // need to finish write op before we can read anyway.
+        while (!try_read())
+            std::this_thread::sleep_for(std::chrono::microseconds(100000));
+    });
 }
 
 void blockchain_impl::fetch_block_header(uint64_t height,
@@ -354,6 +351,5 @@ void blockchain_impl::subscribe_reorganize(
     reorganize_subscriber_->subscribe(handle_reorganize);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
-
