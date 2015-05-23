@@ -21,6 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
 
 #include <atomic>
+#include <cstddef>
+#include <memory>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -34,13 +36,14 @@ class blockchain_impl
   : public blockchain
 {
 public:
-    // Used by internal components so need public definition here
+    // Used by internal components so need public definitions here
     typedef subscriber<
         const std::error_code&, uint64_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
     BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
-        const db_active_heights &active_heights=db_active_heights{0});
+        const db_active_heights& active_heights=db_active_heights{0},
+        size_t orphan_capacity=20);
     BCB_API ~blockchain_impl();
 
     // Non-copyable
@@ -127,18 +130,22 @@ private:
         fetch_handler_stealth handle_fetch, uint64_t from_height,
         uint64_t slock);
 
-    bool stopped_ = false;
-
     boost::asio::io_service& ios_;
+
     // Queue for writes to the blockchain.
     async_strand write_strand_;
+
     // Queue for serializing reorganization handler calls.
     async_strand reorg_strand_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;
+
     // seqlock used for writes.
     seqlock_type seqlock_;
+
+    // Is the blockchain stopped.
+    bool stopped_;
 
     // Main database core.
     db_paths db_paths_;
@@ -147,9 +154,8 @@ private:
     // Organize stuff
     orphans_pool_ptr orphans_;
     simple_chain_ptr chain_;
-    organizer_ptr organize_;
-
     reorganize_subscriber_type::ptr reorganize_subscriber_;
+    organizer_ptr organize_;
 };
 
     } // namespace chain

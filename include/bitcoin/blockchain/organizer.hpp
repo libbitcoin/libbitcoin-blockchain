@@ -86,7 +86,7 @@ typedef std::vector<block_detail_ptr> block_detail_list;
 class orphans_pool
 {
 public:
-    orphans_pool(size_t pool_size);
+    orphans_pool(size_t pool_size=20);
     bool add(block_detail_ptr incoming_block);
     block_detail_list trace(block_detail_ptr end_block);
     block_detail_list unprocessed();
