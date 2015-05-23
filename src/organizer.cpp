@@ -71,13 +71,13 @@ const block_info& block_detail::info() const
     return info_;
 }
 
-void block_detail::set_error(const std::error_code& ec)
+void block_detail::set_error(const std::error_code& code)
 {
-    ec_ = ec;
+    code_ = code;
 }
 const std::error_code& block_detail::error() const
 {
-    return ec_;
+    return code_;
 }
 
 orphans_pool::orphans_pool(size_t pool_size)

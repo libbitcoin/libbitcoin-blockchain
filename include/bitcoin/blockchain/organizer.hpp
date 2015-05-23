@@ -64,7 +64,7 @@ public:
     const hash_digest& hash() const;
     void set_info(const block_info& replace_info);
     const block_info& info() const;
-    void set_error(const std::error_code& ec);
+    void set_error(const std::error_code& code);
     const std::error_code& error() const;
 
 private:
@@ -72,7 +72,7 @@ private:
     const hash_digest block_hash_;
     bool processed_;
     block_info info_;
-    std::error_code ec_;
+    std::error_code code_;
 };
 
 typedef std::shared_ptr<block_detail> block_detail_ptr;
@@ -127,8 +127,8 @@ protected:
 private:
     void process(block_detail_ptr process_block);
     void replace_chain(size_t fork_index, block_detail_list& orphan_chain);
-    void clip_orphans(block_detail_list& orphan_chain,
-        size_t orphan_index, const std::error_code& invalid_reason);
+    void clip_orphans(block_detail_list& orphan_chain, size_t orphan_index,
+        const std::error_code& invalid_reason);
     void notify_reorganize(
         size_t fork_point,
         const block_detail_list& orphan_chain,

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -24,7 +24,7 @@
 #include "simple_chain_impl.hpp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class organizer_impl
   : public organizer
@@ -38,8 +38,8 @@ public:
 protected:
     std::error_code verify(size_t fork_index,
         const block_detail_list& orphan_chain, size_t orphan_index);
-    void reorganize_occured(
-        size_t fork_point,
+
+    void reorganize_occured(size_t fork_point,
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced);
 
@@ -48,7 +48,7 @@ private:
     reorganize_handler handler_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif
