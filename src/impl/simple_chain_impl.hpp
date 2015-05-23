@@ -30,12 +30,11 @@ class simple_chain_impl
   : public simple_chain
 {
 public:
-    simple_chain_impl(db_interface& interface);
+    simple_chain_impl(db_interface& database);
     void append(block_detail_ptr incoming_block);
     size_t find_height(const hash_digest& search_block_hash);
     hash_number sum_difficulty(size_t begin_index);
-    bool release(size_t begin_index,
-        block_detail_list& released_blocks);
+    bool release(size_t begin_index, block_detail_list& released_blocks);
 
 private:
     db_interface& interface_;

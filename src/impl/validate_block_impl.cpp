@@ -25,10 +25,10 @@ namespace libbitcoin {
     namespace chain {
 
 validate_block_impl::validate_block_impl(
-    db_interface& interface, int fork_index,
+    db_interface& database, int fork_index,
     const block_detail_list& orphan_chain, int orphan_index,
     size_t height, const block_type& current_block)
-  : validate_block(height, current_block), interface_(interface),
+  : validate_block(height, current_block), interface_(database),
     height_(height), fork_index_(fork_index),
     orphan_index_(orphan_index), orphan_chain_(orphan_chain)
 {

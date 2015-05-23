@@ -32,7 +32,7 @@ class validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(db_interface& interface, int fork_index,
+    validate_block_impl(db_interface& database, int fork_index,
         const block_detail_list& orphan_chain, int orphan_index,
         size_t height, const block_type& current_block);
 
@@ -56,9 +56,7 @@ private:
         size_t skip_tx, size_t skip_input);
 
     db_interface& interface_;
-    size_t height_;
-
-    size_t fork_index_, orphan_index_;
+    size_t height_, fork_index_, orphan_index_;
     const block_detail_list& orphan_chain_;
 };
 
