@@ -260,8 +260,8 @@ void lazy_remove(block_detail_list& process_queue,
 void organizer::clip_orphans(block_detail_list& orphan_chain,
     size_t orphan_index, const std::error_code& invalid_reason)
 {
+    // Remove from orphans pool.
     auto orphan_start = orphan_chain.begin() + orphan_index;
-    // Remove from orphans pool
     for (auto it = orphan_start; it != orphan_chain.end(); ++it)
     {
         if (it == orphan_start)
@@ -276,6 +276,7 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
         // invalid blocks and remove try to remove non-existant blocks.
         lazy_remove(process_queue_, *it);
     }
+
     orphan_chain.erase(orphan_start, orphan_chain.end());
 }
 
