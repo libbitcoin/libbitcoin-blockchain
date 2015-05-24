@@ -26,8 +26,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include "organizer_impl.hpp"
-#include "simple_chain_impl.hpp"
+#include <bitcoin/blockchain/organizer_impl.hpp>
+#include <bitcoin/blockchain/simple_chain_impl.hpp>
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 

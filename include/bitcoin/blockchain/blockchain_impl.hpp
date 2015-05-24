@@ -29,10 +29,8 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-
-// This is a problem, need to publish these includes.
-#include "../../../src/impl/organizer_impl.hpp"
-#include "../../../src/impl/simple_chain_impl.hpp"
+#include <bitcoin/blockchain/organizer_impl.hpp>
+#include <bitcoin/blockchain/simple_chain_impl.hpp>
 
 namespace libbitcoin {
 namespace chain {

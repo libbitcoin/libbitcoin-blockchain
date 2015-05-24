@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
 
 #include <bitcoin/blockchain/organizer.hpp>
-#include "simple_chain_impl.hpp"
+#include <bitcoin/blockchain/simple_chain_impl.hpp>
 
 namespace libbitcoin {
 namespace chain {
