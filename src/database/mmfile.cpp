@@ -27,6 +27,7 @@
     #define FILE_OPEN_PERMISSIONS _S_IREAD | _S_IWRITE
 #else
     #include <unistd.h>
+    #include <stddef.h>
     #include <sys/mman.h>
     #define FILE_OPEN_PERMISSIONS S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 #endif
@@ -54,10 +55,11 @@ static void handle_error(const char* context, const path& filename)
 {
     const static auto form = "The file failed to %1%: %2% error: %3%";
 #ifdef _WIN32
-    const auto message = format(form) % context % filename % errno;
+    const auto error = GetLastError();
 #else
-    const auto message = format(form) % context % filename % GetLastError();
+    const auto error = errno;
 #endif
+    const auto message = format(form) % context % filename % error;
     log_error(LOG_BLOCKCHAIN) << message.str();
 }
 
