@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 /**
  * Implements on disk array with a fixed size.
@@ -90,7 +90,7 @@ private:
     IndexType size_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #include <bitcoin/blockchain/impl/disk_array.ipp>

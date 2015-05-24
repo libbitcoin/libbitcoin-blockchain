@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -24,20 +24,32 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 using boost::filesystem::path;
 
-void touch_file(const path& filepath)
+bool touch_file(const path& filepath)
 {
     bc::ofstream file(filepath.string());
-    if (!file.good())
-    {
-        // TODO: handle error.
-    }
+    if (file.bad())
+        return false;
 
     // Write one byte so file is nonzero size.
     file.write("H", 1);
+    return true;
+}
+
+bool initialize_blockchain(const path& prefix)
+{
+    // Create paths.
+    db_paths paths(prefix);
+    bool result = paths.touch_all();
+
+    // Initialize databases.
+    db_interface database(paths, { 0 });
+    database.create();
+
+    return result;
 }
 
 db_paths::db_paths(const path& prefix)
@@ -52,16 +64,17 @@ db_paths::db_paths(const path& prefix)
     stealth_rows = prefix / "stealth_rows";
 }
 
-void db_paths::touch_all() const
+bool db_paths::touch_all() const
 {
-    touch_file(blocks_lookup);
-    touch_file(blocks_rows);
-    touch_file(spends);
-    touch_file(transactions);
-    touch_file(history_lookup);
-    touch_file(history_rows);
-    touch_file(stealth_index);
-    touch_file(stealth_rows);
+    return
+        touch_file(blocks_lookup) &&
+        touch_file(blocks_rows) &&
+        touch_file(spends) &&
+        touch_file(transactions) &&
+        touch_file(history_lookup) &&
+        touch_file(history_rows) &&
+        touch_file(stealth_index) &&
+        touch_file(stealth_rows);
 }
 
 db_interface::db_interface(const db_paths& paths,
@@ -298,16 +311,6 @@ void db_interface::pop_outputs(
     }
 }
 
-void initialize_blockchain(const path& prefix)
-{
-    // Create paths.
-    db_paths paths(prefix);
-    paths.touch_all();
-    // Initialize databases.
-    db_interface interface(paths, {0});
-    interface.create();
-}
-
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

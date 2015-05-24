@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class spend_result
 {
@@ -117,7 +117,7 @@ private:
     map_type map_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

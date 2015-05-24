@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class block_result
 {
@@ -140,7 +140,7 @@ private:
     record_allocator index_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

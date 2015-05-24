@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -31,7 +31,7 @@
 #endif
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -834,5 +834,5 @@ bool validate_block::connect_input(size_t index_in_parent,
     return true;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin

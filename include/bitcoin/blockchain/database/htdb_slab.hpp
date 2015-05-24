@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 
 /**
@@ -88,7 +88,7 @@ private:
     slab_allocator& allocator_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #include <bitcoin/blockchain/impl/htdb_slab.ipp>

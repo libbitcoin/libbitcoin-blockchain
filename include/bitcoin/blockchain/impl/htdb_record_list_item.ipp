@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_LIST_ITEM_IPP
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 /**
  * Item for htdb_record. A chained list with the key included.
@@ -129,7 +129,7 @@ uint8_t* htdb_record_list_item<HashType>::raw_next_data() const
     return raw_data(next_begin);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -22,10 +22,10 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
-simple_chain_impl::simple_chain_impl(db_interface& interface)
-  : interface_(interface)
+simple_chain_impl::simple_chain_impl(db_interface& database)
+  : interface_(database)
 {
 }
 
@@ -42,6 +42,7 @@ size_t simple_chain_impl::find_height(const hash_digest& search_block_hash)
     auto result = interface_.blocks.get(search_block_hash);
     if (!result)
         return null_height;
+
     return result.height();
 }
 
@@ -55,6 +56,7 @@ hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
         uint32_t bits = interface_.blocks.get(i).header().bits;
         total_work += block_work(bits);
     }
+
     return total_work;
 }
 
@@ -69,8 +71,9 @@ bool simple_chain_impl::release(size_t begin_index,
             std::make_shared<block_detail>(interface_.pop());
         released_blocks.push_back(block);
     }
+
     return true;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin

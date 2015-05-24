@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_HPP
 
+#include <cstddef>
 #include <functional>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -27,7 +28,7 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct BCB_API transaction_entry_info
 {
@@ -74,7 +75,8 @@ public:
 
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
-    BCB_API transaction_pool(threadpool& pool, blockchain& chain);
+    BCB_API transaction_pool(threadpool& pool, blockchain& chain,
+        size_t capacity=2000);
     BCB_API ~transaction_pool();
     BCB_API void start();
 
@@ -83,9 +85,7 @@ public:
     /// Non-copyable class
     void operator=(const transaction_pool&) = delete;
 
-    /**
-     * Set the size of the circular buffer. Defaults to 2000.
-     */
+    /// Deprecated, unsafe after startup, use constructor.
     BCB_API void set_capacity(size_t capacity);
 
     /**
@@ -187,12 +187,12 @@ private:
     void do_validate(const transaction_type& tx,
         validate_handler handle_validate);
     void validation_complete(
-        const std::error_code& ec, const index_list& unconfirmed,
+        const std::error_code& code, const index_list& unconfirmed,
         const hash_digest& tx_hash, validate_handler handle_validate);
 
     bool tx_exists(const hash_digest& tx_hash);
 
-    void reorganize(const std::error_code& ec,
+    void reorganize(const std::error_code& code,
         size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
@@ -202,10 +202,10 @@ private:
 
     async_strand strand_;
     blockchain& chain_;
-    pool_buffer pool_;
+    pool_buffer buffer_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

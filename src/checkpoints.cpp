@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/checkpoints.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 inline bool checkpoint_test(
     const size_t current_height, const hash_digest& current_hash,
@@ -92,6 +92,6 @@ bool passes_checkpoints(const size_t height, const hash_digest& block_hash)
     return true;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

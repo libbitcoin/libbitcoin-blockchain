@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -20,27 +20,35 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
 
-#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <system_error>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
+
+// This is a problem, need to publish these includes.
+#include "../../../src/impl/organizer_impl.hpp"
+#include "../../../src/impl/simple_chain_impl.hpp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class blockchain_impl
   : public blockchain
 {
 public:
-    // Used by internal components so need public definition here
+    // Used by internal components so need public definitions here
     typedef subscriber<
         const std::error_code&, uint64_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
     BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
-        const db_active_heights &active_heights=db_active_heights{0});
+        const db_active_heights& active_heights=db_active_heights{0},
+        size_t orphan_capacity=20);
     BCB_API ~blockchain_impl();
 
     // Non-copyable
@@ -90,24 +98,22 @@ public:
 
 private:
     typedef std::atomic<size_t> seqlock_type;
-
     typedef std::function<bool(uint64_t)> perform_read_functor;
 
     void initialize_lock(const std::string& prefix);
-
     void start_write();
 
     template <typename Handler, typename... Args>
     void stop_write(Handler handler, Args&&... args)
     {
         ++seqlock_;
+
         // seqlock is now even again.
         BITCOIN_ASSERT(seqlock_ % 2 == 0);
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(const block_type& block,
-        store_block_handler handle_store);
+    void do_store(const block_type& block, store_block_handler handle_store);
 
     // Uses sequence looks to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
@@ -119,6 +125,7 @@ private:
     {
         if (slock != seqlock_)
             return false;
+
         handler(std::forward<Args>(args)...);
         return true;
     }
@@ -127,32 +134,35 @@ private:
         fetch_handler_stealth handle_fetch, uint64_t from_height,
         uint64_t slock);
 
-    bool stopped_ = false;
-
     boost::asio::io_service& ios_;
+
     // Queue for writes to the blockchain.
     async_strand write_strand_;
+
     // Queue for serializing reorganization handler calls.
     async_strand reorg_strand_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;
+
     // seqlock used for writes.
     seqlock_type seqlock_;
+
+    // Is the blockchain stopped.
+    bool stopped_;
 
     // Main database core.
     db_paths db_paths_;
     db_interface interface_;
 
     // Organize stuff
-    orphans_pool_ptr orphans_;
-    simple_chain_ptr chain_;
-    organizer_ptr organize_;
-
+    orphans_pool orphans_;
+    simple_chain_impl chain_;
     reorganize_subscriber_type::ptr reorganize_subscriber_;
+    organizer_impl organizer_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

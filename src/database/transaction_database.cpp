@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 constexpr size_t number_buckets = 100000000;
 BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(number_buckets);
@@ -123,6 +123,6 @@ void transaction_database::sync()
     allocator_.sync();
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
