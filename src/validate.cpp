@@ -42,8 +42,17 @@ using boost::posix_time::from_time_t;
 using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
-constexpr size_t max_block_size = 1000000;
-constexpr size_t max_block_script_sig_operations = max_block_size / 50;
+constexpr uint32_t max_block_size = 1000000;
+constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
+
+// Every two weeks we readjust target
+constexpr uint64_t target_timespan = 14 * 24 * 60 * 60;
+
+// Aim for blocks every 10 mins
+constexpr uint64_t target_spacing = 10 * 60;
+
+// Two weeks worth of blocks = readjust interval = 2016
+constexpr uint64_t readjustment_interval = target_timespan / target_spacing;
 
 enum validation_options : uint32_t
 {
@@ -588,12 +597,13 @@ std::error_code validate_block::accept_block()
     return std::error_code();
 }
 
+// TODO: move to utils.
 template<typename Value>
 inline Value range_constraint(Value value, Value minimum, Value maximum)
 {
     if (value < minimum)
         return minimum;
-    else if (value > maximum)
+    if (value > maximum)
         return maximum;
     return value;
 }
@@ -601,20 +611,22 @@ inline Value range_constraint(Value value, Value minimum, Value maximum)
 uint32_t validate_block::work_required()
 {
 #ifdef ENABLE_TESTNET
-    auto last_non_special_bits = [this]
+    const auto last_non_special_bits = [this]
     {
         // Return the last non-special block
         block_header_type previous_block;
         size_t previous_height = height_;
+
         // Loop backwards until we find a difficulty change point,
         // or we find a block which does not have max_bits (is not special).
         while (true)
         {
             --previous_height;
-            previous_block = fetch_block(previous_height);
             if (previous_height % readjustment_interval == 0)
                break;
-            if (previous_block.bits != max_bits)
+
+            previous_block = fetch_block(previous_height);
+            if (previous_block.bits != max_work_bits)
                break;
         }
         return previous_block.bits;
@@ -622,14 +634,16 @@ uint32_t validate_block::work_required()
 #endif
 
     if (height_ == 0)
-        return max_bits;
-    else if (height_ % readjustment_interval != 0)
+        return max_work_bits;
+
+    if (height_ % readjustment_interval != 0)
     {
 #ifdef ENABLE_TESTNET
         uint32_t max_time_gap =
             fetch_block(height_ - 1).timestamp + 2 * target_spacing;
         if (current_block_.header.timestamp > max_time_gap)
-            return max_bits;
+            return max_work_bits;
+
         return last_non_special_bits();
 #else
         return previous_block_bits();
@@ -637,17 +651,16 @@ uint32_t validate_block::work_required()
     }
 
     // This is the total time it took for the last 2016 blocks.
-    uint64_t actual = actual_timespan(readjustment_interval);
+    const auto actual = actual_timespan(readjustment_interval);
+
     // Now constrain the time between an upper and lower bound.
-    uint32_t constrained_actual = static_cast<uint32_t>(range_constraint(
-        actual, target_timespan / 4, target_timespan * 4));
+    const auto constrained = range_constraint(
+        actual, target_timespan / 4, target_timespan * 4);
 
     hash_number retarget;
     retarget.set_compact(previous_block_bits());
-
-    retarget *= constrained_actual;
+    retarget *= constrained;
     retarget /= target_timespan;
-
     if (retarget > max_target())
         retarget = max_target();
 
@@ -659,22 +672,26 @@ bool validate_block::coinbase_height_match()
     // There are old blocks with version incorrectly set to 2. Ignore them.
     if (height_ < 237370)
         return true;
-    // Checks whether the block height is in the coinbase
-    // transaction input script.
+
+    // Checks whether the block height is in the coinbase tx input script.
     // Version 2 blocks and onwards.
     BITCOIN_ASSERT(current_block_.header.version >= 2);
     BITCOIN_ASSERT(current_block_.transactions.size() > 0);
     BITCOIN_ASSERT(current_block_.transactions[0].inputs.size() > 0);
+
     // First get the serialized coinbase input script as a series of bytes.
-    const script_type& coinbase_script =
-        current_block_.transactions[0].inputs[0].script;
-    const data_chunk raw_coinbase = save_script(coinbase_script);
+    const auto& coinbase_tx = current_block_.transactions[0];
+    const auto& coinbase_script = coinbase_tx.inputs[0].script;
+    const auto raw_coinbase = save_script(coinbase_script);
+
     // Try to recreate the expected bytes.
-    script_number expect_number(height_);
     script_type expect_coinbase;
+    script_number expect_number(height_);
     expect_coinbase.push_operation({opcode::special, expect_number.data()});
+
     // Save the expected coinbase script.
     const data_chunk expect = save_script(expect_coinbase);
+
     // Perform comparison of the first bytes with raw_coinbase.
     BITCOIN_ASSERT(expect.size() <= raw_coinbase.size());
     return std::equal(expect.begin(), expect.end(), raw_coinbase.begin());
@@ -694,40 +711,43 @@ std::error_code validate_block::connect_block()
             ++tx_index)
     {
         uint64_t value_in = 0;
-        const transaction_type& tx = current_block_.transactions[tx_index];
+        const auto& tx = current_block_.transactions[tx_index];
         total_sigops += tx_legacy_sigops_count(tx);
         if (total_sigops > max_block_script_sig_operations)
             return error::too_many_sigs;
+
         // Count sigops for tx 0, but we don't perform
         // the other checks on coinbase tx.
         if (is_coinbase(tx))
             continue;
+
         if (!validate_inputs(tx, tx_index, value_in, total_sigops))
             return error::validate_inputs_failed;
+
         if (!validate_transaction::tally_fees(tx, value_in, fees))
             return error::fees_out_of_range;
     }
-    uint64_t coinbase_value =
-        total_output_value(current_block_.transactions[0]);
-    if (coinbase_value  > block_value(height_) + fees)
+
+    uint64_t coinbase_value = total_output_value(current_block_.transactions[0]);
+    if (coinbase_value > block_value(height_) + fees)
         return error::coinbase_too_large;
+
     return std::error_code();
 }
 
 bool validate_block::not_duplicate_or_spent(const transaction_type& tx)
 {
-    const hash_digest& tx_hash = hash_transaction(tx);
+    const auto& tx_hash = hash_transaction(tx);
+
     // Is there a matching previous tx?
     if (!transaction_exists(tx_hash))
         return true;
-    // Then for a duplicate transaction to exist, all its outputs
-    // must have been spent.
-    for (uint32_t output_index = 0; output_index < tx.outputs.size();
-        ++output_index)
-    {
-        if (!is_output_spent({tx_hash, output_index}))
+
+    // For a duplicate tx to exist, all its outputs must have been spent.
+    for (uint32_t output = 0; output < tx.outputs.size(); ++output)
+        if (!is_output_spent({tx_hash, output}))
             return false;
-    }
+
     return true;
 }
 
@@ -754,10 +774,12 @@ size_t script_hash_signature_operations_count(
 {
     if (output_script.type() != payment_type::script_hash)
         return 0;
+
     if (input_script.operations().empty())
         return 0;
-    const data_chunk& last_data = input_script.operations().back().data;
-    script_type eval_script = parse_script(last_data);
+
+    const auto& last_data = input_script.operations().back().data;
+    const auto eval_script = parse_script(last_data);
     return count_script_sigops(eval_script.operations(), true);
 }
 
@@ -765,19 +787,21 @@ bool validate_block::connect_input(size_t index_in_parent,
     const transaction_type& current_tx, size_t input_index, uint64_t& value_in,
     size_t& total_sigops)
 {
-    // Lookup previous output
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
-    const transaction_input_type& input = current_tx.inputs[input_index];
-    const output_point& previous_output = input.previous_output;
-    transaction_type previous_tx;
+
+    // Lookup previous output
     size_t previous_height;
+    transaction_type previous_tx;
+    const auto& input = current_tx.inputs[input_index];
+    const auto& previous_output = input.previous_output;
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
         log_warning(LOG_VALIDATE) << "Unable to fetch input transaction";
         return false;
     }
-    const transaction_output_type& previous_tx_out =
-        previous_tx.outputs[previous_output.index];
+
+    const auto& previous_tx_out = previous_tx.outputs[previous_output.index];
+
     // Signature operations count if script_hash payment type.
     try
     {
@@ -789,11 +813,13 @@ bool validate_block::connect_input(size_t index_in_parent,
         log_warning(LOG_VALIDATE) << "Parsing eval script failed.";
         return false;
     }
+
     if (total_sigops > max_block_script_sig_operations)
     {
         log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum";
         return false;
     }
+
     // Get output amount
     uint64_t output_value = previous_tx_out.value;
     if (output_value > max_money())
@@ -801,6 +827,7 @@ bool validate_block::connect_input(size_t index_in_parent,
         log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum";
         return false;
     }
+
     // Check coinbase maturity has been reached
     if (is_coinbase(previous_tx))
     {
@@ -812,18 +839,21 @@ bool validate_block::connect_input(size_t index_in_parent,
             return false;
         }
     }
+
     if (!validate_consensus(previous_tx_out.script, current_tx, input_index,
         current_block_.header, height_))
     {
         log_warning(LOG_VALIDATE) << "Input script consensus validation failed";
         return false;
     }
+
     // Search for double spends
     if (is_output_spent(previous_output, index_in_parent, input_index))
     {
         log_warning(LOG_VALIDATE) << "Double spend detected";
         return false;
     }
+
     // Increase value_in by this output's value
     value_in += output_value;
     if (value_in > max_money())

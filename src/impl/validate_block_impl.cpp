@@ -43,6 +43,7 @@ block_header_type validate_block_impl::fetch_block(size_t fetch_height)
         BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
         return orphan_chain_[fetch_index]->actual().header;
     }
+
     // We only really need the bits and timestamp fields.
     auto result = interface_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);
@@ -55,15 +56,13 @@ uint32_t validate_block_impl::previous_block_bits()
     return fetch_block(height_ - 1).bits;
 }
 
-uint64_t validate_block_impl::actual_timespan(const uint64_t interval)
+uint64_t validate_block_impl::actual_timespan(size_t interval)
 {
-    // Warning: conversion from 'uint64_t' to 'uint32_t', 
-    // possible loss of data in fetch_block parameterization.
-    BITCOIN_ASSERT(interval <= UINT32_MAX);
+    BITCOIN_ASSERT(height_ > 0 && height_ >= interval);
 
     // height - interval and height - 1, return time difference
     return fetch_block(height_ - 1).timestamp -
-        fetch_block(height_ - (uint32_t)interval).timestamp;
+        fetch_block(height_ - interval).timestamp;
 }
 
 uint64_t validate_block_impl::median_time_past()
