@@ -24,7 +24,7 @@
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 constexpr size_t number_buckets = 600000;
 BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(number_buckets);
@@ -188,6 +188,6 @@ position_type block_database::read_position(const index_type index) const
     return from_little_endian_unsafe<position_type>(record);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

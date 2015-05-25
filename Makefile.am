@@ -55,11 +55,8 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/database/mman-win32/mman.h \
     src/impl/blockchain_impl.cpp \
     src/impl/organizer_impl.cpp \
-    src/impl/organizer_impl.hpp \
     src/impl/simple_chain_impl.cpp \
-    src/impl/simple_chain_impl.hpp \
-    src/impl/validate_block_impl.cpp \
-    src/impl/validate_block_impl.hpp
+    src/impl/validate_block_impl.cpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -285,8 +282,11 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/db_interface.hpp \
     include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/organizer.hpp \
+    include/bitcoin/blockchain/organizer_impl.hpp \
+    include/bitcoin/blockchain/simple_chain_impl.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate.hpp \
+    include/bitcoin/blockchain/validate_block_impl.hpp \
     include/bitcoin/blockchain/version.hpp
 
 include_bitcoin_blockchain_databasedir = ${includedir}/bitcoin/blockchain/database

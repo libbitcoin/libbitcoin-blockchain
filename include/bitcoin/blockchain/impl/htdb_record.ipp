@@ -25,7 +25,7 @@
 #include "remainder.ipp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 template <typename HashType>
 htdb_record<HashType>::htdb_record(
@@ -130,7 +130,7 @@ void htdb_record<HashType>::release(
     previous_item.write_next_index(item.next_index());
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

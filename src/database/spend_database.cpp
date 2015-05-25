@@ -22,7 +22,7 @@
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 constexpr size_t number_buckets = 228110589;
 BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
@@ -134,6 +134,6 @@ spend_statinfo spend_database::statinfo() const
     };
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -17,39 +17,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
-#define LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
+#ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_CHAIN_KEEPER_H
+#define LIBBITCOIN_BLOCKCHAIN_IMPL_CHAIN_KEEPER_H
 
+#include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-#include "simple_chain_impl.hpp"
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
-class organizer_impl
-  : public organizer
+class simple_chain_impl
+  : public simple_chain
 {
 public:
-    typedef blockchain::reorganize_handler reorganize_handler;
-
-    organizer_impl(db_interface& interface,
-        orphans_pool_ptr orphans, simple_chain_ptr chain,
-        reorganize_handler handler);
-
-protected:
-    std::error_code verify(size_t fork_index,
-        const block_detail_list& orphan_chain, size_t orphan_index);
-    void reorganize_occured(
-        size_t fork_point,
-        const blockchain::block_list& arrivals,
-        const blockchain::block_list& replaced);
+    simple_chain_impl(db_interface& database);
+    void append(block_detail_ptr incoming_block);
+    size_t find_height(const hash_digest& search_block_hash);
+    hash_number sum_difficulty(size_t begin_index);
+    bool release(size_t begin_index, block_detail_list& released_blocks);
 
 private:
     db_interface& interface_;
-    reorganize_handler handler_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

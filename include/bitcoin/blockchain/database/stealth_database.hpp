@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 class stealth_database
 {
@@ -85,7 +85,7 @@ private:
     record_allocator rows_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

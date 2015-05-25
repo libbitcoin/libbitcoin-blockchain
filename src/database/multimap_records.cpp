@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/database/multimap_records.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 multimap_records_iterator::multimap_records_iterator(
     const linked_records& linked_rows, index_type index)
@@ -58,6 +58,6 @@ bool operator!=(
     return iter_a.index_ != iter_b.index_;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
   : file_(file), start_(sector_start), size_(0)
@@ -94,6 +94,6 @@ void slab_allocator::write_size()
     serial.write_little_endian(size_);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

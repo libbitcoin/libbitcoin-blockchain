@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 record_allocator::record_allocator(mmfile& file, position_type sector_start,
     size_t record_size)
@@ -119,6 +119,6 @@ void record_allocator::count(const index_type records)
     count_ = records;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 

@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct transaction_metainfo
 {
@@ -118,7 +118,7 @@ private:
     map_type map_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

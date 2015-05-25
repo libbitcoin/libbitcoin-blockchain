@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -17,19 +17,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "organizer_impl.hpp"
+#include <bitcoin/blockchain/organizer_impl.hpp>
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoints.hpp>
-#include "validate_block_impl.hpp"
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
-organizer_impl::organizer_impl(db_interface& interface,
-    orphans_pool_ptr orphans, simple_chain_ptr chain,
-    reorganize_handler handler)
-  : organizer(orphans, chain), interface_(interface), handler_(handler)
+organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
+    simple_chain& chain, reorganize_handler handler)
+  : organizer(orphans, chain), interface_(database), handler_(handler)
 {
 }
 
@@ -37,32 +36,36 @@ std::error_code organizer_impl::verify(size_t fork_index,
     const block_detail_list& orphan_chain, size_t orphan_index)
 {
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
-    const block_type& current_block = orphan_chain[orphan_index]->actual();
+    const auto& current_block = orphan_chain[orphan_index]->actual();
     const size_t height = fork_index + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
+
     validate_block_impl validate(interface_, fork_index, orphan_chain,
         orphan_index, height, current_block);
+
     // Perform checks.
-    std::error_code ec;
-    ec = validate.check_block();
-    if (ec)
-        return ec;
-    ec = validate.accept_block();
-    if (ec)
-        return ec;
+    auto code = validate.check_block();
+    if (code)
+        return code;
+
+    code = validate.accept_block();
+    if (code)
+        return code;
+
     // Skip non-essential checks if before last checkpoint.
     if (fork_index < block_validation_cutoff_height)
         return std::error_code();
+
     // Perform strict but slow tests - connect_block()
     return validate.connect_block();
 }
-void organizer_impl::reorganize_occured(
-    size_t fork_point,
+
+void organizer_impl::reorganize_occured(size_t fork_point,
     const blockchain::block_list& arrivals,
     const blockchain::block_list& replaced)
 {
     handler_(std::error_code(), fork_point, arrivals, replaced);
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -17,18 +17,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "validate_block_impl.hpp"
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 validate_block_impl::validate_block_impl(
-    db_interface& interface, int fork_index,
+    db_interface& database, int fork_index,
     const block_detail_list& orphan_chain, int orphan_index,
     size_t height, const block_type& current_block)
-  : validate_block(height, current_block), interface_(interface),
+  : validate_block(height, current_block), interface_(database),
     height_(height), fork_index_(fork_index),
     orphan_index_(orphan_index), orphan_chain_(orphan_chain)
 {
@@ -187,5 +187,5 @@ bool validate_block_impl::orphan_is_spent(
     return false;
 }
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin

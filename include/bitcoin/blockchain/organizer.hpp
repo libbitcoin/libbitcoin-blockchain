@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 /**
  * Dependency graph:
@@ -55,7 +55,7 @@ class block_detail
 {
 public:
     block_detail(const block_type& actual_block);
-    block_detail(const block_header_type& header);
+    block_detail(const block_header_type& actual_block_header);
     block_type& actual();
     const block_type& actual() const;
     std::shared_ptr<block_type> actual_ptr() const;
@@ -64,19 +64,15 @@ public:
     const hash_digest& hash() const;
     void set_info(const block_info& replace_info);
     const block_info& info() const;
-    void set_error(const std::error_code& ec);
+    void set_error(const std::error_code& code);
     const std::error_code& error() const;
+
 private:
     std::shared_ptr<block_type> actual_block_;
     const hash_digest block_hash_;
-    bool processed_ = false;
-
-    // Syntax change is woraround for compiler bug as of VS2013 C++11 NOV CTP:
-    // http://connect.microsoft.com/VisualStudio/feedback/details/792161/constructor-initializer-list-does-not-support-braced-init-list-form
-    // block_info info_{block_status::orphan, 0};
-    block_info info_ = block_info{block_status::orphan, 0};
-
-    std::error_code ec_;
+    bool processed_;
+    block_info info_;
+    std::error_code code_;
 };
 
 typedef std::shared_ptr<block_detail> block_detail_ptr;
@@ -86,11 +82,12 @@ typedef std::vector<block_detail_ptr> block_detail_list;
 class orphans_pool
 {
 public:
-    orphans_pool(size_t pool_size);
+    orphans_pool(size_t pool_size=20);
     bool add(block_detail_ptr incoming_block);
     block_detail_list trace(block_detail_ptr end_block);
     block_detail_list unprocessed();
     void remove(block_detail_ptr remove_block);
+
 private:
     boost::circular_buffer<block_detail_ptr> pool_;
 };
@@ -116,38 +113,35 @@ typedef std::shared_ptr<simple_chain> simple_chain_ptr;
 class organizer
 {
 public:
-    organizer(orphans_pool_ptr orphans, simple_chain_ptr chain);
+    organizer(orphans_pool& orphans, simple_chain& chain);
 
     void start();
 
 protected:
     virtual std::error_code verify(size_t fork_index,
         const block_detail_list& orphan_chain, size_t orphan_index) = 0;
-    virtual void reorganize_occured(
-        size_t fork_point,
+    virtual void reorganize_occured(size_t fork_point,
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced) = 0;
 
 private:
     void process(block_detail_ptr process_block);
     void replace_chain(size_t fork_index, block_detail_list& orphan_chain);
-    void clip_orphans(block_detail_list& orphan_chain,
-        size_t orphan_index, const std::error_code& invalid_reason);
+    void clip_orphans(block_detail_list& orphan_chain, size_t orphan_index,
+        const std::error_code& invalid_reason);
     void notify_reorganize(
         size_t fork_point,
         const block_detail_list& orphan_chain,
         const block_detail_list& replaced_slice);
 
-    orphans_pool_ptr orphans_;
-    simple_chain_ptr chain_;
-
+    orphans_pool& orphans_;
+    simple_chain& chain_;
     block_detail_list process_queue_;
 };
 
 typedef std::shared_ptr<organizer> organizer_ptr;
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif
-

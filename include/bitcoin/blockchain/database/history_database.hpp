@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/multimap_records.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct history_statinfo
 {
@@ -117,7 +117,7 @@ private:
     multimap_type map_;
 };
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

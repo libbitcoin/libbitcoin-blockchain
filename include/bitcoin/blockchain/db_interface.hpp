@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
@@ -29,13 +29,12 @@
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 
 namespace libbitcoin {
-    namespace chain {
+namespace chain {
 
 struct db_paths
 {
     BCB_API db_paths(const boost::filesystem::path& prefix);
-
-    BCB_API void touch_all() const;
+    BCB_API bool touch_all() const;
 
     boost::filesystem::path blocks_lookup;
     boost::filesystem::path blocks_rows;
@@ -54,7 +53,7 @@ struct db_active_heights
     const size_t history;
 };
 
-BCB_API void touch_file(const boost::filesystem::path& file);
+BCB_API bool touch_file(const boost::filesystem::path& file);
 
 class db_interface
 {
@@ -101,9 +100,9 @@ private:
  * Convenience function to create a new blockchain with a given
  * prefix and default paths.
  */
-BCB_API void initialize_blockchain(const boost::filesystem::path& prefix);
+BCB_API bool initialize_blockchain(const boost::filesystem::path& prefix);
 
-    } // namespace chain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif

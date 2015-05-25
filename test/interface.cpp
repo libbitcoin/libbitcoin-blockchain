@@ -205,11 +205,10 @@ void compare_blocks(const block_type& popped, const block_type& original)
 BOOST_AUTO_TEST_CASE(pushpop)
 {
     // This test causes Travis run failures for performance reasons.
-    set_thread_priority(thread_priority::low);
 
     const std::string prefix = "chain";
     boost::filesystem::create_directory(prefix);
-    initialize_blockchain(prefix);
+    BOOST_REQUIRE(initialize_blockchain(prefix));
 
     db_paths paths(prefix);
     db_interface interface(paths, {0});
