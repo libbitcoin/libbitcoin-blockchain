@@ -32,7 +32,7 @@ namespace blockchain {
 class block_result
 {
 public:
-    block_result(const slab_type slab);
+    block_result(const slab_type slab, uint64_t size_limit);
 
     /**
      * Test whether the result exists, return false otherwise.
@@ -61,6 +61,7 @@ public:
 
 private:
     const slab_type slab_;
+    uint64_t size_limit_;
 };
 
 typedef std::vector<index_type> transaction_index_list;

@@ -126,7 +126,7 @@ int main(int argc, char** argv)
         std::cout << "height: " << result.height() << std::endl;
         std::cout << "index: " << result.index() << std::endl;
         auto tx = result.transaction();
-        data_chunk data = tx;
+        data_chunk data = tx.to_data();
         std::cout << "tx: " << encode_base16(data) << std::endl;
     }
     else if (command == "store")
@@ -142,7 +142,10 @@ int main(int argc, char** argv)
         if (!parse_uint(info.index, args[1]))
             return -1;
         data_chunk data = decode_hex(args[2]);
-        chain::transaction tx(data);
+        chain::transaction tx;
+
+        if (!tx.from_data(data))
+            throw end_of_stream();
 
         db.start();
         db.store(info, tx);

@@ -293,6 +293,7 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/genesis_block.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphans_pool.hpp \
+    include/bitcoin/blockchain/pointer_array_source.hpp \
     include/bitcoin/blockchain/simple_chain.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
