@@ -63,6 +63,23 @@ slab_type slab_allocator::get(position_type position) const
     return data(position);
 }
 
+
+// retrieve eof/memory boundary
+uint64_t slab_allocator::to_eof(slab_type slab) const
+{
+    uint64_t result = 0;
+
+    if (slab > file_.data())
+    {
+        uint64_t offset_position = (slab - file_.data());
+
+        if (offset_position < file_.size())
+            result = file_.size() - offset_position;
+    }
+
+    return result;
+}
+
 // File data access, by byte-wise position relative to start.
 uint8_t* slab_allocator::data(const position_type position) const
 {

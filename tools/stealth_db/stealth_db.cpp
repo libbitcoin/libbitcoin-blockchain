@@ -141,7 +141,8 @@ int main(int argc, char** argv)
         }
         // bitfield
         std::string script_str(args[0]);
-        chain::script script(script_str);
+        chain::script script;
+        script.from_string(script_str);
         stealth_row row;
         // ephemkey
         if (!decode_hash(row.ephemkey, args[1]))

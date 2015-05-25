@@ -75,11 +75,11 @@ bool parse_point(Point& point, const std::string& arg)
         std::cerr << "spend_db: bad point provided." << std::endl;
         return false;
     }
-    point.hash(hash);
+    point.hash = hash;
     const std::string& index_string = strs[1];
     try
     {
-        point.index(boost::lexical_cast<uint32_t>(index_string));
+        point.index = boost::lexical_cast<uint32_t>(index_string);
     }
     catch (const boost::bad_lexical_cast&)
     {

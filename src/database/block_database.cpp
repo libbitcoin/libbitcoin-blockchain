@@ -20,7 +20,9 @@
 #include <bitcoin/blockchain/database/block_database.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/pointer_array_source.hpp>
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
@@ -42,16 +44,21 @@ BC_CONSTEXPR position_type allocator_offset = header_size;
 //  [ [ tx_hash:32 ] ]
 //  [ [    ...     ] ]
 
-template <typename Iterator>
-chain::block_header deserialize(const Iterator first)
+chain::block_header deserialize_header(const slab_type begin, uint64_t length)
 {
-    auto deserial = make_deserializer_unsafe(first);
-    chain::block_header header(deserial);
+    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
+    istream.exceptions(std::ios_base::failbit);
+    chain::block_header header;
+    header.from_data(istream);
+
+//    if (!istream)
+//        throw end_of_stream();
+
     return header;
 }
 
-block_result::block_result(const slab_type slab)
-  : slab_(slab)
+block_result::block_result(const slab_type slab, uint64_t size_limit)
+  : slab_(slab), size_limit_(size_limit)
 {
 }
 
@@ -63,7 +70,7 @@ block_result::operator bool() const
 chain::block_header block_result::header() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
-    return deserialize(slab_);
+    return deserialize_header(slab_, size_limit_);
 }
 
 size_t block_result::height() const
@@ -119,17 +126,17 @@ void block_database::start()
 block_result block_database::get(const size_t height) const
 {
     if (height >= index_.count())
-        return block_result(nullptr);
+        return block_result(nullptr, 0);
 
     const auto position = read_position(height);
     const auto slab = allocator_.get(position);
-    return block_result(slab);
+    return block_result(slab, allocator_.to_eof(slab));
 }
 
 block_result block_database::get(const hash_digest& hash) const
 {
     const auto slab = map_.get(hash);
-    return block_result(slab);
+    return block_result(slab, allocator_.to_eof(slab));
 }
 
 void block_database::store(const chain::block& block)
@@ -142,7 +149,7 @@ void block_database::store(const chain::block& block)
     const auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        data_chunk header_data = block.header();
+        data_chunk header_data = block.header.to_data();
         serial.write_data(header_data);
         serial.write_4_bytes(height);
         serial.write_4_bytes(number_txs32);

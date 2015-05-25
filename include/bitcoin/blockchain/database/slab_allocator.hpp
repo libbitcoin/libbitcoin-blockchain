@@ -75,6 +75,11 @@ public:
      */
     slab_type get(position_type position) const;
 
+    /**
+     * Return distance from slab to eof providing a read boundary.
+     */
+    BCB_API uint64_t to_eof(slab_type slab) const;
+
 private:
     /// File data access, by byte-wise position relative to start.
     uint8_t* data(const position_type position) const;

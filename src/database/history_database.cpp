@@ -20,6 +20,8 @@
 #include <bitcoin/blockchain/database/history_database.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <bitcoin/blockchain/pointer_array_source.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -74,7 +76,7 @@ void history_database::add_output(
     {
         auto serial = make_serializer(data);
         serial.write_byte(0);
-        data_chunk raw_outpoint = outpoint;
+        data_chunk raw_outpoint = outpoint.to_data();
         serial.write_data(raw_outpoint);
         serial.write_4_bytes(output_height);
         serial.write_8_bytes(value);
@@ -90,7 +92,7 @@ void history_database::add_spend(
     {
         auto serial = make_serializer(data);
         serial.write_byte(1);
-        data_chunk raw_spend = spend;
+        data_chunk raw_spend = spend.to_data();
         serial.write_data(raw_spend);
         serial.write_4_bytes(spend_height);
         serial.write_8_bytes(spend_checksum(previous));
@@ -123,20 +125,27 @@ history_list history_database::get(const short_hash& key,
 
     // Read a row from the data into the history list.
     history_list history;
-    auto read_row = [&history](const uint8_t* data)
+    auto read_row = [&history](const uint8_t* data, std::streamsize length)
     {
-        auto deserial = make_deserializer_unsafe(data);
-        return history_row
-        {
+        boost::iostreams::stream<byte_pointer_array_source> istream(data, length);
+        istream.exceptions(std::ios_base::failbit);
+
+        history_row result{
             // output or spend?
-            marker_to_id(deserial.read_byte()),
+            marker_to_id(read_byte(istream)),
             // point
-            chain::point(deserial),
+            chain::point::factory_from_data(istream),
             // height
-            deserial.read_4_bytes(),
+            read_4_bytes(istream),
             // value or checksum
-            deserial.read_8_bytes()
+            read_8_bytes(istream)
         };
+
+//        if (!istream)
+//            throw end_of_stream();
+
+        return result;
+>>>>>>> Integrate iostream based deserialization.
     };
     const index_type start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
@@ -149,7 +158,7 @@ history_list history_database::get(const short_hash& key,
         if (from_height && read_height(data) < from_height)
             continue;
         // Read this row into the list.
-        history.emplace_back(read_row(data));
+        history.emplace_back(read_row(data, value_size));
     }
 
     return history;
