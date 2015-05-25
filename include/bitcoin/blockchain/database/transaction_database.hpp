@@ -37,7 +37,7 @@ struct transaction_metainfo
 class transaction_result
 {
 public:
-    transaction_result(const slab_type slab);
+    transaction_result(const slab_type slab, uint64_t size_limit);
 
     /**
      * Test whether the result exists, return false otherwise.
@@ -62,6 +62,7 @@ public:
 private:
 
     const slab_type slab_;
+    uint64_t size_limit_;
 };
 
 /**

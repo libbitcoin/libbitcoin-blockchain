@@ -20,7 +20,9 @@
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/pointer_array_source.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -31,16 +33,21 @@ BC_CONSTEXPR size_t initial_map_file_size = header_size + min_slab_fsize;
 
 BC_CONSTEXPR position_type alloc_offset = header_size;
 
-template <typename Iterator>
-chain::transaction deserialize(const Iterator first)
+chain::transaction deserialize_tx(const slab_type begin, uint64_t length)
 {
-    auto deserial = make_deserializer_unsafe(first);
-    chain::transaction tx(deserial);
+    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
+    istream.exceptions(std::ios_base::failbit);
+    chain::transaction tx;
+    tx.from_data(istream);
+
+//    if (!istream)
+//        throw end_of_stream();
+
     return tx;
 }
 
-transaction_result::transaction_result(const slab_type slab)
-  : slab_(slab)
+transaction_result::transaction_result(const slab_type slab, uint64_t size_limit)
+  : slab_(slab), size_limit_(size_limit)
 {
 }
 
@@ -64,7 +71,7 @@ size_t transaction_result::index() const
 chain::transaction transaction_result::transaction() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
-    return deserialize(slab_ + 8);
+    return deserialize_tx(slab_ + 8, size_limit_ - 8);
 }
 
 transaction_database::transaction_database(
@@ -93,7 +100,7 @@ void transaction_database::start()
 transaction_result transaction_database::get(const hash_digest& hash) const
 {
     const slab_type slab = map_.get(hash);
-    return transaction_result(slab);
+    return transaction_result(slab, allocator_.to_eof(slab));
 }
 
 void transaction_database::store(
@@ -107,7 +114,7 @@ void transaction_database::store(
         auto serial = make_serializer(data);
         serial.write_4_bytes(info.height);
         serial.write_4_bytes(info.index);
-        data_chunk tx_data = tx;
+        data_chunk tx_data = tx.to_data();
         serial.write_data(tx_data);
     };
     map_.store(key, write, value_size);

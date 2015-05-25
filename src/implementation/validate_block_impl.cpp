@@ -43,7 +43,7 @@ chain::block_header validate_block_impl::fetch_block(size_t fetch_height)
         const auto fetch_index = fetch_height - fork_index_ - 1;
         BITCOIN_ASSERT(fetch_index <= orphan_index_);
         BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
-        return orphan_chain_[fetch_index]->actual().header();
+        return orphan_chain_[fetch_index]->actual().header;
     }
 
     // We only really need the bits and timestamp fields.
@@ -55,7 +55,7 @@ chain::block_header validate_block_impl::fetch_block(size_t fetch_height)
 uint32_t validate_block_impl::previous_block_bits()
 {
     // Read block d - 1 and return bits
-    return fetch_block(height_ - 1).bits();
+    return fetch_block(height_ - 1).bits;
 }
 
 uint64_t validate_block_impl::actual_timespan(size_t interval)
@@ -124,7 +124,7 @@ bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
     {
         const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
 
-        for (const chain::transaction& orphan_tx: orphan_block.transactions())
+        for (const chain::transaction& orphan_tx: orphan_block.transactions)
         {
             if (orphan_tx.hash() == tx_hash)
             {
@@ -164,13 +164,13 @@ bool validate_block_impl::orphan_is_spent(
         BITCOIN_ASSERT(orphan_block.transactions.size() >= 1);
         BITCOIN_ASSERT(orphan_block.transactions[0].is_coinbase());
 
-        for (size_t tx_index = 0; tx_index < orphan_block.transactions().size();
+        for (size_t tx_index = 0; tx_index < orphan_block.transactions.size();
             ++tx_index)
         {
             // TODO: too deep, move this section to subfunction.
             const auto& orphan_tx = orphan_block.transactions[tx_index];
 
-            for (size_t input_index = 0; input_index < orphan_tx.inputs().size();
+            for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
                 ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
