@@ -93,15 +93,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp">
-      <Filter>src\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\impl\validate_block_impl.hpp">
-      <Filter>src\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp">
-      <Filter>src\impl</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -155,6 +146,15 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\multimap_records.hpp">
       <Filter>include\bitcoin\blockchain\database\record</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
