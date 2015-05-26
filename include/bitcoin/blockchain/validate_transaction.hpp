@@ -66,25 +66,24 @@ private:
 
     // Used for checking coinbase maturity
     void set_last_height(const std::error_code& ec, size_t last_height);
+
     // Begin looping through the inputs, fetching the previous tx
     void next_previous_transaction();
     void previous_tx_index(const std::error_code& ec, size_t parent_height);
+
     // If previous_tx_index didn't find it then check in pool instead
     void search_pool_previous_tx();
     void handle_previous_tx(const std::error_code& ec,
         const transaction_type& previous_tx, size_t parent_height);
-    // After running connect_input, we check whether this
-    // validated previous output wasn't already spent by
-    // another input in the blockchain.
+
+    // After running connect_input, we check whether this validated previous
+    // output was not already spent by another input in the blockchain.
     // is_spent() earlier already checked in the pool.
     void check_double_spend(const std::error_code& ec);
-    // next_previous_transaction();
-
     void check_fees();
 
     async_strand& strand_;
     blockchain& chain_;
-
     const transaction_type tx_;
     const hash_digest tx_hash_;
     const pool_buffer& pool_;

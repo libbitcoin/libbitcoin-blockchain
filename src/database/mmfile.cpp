@@ -136,7 +136,7 @@ bool mmfile::resize(size_t new_size)
         return false;
 
     const auto message = format("Resizing: %1% [%2%]") % filename_ % new_size;
-    log_info(LOG_BLOCKCHAIN) << message.str();
+    log_debug(LOG_BLOCKCHAIN) << message.str();
 
     // Readjust memory map.
 #ifdef MREMAP_MAYMOVE

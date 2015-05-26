@@ -28,59 +28,57 @@
 namespace libbitcoin {
 namespace chain {
 
-class stealth_database
+class BCB_API stealth_database
 {
 public:
     typedef std::function<void (uint8_t*)> write_function;
 
-    BCB_API stealth_database(const boost::filesystem::path& index_filename,
+    stealth_database(const boost::filesystem::path& index_filename,
         const boost::filesystem::path& rows_filename);
 
     /**
      * Initialize a new stealth database.
      */
-    BCB_API void create();
+    void create();
 
     /**
      * You must call start() before using the database.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Linearly scans all entries starting at from_height.
      */
-    BCB_API stealth_list scan(
-        const binary_type& prefix, const size_t from_height) const;
+    stealth_list scan(const binary_type& prefix, size_t from_height) const;
 
     /**
      * Add a stealth row to the database.
      */
-    BCB_API void store(
-        const script_type& stealth_script, const stealth_row& row);
+    void store(const script_type& stealth_script, const stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.
      */
-    BCB_API void unlink(const size_t from_height);
+    void unlink(size_t from_height);
 
     /**
      * Synchronise storage with disk so things are consistent.
      * Should be done at the end of every block write.
      */
-    BCB_API void sync();
+    void sync();
 
 private:
     void write_index();
-    index_type read_index(const size_t from_height) const;
+    index_type read_index(size_t from_height) const;
 
     index_type block_start_;
 
-    /// Table used for jumping to rows by height.
-    /// Resolves to a index within the rows.
+    // Table used for jumping to rows by height.
+    // Resolves to a index within the rows.
     mmfile index_file_;
     record_allocator index_;
 
-    /// Actual row entries containing stealth tx data.
+    // Actual row entries containing stealth tx data.
     mmfile rows_file_;
     record_allocator rows_;
 };

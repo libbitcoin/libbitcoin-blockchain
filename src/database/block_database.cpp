@@ -105,7 +105,6 @@ void block_database::create()
     map_file_.resize(initial_map_file_size);
     header_.create(number_buckets);
     allocator_.create();
-
     index_file_.resize(min_records_fsize);
     index_.create();
 }
@@ -121,37 +120,42 @@ block_result block_database::get(const size_t height) const
 {
     if (height >= index_.count())
         return block_result(nullptr);
-    const position_type position = read_position(height);
-    const slab_type slab = allocator_.get(position);
+
+    const auto position = read_position(height);
+    const auto slab = allocator_.get(position);
     return block_result(slab);
 }
 
 block_result block_database::get(const hash_digest& hash) const
 {
-    const slab_type slab = map_.get(hash);
+    const auto slab = map_.get(hash);
     return block_result(slab);
 }
 
 void block_database::store(const block_type& block)
 {
-    const size_t height = index_.count();
+    const uint32_t height = index_.count();
+    const auto number_txs = block.transactions.size();
+    const uint32_t number_txs32 = static_cast<uint32_t>(number_txs);
+
     // Write block data.
-    const hash_digest key = hash_block_header(block.header);
-    const size_t number_txs = block.transactions.size();
-    const size_t value_size = 80 + 4 + 4 + number_txs * hash_size;
-    auto write = [&](uint8_t* data)
+    const auto write = [&](uint8_t* data)
     {
         satoshi_save(block.header, data);
         auto serial = make_serializer(data + 80);
         serial.write_4_bytes(height);
-        serial.write_4_bytes(number_txs);
-        for (const transaction_type& tx: block.transactions)
+        serial.write_4_bytes(number_txs32);
+        for (const auto& tx: block.transactions)
         {
-            const hash_digest tx_hash = hash_transaction(tx);
+            const auto tx_hash = hash_transaction(tx);
             serial.write_hash(tx_hash);
         }
     };
-    const position_type position = map_.store(key, write, value_size);
+
+    const auto key = hash_block_header(block.header);
+    const auto value_size = 80 + 4 + 4 + number_txs * hash_size;
+    const auto position = map_.store(key, write, value_size);
+
     // Write height -> position mapping.
     write_position(position);
 }
@@ -171,20 +175,21 @@ size_t block_database::last_height() const
 {
     if (index_.count() == 0)
         return null_height;
+
     return index_.count() - 1;
 }
 
 void block_database::write_position(const position_type position)
 {
-    const index_type record = index_.allocate();
-    record_type data = index_.get(record);
+    const auto record = index_.allocate();
+    const auto data = index_.get(record);
     auto serial = make_serializer(data);
     serial.write_8_bytes(position);
 }
 
 position_type block_database::read_position(const index_type index) const
 {
-    record_type record = index_.get(index);
+    const auto record = index_.get(index);
     return from_little_endian_unsafe<position_type>(record);
 }
 

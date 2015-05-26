@@ -334,8 +334,8 @@ std::error_code validate_block::connect_block()
 
     uint64_t fees = 0;
     size_t total_sigops = 0;
-    for (size_t tx_index = 0; tx_index < current_block_.transactions.size();
-            ++tx_index)
+    const auto count = current_block_.transactions.size();
+    for (size_t tx_index = 0; tx_index < count; ++tx_index)
     {
         uint64_t value_in = 0;
         const auto& tx = current_block_.transactions[tx_index];
@@ -355,7 +355,8 @@ std::error_code validate_block::connect_block()
             return error::fees_out_of_range;
     }
 
-    uint64_t coinbase_value = total_output_value(current_block_.transactions[0]);
+    const auto& coinbase = current_block_.transactions[0];
+    const auto coinbase_value = total_output_value(coinbase);
     if (coinbase_value > block_value(height_) + fees)
         return error::coinbase_too_large;
 

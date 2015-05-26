@@ -96,27 +96,28 @@ void spend_database::start()
 
 spend_result spend_database::get(const output_point& outpoint) const
 {
-    const hash_digest key = output_to_hash(outpoint);
-    const record_type record = map_.get(key);
+    const auto key = output_to_hash(outpoint);
+    const auto record = map_.get(key);
     return spend_result(record);
 }
 
-void spend_database::store(
-    const output_point& outpoint, const input_point& spend)
+void spend_database::store(const output_point& outpoint,
+    const input_point& spend)
 {
-    const hash_digest key = output_to_hash(outpoint);
-    auto write = [&spend](uint8_t* data)
+    const auto write = [&spend](uint8_t* data)
     {
         auto serial = make_serializer(data);
         serial.write_data(spend.hash);
         serial.write_4_bytes(spend.index);
     };
+
+    const auto key = output_to_hash(outpoint);
     map_.store(key, write);
 }
 
 void spend_database::remove(const output_point& outpoint)
 {
-    const hash_digest key = output_to_hash(outpoint);
+    const auto key = output_to_hash(outpoint);
     DEBUG_ONLY(bool success =) map_.unlink(key);
     BITCOIN_ASSERT(success);
 }
@@ -128,7 +129,8 @@ void spend_database::sync()
 
 spend_statinfo spend_database::statinfo() const
 {
-    return {
+    return
+    {
         header_.size(),
         allocator_.count()
     };
