@@ -101,8 +101,8 @@ spend_result spend_database::get(const output_point& outpoint) const
     return spend_result(record);
 }
 
-void spend_database::store(
-    const output_point& outpoint, const input_point& spend)
+void spend_database::store(const output_point& outpoint,
+    const input_point& spend)
 {
     const auto write = [&spend](uint8_t* data)
     {

@@ -54,8 +54,8 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-stealth_list stealth_database::scan(
-    const binary_type& prefix, const size_t from_height) const
+stealth_list stealth_database::scan(const binary_type& prefix,
+    size_t from_height) const
 {
     if (from_height >= index_.count())
         return stealth_list();
@@ -84,8 +84,8 @@ stealth_list stealth_database::scan(
     return result;
 }
 
-void stealth_database::store(
-    const script_type& stealth_script, const stealth_row& row)
+void stealth_database::store(const script_type& stealth_script,
+    const stealth_row& row)
 {
     // Create prefix.
     const auto prefix = calculate_stealth_prefix(stealth_script);
@@ -105,7 +105,7 @@ void stealth_database::store(
         data + bitfield_size + hash_size + short_hash_size + hash_size);
 }
 
-void stealth_database::unlink(const size_t from_height)
+void stealth_database::unlink(size_t from_height)
 {
     BITCOIN_ASSERT(index_.count() > from_height);
     index_.count(from_height);
@@ -120,8 +120,8 @@ void stealth_database::sync()
 void stealth_database::write_index()
 {
     // Write index of first row into block lookup index.
-    const index_type index = index_.allocate();
-    record_type data = index_.get(index);
+    const auto index = index_.allocate();
+    const auto data = index_.get(index);
     auto serial = make_serializer(data);
     serial.write_4_bytes(block_start_);
 
@@ -132,7 +132,7 @@ void stealth_database::write_index()
     block_start_ = rows_.count();
 }
 
-index_type stealth_database::read_index(const size_t from_height) const
+index_type stealth_database::read_index(size_t from_height) const
 {
     BITCOIN_ASSERT(from_height < index_.count());
     const auto record = index_.get(from_height);
