@@ -32,6 +32,7 @@ namespace chain {
 class BCB_API simple_chain
 {
 public:
+    // TODO: merge with block_database::null_height (interface break).
     static BC_CONSTEXPR size_t null_height = bc::max_size_t;
 
     virtual void append(block_detail_ptr incoming_block) = 0;

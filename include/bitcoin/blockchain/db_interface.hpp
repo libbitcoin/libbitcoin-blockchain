@@ -34,11 +34,13 @@ namespace chain {
 
 BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
 
+// TODO: consider eliminating this struct (interface break).
 struct BCB_API db_active_heights
 {
     const size_t history;
 };
 
+// TODO: rename to 'store' (interface break).
 struct BCB_API db_paths
 {
     db_paths(const boost::filesystem::path& prefix);
@@ -54,6 +56,7 @@ struct BCB_API db_paths
     boost::filesystem::path stealth_rows;
 };
 
+// TODO: rename to 'database' (interface break).
 class BCB_API db_interface
 {
 public:
