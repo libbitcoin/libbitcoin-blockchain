@@ -38,7 +38,7 @@ public:
 
 protected:
     uint32_t previous_block_bits();
-    uint64_t actual_timespan(const uint64_t interval);
+    uint64_t actual_timespan(size_t interval);
     uint64_t median_time_past();
     bool transaction_exists(const hash_digest& tx_hash);
     bool is_output_spent(const output_point& outpoint);

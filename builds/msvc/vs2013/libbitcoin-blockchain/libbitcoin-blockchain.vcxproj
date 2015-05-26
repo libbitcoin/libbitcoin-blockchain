@@ -99,13 +99,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer_impl.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
     <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
-    <ClInclude Include="..\..\..\..\src\impl\organizer_impl.hpp" />
-    <ClInclude Include="..\..\..\..\src\impl\simple_chain_impl.hpp" />
-    <ClInclude Include="..\..\..\..\src\impl\validate_block_impl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\blockchain.cpp" />

@@ -112,7 +112,7 @@ protected:
     BCB_API validate_block(size_t height, const block_type& current_block);
 
     virtual uint32_t previous_block_bits() = 0;
-    virtual uint64_t actual_timespan(const uint64_t interval) = 0;
+    virtual uint64_t actual_timespan(size_t interval) = 0;
     virtual uint64_t median_time_past() = 0;
     virtual bool transaction_exists(const hash_digest& tx_hash) = 0;
     virtual bool is_output_spent(const output_point& outpoint) = 0;
@@ -120,12 +120,11 @@ protected:
     BCB_API virtual bool validate_inputs(const transaction_type& tx,
         size_t index_in_parent, uint64_t& value_in, size_t& total_sigops);
     BCB_API virtual bool connect_input(size_t index_in_parent,
-        const transaction_type& current_tx,
-        size_t input_index, uint64_t& value_in, size_t& total_sigops);
+        const transaction_type& current_tx, size_t input_index,
+        uint64_t& value_in, size_t& total_sigops);
     virtual bool fetch_transaction(transaction_type& tx,
         size_t& previous_height, const hash_digest& tx_hash) = 0;
-    virtual bool is_output_spent(
-        const output_point& previous_output,
+    virtual bool is_output_spent(const output_point& previous_output,
         size_t index_in_parent, size_t input_index) = 0;
     virtual block_header_type fetch_block(size_t fetch_height) = 0;
 
