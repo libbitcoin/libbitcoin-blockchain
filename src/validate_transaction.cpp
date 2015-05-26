@@ -43,9 +43,8 @@ enum validation_options : uint32_t
     // dersig
 };
 
-validate_transaction::validate_transaction(
-    blockchain& chain, const transaction_type& tx,
-    const pool_buffer& pool, async_strand& strand)
+validate_transaction::validate_transaction(blockchain& chain,
+    const transaction_type& tx, const pool_buffer& pool, async_strand& strand)
   : strand_(strand), chain_(chain),
     tx_(tx), tx_hash_(hash_transaction(tx)), pool_(pool)
 {
@@ -85,7 +84,7 @@ std::error_code validate_transaction::basic_checks() const
         return error::is_not_standard;
 
     // Check for conflicts
-    if (fetch(tx_hash_))
+    if (fetch(tx_hash_) != nullptr)
         return error::duplicate;
 
     // Check for blockchain dups done next in start() after this exits.
@@ -143,8 +142,8 @@ bool validate_transaction::is_spent(const output_point& outpoint) const
     return false;
 }
 
-void validate_transaction::set_last_height(
-    const std::error_code& ec, size_t last_height)
+void validate_transaction::set_last_height(const std::error_code& ec,
+    size_t last_height)
 {
     if (ec)
     {
@@ -175,8 +174,8 @@ void validate_transaction::next_previous_transaction()
                 shared_from_this(), _1, _2));
 }
 
-void validate_transaction::previous_tx_index(
-    const std::error_code& ec, size_t parent_height)
+void validate_transaction::previous_tx_index(const std::error_code& ec,
+    size_t parent_height)
 {
     if (ec)
     {
@@ -377,10 +376,9 @@ bool validate_transaction::validate_consensus(const script_type& prevout_script,
     return check_consensus(prevout_script, current_tx, input_index, options);
 }
 
-bool validate_transaction::connect_input(
-    const transaction_type& tx, size_t current_input,
-    const transaction_type& previous_tx, size_t parent_height,
-    size_t last_block_height, uint64_t& value_in)
+bool validate_transaction::connect_input(const transaction_type& tx,
+    size_t current_input, const transaction_type& previous_tx, 
+    size_t parent_height, size_t last_block_height, uint64_t& value_in)
 {
     const auto& input = tx.inputs[current_input];
     const auto& previous_outpoint = tx.inputs[current_input].previous_output;
