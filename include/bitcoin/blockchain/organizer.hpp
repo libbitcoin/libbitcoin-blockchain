@@ -23,7 +23,11 @@
 #include <memory>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -50,67 +54,8 @@ namespace chain {
  * All these components are managed and kept inside blockchain_impl.
  */
 
-// Metadata + block
-class block_detail
-{
-public:
-    block_detail(const block_type& actual_block);
-    block_detail(const block_header_type& actual_block_header);
-    block_type& actual();
-    const block_type& actual() const;
-    std::shared_ptr<block_type> actual_ptr() const;
-    void mark_processed();
-    bool is_processed();
-    const hash_digest& hash() const;
-    void set_info(const block_info& replace_info);
-    const block_info& info() const;
-    void set_error(const std::error_code& code);
-    const std::error_code& error() const;
-
-private:
-    std::shared_ptr<block_type> actual_block_;
-    const hash_digest block_hash_;
-    bool processed_;
-    block_info info_;
-    std::error_code code_;
-};
-
-typedef std::shared_ptr<block_detail> block_detail_ptr;
-typedef std::vector<block_detail_ptr> block_detail_list;
-
-// An unordered memory pool for orphan blocks
-class orphans_pool
-{
-public:
-    orphans_pool(size_t pool_size=20);
-    bool add(block_detail_ptr incoming_block);
-    block_detail_list trace(block_detail_ptr end_block);
-    block_detail_list unprocessed();
-    void remove(block_detail_ptr remove_block);
-
-private:
-    boost::circular_buffer<block_detail_ptr> pool_;
-};
-
-typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
-
-// The actual blockchain is encapsulated by this
-class simple_chain
-{
-public:
-    static BC_CONSTEXPR size_t null_height = bc::max_size_t;
-
-    virtual void append(block_detail_ptr incoming_block) = 0;
-    virtual size_t find_height(const hash_digest& search_block_hash) = 0;
-    virtual hash_number sum_difficulty(size_t begin_index) = 0;
-    virtual bool release(size_t begin_index,
-        block_detail_list& released_blocks) = 0;
-};
-
-typedef std::shared_ptr<simple_chain> simple_chain_ptr;
-
-// Structure which organises the blocks from the orphan pool to the blockchain
-class organizer
+// Structure which organises the blocks from the orphan pool to the blockchain.
+class BCB_API organizer
 {
 public:
     organizer(orphans_pool& orphans, simple_chain& chain);
@@ -139,6 +84,7 @@ private:
     block_detail_list process_queue_;
 };
 
+// TODO: define in organizer (compat break).
 typedef std::shared_ptr<organizer> organizer_ptr;
 
 } // namespace chain

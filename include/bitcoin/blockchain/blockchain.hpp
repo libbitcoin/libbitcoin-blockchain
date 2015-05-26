@@ -20,11 +20,9 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_INTERFACE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_INTERFACE_HPP
 
-/**
- * Represents an interface to a blockchain backend.
- */
-
+#include <cstdint>
 #include <functional>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -41,10 +39,13 @@ struct BCB_API history_row
 {
     /// Is this an output or spend
     point_ident id;
+
     /// input/output point
     point_type point;
+
     /// Block height of transaction
     uint64_t height;
+
     union
     {
         /// If output, then satoshis value of output.
@@ -61,14 +62,6 @@ struct BCB_API history_row
     };
 };
 
-typedef std::vector<history_row> history_list;
-
-/**
- * Create checksum so spend can be matched with corresponding
- * output point without needing the whole previous outpoint.
- */
-BCB_API uint64_t spend_checksum(output_point outpoint);
-
 struct BCB_API stealth_row
 {
     // No sign byte in public key.
@@ -78,8 +71,13 @@ struct BCB_API stealth_row
     hash_digest transaction_hash;
 };
 
+// TODO: define in blockchain (compat break).
+typedef std::vector<history_row> history_list;
 typedef std::vector<stealth_row> stealth_list;
 
+/**
+ * An interface to a blockchain backend.
+ */
 class blockchain
 {
 public:
@@ -120,7 +118,7 @@ public:
     typedef std::function<void (const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
 
-    BCB_API virtual ~blockchain() {};
+    virtual ~blockchain() {};
 
     /**
      * Store a new block.
@@ -137,7 +135,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void store(const block_type& block,
+    virtual void store(const block_type& block,
         store_block_handler handle_store) = 0;
 
     /**
@@ -153,7 +151,7 @@ public:
      *  );
      * @encode
      */
-    BCB_API virtual void import(const block_type& import_block,
+    virtual void import(const block_type& import_block,
         import_block_handler handle_import) = 0;
 
     /**
@@ -168,7 +166,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_block_header(uint64_t height,
+    virtual void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch) = 0;
 
     /**
@@ -183,7 +181,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_block_header(const hash_digest& hash,
+    virtual void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch) = 0;
 
     /**
@@ -198,7 +196,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_block_transaction_hashes(
+    virtual void fetch_block_transaction_hashes(
         const hash_digest& hash,
         fetch_handler_block_transaction_hashes handle_fetch) = 0;
 
@@ -214,7 +212,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_block_height(const hash_digest& hash,
+    virtual void fetch_block_height(const hash_digest& hash,
         fetch_handler_block_height handle_fetch) = 0;
 
     /**
@@ -228,7 +226,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_last_height(
+    virtual void fetch_last_height(
         fetch_handler_last_height handle_fetch) = 0;
 
     /**
@@ -243,7 +241,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_transaction(const hash_digest& hash,
+    virtual void fetch_transaction(const hash_digest& hash,
         fetch_handler_transaction handle_fetch) = 0;
 
     /**
@@ -262,7 +260,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_transaction_index(
+    virtual void fetch_transaction_index(
         const hash_digest& hash,
         fetch_handler_transaction_index handle_fetch) = 0;
 
@@ -281,7 +279,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_spend(const output_point& outpoint,
+    virtual void fetch_spend(const output_point& outpoint,
         fetch_handler_spend handle_fetch) = 0;
 
     /**
@@ -330,7 +328,7 @@ public:
      *                              Useful to filter entries or to fetch
      *                              the history in chunks.
      */
-    BCB_API virtual void fetch_history(const payment_address& address,
+    virtual void fetch_history(const payment_address& address,
         fetch_handler_history handle_fetch, const uint64_t limit=0,
         const uint64_t from_height=0) = 0;
 
@@ -366,7 +364,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_stealth(const binary_type& prefix,
+    virtual void fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, uint64_t from_height=0) = 0;
 
     /**
@@ -385,7 +383,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void subscribe_reorganize(
+    virtual void subscribe_reorganize(
         reorganize_handler handle_reorganize) = 0;
 
     // .stop()
@@ -448,6 +446,13 @@ typedef std::function<
  */
 BCB_API void fetch_block_locator(blockchain& chain,
     blockchain_fetch_handler_block_locator handle_fetch);
+
+
+/**
+ * Create checksum so spend can be matched with corresponding
+ * output point without needing the whole previous outpoint.
+ */
+BCB_API uint64_t spend_checksum(output_point outpoint);
 
 } // namespace chain
 } // namespace libbitcoin

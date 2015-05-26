@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DB_INTERFACE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DB_INTERFACE_HPP
 
+#include <cstddef>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
@@ -31,10 +32,17 @@
 namespace libbitcoin {
 namespace chain {
 
-struct db_paths
+BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
+
+struct BCB_API db_active_heights
 {
-    BCB_API db_paths(const boost::filesystem::path& prefix);
-    BCB_API bool touch_all() const;
+    const size_t history;
+};
+
+struct BCB_API db_paths
+{
+    db_paths(const boost::filesystem::path& prefix);
+    bool touch_all() const;
 
     boost::filesystem::path blocks_lookup;
     boost::filesystem::path blocks_rows;
@@ -46,26 +54,17 @@ struct db_paths
     boost::filesystem::path stealth_rows;
 };
 
-BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
-
-struct db_active_heights
-{
-    const size_t history;
-};
-
-BCB_API bool touch_file(const boost::filesystem::path& file);
-
-class db_interface
+class BCB_API db_interface
 {
 public:
-    BCB_API db_interface(const db_paths& paths,
+    db_interface(const db_paths& paths,
         const db_active_heights &active_heights);
 
-    BCB_API void create();
-    BCB_API void start();
+    void create();
+    void start();
 
-    BCB_API void push(const block_type& block);
-    BCB_API block_type pop();
+    void push(const block_type& block);
+    block_type pop();
 
     block_database blocks;
     spend_database spends;
@@ -97,13 +96,13 @@ private:
 };
 
 /**
- * Convenience function to create a new blockchain with a given
- * prefix and default paths.
+ * Create a new blockchain with a given prefix and default paths.
  */
 BCB_API bool initialize_blockchain(const boost::filesystem::path& prefix);
+
+BCB_API bool touch_file(const boost::filesystem::path& file);
 
 } // namespace chain
 } // namespace libbitcoin
 
 #endif
-

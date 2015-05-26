@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/blockchain_impl.hpp>
+#include <bitcoin/blockchain/implementation/blockchain_impl.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -26,8 +26,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/organizer_impl.hpp>
-#include <bitcoin/blockchain/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
+#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
@@ -221,9 +221,8 @@ void blockchain_impl::fetch_block_transaction_hashes(
                 error::not_found, hash_list());
 
         hash_list hashes;
-        const auto txs_size = result.transactions_size();
-        for (auto i = 0; i < txs_size; ++i)
-            hashes.push_back(result.transaction_hash(i));
+        for (size_t index = 0; index < result.transactions_size(); ++index)
+            hashes.push_back(result.transaction_hash(index));
 
         return finish_fetch(slock, handle_fetch,
             std::error_code(), hashes);

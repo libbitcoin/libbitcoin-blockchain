@@ -29,13 +29,13 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-#include <bitcoin/blockchain/organizer_impl.hpp>
-#include <bitcoin/blockchain/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
+#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-class blockchain_impl
+    class BCB_API blockchain_impl
   : public blockchain
 {
 public:
@@ -44,55 +44,55 @@ public:
         const std::error_code&, uint64_t, const block_list&, const block_list&>
             reorganize_subscriber_type;
 
-    BCB_API blockchain_impl(threadpool& pool, const std::string& prefix,
+    blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights=db_active_heights{0},
         size_t orphan_capacity=20);
-    BCB_API ~blockchain_impl();
+    ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
-    BCB_API bool start();
-    BCB_API void stop();
+    bool start();
+    void stop();
 
-    BCB_API void store(const block_type& block,
+    void store(const block_type& block,
         store_block_handler handle_store);
-    BCB_API void import(const block_type& block,
+    void import(const block_type& block,
         import_block_handler handle_import);
 
     // fetch block header by height
-    BCB_API void fetch_block_header(uint64_t height,
+    void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch);
     // fetch block header by hash
-    BCB_API void fetch_block_header(const hash_digest& hash,
+    void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
     // fetch transaction hashes in block by hash
-    BCB_API void fetch_block_transaction_hashes(const hash_digest& hash,
+    void fetch_block_transaction_hashes(const hash_digest& hash,
         fetch_handler_block_transaction_hashes handle_fetch);
     // fetch height of block by hash
-    BCB_API void fetch_block_height(const hash_digest& hash,
+    void fetch_block_height(const hash_digest& hash,
         fetch_handler_block_height handle_fetch);
     // fetch height of latest block
-    BCB_API void fetch_last_height(fetch_handler_last_height handle_fetch);
+    void fetch_last_height(fetch_handler_last_height handle_fetch);
     // fetch transaction by hash
-    BCB_API void fetch_transaction(const hash_digest& hash,
+    void fetch_transaction(const hash_digest& hash,
         fetch_handler_transaction handle_fetch);
     // fetch height and offset within block of transaction by hash
-    BCB_API void fetch_transaction_index(const hash_digest& hash,
+    void fetch_transaction_index(const hash_digest& hash,
         fetch_handler_transaction_index handle_fetch);
     // fetch spend of an output point
-    BCB_API void fetch_spend(const output_point& outpoint,
+    void fetch_spend(const output_point& outpoint,
         fetch_handler_spend handle_fetch);
     // fetch outputs, values and spends for an address.
-    BCB_API void fetch_history(const payment_address& address,
+    void fetch_history(const payment_address& address,
         fetch_handler_history handle_fetch,
         const uint64_t limit=0, const uint64_t from_height=0);
     // fetch stealth results.
-    BCB_API void fetch_stealth(const binary_type& prefix,
+    void fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, uint64_t from_height=0);
 
-    BCB_API void subscribe_reorganize(reorganize_handler handle_reorganize);
+    void subscribe_reorganize(reorganize_handler handle_reorganize);
 
 private:
     typedef std::atomic<size_t> seqlock_type;

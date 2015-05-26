@@ -20,17 +20,17 @@
 #include <bitcoin/consensus.hpp>
 #endif
 
+#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
-#include <bitcoin/blockchain/blockchain_impl.hpp>
 #include <bitcoin/blockchain/checkpoints.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-#include <bitcoin/blockchain/organizer_impl.hpp>
-#include <bitcoin/blockchain/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
-#include <bitcoin/blockchain/validate.hpp>
-#include <bitcoin/blockchain/validate_block_impl.hpp>
+#include <bitcoin/blockchain/validate_block.hpp>
+#include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/database/disk_array.hpp>
@@ -45,5 +45,9 @@
 #include <bitcoin/blockchain/database/spend_database.hpp>
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/blockchain/database/transaction_database.hpp>
+#include <bitcoin/blockchain/implementation/blockchain_impl.hpp>
+#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
+#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 #endif

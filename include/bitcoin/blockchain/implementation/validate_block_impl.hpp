@@ -22,13 +22,13 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
-#include <bitcoin/blockchain/organizer_impl.hpp>
-#include <bitcoin/blockchain/validate.hpp>
+#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
+#include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-class validate_block_impl
+class BCB_API validate_block_impl
   : public validate_block
 {
 public:

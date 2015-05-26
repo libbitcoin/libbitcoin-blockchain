@@ -17,12 +17,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_VALIDATE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_TRANSACTION_HPP
+#define LIBBITCOIN_BLOCKCHAIN_VALIDATE_TRANSACTION_HPP
 
+#include <cstdint>
+#include <cstddef>
+#include <functional>
 #include <memory>
-#include <thread>
-#include <boost/optional/optional.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
@@ -34,26 +35,26 @@ namespace chain {
  * If you're looking to validate a transaction, then use the simpler
  * transaction_pool::validate() method instead.
  */
-class validate_transaction
+class BCB_API validate_transaction
   : public std::enable_shared_from_this<validate_transaction>
 {
 public:
     typedef std::function<
         void (const std::error_code&, const index_list&)> validate_handler;
 
-    validate_transaction(
-        blockchain& chain, const transaction_type& tx,
+    validate_transaction(blockchain& chain, const transaction_type& tx,
         const pool_buffer& pool, async_strand& strand);
     void start(validate_handler handle_validate);
 
-    static std::error_code check_transaction(
-        const transaction_type& tx);
-    static bool connect_input(
-        const transaction_type& tx, size_t current_input,
+    static std::error_code check_transaction(const transaction_type& tx);
+    static bool connect_input(const transaction_type& tx, size_t current_input,
         const transaction_type& previous_tx, size_t parent_height,
         size_t last_block_height, uint64_t& value_in);
-    static bool tally_fees(const transaction_type& tx,
-        uint64_t value_in, uint64_t& fees);
+    static bool tally_fees(const transaction_type& tx, uint64_t value_in,
+        uint64_t& fees);
+    static bool validate_consensus(const script_type& prevout_script,
+        const transaction_type& current_tx, size_t input_index,
+        const block_header_type& header, const size_t height);
 
 private:
     std::error_code basic_checks() const;
@@ -94,53 +95,8 @@ private:
     validate_handler handle_validate_;
 };
 
+// TODO: define in validate_transaction (compat break).
 typedef std::shared_ptr<validate_transaction> validate_transaction_ptr;
-
-
-// Temporary, find why 'typeinfo' error exists.
-// Remove BCB_API from class declaration.
-class BCB_API validate_block
-{
-public:
-    BCB_API std::error_code check_block();
-    BCB_API std::error_code accept_block();
-    BCB_API std::error_code connect_block();
-
-    BCB_API static bool check_proof_of_work(hash_digest hash, uint32_t bits);
-
-protected:
-    BCB_API validate_block(size_t height, const block_type& current_block);
-
-    virtual uint32_t previous_block_bits() = 0;
-    virtual uint64_t actual_timespan(size_t interval) = 0;
-    virtual uint64_t median_time_past() = 0;
-    virtual bool transaction_exists(const hash_digest& tx_hash) = 0;
-    virtual bool is_output_spent(const output_point& outpoint) = 0;
-    // These have optional implementations that can be overriden
-    BCB_API virtual bool validate_inputs(const transaction_type& tx,
-        size_t index_in_parent, uint64_t& value_in, size_t& total_sigops);
-    BCB_API virtual bool connect_input(size_t index_in_parent,
-        const transaction_type& current_tx, size_t input_index,
-        uint64_t& value_in, size_t& total_sigops);
-    virtual bool fetch_transaction(transaction_type& tx,
-        size_t& previous_height, const hash_digest& tx_hash) = 0;
-    virtual bool is_output_spent(const output_point& previous_output,
-        size_t index_in_parent, size_t input_index) = 0;
-    virtual block_header_type fetch_block(size_t fetch_height) = 0;
-
-private:
-    size_t legacy_sigops_count();
-
-    // accept_block()
-    uint32_t work_required();
-    bool coinbase_height_match();
-
-    // connect_block()
-    bool not_duplicate_or_spent(const transaction_type& tx);
-
-    const size_t height_;
-    const block_type& current_block_;
-};
 
 } // namespace chain
 } // namespace libbitcoin
