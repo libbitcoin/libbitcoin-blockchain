@@ -45,8 +45,8 @@ transaction_pool::~transaction_pool()
 // Deprecated, use constructor.
 void transaction_pool::set_capacity(size_t capacity)
 {
-    BITCOIN_ASSERT_MSG(false, 
-        "transaction_pool::set_capacity deprecated, set on construct");
+    //BITCOIN_ASSERT_MSG(false, 
+    //    "transaction_pool::set_capacity deprecated, set on construct");
     buffer_.set_capacity(capacity);
 }
 
@@ -64,7 +64,7 @@ void transaction_pool::validate(const transaction_type& tx,
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
-    validate_transaction_ptr validate =
+   const auto validate =
         std::make_shared<validate_transaction>(chain_, tx, buffer_, strand_);
 
     validate->start(strand_.wrap(&transaction_pool::validation_complete, this,
@@ -122,8 +122,7 @@ void transaction_pool::store(const transaction_type& tx,
         }
 
         // We store a precomputed tx hash to make lookups faster.
-        buffer_.push_back(
-            {hash_transaction(tx), tx, handle_confirm});
+        buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
     };
 
     const auto wrap_handle_validate = [perform_store, handle_validate](
