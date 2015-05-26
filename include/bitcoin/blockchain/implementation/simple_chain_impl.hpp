@@ -17,35 +17,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
-#define LIBBITCOIN_BLOCKCHAIN_IMPL_ORGANIZER_H
+#ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
+#define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
 
-#include <bitcoin/blockchain/organizer.hpp>
-#include <bitcoin/blockchain/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-class organizer_impl
-  : public organizer
+class BCB_API simple_chain_impl
+  : public simple_chain
 {
 public:
-    typedef blockchain::reorganize_handler reorganize_handler;
-
-    organizer_impl(db_interface& database, orphans_pool& orphans,
-        simple_chain& chain, reorganize_handler handler);
-
-protected:
-    std::error_code verify(size_t fork_index,
-        const block_detail_list& orphan_chain, size_t orphan_index);
-
-    void reorganize_occured(size_t fork_point,
-        const blockchain::block_list& arrivals,
-        const blockchain::block_list& replaced);
+    simple_chain_impl(db_interface& database);
+    void append(block_detail_ptr incoming_block);
+    size_t find_height(const hash_digest& search_block_hash);
+    hash_number sum_difficulty(size_t begin_index);
+    bool release(size_t begin_index, block_detail_list& released_blocks);
 
 private:
     db_interface& interface_;
-    reorganize_handler handler_;
 };
 
 } // namespace chain

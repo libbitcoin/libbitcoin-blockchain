@@ -38,6 +38,7 @@ struct BCB_API transaction_entry_info
     confirm_handler handle_confirm;
 };
 
+// TODO: define in transaction_entry_info or transaction_pool (compat break).
 typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 
 /**

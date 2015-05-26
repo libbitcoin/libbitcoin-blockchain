@@ -20,8 +20,10 @@
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
 #include <cstddef>
+#include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/validate.hpp>
+#include <bitcoin/blockchain/transaction_pool.hpp>
+#include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
 namespace chain {

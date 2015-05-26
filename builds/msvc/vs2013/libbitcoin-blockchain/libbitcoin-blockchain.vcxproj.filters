@@ -46,9 +46,6 @@
     <Filter Include="src\database">
       <UniqueIdentifier>{0f53f3ba-5415-4635-9b3c-f594ea8dab60}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\impl">
-      <UniqueIdentifier>{799d9fca-10da-4b08-ae5f-65e1c47bb606}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\database\mman-win32">
       <UniqueIdentifier>{2a5cbc8e-58bf-437f-b5ec-6c58d6e5a2ec}</UniqueIdentifier>
     </Filter>
@@ -76,6 +73,12 @@
     <Filter Include="src\database\slab">
       <UniqueIdentifier>{81b1544f-4dc7-4120-9fcc-294d0458f83f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\implementation">
+      <UniqueIdentifier>{e0bb57d3-a8d3-431b-8534-ee6112cb761d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\implementation">
+      <UniqueIdentifier>{1c07bf35-eb8a-4ef7-8e73-6ea432dabd30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
@@ -87,16 +90,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain_impl.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp">
@@ -147,14 +144,32 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\multimap_records.hpp">
       <Filter>include\bitcoin\blockchain\database\record</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain_impl.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphans_pool.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer_impl.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\simple_chain_impl.hpp">
+      <Filter>include\bitcoin\blockchain\implementation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp">
+      <Filter>include\bitcoin\blockchain\implementation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\blockchain_impl.hpp">
+      <Filter>include\bitcoin\blockchain\implementation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp">
+      <Filter>include\bitcoin\blockchain\implementation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -164,25 +179,10 @@
     <ClCompile Include="..\..\..\..\src\db_interface.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\impl\validate_block_impl.cpp">
-      <Filter>src\impl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\impl\blockchain_impl.cpp">
-      <Filter>src\impl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\impl\organizer_impl.cpp">
-      <Filter>src\impl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\impl\simple_chain_impl.cpp">
-      <Filter>src\impl</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\blockchain.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\validate.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\checkpoints.cpp">
@@ -220,6 +220,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp">
       <Filter>src\database\record</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\orphans_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\block_detail.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validate_transaction.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validate_block.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp">
+      <Filter>src\implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\implementation\simple_chain_impl.cpp">
+      <Filter>src\implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp">
+      <Filter>src\implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp">
+      <Filter>src\implementation</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
