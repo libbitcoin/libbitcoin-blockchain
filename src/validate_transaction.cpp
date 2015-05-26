@@ -315,8 +315,8 @@ static bool check_consensus(const script_type& prevout_script,
     const transaction_type& current_tx, size_t input_index,
     uint32_t options)
 {
-    BITCOIN_ASSERT(input_index < current_tx.inputs.size());
     BITCOIN_ASSERT(input_index <= max_uint32);
+    BITCOIN_ASSERT(input_index < current_tx.inputs.size());
     const auto input_index32 = static_cast<uint32_t>(input_index);
     const auto bip16_enabled = ((options & validation_options::p2sh) != 0);
 
@@ -338,8 +338,9 @@ static bool check_consensus(const script_type& prevout_script,
 
     return (result == verify_result::verify_result_eval_true);
 #else
+    // Copy the const prevout script so it can be run.
     auto previous_output_script = prevout_script;
-    const auto current_input_script = current_tx.inputs[input_index].script;
+    const auto& current_input_script = current_tx.inputs[input_index].script;
 
     // TODO: expand support beyond BIP16 option.
     return previous_output_script.run(current_input_script, current_tx,
@@ -416,7 +417,6 @@ bool validate_transaction::tally_fees(const transaction_type& tx,
     total_fees += fee;
     return (total_fees <= max_money());
 }
-
 
 } // namespace chain
 } // namespace libbitcoin
