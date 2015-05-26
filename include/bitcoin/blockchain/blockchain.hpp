@@ -393,6 +393,9 @@ public:
 typedef std::function<void (const std::error_code&, const block_type&)>
     blockchain_fetch_handler_block;
 
+typedef std::function<void (const std::error_code&, const block_locator_type&)>
+    blockchain_fetch_handler_block_locator;
+
 /**
  * Fetch a block by height.
  *
@@ -428,10 +431,6 @@ BCB_API void fetch_block(blockchain& chain, uint64_t height,
  */
 BCB_API void fetch_block(blockchain& chain, const hash_digest& hash,
     blockchain_fetch_handler_block handle_fetch);
-
-typedef std::function<
-    void (const std::error_code&, const block_locator_type&)>
-        blockchain_fetch_handler_block_locator;
 
 /**
  * Creates a block_locator object used to download the blockchain.

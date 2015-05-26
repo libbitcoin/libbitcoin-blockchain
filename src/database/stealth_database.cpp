@@ -24,6 +24,8 @@
 namespace libbitcoin {
 namespace chain {
 
+constexpr size_t bitfield_size = 4;
+
 // ephemkey is without sign byte and address is without version byte.
 // [ prefix_bitfield:4 ][ ephemkey:32 ][ address:20 ][ tx_id:32 ]
 constexpr size_t row_size = 4 + 32 + 20 + 32;
@@ -41,7 +43,6 @@ void stealth_database::create()
 {
     index_file_.resize(min_records_fsize);
     index_.create();
-
     rows_file_.resize(min_records_fsize);
     rows_.create();
 }
@@ -53,31 +54,33 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-constexpr size_t bitfield_size = 4;
-
 stealth_list stealth_database::scan(
     const binary_type& prefix, const size_t from_height) const
 {
     if (from_height >= index_.count())
         return stealth_list();
+
     stealth_list result;
-    index_type start = read_index(from_height);
-    for (size_t index = start; index < rows_.count(); ++index)
+    const auto start = read_index(from_height);
+    for (auto index = start; index < rows_.count(); ++index)
     {
         // see if prefix matches
-        const record_type record = rows_.get(index);
+        const auto record = rows_.get(index);
         const data_slice bitfield(record, record + bitfield_size);
         const binary_type compare(prefix.size(), bitfield);
         if (prefix != compare)
             continue;
+
         // Add row to results.
         auto deserial = make_deserializer_unsafe(record + bitfield_size);
-        result.push_back({
+        result.push_back(
+        {
             deserial.read_hash(),
             deserial.read_short_hash(),
             deserial.read_hash()
         });
     }
+
     return result;
 }
 
@@ -85,11 +88,13 @@ void stealth_database::store(
     const script_type& stealth_script, const stealth_row& row)
 {
     // Create prefix.
-    binary_type prefix = calculate_stealth_prefix(stealth_script);
+    const auto prefix = calculate_stealth_prefix(stealth_script);
     BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
+
     // Allocate new row.
-    const index_type index = rows_.allocate();
-    record_type data = rows_.get(index);
+    const auto index = rows_.allocate();
+    const auto data = rows_.get(index);
+
     // Write data.
     auto serial = make_serializer(data);
     serial.write_data(prefix.blocks());
@@ -119,8 +124,10 @@ void stealth_database::write_index()
     record_type data = index_.get(index);
     auto serial = make_serializer(data);
     serial.write_4_bytes(block_start_);
+
     // Synchronise data.
     index_.sync();
+
     // Prepare for next block.
     block_start_ = rows_.count();
 }
@@ -128,7 +135,7 @@ void stealth_database::write_index()
 index_type stealth_database::read_index(const size_t from_height) const
 {
     BITCOIN_ASSERT(from_height < index_.count());
-    const record_type record = index_.get(from_height);
+    const auto record = index_.get(from_height);
     return from_little_endian_unsafe<index_type>(record);
 }
 
