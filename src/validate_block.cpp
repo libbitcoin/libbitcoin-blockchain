@@ -385,12 +385,12 @@ bool validate_block::validate_inputs(const transaction_type& tx,
     BITCOIN_ASSERT(!is_coinbase(tx));
     for (size_t input_index = 0; input_index < tx.inputs.size(); ++input_index)
     {
-        if (!connect_input(index_in_parent, tx, input_index,
-                value_in, total_sigops))
+        if (!connect_input(index_in_parent, tx, input_index, value_in,
+            total_sigops))
         {
-            log_warning(LOG_VALIDATE) << "Validate input "
+            log_warning(LOG_VALIDATE) << "Invalid input ["
                 << encode_hash(hash_transaction(tx)) << ":"
-                << input_index << " failed";
+                << input_index << "]";
             return false;
         }
     }
@@ -424,7 +424,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     const auto& previous_output = input.previous_output;
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
-        log_warning(LOG_VALIDATE) << "Unable to fetch input transaction";
+        log_warning(LOG_VALIDATE) << "Failure fetching input transaction.";
         return false;
     }
 
@@ -438,21 +438,21 @@ bool validate_block::connect_input(size_t index_in_parent,
     }
     catch (end_of_stream)
     {
-        log_warning(LOG_VALIDATE) << "Parsing eval script failed.";
+        log_warning(LOG_VALIDATE) << "Invalid eval script.";
         return false;
     }
 
     if (total_sigops > max_block_script_sig_operations)
     {
-        log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum";
+        log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum.";
         return false;
     }
 
     // Get output amount
-    uint64_t output_value = previous_tx_out.value;
+    const auto output_value = previous_tx_out.value;
     if (output_value > max_money())
     {
-        log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum";
+        log_warning(LOG_VALIDATE) << "Output money exceeds 21 million.";
         return false;
     }
 
@@ -460,10 +460,10 @@ bool validate_block::connect_input(size_t index_in_parent,
     if (is_coinbase(previous_tx))
     {
         BITCOIN_ASSERT(previous_height <= height_);
-        uint32_t height_difference = height_ - previous_height;
+        const auto height_difference = height_ - previous_height;
         if (height_difference < coinbase_maturity)
         {
-            log_warning(LOG_VALIDATE) << "Spends immature coinbase";
+            log_warning(LOG_VALIDATE) << "Immature coinbase spend attempt.";
             return false;
         }
     }
@@ -471,14 +471,14 @@ bool validate_block::connect_input(size_t index_in_parent,
     if (!validate_transaction::validate_consensus(previous_tx_out.script,
         current_tx, input_index, current_block_.header, height_))
     {
-        log_warning(LOG_VALIDATE) << "Input script consensus validation failed";
+        log_warning(LOG_VALIDATE) << "Input script invalid consensus.";
         return false;
     }
 
     // Search for double spends
     if (is_output_spent(previous_output, index_in_parent, input_index))
     {
-        log_warning(LOG_VALIDATE) << "Double spend detected";
+        log_warning(LOG_VALIDATE) << "Double spend attempt.";
         return false;
     }
 
@@ -486,7 +486,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     value_in += output_value;
     if (value_in > max_money())
     {
-        log_warning(LOG_VALIDATE) << "Total input money over 21 million";
+        log_warning(LOG_VALIDATE) << "Input money exceeds 21 million.";
         return false;
     }
 

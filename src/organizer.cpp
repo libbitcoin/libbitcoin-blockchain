@@ -77,6 +77,11 @@ void organizer::replace_chain(size_t fork_index,
         const auto invalid_reason = verify(fork_index, orphan_chain, orphan);
         if (invalid_reason)
         {
+            const auto& header = orphan_chain[orphan]->actual().header;
+            log_info(LOG_VALIDATE) << "Invalid block ["
+                << encode_base16(hash_block_header(header)) << "] "
+                << invalid_reason.value();
+
             // Block is invalid, clip the orphans.
             clip_orphans(orphan_chain, orphan, invalid_reason);
 
@@ -96,9 +101,13 @@ void organizer::replace_chain(size_t fork_index,
         return;
 
     // Replace! Switch!
-    block_detail_list replaced_slice;
-    DEBUG_ONLY(bool success =) chain_.release(begin_index, replaced_slice);
+    block_detail_list released_blocks;
+    DEBUG_ONLY(bool success = ) chain_.release(begin_index, released_blocks);
     BITCOIN_ASSERT(success);
+
+    if (!released_blocks.empty())
+        log_info(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
+            << begin_index << ", " << released_blocks.size() << "]";
 
     // We add the arriving blocks first to the main chain because if
     // we add the blocks being replaced back to the pool first then
@@ -118,14 +127,14 @@ void organizer::replace_chain(size_t fork_index,
     }
 
     // Now add the old blocks back to the pool
-    for (auto replaced_block: replaced_slice)
+    for (auto replaced_block: released_blocks)
     {
         replaced_block->mark_processed();
         replaced_block->set_info({block_status::orphan, 0});
         orphans_.add(replaced_block);
     }
 
-    notify_reorganize(fork_index, orphan_chain, replaced_slice);
+    notify_reorganize(fork_index, orphan_chain, released_blocks);
 }
 
 static void lazy_remove(block_detail_list& process_queue,

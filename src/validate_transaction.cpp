@@ -335,16 +335,22 @@ static bool check_consensus(const script_type& prevout_script,
         (result == verify_result::verify_result_eval_true) ||
         (result == verify_result::verify_result_eval_false));
 
-    return (result == verify_result::verify_result_eval_true);
+    const auto valid = (result == verify_result::verify_result_eval_true);
 #else
     // Copy the const prevout script so it can be run.
     auto previous_output_script = prevout_script;
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
     // TODO: expand support beyond BIP16 option.
-    return previous_output_script.run(current_input_script, current_tx,
-        input_index32, bip16_enabled);
+    const auto valid = previous_output_script.run(current_input_script,
+        current_tx, input_index32, bip16_enabled);
 #endif
+
+    if (!valid)
+        log_info(LOG_VALIDATE) << "Invalid transaction ["
+            << encode_base16(hash_transaction(current_tx)) << "]";
+
+    return valid;
 }
 
 // Validate script consensus conformance, defaulting to p2sh.
