@@ -41,16 +41,16 @@ public:
 protected:
     typedef std::function<bool()> stopped_callback;
 
-    validate_block(size_t height, const block_type& block,
+    validate_block(size_t height, const chain::block& block,
         const config::checkpoint::list& checks,
         stopped_callback stop_callback=nullptr);
 
     virtual uint64_t actual_timespan(size_t interval) const = 0;
-    virtual block_header_type fetch_block(size_t fetch_height) const = 0;
-    virtual bool fetch_transaction(transaction_type& tx,
+    virtual chain::block_header fetch_block(size_t fetch_height) const = 0;
+    virtual bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const = 0;
-    virtual bool is_output_spent(const output_point& outpoint) const = 0;
-    virtual bool is_output_spent(const output_point& previous_output,
+    virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;
+    virtual bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const = 0;
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;
@@ -58,29 +58,29 @@ protected:
 
     // These have default implementations that can be overriden.
     virtual bool connect_input(size_t index_in_parent,
-        const transaction_type& current_tx, size_t input_index,
+        const chain::transaction& current_tx, size_t input_index,
         uint64_t& value_in, size_t& total_sigops) const;
-    virtual bool validate_inputs(const transaction_type& tx,
+    virtual bool validate_inputs(const chain::transaction& tx,
         size_t index_in_parent, uint64_t& value_in,
         size_t& total_sigops) const;
 
     // These are protected virtual for testability.
     virtual boost::posix_time::ptime current_time() const;
     virtual bool stopped() const;
-    virtual bool is_spent_duplicate(const transaction_type& tx) const;
+    virtual bool is_spent_duplicate(const chain::transaction& tx) const;
     virtual bool is_valid_time_stamp(uint32_t timestamp) const;
     virtual uint32_t work_required() const;
 
-    static bool is_distinct_tx_set(const transaction_list& txs);
+    static bool is_distinct_tx_set(const chain::transaction::list& txs);
     static bool is_valid_proof_of_work(hash_digest hash, uint32_t bits);
     static bool is_valid_coinbase_height(size_t height,
-        const block_type& block);
-    static size_t legacy_sigops_count(const transaction_type& tx);
-    static size_t legacy_sigops_count(const transaction_list& txs);
+        const chain::block& block);
+    static size_t legacy_sigops_count(const chain::transaction& tx);
+    static size_t legacy_sigops_count(const chain::transaction::list& txs);
 
 private:
     const size_t height_;
-    const block_type& current_block_;
+    const chain::block& current_block_;
     const config::checkpoint::list& checkpoints_;
     const stopped_callback stop_callback_;
 };
@@ -89,4 +89,3 @@ private:
 } // namespace libbitcoin
 
 #endif
-

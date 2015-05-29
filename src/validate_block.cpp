@@ -26,8 +26,8 @@
 #include <vector>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
+#include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/checkpoints.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 #ifdef WITH_CONSENSUS
@@ -35,7 +35,7 @@
 #endif
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using boost::posix_time::ptime;
 using boost::posix_time::from_time_t;
@@ -93,14 +93,16 @@ std::error_code validate_block::check_block() const
     // that can be validated before saving an orphan block.
 
     const auto& transactions = current_block_.transactions;
+
     if (transactions.empty() || transactions.size() > max_block_size ||
-        satoshi_raw_size(current_block_) > max_block_size)
+        current_block_.satoshi_size() > max_block_size)
     {
         return error::size_limits;
     }
 
     const auto& header = current_block_.header;
-    const auto hash = hash_block_header(header);
+    const auto hash = header.hash();
+
     if (!is_valid_proof_of_work(hash, header.bits))
         return error::proof_of_work;
 
@@ -111,14 +113,14 @@ std::error_code validate_block::check_block() const
 
     RETURN_IF_STOPPED();
 
-    if (!is_coinbase(transactions.front()))
+    if (!transactions.front().is_coinbase())
         return error::first_not_coinbase;
 
     for (auto it = ++transactions.begin(); it != transactions.end(); ++it)
     {
         RETURN_IF_STOPPED();
 
-        if (is_coinbase(*it))
+        if ((*it).is_coinbase())
             return error::extra_coinbases;
     }
 
@@ -144,7 +146,7 @@ std::error_code validate_block::check_block() const
 
     RETURN_IF_STOPPED();
 
-    if (header.merkle != generate_merkle_root(transactions))
+    if (header.merkle != chain::block::generate_merkle_root(transactions))
         return error::merkle_mismatch;
 
     return error::success;
@@ -190,38 +192,38 @@ bool validate_block::is_valid_proof_of_work(hash_digest hash, uint32_t bits)
     return (our_value <= target);
 }
 
-inline bool within_op_n(opcode code)
+inline bool within_op_n(chain::opcode code)
 {
     const auto raw_code = static_cast<uint8_t>(code);
-    constexpr auto op_1 = static_cast<uint8_t>(opcode::op_1);
-    constexpr auto op_16 = static_cast<uint8_t>(opcode::op_16);
+    constexpr auto op_1 = static_cast<uint8_t>(chain::opcode::op_1);
+    constexpr auto op_16 = static_cast<uint8_t>(chain::opcode::op_16);
     return op_1 <= raw_code && raw_code <= op_16;
 }
 
-inline uint8_t decode_op_n(opcode code)
+inline uint8_t decode_op_n(chain::opcode code)
 {
     const auto raw_code = static_cast<uint8_t>(code);
     BITCOIN_ASSERT(within_op_n(code));
 
     // Add 1 because we minus opcode::op_1, not the value before.
-    constexpr auto op_1 = static_cast<uint8_t>(opcode::op_1);
+    constexpr auto op_1 = static_cast<uint8_t>(chain::opcode::op_1);
     return raw_code - op_1 + 1;
 }
 
-inline size_t count_script_sigops(const operation_stack& operations,
-    bool accurate)
+inline size_t count_script_sigops(
+    const chain::operation_stack& operations, bool accurate)
 {
     size_t total_sigs = 0;
-    opcode last_opcode = opcode::bad_operation;
+    chain::opcode last_opcode = chain::opcode::bad_operation;
     for (const auto& op: operations)
     {
-        if (op.code == opcode::checksig ||
-            op.code == opcode::checksigverify)
+        if (op.code == chain::opcode::checksig ||
+            op.code == chain::opcode::checksigverify)
         {
             total_sigs++;
         }
-        else if (op.code == opcode::checkmultisig ||
-            op.code == opcode::checkmultisigverify)
+        else if (op.code == chain::opcode::checkmultisig ||
+            op.code == chain::opcode::checkmultisigverify)
         {
             if (accurate && within_op_n(last_opcode))
                 total_sigs += decode_op_n(last_opcode);
@@ -235,18 +237,18 @@ inline size_t count_script_sigops(const operation_stack& operations,
     return total_sigs;
 }
 
-size_t validate_block::legacy_sigops_count(const transaction_type& tx)
+size_t validate_block::legacy_sigops_count(const chain::transaction& tx)
 {
     size_t total_sigs = 0;
     for (const auto& input: tx.inputs)
     {
-        const auto& operations = input.script.operations();
+        const auto& operations = input.script.operations;
         total_sigs += count_script_sigops(operations, false);
     }
 
     for (const auto& output: tx.outputs)
     {
-        const auto& operations = output.script.operations();
+        const auto& operations = output.script.operations;
         total_sigs += count_script_sigops(operations, false);
     }
 
@@ -278,7 +280,7 @@ std::error_code validate_block::accept_block() const
     // Txs should be final when included in a block.
     for (const auto& tx: current_block_.transactions)
     {
-        if (!is_final(tx, height_, header.timestamp))
+        if (!tx.is_final(height_, header.timestamp))
             return error::non_final_transaction;
 
         RETURN_IF_STOPPED();
@@ -286,7 +288,7 @@ std::error_code validate_block::accept_block() const
 
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
-    const auto block_hash = hash_block_header(header);
+    const auto block_hash = header.hash();
     if (!checkpoint::validate(block_hash, height_, checkpoints_))
         return error::checkpoints_failed;
 
@@ -382,15 +384,16 @@ bool validate_block::is_valid_coinbase_height(size_t height,
     // First get the serialized coinbase input script as a series of bytes.
     const auto& coinbase_tx = block.transactions.front();
     const auto& coinbase_script = coinbase_tx.inputs.front().script;
-    const auto raw_coinbase = save_script(coinbase_script);
+    const auto raw_coinbase = coinbase_script.to_data(false);
 
     // Try to recreate the expected bytes.
-    script_type expect_coinbase;
+    chain::script expect_coinbase;
     script_number expect_number(height);
-    expect_coinbase.push_operation({opcode::special, expect_number.data()});
+    expect_coinbase.operations.push_back(
+        { chain::opcode::special, expect_number.data() });
 
     // Save the expected coinbase script.
-    const auto expect = save_script(expect_coinbase);
+    const auto expect = expect_coinbase.to_data(false);
 
     // Perform comparison of the first bytes with raw_coinbase.
     if (expect.size() > raw_coinbase.size())
@@ -434,7 +437,7 @@ std::error_code validate_block::connect_block() const
 
         // Count sigops for tx 0, but we don't perform
         // the other checks on coinbase tx.
-        if (is_coinbase(tx))
+        if (tx.is_coinbase())
             continue;
 
         RETURN_IF_STOPPED();
@@ -452,16 +455,17 @@ std::error_code validate_block::connect_block() const
     RETURN_IF_STOPPED();
 
     const auto& coinbase = transactions.front();
-    const auto coinbase_value = total_output_value(coinbase);
+    const auto coinbase_value = coinbase.total_output_value();
+
     if (coinbase_value > block_value(height_) + fees)
         return error::coinbase_too_large;
 
     return error::success;
 }
 
-bool validate_block::is_spent_duplicate(const transaction_type& tx) const
+bool validate_block::is_spent_duplicate(const chain::transaction& tx) const
 {
-    const auto tx_hash = hash_transaction(tx);
+    const auto tx_hash = tx.hash();
 
     // Is there a matching previous tx?
     if (!transaction_exists(tx_hash))
@@ -479,10 +483,10 @@ bool validate_block::is_spent_duplicate(const transaction_type& tx) const
     return true;
 }
 
-bool validate_block::validate_inputs(const transaction_type& tx,
+bool validate_block::validate_inputs(const chain::transaction& tx,
     size_t index_in_parent, uint64_t& value_in, size_t& total_sigops) const
 {
-    BITCOIN_ASSERT(!is_coinbase(tx));
+    BITCOIN_ASSERT(!tx.is_coinbase());
 
     ////////////// TODO: parallelize. //////////////
     for (size_t input_index = 0; input_index < tx.inputs.size(); ++input_index)
@@ -490,7 +494,7 @@ bool validate_block::validate_inputs(const transaction_type& tx,
             total_sigops))
         {
             log_warning(LOG_VALIDATE) << "Invalid input ["
-                << encode_hash(hash_transaction(tx)) << ":"
+                << encode_hash(tx.hash()) << ":"
                 << input_index << "]";
             return false;
         }
@@ -499,30 +503,35 @@ bool validate_block::validate_inputs(const transaction_type& tx,
 }
 
 size_t script_hash_signature_operations_count(
-    const script_type& output_script, const script_type& input_script)
+    const chain::script& output_script, const chain::script& input_script)
 {
-    if (output_script.type() != payment_type::script_hash)
+    if (output_script.type() != chain::payment_type::script_hash)
         return 0;
 
-    if (input_script.operations().empty())
+    if (input_script.operations.empty())
         return 0;
 
-    const auto& last_data = input_script.operations().back().data;
-    const auto eval_script = parse_script(last_data);
-    return count_script_sigops(eval_script.operations(), true);
+    const auto& last_data = input_script.operations.back().data;
+
+    // ignore possible failure?
+    const auto eval_script =
+        chain::script::factory_from_data(last_data, false, false);
+
+    return count_script_sigops(eval_script.operations, true);
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const transaction_type& current_tx, size_t input_index, uint64_t& value_in,
-    size_t& total_sigops) const
+    const chain::transaction& current_tx, size_t input_index
+    uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
 
     // Lookup previous output
     size_t previous_height;
-    transaction_type previous_tx;
+    chain::transaction previous_tx;
     const auto& input = current_tx.inputs[input_index];
     const auto& previous_output = input.previous_output;
+
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
         log_warning(LOG_VALIDATE) << "Failure fetching input transaction.";
@@ -558,7 +567,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     }
 
     // Check coinbase maturity has been reached
-    if (is_coinbase(previous_tx))
+    if (previous_tx.is_coinbase())
     {
         BITCOIN_ASSERT(previous_height <= height_);
         const auto height_difference = height_ - previous_height;
@@ -596,5 +605,5 @@ bool validate_block::connect_input(size_t index_in_parent,
 
 #undef RETURN_IF_STOPPED
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

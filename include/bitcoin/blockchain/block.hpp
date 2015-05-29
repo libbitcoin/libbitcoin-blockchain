@@ -26,8 +26,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-BCB_API chain::block genesis_block();
-
 BCB_API chain::index_list block_locator_indexes(int top_height);
 
 BCB_API uint64_t block_value(size_t height);

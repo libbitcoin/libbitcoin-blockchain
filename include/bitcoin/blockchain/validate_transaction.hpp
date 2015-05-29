@@ -53,6 +53,10 @@ public:
     static bool tally_fees(const chain::transaction& tx, uint64_t value_in,
         uint64_t& fees);
 
+    static bool validate_consensus(const chain::script& prevout_script,
+        const chain::transaction& current_tx, size_t input_index,
+        const chain::block_header& header, const size_t height);
+
 private:
     std::error_code basic_checks() const;
     bool is_standard() const;
