@@ -25,19 +25,21 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/block_info.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 // Metadata + block
 class BCB_API block_detail
 {
 public:
-    block_detail(const block_type& actual_block);
-    block_detail(const block_header_type& actual_block_header);
-    block_type& actual();
-    const block_type& actual() const;
-    std::shared_ptr<block_type> actual_ptr() const;
+
+    block_detail(const chain::block& actual_block);
+    block_detail(const chain::block_header& actual_block_header);
+    chain::block& actual();
+    const chain::block& actual() const;
+    std::shared_ptr<chain::block> actual_ptr() const;
     void mark_processed();
     bool is_processed();
     const hash_digest& hash() const;
@@ -47,7 +49,8 @@ public:
     const std::error_code& error() const;
 
 private:
-    std::shared_ptr<block_type> actual_block_;
+
+    std::shared_ptr<chain::block> actual_block_;
     const hash_digest block_hash_;
     bool processed_;
     block_info info_;
