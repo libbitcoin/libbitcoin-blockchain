@@ -31,7 +31,7 @@
 #endif
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -44,9 +44,10 @@ enum validation_options : uint32_t
 };
 
 validate_transaction::validate_transaction(blockchain& chain,
-    const transaction_type& tx, const pool_buffer& pool, async_strand& strand)
-  : strand_(strand), blockchain_(chain),
-    tx_(tx), tx_hash_(hash_transaction(tx)), pool_(pool)
+    const chain::transaction& tx, const pool_buffer& pool,
+    async_strand& strand)
+  : strand_(strand), blockchain_(chain), tx_(tx), tx_hash_(tx.hash()),
+    pool_(pool)
 {
 }
 
@@ -56,7 +57,7 @@ void validate_transaction::start(validate_handler handle_validate)
     const auto ec = basic_checks();
     if (ec)
     {
-        handle_validate_(ec, index_list());
+        handle_validate_(ec, chain::index_list());
         return;
     }
 
@@ -73,7 +74,7 @@ std::error_code validate_transaction::basic_checks() const
     if (ec)
         return ec;
 
-    if (is_coinbase(tx_))
+    if (tx_.is_coinbase())
         return error::coinbase_transaction;
 
     // Ummm...
@@ -95,7 +96,7 @@ bool validate_transaction::is_standard() const
     return true;
 }
 
-const transaction_type* validate_transaction::fetch(
+const chain::transaction* validate_transaction::fetch(
     const hash_digest& tx_hash) const
 {
     for (const auto& entry: pool_)
@@ -109,7 +110,7 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
 {
     if (ec != error::not_found)
     {
-        handle_validate_(error::duplicate, index_list());
+        handle_validate_(error::duplicate, chain::index_list());
         return;
     }
 
@@ -120,7 +121,7 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
         const auto& previous_output = tx_.inputs[input_index].previous_output;
         if (is_spent(previous_output))
         {
-            handle_validate_(error::double_spend, index_list());
+            handle_validate_(error::double_spend, chain::index_list());
             return;
         }
     }
@@ -132,7 +133,7 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
             shared_from_this(), _1, _2));
 }
 
-bool validate_transaction::is_spent(const output_point& outpoint) const
+bool validate_transaction::is_spent(const chain::output_point& outpoint) const
 {
     for (const auto& entry: pool_)
         for (const auto& current_input: entry.tx.inputs)
@@ -147,7 +148,7 @@ void validate_transaction::set_last_height(const std::error_code& ec,
 {
     if (ec)
     {
-        handle_validate_(ec, index_list());
+        handle_validate_(ec, chain::index_list());
         return;
     }
 
@@ -196,11 +197,13 @@ void validate_transaction::search_pool_previous_tx()
     const auto previous_tx = fetch(prev_tx_hash);
     if (previous_tx == nullptr)
     {
-        handle_validate_(error::input_not_found, index_list{current_input_});
+        handle_validate_(error::input_not_found,
+            chain::index_list{ current_input_ });
+
         return;
     }
 
-    BITCOIN_ASSERT(!is_coinbase(*previous_tx));
+    BITCOIN_ASSERT(!(*previous_tx).is_coinbase());
 
     // parent_height ignored here as memory pool transactions can
     // never be a coinbase transaction.
@@ -209,11 +212,13 @@ void validate_transaction::search_pool_previous_tx()
 }
 
 void validate_transaction::handle_previous_tx(const std::error_code& ec,
-    const transaction_type& previous_tx, size_t parent_height)
+    const chain::transaction& previous_tx, size_t parent_height)
 {
     if (ec)
     {
-        handle_validate_(error::input_not_found, index_list{current_input_});
+        handle_validate_(error::input_not_found,
+            chain::index_list{ current_input_});
+
         return;
     }
 
@@ -235,7 +240,7 @@ void validate_transaction::check_double_spend(const std::error_code& ec)
 {
     if (ec != error::unspent_output)
     {
-        handle_validate_(error::double_spend, index_list());
+        handle_validate_(error::double_spend, chain::index_list());
         return;
     }
 
@@ -256,7 +261,7 @@ void validate_transaction::check_fees()
     uint64_t fee = 0;
     if (!tally_fees(tx_, value_in_, fee))
     {
-        handle_validate_(error::fees_out_of_range, index_list());
+        handle_validate_(error::fees_out_of_range, chain::index_list());
         return;
     }
 
@@ -267,7 +272,7 @@ void validate_transaction::check_fees()
 }
 
 std::error_code validate_transaction::check_transaction(
-    const transaction_type& tx)
+    const chain::transaction& tx)
 {
     if (tx.inputs.empty() || tx.outputs.empty())
         return error::empty_transaction;
@@ -288,17 +293,17 @@ std::error_code validate_transaction::check_transaction(
             return error::output_value_overflow;
     }
 
-    if (is_coinbase(tx))
+    if (tx.is_coinbase())
     {
         const auto& coinbase_script = tx.inputs[0].script;
-        const auto coinbase_script_size = save_script(coinbase_script).size();
+        const auto coinbase_script_size = coinbase_script.satoshi_size(false);
         if (coinbase_script_size < 2 || coinbase_script_size > 100)
             return error::invalid_coinbase_script_size;
     }
     else
     {
         for (const auto& input: tx.inputs)
-            if (previous_output_is_null(input.previous_output))
+            if (input.previous_output.is_null())
                 return error::previous_output_null;
     }
 
@@ -306,8 +311,8 @@ std::error_code validate_transaction::check_transaction(
 }
 
 // Validate script consensus conformance based on flags provided.
-static bool check_consensus(const script_type& prevout_script,
-    const transaction_type& current_tx, size_t input_index,
+static bool check_consensus(const chain::script& prevout_script,
+    const chain::transaction& current_tx, size_t input_index,
     uint32_t options)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
@@ -317,9 +322,8 @@ static bool check_consensus(const script_type& prevout_script,
 
 #ifdef WITH_CONSENSUS
     using namespace bc::consensus;
-    const auto previous_output_script = save_script(prevout_script);
-    data_chunk current_transaction(satoshi_raw_size(current_tx));
-    satoshi_save(current_tx, current_transaction.begin());
+    const auto previous_output_script = prevout_script.to_data(false);
+    data_chunk current_transaction = current_tx.to_data();
 
     // TODO: expand support beyond BIP16 option.
     const auto flags = (bip16_enabled ? verify_flags_p2sh : verify_flags_none);
@@ -338,8 +342,8 @@ static bool check_consensus(const script_type& prevout_script,
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
     // TODO: expand support beyond BIP16 option.
-    const auto valid = previous_output_script.run(current_input_script,
-        current_tx, input_index32, bip16_enabled);
+    const auto valid = chain::script::verify(current_input_script,
+        previous_output_script, current_tx, input_index32, bip16_enabled);
 #endif
 
     if (!valid)
@@ -350,15 +354,15 @@ static bool check_consensus(const script_type& prevout_script,
 }
 
 // Validate script consensus conformance, defaulting to p2sh.
-static bool check_consensus(const script_type& prevout_script,
-    const transaction_type& current_tx, size_t input_index)
+static bool check_consensus(const chain::script& prevout_script,
+    const chain::transaction& current_tx, size_t input_index)
 {
     return check_consensus(prevout_script, current_tx, input_index,
         validation_options::p2sh);
 }
 
 // Determine if BIP16 compliance is required for this block.
-static bool is_bip_16_enabled(const block_header_type& header, size_t height)
+static bool is_bip_16_enabled(const chain::block_header& header, size_t height)
 {
     // Block 170060 contains an invalid BIP 16 transaction before switchover date.
     const auto bip16_enabled = header.timestamp >= bip16_switchover_timestamp;
@@ -367,9 +371,9 @@ static bool is_bip_16_enabled(const block_header_type& header, size_t height)
 }
 
 // Validate script consensus conformance, calculating p2sh based on block/height.
-bool validate_transaction::validate_consensus(const script_type& prevout_script,
-    const transaction_type& current_tx, size_t input_index,
-    const block_header_type& header, const size_t height)
+bool validate_transaction::validate_consensus(const chain::script& prevout_script,
+    const chain::transaction& current_tx, size_t input_index,
+    const chain::block_header& header, const size_t height)
 {
     uint32_t options = validation_options::none;
     if (is_bip_16_enabled(header, height))
@@ -378,8 +382,8 @@ bool validate_transaction::validate_consensus(const script_type& prevout_script,
     return check_consensus(prevout_script, current_tx, input_index, options);
 }
 
-bool validate_transaction::connect_input(const transaction_type& tx,
-    size_t current_input, const transaction_type& previous_tx, 
+bool validate_transaction::connect_input(const chain::transaction& tx,
+    size_t current_input, const chain::transaction& previous_tx,
     size_t parent_height, size_t last_block_height, uint64_t& value_in)
 {
     const auto& input = tx.inputs[current_input];
@@ -392,7 +396,7 @@ bool validate_transaction::connect_input(const transaction_type& tx,
     if (output_value > max_money())
         return false;
 
-    if (is_coinbase(previous_tx))
+    if (previous_tx.is_coinbase())
     {
         const auto height_difference = last_block_height - parent_height;
         if (height_difference < coinbase_maturity)
@@ -406,10 +410,11 @@ bool validate_transaction::connect_input(const transaction_type& tx,
     return (value_in <= max_money());
 }
 
-bool validate_transaction::tally_fees(const transaction_type& tx,
+bool validate_transaction::tally_fees(const chain::transaction& tx,
     uint64_t value_in, uint64_t& total_fees)
 {
-    const auto value_out = total_output_value(tx);
+    const auto value_out = tx.total_output_value();
+
     if (value_in < value_out)
         return false;
 
@@ -418,5 +423,5 @@ bool validate_transaction::tally_fees(const transaction_type& tx,
     return (total_fees <= max_money());
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

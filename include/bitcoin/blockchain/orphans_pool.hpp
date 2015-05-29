@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 // An unordered memory pool for orphan blocks
 class BCB_API orphans_pool
@@ -52,7 +52,7 @@ private:
 // TODO: define in orphans_pool (compat break).
 typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

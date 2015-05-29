@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 orphans_pool::orphans_pool(size_t size)
   : buffer_(size)
@@ -113,5 +113,5 @@ block_detail_list orphans_pool::unprocessed()
     return unprocessed_blocks;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

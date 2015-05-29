@@ -136,7 +136,7 @@ void blockchain_impl::do_store(const chain::block& block,
     start_write();
 
     const auto stored_detail = std::make_shared<block_detail>(block);
-    const auto height = chain_->find_height(block.header.hash());
+    const auto height = chain_.find_height(block.header.hash());
 
     if (height != simple_chain::null_height)
     {
