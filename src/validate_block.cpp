@@ -187,7 +187,7 @@ size_t tx_legacy_sigops_count(const transaction_type& tx)
         total_sigs += count_script_sigops(operations, false);
     }
 
-    for (const auto& output : tx.outputs)
+    for (const auto& output: tx.outputs)
     {
         const auto& operations = output.script.operations();
         total_sigs += count_script_sigops(operations, false);

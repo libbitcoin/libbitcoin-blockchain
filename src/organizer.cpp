@@ -118,7 +118,7 @@ void organizer::replace_chain(size_t fork_index,
     // there so that problems will show earlier.
     // All arrival_blocks should be blocks from the pool.
     auto arrival_index = fork_index;
-    for (const auto& arrival_block : orphan_chain)
+    for (const auto arrival_block: orphan_chain)
     {
         orphans_.remove(arrival_block);
         ++arrival_index;
@@ -127,7 +127,7 @@ void organizer::replace_chain(size_t fork_index,
     }
 
     // Now add the old blocks back to the pool
-    for (const auto& replaced_block: released_blocks)
+    for (const auto replaced_block: released_blocks)
     {
         replaced_block->mark_processed();
         replaced_block->set_info({block_status::orphan, 0});
@@ -178,10 +178,10 @@ void organizer::notify_reorganize(size_t fork_point,
 {
     // Strip out meta-info, converting to format passed to subscribe handlers.
     blockchain::block_list arrival_blocks, replaced_blocks;
-    for (const auto& arrival_block : orphan_chain)
+    for (const auto arrival_block: orphan_chain)
         arrival_blocks.push_back(arrival_block->actual_ptr());
 
-    for (const auto& replaced_block : replaced_chain)
+    for (const auto replaced_block: replaced_chain)
         replaced_blocks.push_back(replaced_block->actual_ptr());
 
     reorganize_occured(fork_point, arrival_blocks, replaced_blocks);

@@ -79,20 +79,19 @@ void transaction_pool::do_validate(const transaction_type& tx,
 }
 
 void transaction_pool::validation_complete(
-    const std::error_code& code, const index_list& unconfirmed,
+    const std::error_code& ec, const index_list& unconfirmed,
     const hash_digest& tx_hash, validate_handler handle_validate)
 {
-    if (code == error::input_not_found ||
-        code == error::validate_inputs_failed)
+    if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
         //BITCOIN_ASSERT(unconfirmed[0] < tx.inputs.size());
-        handle_validate(code, unconfirmed);
+        handle_validate(ec, unconfirmed);
     }
-    else if (code)
+    else if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handle_validate(code, index_list());
+        handle_validate(ec, index_list());
     }
     // Re-check as another transaction might have been added in the interim.
     else if (tx_exists(tx_hash))
@@ -113,9 +112,6 @@ bool transaction_pool::tx_exists(const hash_digest& tx_hash)
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    // BUGBUG: this is thread unsafe (the size vs. capacity check can be missed
-    // while still dropping txs, resulting in a missed handle_confirm firing).
-    // This is not catastrophic in that the call is only useful for reporting.
     const auto perform_store = [this, tx, handle_confirm]
     {
         // When new tx are added to the circular buffer, any tx at the front
@@ -129,16 +125,25 @@ void transaction_pool::store(const transaction_type& tx,
 
         // We store a precomputed tx hash to make lookups faster.
         buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
+
+        //log_warning("transaction")
+        //    << "Transaction save " << buffer_.size();
     };
 
-    const auto wrap_handle_validate = [perform_store, handle_validate](
-        const std::error_code& code, const index_list& unconfirmed)
+    const auto wrap_handle_validate = [this, perform_store, handle_validate](
+        const std::error_code& ec, const index_list& unconfirmed)
     {
-        if (!code)
+        if (!ec)
             perform_store();
+        //else
+        //    log_warning("transaction")
+        //        << "Transaction fail " << buffer_.size();
 
-        handle_validate(code, unconfirmed);
+        handle_validate(ec, unconfirmed);
     };
+
+    //log_warning("transaction")
+    //    << "Transaction validate " << buffer_.size();
 
     validate(tx, wrap_handle_validate);
 }
@@ -172,26 +177,31 @@ void transaction_pool::exists(const hash_digest& transaction_hash,
     strand_.queue(existence_tester);
 }
 
-void transaction_pool::reorganize(const std::error_code& code,
-    size_t /* fork_point */,
-    const blockchain::block_list& new_blocks,
+void transaction_pool::reorganize(const std::error_code& ec,
+    size_t /* fork_point */, const blockchain::block_list& new_blocks,
     const blockchain::block_list& replaced_blocks)
 {
-    if (code)
+    if (ec)
     {
-        BITCOIN_ASSERT(code == error::service_stopped);
+        BITCOIN_ASSERT(ec == error::service_stopped);
         return;
     }
 
-    if (!replaced_blocks.empty())
-        strand_.queue(&transaction_pool::invalidate_pool, this);
-    else
+    log_warning("transaction")
+        << "Transaction pool reorganize (" << buffer_.size()
+        << ") new blocks (" << new_blocks.size()
+        << ") replace blocks (" << replaced_blocks.size() << ")";
+
+    if (replaced_blocks.empty())
         strand_.queue(&transaction_pool::takeout_confirmed, this, new_blocks);
+    else
+        strand_.queue(&transaction_pool::invalidate_pool, this);
 
     // new blocks come in - remove txs in new
     // old blocks taken out - resubmit txs in old
     chain_.subscribe_reorganize(
-        std::bind(&transaction_pool::reorganize, this, _1, _2, _3, _4));
+        std::bind(&transaction_pool::reorganize,
+            this, _1, _2, _3, _4));
 }
 
 void transaction_pool::invalidate_pool()
@@ -208,7 +218,7 @@ void transaction_pool::invalidate_pool()
 void transaction_pool::takeout_confirmed(
     const blockchain::block_list& new_blocks)
 {
-    for (auto new_block: new_blocks)
+    for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
             try_delete(hash_transaction(new_tx));
 }

@@ -49,7 +49,7 @@ bool orphans_pool::add(block_detail_ptr incoming_block)
 {
     BITCOIN_ASSERT(incoming_block);
     const auto& incomming_header = incoming_block->actual().header;
-    for (auto current_block : buffer_)
+    for (auto current_block: buffer_)
     {
         // No duplicates allowed.
         const auto& actual = current_block->actual().header;
@@ -79,7 +79,7 @@ block_detail_list orphans_pool::trace(block_detail_ptr end_block)
         const auto& actual = traced_chain.back()->actual();
         const auto& previous_block_hash = actual.header.previous_block_hash;
         found = false;
-        for (const auto& current_block: buffer_)
+        for (const auto current_block: buffer_)
             if (current_block->hash() == previous_block_hash)
             {
                 found = true;
@@ -96,7 +96,7 @@ block_detail_list orphans_pool::trace(block_detail_ptr end_block)
 block_detail_list orphans_pool::unprocessed()
 {
     block_detail_list unprocessed_blocks;
-    for (const auto& current_block: buffer_)
+    for (const auto current_block: buffer_)
         if (!current_block->is_processed())
             unprocessed_blocks.push_back(current_block);
 

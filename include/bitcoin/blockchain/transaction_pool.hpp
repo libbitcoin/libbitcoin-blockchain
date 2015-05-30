@@ -185,11 +185,11 @@ public:
 private:
     void do_validate(const transaction_type& tx,
         validate_handler handle_validate);
-    void validation_complete(const std::error_code& code, 
+    void validation_complete(const std::error_code& ec, 
         const index_list& unconfirmed, const hash_digest& tx_hash,
         validate_handler handle_validate);
     bool tx_exists(const hash_digest& tx_hash);
-    void reorganize(const std::error_code& code, size_t fork_point,
+    void reorganize(const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
     void invalidate_pool();
