@@ -39,6 +39,11 @@ transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
 {
 }
 
+transaction_pool::~transaction_pool()
+{
+    // This was reportedly required for use with circular_buffer.
+}
+
 bool transaction_pool::empty() const
 {
     return buffer_.empty();

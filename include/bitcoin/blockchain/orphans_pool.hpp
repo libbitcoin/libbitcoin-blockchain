@@ -35,6 +35,7 @@ class BCB_API orphans_pool
 {
 public:
     orphans_pool(size_t size=20);
+    ~orphans_pool();
 
     bool empty() const;
     size_t size() const;

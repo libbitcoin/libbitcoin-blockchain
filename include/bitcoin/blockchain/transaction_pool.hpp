@@ -38,7 +38,7 @@ struct BCB_API transaction_entry_info
     confirm_handler handle_confirm;
 };
 
-// TODO: define in transaction_entry_info or transaction_pool (compat break).
+// TODO: eliminate this and don't expose the internal transaction pool.
 typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 
 /**
@@ -74,6 +74,7 @@ public:
 
     transaction_pool(threadpool& pool, blockchain& chain,
         size_t capacity=2000);
+    ~transaction_pool();
 
     /// This class is not copyable.
     transaction_pool(const transaction_pool&) = delete;
@@ -184,14 +185,11 @@ public:
 private:
     void do_validate(const transaction_type& tx,
         validate_handler handle_validate);
-    void validation_complete(
-        const std::error_code& code, const index_list& unconfirmed,
-        const hash_digest& tx_hash, validate_handler handle_validate);
-
+    void validation_complete(const std::error_code& code, 
+        const index_list& unconfirmed, const hash_digest& tx_hash,
+        validate_handler handle_validate);
     bool tx_exists(const hash_digest& tx_hash);
-
-    void reorganize(const std::error_code& code,
-        size_t fork_point,
+    void reorganize(const std::error_code& code, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
     void invalidate_pool();

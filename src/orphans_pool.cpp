@@ -30,6 +30,11 @@ orphans_pool::orphans_pool(size_t size)
 {
 }
 
+orphans_pool::~orphans_pool()
+{
+    // This was reportedly required for use with circular_buffer.
+}
+
 bool orphans_pool::empty() const
 {
     return buffer_.empty();
