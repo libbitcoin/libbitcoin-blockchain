@@ -416,8 +416,10 @@ size_t script_hash_signature_operations_count(
     const auto& last_data = input_script.operations.back().data;
 
     // ignore possible failure?
-    const auto eval_script =
-        chain::script::factory_from_data(last_data, false, false);
+    chain::script eval_script;
+
+    if (!eval_script.from_data(last_data, false, false))
+        throw end_of_stream();
 
     return count_script_sigops(eval_script.operations, true);
 }
