@@ -62,32 +62,26 @@ typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
  *  txpool.start();
  * @endcode
  */
-class transaction_pool
+class BCB_API transaction_pool
 {
 public:
-    typedef std::function<
-        void (const std::error_code&, const index_list&)> validate_handler;
-
-    typedef std::function<
-        void (const std::error_code&, const transaction_type&)>
-            fetch_handler;
-
+    typedef std::function<void (const std::error_code&,
+        const index_list&)> validate_handler;
+    typedef std::function<void (const std::error_code&,
+        const transaction_type&)> fetch_handler;
     typedef std::function<void (bool)> exists_handler;
-
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
-    BCB_API transaction_pool(threadpool& pool, blockchain& chain,
+    transaction_pool(threadpool& pool, blockchain& chain,
         size_t capacity=2000);
-    BCB_API ~transaction_pool();
-    BCB_API void start();
 
-    /// Non-copyable class
+    /// This class is not copyable.
     transaction_pool(const transaction_pool&) = delete;
-    /// Non-copyable class
     void operator=(const transaction_pool&) = delete;
 
-    /// Deprecated, unsafe after startup, use constructor.
-    BCB_API void set_capacity(size_t capacity);
+    bool empty() const;
+    size_t size() const;
+    void start();
 
     /**
      * Validate a transaction without storing it.
@@ -120,7 +114,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API void validate(const transaction_type& tx,
+    void validate(const transaction_type& tx,
         validate_handler handle_validate);
 
     /**
@@ -154,7 +148,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API void store(const transaction_type& tx,
+    void store(const transaction_type& tx,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
     /**
@@ -169,7 +163,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API void fetch(const hash_digest& transaction_hash,
+    void fetch(const hash_digest& transaction_hash,
         fetch_handler handle_fetch);
 
     /**
@@ -181,8 +175,11 @@ public:
      *  void handle_exists(bool);
      * @endcode
      */
-    BCB_API void exists(const hash_digest& transaction_hash,
+    void exists(const hash_digest& transaction_hash,
         exists_handler handle_exists);
+
+    /// Deprecated, unsafe after startup, use constructor.
+    void set_capacity(size_t capacity);
 
 private:
     void do_validate(const transaction_type& tx,

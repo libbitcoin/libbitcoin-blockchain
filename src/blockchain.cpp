@@ -175,10 +175,10 @@ public:
     void start(handler_locator handle)
     {
         handle_ = handle;
-        const auto this_ptr = shared_from_this();
+        const auto self = shared_from_this();
         chain_.fetch_last_height(
             std::bind(&fetch_locator::populate,
-                this_ptr, _1, _2));
+                self, _1, _2));
     }
 
 private:
@@ -217,12 +217,12 @@ private:
             return;
         }
 
-        const auto this_ptr = shared_from_this();
+        const auto self = shared_from_this();
         const auto height = indexes_.back();
         indexes_.pop_back();
         chain_.fetch_block_header(height,
             std::bind(&fetch_locator::append,
-                this_ptr, _1, _2, height));
+                self, _1, _2, height));
     }
 
     void append(const std::error_code& ec, const block_header_type& blk_header,
@@ -246,7 +246,7 @@ private:
 
 void fetch_block_locator(blockchain& chain, handler_locator handle_fetch)
 {
-    auto fetcher = std::make_shared<fetch_locator>(chain);
+    const auto fetcher = std::make_shared<fetch_locator>(chain);
     fetcher->start(handle_fetch);
 }
 

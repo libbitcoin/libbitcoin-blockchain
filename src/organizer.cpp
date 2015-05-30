@@ -43,7 +43,7 @@ void organizer::start()
     // As we loop, we pop blocks off and process them
     while (!process_queue_.empty())
     {
-        auto process_block = process_queue_.back();
+        const auto process_block = process_queue_.back();
         process_queue_.pop_back();
 
         // process() can remove blocks from the queue too
@@ -118,7 +118,7 @@ void organizer::replace_chain(size_t fork_index,
     // there so that problems will show earlier.
     // All arrival_blocks should be blocks from the pool.
     auto arrival_index = fork_index;
-    for (auto arrival_block: orphan_chain)
+    for (const auto& arrival_block : orphan_chain)
     {
         orphans_.remove(arrival_block);
         ++arrival_index;
@@ -127,7 +127,7 @@ void organizer::replace_chain(size_t fork_index,
     }
 
     // Now add the old blocks back to the pool
-    for (auto replaced_block: released_blocks)
+    for (const auto& replaced_block: released_blocks)
     {
         replaced_block->mark_processed();
         replaced_block->set_info({block_status::orphan, 0});
@@ -141,7 +141,7 @@ static void lazy_remove(block_detail_list& process_queue,
     block_detail_ptr remove_block)
 {
     BITCOIN_ASSERT(remove_block);
-    auto it = std::find(process_queue.begin(), process_queue.end(),
+    const auto it = std::find(process_queue.begin(), process_queue.end(),
         remove_block);
     if (it != process_queue.end())
         process_queue.erase(it);
@@ -174,17 +174,14 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
 
 void organizer::notify_reorganize(size_t fork_point,
     const block_detail_list& orphan_chain,
-    const block_detail_list& replaced_slice)
+    const block_detail_list& replaced_chain)
 {
-    // Strip out the meta-info, to convert to format which can
-    // be passed to subscribe handlers
-    // orphan_chain = arrival blocks
-    // replaced slice = replaced chain
+    // Strip out meta-info, converting to format passed to subscribe handlers.
     blockchain::block_list arrival_blocks, replaced_blocks;
-    for (auto arrival_block: orphan_chain)
+    for (const auto& arrival_block : orphan_chain)
         arrival_blocks.push_back(arrival_block->actual_ptr());
 
-    for (auto replaced_block: replaced_slice)
+    for (const auto& replaced_block : replaced_chain)
         replaced_blocks.push_back(replaced_block->actual_ptr());
 
     reorganize_occured(fork_point, arrival_blocks, replaced_blocks);

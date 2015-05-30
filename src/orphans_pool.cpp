@@ -25,9 +25,19 @@
 namespace libbitcoin {
 namespace chain {
 
-orphans_pool::orphans_pool(size_t pool_size)
-  : buffer_(pool_size)
+orphans_pool::orphans_pool(size_t size)
+  : buffer_(size)
 {
+}
+
+bool orphans_pool::empty() const
+{
+    return buffer_.empty();
+}
+
+size_t orphans_pool::size() const
+{
+    return buffer_.size();
 }
 
 bool orphans_pool::add(block_detail_ptr incoming_block)
@@ -46,6 +56,14 @@ bool orphans_pool::add(block_detail_ptr incoming_block)
     return true;
 }
 
+void orphans_pool::remove(block_detail_ptr remove_block)
+{
+    BITCOIN_ASSERT(remove_block);
+    const auto it = std::find(buffer_.begin(), buffer_.end(), remove_block);
+    BITCOIN_ASSERT(it != buffer_.end());
+    buffer_.erase(it);
+}
+
 block_detail_list orphans_pool::trace(block_detail_ptr end_block)
 {
     BITCOIN_ASSERT(end_block);
@@ -56,7 +74,7 @@ block_detail_list orphans_pool::trace(block_detail_ptr end_block)
         const auto& actual = traced_chain.back()->actual();
         const auto& previous_block_hash = actual.header.previous_block_hash;
         found = false;
-        for (const auto current_block: buffer_)
+        for (const auto& current_block: buffer_)
             if (current_block->hash() == previous_block_hash)
             {
                 found = true;
@@ -73,7 +91,7 @@ block_detail_list orphans_pool::trace(block_detail_ptr end_block)
 block_detail_list orphans_pool::unprocessed()
 {
     block_detail_list unprocessed_blocks;
-    for (const auto current_block: buffer_)
+    for (const auto& current_block: buffer_)
         if (!current_block->is_processed())
             unprocessed_blocks.push_back(current_block);
 
@@ -81,14 +99,6 @@ block_detail_list orphans_pool::unprocessed()
     // Helps avoid fragmentation, but isn't neccessary
     std::reverse(unprocessed_blocks.begin(), unprocessed_blocks.end());
     return unprocessed_blocks;
-}
-
-void orphans_pool::remove(block_detail_ptr remove_block)
-{
-    BITCOIN_ASSERT(remove_block);
-    auto it = std::find(buffer_.begin(), buffer_.end(), remove_block);
-    BITCOIN_ASSERT(it != buffer_.end());
-    buffer_.erase(it);
 }
 
 } // namespace chain

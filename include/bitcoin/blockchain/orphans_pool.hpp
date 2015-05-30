@@ -34,11 +34,15 @@ namespace chain {
 class BCB_API orphans_pool
 {
 public:
-    orphans_pool(size_t pool_size=20);
+    orphans_pool(size_t size=20);
+
+    bool empty() const;
+    size_t size() const;
+
     bool add(block_detail_ptr incoming_block);
+    void remove(block_detail_ptr remove_block);
     block_detail_list trace(block_detail_ptr end_block);
     block_detail_list unprocessed();
-    void remove(block_detail_ptr remove_block);
 
 private:
     boost::circular_buffer<block_detail_ptr> buffer_;

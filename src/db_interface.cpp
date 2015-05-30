@@ -110,6 +110,7 @@ size_t next_height(const size_t current_height)
 {
     if (current_height == block_database::null_height)
         return 0;
+
     return current_height + 1;
 }
 
@@ -123,32 +124,40 @@ bool is_special_duplicate(const transaction_metainfo& info)
 
 void db_interface::push(const block_type& block)
 {
-    const size_t block_height = next_height(blocks.last_height());
+    const auto block_height = next_height(blocks.last_height());
     for (size_t i = 0; i < block.transactions.size(); ++i)
     {
-        const transaction_type& tx = block.transactions[i];
+        const auto& tx = block.transactions[i];
         const transaction_metainfo info{block_height, i};
+
         // Skip special duplicate transactions.
         if (is_special_duplicate(info))
             continue;
         const hash_digest tx_hash = hash_transaction(tx);
+
         // Add inputs
         if (!is_coinbase(tx))
             push_inputs(tx_hash, block_height, tx.inputs);
+
         // Add outputs
         push_outputs(tx_hash, block_height, tx.outputs);
+
         // Add stealth outputs
         push_stealth_outputs(tx_hash, tx.outputs);
+
         // Add transaction
         transactions.store(info, tx);
     }
+
     // Add block itself.
     blocks.store(block);
+
     // Synchronise everything...
     spends.sync();
     transactions.sync();
     history.sync();
     stealth.sync();
+
     // ... do block header last so if there's a crash midway
     // then on the next startup we'll try to redownload the
     // last block and it will fail because blockchain was left
@@ -159,74 +168,86 @@ void db_interface::push(const block_type& block)
 block_type db_interface::pop()
 {
     block_type result;
-    const size_t block_height = blocks.last_height();
+    const auto block_height = blocks.last_height();
     auto block_result = blocks.get(block_height);
     BITCOIN_ASSERT(block_result);
+
     // Set result header
     result.header = block_result.header();
-    const size_t txs_size = block_result.transactions_size();
+    const auto txs_size = block_result.transactions_size();
+
     // Loop backwards (in reverse to how we added).
     for (int i = txs_size - 1; i >= 0; --i)
     {
-        const hash_digest tx_hash = block_result.transaction_hash(i);
+        const auto tx_hash = block_result.transaction_hash(i);
         auto tx_result = transactions.get(tx_hash);
         BITCOIN_ASSERT(tx_result);
         BITCOIN_ASSERT(tx_result.height() == block_height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
-        const transaction_type tx = tx_result.transaction();
+        const auto tx = tx_result.transaction();
+
         // Do things in reverse so pop txs, then outputs, then inputs.
         transactions.remove(tx_hash);
+
         // Remove outputs
         pop_outputs(block_height, tx.outputs);
+
         // Remove inputs
         if (!is_coinbase(tx))
             pop_inputs(block_height, tx.inputs);
+
         // Add transaction to result
         result.transactions.push_back(tx);
     }
+
     stealth.unlink(block_height);
     blocks.unlink(block_height);
+
     // Since we looped backwards
     std::reverse(result.transactions.begin(), result.transactions.end());
     return result;
 }
 
-void db_interface::push_inputs(
-    const hash_digest& tx_hash, const size_t block_height,
-    const transaction_input_list& inputs)
+void db_interface::push_inputs(const hash_digest& tx_hash,
+    const size_t block_height, const transaction_input_list& inputs)
 {
     for (uint32_t i = 0; i < inputs.size(); ++i)
     {
-        const transaction_input_type& input = inputs[i];
+        const auto& input = inputs[i];
         const input_point spend{tx_hash, i};
         spends.store(input.previous_output, spend);
+
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
             continue;
+
         // Try to extract an address.
         payment_address address;
         if (!extract(address, input.script))
             continue;
+
         history.add_spend(address.hash(),
             input.previous_output, spend, block_height);
     }
 }
 
-void db_interface::push_outputs(
-    const hash_digest& tx_hash, const size_t block_height,
-    const transaction_output_list& outputs)
+void db_interface::push_outputs(const hash_digest& tx_hash, 
+    const size_t block_height, const transaction_output_list& outputs)
 {
     for (uint32_t i = 0; i < outputs.size(); ++i)
     {
-        const transaction_output_type& output = outputs[i];
+        const auto& output = outputs[i];
         const output_point outpoint{tx_hash, i};
+
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
             continue;
+
         // Try to extract an address.
         payment_address address;
         if (!extract(address, output.script))
             continue;
+
         history.add_output(address.hash(),
             outpoint, block_height, output.value);
     }
@@ -242,28 +263,31 @@ hash_digest read_ephemkey(const data_chunk& stealth_data)
     return ephemkey;
 }
 
-void db_interface::push_stealth_outputs(
-    const hash_digest& tx_hash,
+void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
     const transaction_output_list& outputs)
 {
     // Stealth cannot be in last output because there needs
     // to be a matching following output.
-    const size_t last_possible = outputs.size() - 1;
-    for (size_t i = 0; i < last_possible; ++i)
+    const int last_possible = outputs.size() - 1;
+    for (int i = 0; i < last_possible; ++i)
     {
-        const transaction_output_type& output = outputs[i];
-        const transaction_output_type& next_output = outputs[i + 1];
+        const auto& output = outputs[i];
+        const auto& next_output = outputs[i + 1];
+
         // Skip past output if not stealth data.
         if (output.script.type() != payment_type::stealth_info)
             continue;
+
         // Try to extract an address.
         payment_address address;
         if (!extract(address, next_output.script))
             continue;
+
         // Stealth data.
         BITCOIN_ASSERT(output.script.operations().size() == 2);
-        const data_chunk& stealth_data = output.script.operations()[1].data;
-        stealth_row row{
+        const auto& stealth_data = output.script.operations()[1].data;
+        stealth_row row
+        {
             read_ephemkey(stealth_data),
             address.hash(),
             tx_hash
@@ -272,41 +296,45 @@ void db_interface::push_stealth_outputs(
     }
 }
 
-void db_interface::pop_inputs(
-    const size_t block_height,
+void db_interface::pop_inputs(const size_t block_height,
     const transaction_input_list& inputs)
 {
     // Loop in reverse.
     for (int i = inputs.size() - 1; i >= 0; --i)
     {
-        const transaction_input_type& input = inputs[i];
+        const auto& input = inputs[i];
         spends.remove(input.previous_output);
+
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
             continue;
+
         // Try to extract an address.
         payment_address address;
         if (!extract(address, input.script))
             continue;
+
         history.delete_last_row(address.hash());
     }
 }
 
-void db_interface::pop_outputs(
-    const size_t block_height,
+void db_interface::pop_outputs(const size_t block_height,
     const transaction_output_list& outputs)
 {
     // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)
     {
         const transaction_output_type& output = outputs[i];
+
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
             continue;
+
         // Try to extract an address.
         payment_address address;
         if (!extract(address, output.script))
             continue;
+
         history.delete_last_row(address.hash());
     }
 }

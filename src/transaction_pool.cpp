@@ -33,33 +33,34 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-transaction_pool::transaction_pool(
-    threadpool& pool, blockchain& chain, size_t capacity)
+transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
+    size_t capacity)
   : strand_(pool), chain_(chain), buffer_(capacity)
 {
 }
-transaction_pool::~transaction_pool()
+
+bool transaction_pool::empty() const
 {
+    return buffer_.empty();
 }
 
-// Deprecated, use constructor.
-void transaction_pool::set_capacity(size_t capacity)
+size_t transaction_pool::size() const
 {
-    //BITCOIN_ASSERT_MSG(false, 
-    //    "transaction_pool::set_capacity deprecated, set on construct");
-    buffer_.set_capacity(capacity);
+    return buffer_.size();
 }
 
 void transaction_pool::start()
 {
     chain_.subscribe_reorganize(
-        std::bind(&transaction_pool::reorganize, this, _1, _2, _3, _4));
+        std::bind(&transaction_pool::reorganize,
+            this, _1, _2, _3, _4));
 }
 
 void transaction_pool::validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
-    strand_.queue(&transaction_pool::do_validate, this, tx, handle_validate);
+    strand_.queue(&transaction_pool::do_validate,
+        this, tx, handle_validate);
 }
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
@@ -67,8 +68,9 @@ void transaction_pool::do_validate(const transaction_type& tx,
    const auto validate =
         std::make_shared<validate_transaction>(chain_, tx, buffer_, strand_);
 
-    validate->start(strand_.wrap(&transaction_pool::validation_complete, this,
-        _1, _2, hash_transaction(tx), handle_validate));
+    validate->start(
+        strand_.wrap(&transaction_pool::validation_complete,
+            this, _1, _2, hash_transaction(tx), handle_validate));
 }
 
 void transaction_pool::validation_complete(
@@ -111,9 +113,8 @@ void transaction_pool::store(const transaction_type& tx,
     // This is not catastrophic in that the call is only useful for reporting.
     const auto perform_store = [this, tx, handle_confirm]
     {
-        // When new tx are added to the circular buffer,
-        // any tx at the front will be droppped.
-        // We notify the API user of this through the handler.
+        // When new tx are added to the circular buffer, any tx at the front
+        // will be droppped. We notify the API user through the handler.
         if (buffer_.size() == buffer_.capacity())
         {
             // There is no guarantee that handle_confirm will fire.
@@ -140,28 +141,30 @@ void transaction_pool::store(const transaction_type& tx,
 void transaction_pool::fetch(const hash_digest& transaction_hash,
     fetch_handler handle_fetch)
 {
-    strand_.queue(
-        [this, transaction_hash, handle_fetch]()
-        {
-            for (const auto& entry: buffer_)
-                if (entry.hash == transaction_hash)
-                {
-                    handle_fetch(std::error_code(), entry.tx);
-                    return;
-                }
+    const auto tx_fetcher = [this, transaction_hash, handle_fetch]()
+    {
+        for (const auto& entry: buffer_)
+            if (entry.hash == transaction_hash)
+            {
+                handle_fetch(std::error_code(), entry.tx);
+                return;
+            }
 
-            handle_fetch(error::not_found, transaction_type());
-        });
+        handle_fetch(error::not_found, transaction_type());
+    };
+
+    strand_.queue(tx_fetcher);
 }
 
 void transaction_pool::exists(const hash_digest& transaction_hash,
     exists_handler handle_exists)
 {
-    strand_.queue(
-        [this, transaction_hash, handle_exists]()
-        {
-            handle_exists(tx_exists(transaction_hash));
-        });
+    const auto existence_tester = [this, transaction_hash, handle_exists]()
+    {
+        handle_exists(tx_exists(transaction_hash));
+    };
+
+    strand_.queue(existence_tester);
 }
 
 void transaction_pool::reorganize(const std::error_code& code,
@@ -210,11 +213,19 @@ void transaction_pool::try_delete(const hash_digest& tx_hash)
     for (auto it = buffer_.begin(); it != buffer_.end(); ++it)
         if (it->hash == tx_hash)
         {
-            auto handle_confirm = it->handle_confirm;
+            const auto handle_confirm = it->handle_confirm;
             buffer_.erase(it);
             handle_confirm(std::error_code());
             return;
         }
+}
+
+// Deprecated, use constructor.
+void transaction_pool::set_capacity(size_t capacity)
+{
+    //BITCOIN_ASSERT_MSG(false, 
+    //    "transaction_pool::set_capacity deprecated, set on construct");
+    buffer_.set_capacity(capacity);
 }
 
 } // namespace chain

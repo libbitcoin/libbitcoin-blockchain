@@ -76,7 +76,7 @@ private:
         const std::error_code& invalid_reason);
     void notify_reorganize(size_t fork_point,
         const block_detail_list& orphan_chain,
-        const block_detail_list& replaced_slice);
+        const block_detail_list& replaced_chain);
 
     orphans_pool& orphans_;
     simple_chain& chain_;
