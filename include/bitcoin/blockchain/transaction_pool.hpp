@@ -193,7 +193,7 @@ private:
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
     void invalidate_pool();
-    void takeout_confirmed(const blockchain::block_list& new_blocks);
+    void delete_confirmed(const blockchain::block_list& new_blocks);
     void try_delete(const hash_digest& tx_hash);
 
     async_strand strand_;

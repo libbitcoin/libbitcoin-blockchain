@@ -102,7 +102,7 @@ void organizer::replace_chain(size_t fork_index,
 
     // Replace! Switch!
     block_detail_list released_blocks;
-    DEBUG_ONLY(bool success = ) chain_.release(begin_index, released_blocks);
+    DEBUG_ONLY(bool success =) chain_.release(begin_index, released_blocks);
     BITCOIN_ASSERT(success);
 
     if (!released_blocks.empty())

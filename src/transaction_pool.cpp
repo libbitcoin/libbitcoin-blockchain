@@ -126,8 +126,8 @@ void transaction_pool::store(const transaction_type& tx,
         // We store a precomputed tx hash to make lookups faster.
         buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
 
-        //log_warning("transaction")
-        //    << "Transaction save " << buffer_.size();
+        log_info("transaction")
+            << "Transaction save " << buffer_.size();
     };
 
     const auto wrap_handle_validate = [this, perform_store, handle_validate](
@@ -135,15 +135,15 @@ void transaction_pool::store(const transaction_type& tx,
     {
         if (!ec)
             perform_store();
-        //else
-        //    log_warning("transaction")
-        //        << "Transaction fail " << buffer_.size();
+        else
+            log_warning("transaction")
+                << "Transaction fail " << buffer_.size();
 
         handle_validate(ec, unconfirmed);
     };
 
-    //log_warning("transaction")
-    //    << "Transaction validate " << buffer_.size();
+    log_warning("transaction")
+        << "Transaction validate " << buffer_.size();
 
     validate(tx, wrap_handle_validate);
 }
@@ -187,13 +187,13 @@ void transaction_pool::reorganize(const std::error_code& ec,
         return;
     }
 
-    log_warning("transaction")
-        << "Transaction pool reorganize (" << buffer_.size()
+    log_info("transaction")
+        << "Transaction pool size (" << buffer_.size()
         << ") new blocks (" << new_blocks.size()
         << ") replace blocks (" << replaced_blocks.size() << ")";
 
     if (replaced_blocks.empty())
-        strand_.queue(&transaction_pool::takeout_confirmed, this, new_blocks);
+        strand_.queue(&transaction_pool::delete_confirmed, this, new_blocks);
     else
         strand_.queue(&transaction_pool::invalidate_pool, this);
 
@@ -215,9 +215,13 @@ void transaction_pool::invalidate_pool()
     buffer_.clear();
 }
 
-void transaction_pool::takeout_confirmed(
+void transaction_pool::delete_confirmed(
     const blockchain::block_list& new_blocks)
 {
+    // Optimization: there is nothing to delete, don't loop/hash.
+    if (buffer_.empty())
+        return;
+
     for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
             try_delete(hash_transaction(new_tx));
