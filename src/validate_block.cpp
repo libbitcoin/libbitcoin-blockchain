@@ -516,7 +516,8 @@ size_t script_hash_signature_operations_count(
     // ignore possible failure?
     chain::script eval_script;
 
-    if (!eval_script.from_data(last_data, false, false))
+    if (!eval_script.from_data(last_data, false,
+        chain::script::parse_mode::strict))
         throw end_of_stream();
 
     return count_script_sigops(eval_script.operations, true);
