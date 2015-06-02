@@ -75,7 +75,7 @@ void multimap_records<HashType>::delete_last_row(const HashType& key)
     auto serial = make_serializer(start_info);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(new_begin);
+    serial.write_4_bytes_little_endian(new_begin);
 }
 
 template <typename HashType>
@@ -89,7 +89,7 @@ void multimap_records<HashType>::add_to_list(record_type start_info,
     auto serial = make_serializer(start_info);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(new_begin);
+    serial.write_4_bytes_little_endian(new_begin);
 }
 
 template <typename HashType>
@@ -104,7 +104,7 @@ void multimap_records<HashType>::create_new(const HashType& key,
         auto serial = make_serializer(data);
 
         // MUST BE ATOMIC ???
-        serial.write_4_bytes(first);
+        serial.write_4_bytes_little_endian(first);
     };
     map_.store(key, write_start_info);
 }

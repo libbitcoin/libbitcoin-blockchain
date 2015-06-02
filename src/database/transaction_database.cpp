@@ -20,9 +20,9 @@
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 
 #include <boost/filesystem.hpp>
-#include <boost/iostreams/stream.hpp>
+//#include <boost/iostreams/stream.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/pointer_array_source.hpp>
+//#include <bitcoin/blockchain/pointer_array_source.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -33,16 +33,25 @@ BC_CONSTEXPR size_t initial_map_file_size = header_size + min_slab_fsize;
 
 BC_CONSTEXPR position_type alloc_offset = header_size;
 
-chain::transaction deserialize_tx(const slab_type begin, uint64_t length)
+//chain::transaction deserialize_tx(const slab_type begin, uint64_t length)
+//{
+//    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
+//    istream.exceptions(std::ios_base::failbit);
+//    chain::transaction tx;
+//    tx.from_data(istream);
+//
+////    if (!istream)
+////        throw end_of_stream();
+//
+//    return tx;
+//}
+
+template <typename Iterator>
+chain::transaction deserialize_tx(const Iterator first)
 {
-    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
-    istream.exceptions(std::ios_base::failbit);
     chain::transaction tx;
-    tx.from_data(istream);
-
-//    if (!istream)
-//        throw end_of_stream();
-
+    auto deserial = make_deserializer_unsafe(first);
+    tx.from_data(deserial);
     return tx;
 }
 
@@ -71,7 +80,8 @@ size_t transaction_result::index() const
 chain::transaction transaction_result::transaction() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
-    return deserialize_tx(slab_ + 8, size_limit_ - 8);
+//    return deserialize_tx(slab_ + 8, size_limit_ - 8);
+    return deserialize_tx(slab_ + 8);
 }
 
 transaction_database::transaction_database(
@@ -112,8 +122,8 @@ void transaction_database::store(
     auto write = [&info, &tx](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        serial.write_4_bytes(info.height);
-        serial.write_4_bytes(info.index);
+        serial.write_4_bytes_little_endian(info.height);
+        serial.write_4_bytes_little_endian(info.index);
         data_chunk tx_data = tx.to_data();
         serial.write_data(tx_data);
     };

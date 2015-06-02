@@ -49,7 +49,7 @@ uint64_t spend_checksum(chain::output_point outpoint)
 
     // Write index onto outpoint hash.
     auto serial = make_serializer(outpoint.hash.begin());
-    serial.write_4_bytes(outpoint.index);
+    serial.write_4_bytes_little_endian(outpoint.index);
 
     // Collapse it into uint64_t.
     return remainder_fast(outpoint.hash, divisor);

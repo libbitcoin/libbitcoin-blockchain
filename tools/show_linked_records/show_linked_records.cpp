@@ -74,7 +74,7 @@ int main(int argc, char** argv)
         BITCOIN_ASSERT(record_size >= 4);
         const record_type rec = recs.get(rec_idx);
         auto deserial = make_deserializer(rec, rec + 4);
-        const index_type prev_idx = deserial.read_4_bytes();
+        const index_type prev_idx = deserial.read_4_bytes_little_endian();
         const data_chunk data(rec + 4, rec + record_size);
         const chain_item new_item{rec_idx, data};
         if (prev_idx == linked_records::empty)

@@ -89,7 +89,7 @@ position_type htdb_slab_list_item<HashType>::create(const HashType& key,
     serial.write_data(key);
 
     // MUST BE ATOMIC ???
-    serial.write_8_bytes(next);
+    serial.write_8_bytes_little_endian(next);
     return slab;
 }
 
@@ -122,7 +122,7 @@ void htdb_slab_list_item<HashType>::write_next_position(position_type next)
     auto serial = make_serializer(next_data);
 
     // MUST BE ATOMIC ???
-    serial.write_8_bytes(next);
+    serial.write_8_bytes_little_endian(next);
 }
 
 template <typename HashType>
