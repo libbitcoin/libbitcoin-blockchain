@@ -27,8 +27,11 @@ namespace chain {
 validate_block_impl::validate_block_impl(db_interface& database,
     int fork_index, const block_detail_list& orphan_chain,
     int orphan_index, size_t height, const block_type& current_block)
-  : validate_block(height, current_block), interface_(database),
-    height_(height), fork_index_(fork_index), orphan_index_(orphan_index),
+  : validate_block(height, current_block),
+    interface_(database),
+    height_(height),
+    fork_index_(fork_index),
+    orphan_index_(orphan_index),
     orphan_chain_(orphan_chain)
 {
 }
@@ -160,6 +163,7 @@ bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
         for (size_t tx_index = 0; tx_index < orphan_block.transactions.size();
             ++tx_index)
         {
+            // TODO: too deep, move this section to subfunction.
             const auto& orphan_tx = orphan_block.transactions[tx_index];
             for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
                 ++input_index)

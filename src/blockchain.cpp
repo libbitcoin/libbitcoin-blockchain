@@ -66,7 +66,9 @@ class fetch_block_t
 {
 public:
     fetch_block_t(blockchain& chain)
-      : chain_(chain), stopped_(false) {}
+      : blockchain_(chain), stopped_(false)
+    {
+    }
 
     template <typename BlockIndex>
     void start(const BlockIndex& index, handler_block handle)
@@ -82,7 +84,7 @@ public:
         };
 
         handle_ = handle;
-        chain_.fetch_block_header(index, handle_fetch_header);
+        blockchain_.fetch_block_header(index, handle_fetch_header);
     }
 
 private:
@@ -123,8 +125,8 @@ private:
 
     void fetch_tx(const hash_digest& tx_hash, size_t tx_index)
     {
-        const auto handle_fetch = [this, tx_index](
-            const std::error_code& ec, const transaction_type& tx)
+        const auto handle_fetch = [this, tx_index](const std::error_code& ec,
+            const transaction_type& tx)
         {
             if (stop_on_error(ec))
                 return;
@@ -136,13 +138,15 @@ private:
                 handle_(std::error_code(), block_);
         };
 
-        chain_.fetch_transaction(tx_hash, handle_fetch);
+        blockchain_.fetch_transaction(tx_hash, handle_fetch);
     }
 
-    blockchain& chain_;
+    blockchain& blockchain_;
     handler_block handle_;
     block_type block_;
     atomic_counter count_;
+
+    // TODO: atomic
     bool stopped_;
 };
 
@@ -170,15 +174,16 @@ class fetch_locator
 {
 public:
     fetch_locator(blockchain& chain)
-      : chain_(chain) {}
+      : blockchain_(chain)
+    {
+    }
 
     void start(handler_locator handle)
     {
         handle_ = handle;
-        const auto self = shared_from_this();
-        chain_.fetch_last_height(
+        blockchain_.fetch_last_height(
             std::bind(&fetch_locator::populate,
-                self, _1, _2));
+                shared_from_this(), _1, _2));
     }
 
 private:
@@ -220,7 +225,7 @@ private:
         const auto self = shared_from_this();
         const auto height = indexes_.back();
         indexes_.pop_back();
-        chain_.fetch_block_header(height,
+        blockchain_.fetch_block_header(height,
             std::bind(&fetch_locator::append,
                 self, _1, _2, height));
     }
@@ -238,7 +243,7 @@ private:
         loop();
     }
 
-    blockchain& chain_;
+    blockchain& blockchain_;
     handler_locator handle_;
     index_list indexes_;
     block_locator_type locator_;

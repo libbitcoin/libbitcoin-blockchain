@@ -35,7 +35,7 @@
 namespace libbitcoin {
 namespace chain {
 
-    class BCB_API blockchain_impl
+class BCB_API blockchain_impl
   : public blockchain
 {
 public:
@@ -56,38 +56,45 @@ public:
     bool start();
     void stop();
 
-    void store(const block_type& block,
-        store_block_handler handle_store);
-    void import(const block_type& block,
-        import_block_handler handle_import);
+    void store(const block_type& block, store_block_handler handle_store);
+    void import(const block_type& block, import_block_handler handle_import);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch);
+
     // fetch block header by hash
     void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
+
     // fetch transaction hashes in block by hash
     void fetch_block_transaction_hashes(const hash_digest& hash,
         fetch_handler_block_transaction_hashes handle_fetch);
+
     // fetch height of block by hash
     void fetch_block_height(const hash_digest& hash,
         fetch_handler_block_height handle_fetch);
+
     // fetch height of latest block
     void fetch_last_height(fetch_handler_last_height handle_fetch);
+
     // fetch transaction by hash
     void fetch_transaction(const hash_digest& hash,
         fetch_handler_transaction handle_fetch);
+
     // fetch height and offset within block of transaction by hash
     void fetch_transaction_index(const hash_digest& hash,
         fetch_handler_transaction_index handle_fetch);
+
     // fetch spend of an output point
     void fetch_spend(const output_point& outpoint,
         fetch_handler_spend handle_fetch);
+
     // fetch outputs, values and spends for an address.
     void fetch_history(const payment_address& address,
         fetch_handler_history handle_fetch,
         const uint64_t limit=0, const uint64_t from_height=0);
+
     // fetch stealth results.
     void fetch_stealth(const binary_type& prefix,
         fetch_handler_stealth handle_fetch, uint64_t from_height=0);
@@ -146,6 +153,7 @@ private:
     // seqlock used for writes.
     seqlock_type seqlock_;
 
+    // TODO: atomic?
     // Is the blockchain stopped.
     bool stopped_;
 

@@ -22,17 +22,19 @@
 namespace libbitcoin {
 namespace chain {
 
-inline bool checkpoint_test(
-    const size_t current_height, const hash_digest& current_hash,
-    const size_t checkpoint_height, const std::string& checkpoint_hex)
+inline bool checkpoint_test(const size_t current_height, 
+    const hash_digest& current_hash, const size_t checkpoint_height,
+    const std::string& checkpoint_hex)
 {
     // Not this checkpoint... Continue on with next check.
     if (current_height != checkpoint_height)
         return true;
+
     // Deserialize hash from hex string.
     hash_digest checkpoint_hash;
     DEBUG_ONLY(bool success =) decode_hash(checkpoint_hash, checkpoint_hex);
     BITCOIN_ASSERT_MSG(success, "Internal error: bad checkpoint hash!");
+
     // Both hashes should match.
     return current_hash == checkpoint_hash;
 }

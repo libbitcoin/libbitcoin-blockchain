@@ -68,9 +68,15 @@ static file_lock init_lock(const std::string& prefix)
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity)
-  : ios_(pool.service()), write_strand_(pool), reorg_strand_(pool),
-    flock_(init_lock(prefix)), seqlock_(0), stopped_(false), db_paths_(prefix),
-    interface_(db_paths_, active_heights), orphans_(orphan_capacity),
+  : ios_(pool.service()),
+    write_strand_(pool),
+    reorg_strand_(pool),
+    flock_(init_lock(prefix)),
+    seqlock_(0),
+    stopped_(false),
+    db_paths_(prefix),
+    interface_(db_paths_, active_heights),
+    orphans_(orphan_capacity),
     chain_(simple_chain_impl(interface_)),
     reorganize_subscriber_(std::make_shared<reorganize_subscriber_type>(pool)),
     organizer_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
@@ -314,10 +320,11 @@ void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch, const uint64_t limit, 
     const uint64_t from_height)
 {
-    const auto do_fetch = [=](size_t slock)
+    const auto do_fetch = 
+        [this, address, handle_fetch, limit, from_height](size_t slock)
     {
-        const auto history = interface_.history.get(
-            address.hash(), limit, from_height);
+        const auto history = interface_.history.get(address.hash(),
+            limit, from_height);
         return finish_fetch(slock, handle_fetch, std::error_code(), history);
     };
     fetch(do_fetch);
@@ -326,7 +333,8 @@ void blockchain_impl::fetch_history(const payment_address& address,
 void blockchain_impl::fetch_stealth(const binary_type& prefix,
     fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
-    const auto do_fetch = [=](size_t slock)
+    const auto do_fetch = 
+        [this, prefix, handle_fetch, from_height](size_t slock)
     {
         const auto stealth = interface_.stealth.scan(prefix, from_height);
         return finish_fetch(slock, handle_fetch, std::error_code(), stealth);

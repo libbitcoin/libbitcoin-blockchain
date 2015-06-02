@@ -133,7 +133,8 @@ void db_interface::push(const block_type& block)
         // Skip special duplicate transactions.
         if (is_special_duplicate(info))
             continue;
-        const hash_digest tx_hash = hash_transaction(tx);
+
+        const auto tx_hash = hash_transaction(tx);
 
         // Add inputs
         if (!is_coinbase(tx))
@@ -324,7 +325,7 @@ void db_interface::pop_outputs(const size_t block_height,
     // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)
     {
-        const transaction_output_type& output = outputs[i];
+        const auto& output = outputs[i];
 
         // Skip history if not at the right level yet.
         if (block_height < active_heights_.history)
