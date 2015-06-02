@@ -84,7 +84,7 @@ position_type htdb_slab_list_item<HashType>::create(
     // Write to slab.
     auto serial = make_serializer(raw_data_);
     serial.write_data(key);
-    serial.write_8_bytes(next);
+    serial.write_8_bytes_little_endian(next);
     return slab;
 }
 
@@ -116,7 +116,7 @@ void htdb_slab_list_item<HashType>::write_next_position(position_type next)
 {
     uint8_t* next_data = raw_next_data();
     auto serial = make_serializer(next_data);
-    serial.write_8_bytes(next);
+    serial.write_8_bytes_little_endian(next);
 }
 
 template <typename HashType>

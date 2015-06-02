@@ -123,7 +123,7 @@ void stealth_database::write_index()
     const auto index = index_.allocate();
     const auto data = index_.get(index);
     auto serial = make_serializer(data);
-    serial.write_4_bytes(block_start_);
+    serial.write_4_bytes_little_endian(block_start_);
 
     // Synchronise data.
     index_.sync();

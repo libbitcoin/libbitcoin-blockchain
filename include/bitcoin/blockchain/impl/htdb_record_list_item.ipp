@@ -77,7 +77,7 @@ index_type htdb_record_list_item<HashType>::create(
     // Write record.
     auto serial = make_serializer(data);
     serial.write_data(key);
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
     return index_;
 }
 
@@ -110,7 +110,7 @@ void htdb_record_list_item<HashType>::write_next_index(index_type next)
 {
     uint8_t* next_data = raw_next_data();
     auto serial = make_serializer(next_data);
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
 }
 
 template <typename HashType>

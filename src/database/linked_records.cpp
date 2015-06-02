@@ -46,7 +46,7 @@ index_type linked_records::insert(index_type next)
 
     // Write next value at first 4 bytes of record.
     auto serial = make_serializer(data);
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
     return record;
 }
 
