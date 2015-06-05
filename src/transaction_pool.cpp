@@ -35,7 +35,7 @@ using std::placeholders::_4;
 
 transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
     size_t capacity)
-  : strand_(pool), chain_(chain), buffer_(capacity)
+  : strand_(pool), blockchain_(chain), buffer_(capacity)
 {
 }
 
@@ -56,7 +56,7 @@ size_t transaction_pool::size() const
 
 void transaction_pool::start()
 {
-    chain_.subscribe_reorganize(
+    blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::reorganize,
             this, _1, _2, _3, _4));
 }
@@ -70,8 +70,8 @@ void transaction_pool::validate(const transaction_type& tx,
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
-   const auto validate =
-        std::make_shared<validate_transaction>(chain_, tx, buffer_, strand_);
+    const auto validate = std::make_shared<validate_transaction>(
+        blockchain_, tx, buffer_, strand_);
 
     validate->start(
         strand_.wrap(&transaction_pool::validation_complete,
@@ -199,7 +199,7 @@ void transaction_pool::reorganize(const std::error_code& ec,
 
     // new blocks come in - remove txs in new
     // old blocks taken out - resubmit txs in old
-    chain_.subscribe_reorganize(
+    blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::reorganize,
             this, _1, _2, _3, _4));
 }

@@ -197,7 +197,7 @@ private:
     void try_delete(const hash_digest& tx_hash);
 
     async_strand strand_;
-    blockchain& chain_;
+    blockchain& blockchain_;
     pool_buffer buffer_;
 };
 
