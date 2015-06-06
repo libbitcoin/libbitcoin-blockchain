@@ -171,6 +171,12 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp">
       <Filter>include\bitcoin\blockchain\implementation</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block_locator.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\organizer.cpp">
@@ -244,6 +250,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp">
       <Filter>src\implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\fetch_block.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\fetch_block_locator.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
