@@ -54,7 +54,7 @@ public:
     void operator=(const blockchain_impl&) = delete;
 
     bool start();
-    void stop();
+    bool stop();
 
     void store(const block_type& block, store_block_handler handle_store);
     void import(const block_type& block, import_block_handler handle_import);

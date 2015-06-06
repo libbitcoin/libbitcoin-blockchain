@@ -41,14 +41,15 @@ static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
     blockchain_impl::reorganize_subscriber_type::ptr reorganize_subscriber)
 {
-    const auto reorg_handler = [=, &reorganize_strand](
+    const auto reorg_handler = [reorganize_subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced)
     {
         // Post this operation without using the same strand. Therefore calling
         // the reorganize callbacks won't prevent store() from continuing.
-        reorganize_strand.queue([=]()
+        reorganize_strand.queue(
+            [code, fork_point, arrivals, replaced, reorganize_subscriber]()
         {
             reorganize_subscriber->relay(code, fork_point, arrivals, replaced);
         });
@@ -96,16 +97,16 @@ bool blockchain_impl::start()
     return true;
 }
 
-void blockchain_impl::stop()
+bool blockchain_impl::stop()
 {
-    const auto notify_stopped = [this]()
-    {
-        const uint64_t params = 0;
-        reorganize_subscriber_->relay(error::service_stopped, params,
-            block_list(), block_list());
-    };
-    write_strand_.randomly_queue(notify_stopped);
+    const uint64_t fork_point = 0;
+    reorganize_subscriber_->relay(error::service_stopped, fork_point,
+        block_list(), block_list());
+
+    // The relay is an asynchronous call that does not accept a callback.
+    // So we cannot currently block or set stopped_ at completion.
     stopped_ = true;
+    return stopped_;
 }
 
 void blockchain_impl::start_write()
@@ -120,7 +121,8 @@ void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
     write_strand_.randomly_queue(
-        std::bind(&blockchain_impl::do_store, this, block, handle_store));
+        &blockchain_impl::do_store,
+            this, block, handle_store);
 }
 void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
