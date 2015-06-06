@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/blockchain.hpp>
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <system_error>
@@ -146,8 +147,8 @@ private:
     block_type block_;
     atomic_counter count_;
 
-    // TODO: atomic
-    bool stopped_;
+    // TODO: use lock-free std::atomic_flag?
+    std::atomic<bool> stopped_;
 };
 
 void fetch_block(blockchain& chain, size_t height,
