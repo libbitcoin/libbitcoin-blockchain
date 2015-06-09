@@ -84,7 +84,7 @@ private:
         // Stop looping and finish.
         if (indexes_.empty())
         {
-            handler_(std::error_code(), locator_);
+            handler_(bc::error::success, locator_);
             return;
         }
 

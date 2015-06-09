@@ -118,7 +118,7 @@ std::error_code validate_block::check_block()
     if (blk_header.merkle != generate_merkle_root(current_block_.transactions))
         return error::merkle_mismatch;
 
-    return std::error_code();
+    return bc::error::success;
 }
 
 bool validate_block::check_proof_of_work(hash_digest block_hash, uint32_t bits)
@@ -231,7 +231,7 @@ std::error_code validate_block::accept_block()
     if (blk_header.version >= 2 && !coinbase_height_match())
         return error::coinbase_height_mismatch;
 
-    return std::error_code();
+    return bc::error::success;
 }
 
 uint32_t validate_block::work_required()
@@ -360,7 +360,7 @@ std::error_code validate_block::connect_block()
     if (coinbase_value > block_value(height_) + fees)
         return error::coinbase_too_large;
 
-    return std::error_code();
+    return bc::error::success;
 }
 
 bool validate_block::not_duplicate_or_spent(const transaction_type& tx)

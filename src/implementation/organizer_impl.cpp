@@ -54,7 +54,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
 
     // Skip non-essential checks if before last checkpoint.
     if (fork_index < block_validation_cutoff_height)
-        return std::error_code();
+        return bc::error::success;
 
     // Perform strict but slow tests - connect_block()
     return validate.connect_block();
@@ -64,7 +64,7 @@ void organizer_impl::reorganize_occured(size_t fork_point,
     const blockchain::block_list& arrivals,
     const blockchain::block_list& replaced)
 {
-    handler_(std::error_code(), fork_point, arrivals, replaced);
+    handler_(bc::error::success, fork_point, arrivals, replaced);
 }
 
 } // namespace chain

@@ -161,7 +161,7 @@ void blockchain_impl::import(const block_type& block,
     {
         start_write();
         interface_.push(block);
-        stop_write(handle_import, std::error_code());
+        stop_write(handle_import, bc::error::success);
     };
     write_strand_.randomly_queue(do_import);
 }
@@ -196,7 +196,7 @@ void blockchain_impl::fetch_block_header(uint64_t height,
                 error::not_found, block_header_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.header());
+            bc::error::success, result.header());
     };
     fetch(do_fetch);
 }
@@ -212,7 +212,7 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
                 error::not_found, block_header_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.header());
+            bc::error::success, result.header());
     };
     fetch(do_fetch);
 }
@@ -233,7 +233,7 @@ void blockchain_impl::fetch_block_transaction_hashes(
             hashes.push_back(result.transaction_hash(index));
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), hashes);
+            bc::error::success, hashes);
     };
 }
 
@@ -248,7 +248,7 @@ void blockchain_impl::fetch_block_height(const hash_digest& hash,
                 error::not_found, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.height());
+            bc::error::success, result.height());
     };
     fetch(do_fetch);
 }
@@ -263,7 +263,7 @@ void blockchain_impl::fetch_last_height(
             return finish_fetch(slock, handle_fetch, error::not_found, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), last_height);
+            bc::error::success, last_height);
     };
     fetch(do_fetch);
 }
@@ -280,7 +280,7 @@ void blockchain_impl::fetch_transaction(
                 error::not_found, transaction_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.transaction());
+            bc::error::success, result.transaction());
     };
     fetch(do_fetch);
 }
@@ -297,7 +297,7 @@ void blockchain_impl::fetch_transaction_index(
                 error::not_found, 0, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.height(), result.index());
+            bc::error::success, result.height(), result.index());
     };
     fetch(do_fetch);
 }
@@ -313,7 +313,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
                 error::unspent_output, input_point());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), input_point{result.hash(), result.index()});
+            bc::error::success, input_point{result.hash(), result.index()});
     };
     fetch(do_fetch);
 }
@@ -327,7 +327,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
     {
         const auto history = interface_.history.get(address.hash(),
             limit, from_height);
-        return finish_fetch(slock, handle_fetch, std::error_code(), history);
+        return finish_fetch(slock, handle_fetch, bc::error::success, history);
     };
     fetch(do_fetch);
 }
@@ -339,7 +339,7 @@ void blockchain_impl::fetch_stealth(const binary_type& prefix,
         [this, prefix, handle_fetch, from_height](size_t slock)
     {
         const auto stealth = interface_.stealth.scan(prefix, from_height);
-        return finish_fetch(slock, handle_fetch, std::error_code(), stealth);
+        return finish_fetch(slock, handle_fetch, bc::error::success, stealth);
     };
     fetch(do_fetch);
 }
