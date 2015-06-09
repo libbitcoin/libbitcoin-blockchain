@@ -237,7 +237,7 @@ std::error_code validate_block::accept_block()
 uint32_t validate_block::work_required()
 {
 #ifdef ENABLE_TESTNET
-    const auto last_non_special_bits = [this]
+    const auto last_non_special_bits = [this]()
     {
         // Return the last non-special block
         block_header_type previous_block;
