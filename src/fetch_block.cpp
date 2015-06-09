@@ -47,14 +47,16 @@ public:
     template <typename BlockIndex>
     void start(const BlockIndex& index, block_fetch_handler handler)
     {
-        const auto handle_fetch_header = [this](const std::error_code& ec,
+        // Keep the class in scope until this handler completes.
+        const auto self = shared_from_this();
+        const auto handle_fetch_header = [self](const std::error_code& ec,
             const block_header_type& block_header)
         {
-            if (stop_on_error(ec))
+            if (self->stop_on_error(ec))
                 return;
 
-            block_.header = block_header;
-            fetch_hashes();
+            self->block_.header = block_header;
+            //self->fetch_hashes();
         };
 
         handler_ = handler;
@@ -77,13 +79,13 @@ private:
         return false;
     }
 
-    void fetch_hashes()
-    {
-        //blockchain_.fetch_block_transaction_hashes(
-        //    hash_block_header(block_.header),
-        //        std::bind(&fetch_block_t::fetch_transactions,
-        //            shared_from_this(), _1, _2));
-    }
+    //void fetch_hashes()
+    //{
+    //    blockchain_.fetch_block_transaction_hashes(
+    //        hash_block_header(block_.header),
+    //            std::bind(&fetch_block_t::fetch_transactions,
+    //                shared_from_this(), _1, _2));
+    //}
 
     void fetch_transactions(const std::error_code& ec,
         const hash_list& tx_hashes)
