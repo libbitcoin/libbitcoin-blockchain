@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -153,9 +154,8 @@ private:
     // seqlock used for writes.
     seqlock_type seqlock_;
 
-    // TODO: atomic?
     // Is the blockchain stopped.
-    bool stopped_;
+    std::atomic<bool> stopped_;
 
     // Main database core.
     db_paths db_paths_;
