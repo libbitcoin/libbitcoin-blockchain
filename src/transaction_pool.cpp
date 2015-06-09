@@ -64,12 +64,20 @@ void transaction_pool::start()
 void transaction_pool::validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
+    log_debug(LOG_BLOCKCHAIN)
+        << "Transaction validate.";
+
     strand_.queue(&transaction_pool::do_validate,
         this, tx, handle_validate);
 }
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
+    log_debug(LOG_BLOCKCHAIN)
+        << "Transaction do validate.";
+
+    // This must be allocated as a shared pointer reference in order for
+    // start to create a shared pointer reference.
     const auto validate = std::make_shared<validate_transaction>(
         blockchain_, tx, buffer_, strand_);
 
@@ -82,6 +90,9 @@ void transaction_pool::validation_complete(
     const std::error_code& ec, const index_list& unconfirmed,
     const hash_digest& tx_hash, validate_handler handle_validate)
 {
+    log_debug(LOG_BLOCKCHAIN)
+        << "Transaction validate complete.";
+
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
@@ -97,7 +108,7 @@ void transaction_pool::validation_complete(
     else if (tx_exists(tx_hash))
         handle_validate(error::duplicate, index_list());
     else
-        handle_validate(std::error_code(), unconfirmed);
+        handle_validate(bc::error::success, unconfirmed);
 }
 
 bool transaction_pool::tx_exists(const hash_digest& tx_hash)
@@ -112,7 +123,7 @@ bool transaction_pool::tx_exists(const hash_digest& tx_hash)
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    const auto perform_store = [this, tx, handle_confirm]
+    const auto store_transaction = [this, tx, handle_confirm]
     {
         // When new tx are added to the circular buffer, any tx at the front
         // will be droppped. We notify the API user through the handler.
@@ -126,26 +137,23 @@ void transaction_pool::store(const transaction_type& tx,
         // We store a precomputed tx hash to make lookups faster.
         buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
 
-        log_info("transaction")
-            << "Transaction save " << buffer_.size();
+        log_debug(LOG_BLOCKCHAIN)
+            << "Transaction saved to mempool (" << buffer_.size() << ")";
     };
 
-    const auto wrap_handle_validate = [this, perform_store, handle_validate](
-        const std::error_code& ec, const index_list& unconfirmed)
+    const auto wrap_validate = [this, store_transaction, handle_validate]
+        (const std::error_code& ec, const index_list& unconfirmed)
     {
-        if (!ec)
-            perform_store();
+        if (ec)
+            log_debug(LOG_BLOCKCHAIN)
+                << "Transaction failed validation.";
         else
-            log_warning("transaction")
-                << "Transaction fail " << buffer_.size();
+            store_transaction();
 
         handle_validate(ec, unconfirmed);
     };
 
-    log_warning("transaction")
-        << "Transaction validate " << buffer_.size();
-
-    validate(tx, wrap_handle_validate);
+    validate(tx, wrap_validate);
 }
 
 void transaction_pool::fetch(const hash_digest& transaction_hash,
@@ -156,7 +164,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
         for (const auto& entry: buffer_)
             if (entry.hash == transaction_hash)
             {
-                handle_fetch(std::error_code(), entry.tx);
+                handle_fetch(bc::error::success, entry.tx);
                 return;
             }
 
@@ -187,8 +195,8 @@ void transaction_pool::reorganize(const std::error_code& ec,
         return;
     }
 
-    log_info("transaction")
-        << "Transaction pool size (" << buffer_.size()
+    log_debug(LOG_BLOCKCHAIN)
+        << "Reorganize: tx pool size (" << buffer_.size()
         << ") new blocks (" << new_blocks.size()
         << ") replace blocks (" << replaced_blocks.size() << ")";
 
@@ -234,7 +242,7 @@ void transaction_pool::try_delete(const hash_digest& tx_hash)
         {
             const auto handle_confirm = it->handle_confirm;
             buffer_.erase(it);
-            handle_confirm(std::error_code());
+            handle_confirm(bc::error::success);
             return;
         }
 }

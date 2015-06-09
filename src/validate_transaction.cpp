@@ -88,7 +88,7 @@ std::error_code validate_transaction::basic_checks() const
         return error::duplicate;
 
     // Check for blockchain dups done next in start() after this exits.
-    return std::error_code();
+    return bc::error::success;
 }
 
 bool validate_transaction::is_standard() const
@@ -206,7 +206,7 @@ void validate_transaction::search_pool_previous_tx()
 
     // parent_height ignored here as memory pool transactions can
     // never be a coinbase transaction.
-    handle_previous_tx(std::error_code(), *previous_tx, 0);
+    handle_previous_tx(bc::error::success, *previous_tx, 0);
     unconfirmed_.push_back(current_input_);
 }
 
@@ -238,7 +238,6 @@ void validate_transaction::check_double_spend(const std::error_code& ec)
 {
     if (ec != error::unspent_output)
     {
-        BITCOIN_ASSERT(!ec || ec != error::unspent_output);
         handle_validate_(error::double_spend, index_list());
         return;
     }
@@ -267,7 +266,7 @@ void validate_transaction::check_fees()
     // Who cares?
     // Fuck the police
     // Every tx equal!
-    handle_validate_(std::error_code(), unconfirmed_);
+    handle_validate_(bc::error::success, unconfirmed_);
 }
 
 std::error_code validate_transaction::check_transaction(
@@ -306,7 +305,7 @@ std::error_code validate_transaction::check_transaction(
                 return error::previous_output_null;
     }
 
-    return std::error_code();
+    return bc::error::success;
 }
 
 // Validate script consensus conformance based on flags provided.
@@ -347,7 +346,7 @@ static bool check_consensus(const script_type& prevout_script,
 #endif
 
     if (!valid)
-        log_info(LOG_VALIDATE) << "Invalid transaction ["
+        log_warning(LOG_VALIDATE) << "Invalid transaction ["
             << encode_base16(hash_transaction(current_tx)) << "]";
 
     return valid;

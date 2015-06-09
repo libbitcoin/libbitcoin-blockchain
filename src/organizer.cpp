@@ -78,7 +78,7 @@ void organizer::replace_chain(size_t fork_index,
         if (invalid_reason)
         {
             const auto& header = orphan_chain[orphan]->actual().header;
-            log_info(LOG_VALIDATE) << "Invalid block ["
+            log_warning(LOG_VALIDATE) << "Invalid block ["
                 << encode_base16(hash_block_header(header)) << "] "
                 << invalid_reason.value();
 
@@ -106,7 +106,7 @@ void organizer::replace_chain(size_t fork_index,
     BITCOIN_ASSERT(success);
 
     if (!released_blocks.empty())
-        log_info(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
+        log_warning(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
             << begin_index << ", " << released_blocks.size() << "]";
 
     // We add the arriving blocks first to the main chain because if
@@ -161,7 +161,9 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
         else
             (*it)->set_error(error::previous_block_invalid);
 
-        (*it)->set_info({block_status::rejected, 0});
+        const static size_t height = 0;
+        const block_info info{ block_status::rejected, height };
+        (*it)->set_info(info);
         orphans_.remove(*it);
 
         // Also erase from process_queue so we avoid trying to re-process
