@@ -62,9 +62,8 @@ void validate_transaction::start(validate_handler handle_validate)
 
     // Check for duplicates in the blockchain
     blockchain_.fetch_transaction(tx_hash_,
-        strand_.wrap(
-            &validate_transaction::handle_duplicate_check,
-                shared_from_this(), _1));
+        strand_.wrap(&validate_transaction::handle_duplicate_check,
+            shared_from_this(), _1));
 }
 
 std::error_code validate_transaction::basic_checks() const
@@ -128,8 +127,9 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
 
     // Check inputs
     // We already know it is not a coinbase tx
-    blockchain_.fetch_last_height(strand_.wrap(
-        &validate_transaction::set_last_height, shared_from_this(), _1, _2));
+    blockchain_.fetch_last_height(
+        strand_.wrap(&validate_transaction::set_last_height,
+            shared_from_this(), _1, _2));
 }
 
 bool validate_transaction::is_spent(const output_point& outpoint) const
@@ -169,9 +169,8 @@ void validate_transaction::next_previous_transaction()
     // Needed for checking the coinbase maturity.
     blockchain_.fetch_transaction_index(
         tx_.inputs[current_input_].previous_output.hash,
-        strand_.wrap(
-            &validate_transaction::previous_tx_index,
-                shared_from_this(), _1, _2));
+        strand_.wrap(&validate_transaction::previous_tx_index,
+            shared_from_this(), _1, _2));
 }
 
 void validate_transaction::previous_tx_index(const std::error_code& ec,
@@ -187,9 +186,8 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
     BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
     blockchain_.fetch_transaction(
         tx_.inputs[current_input_].previous_output.hash,
-        strand_.wrap(
-            &validate_transaction::handle_previous_tx,
-                shared_from_this(), _1, _2, parent_height));
+        strand_.wrap(&validate_transaction::handle_previous_tx,
+            shared_from_this(), _1, _2, parent_height));
 }
 
 void validate_transaction::search_pool_previous_tx()
@@ -229,9 +227,8 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
 
     // Search for double spends...
     blockchain_.fetch_spend(tx_.inputs[current_input_].previous_output,
-        strand_.wrap(
-            &validate_transaction::check_double_spend,
-                shared_from_this(), _1));
+        strand_.wrap(&validate_transaction::check_double_spend,
+            shared_from_this(), _1));
 }
 
 void validate_transaction::check_double_spend(const std::error_code& ec)

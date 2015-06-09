@@ -201,9 +201,13 @@ void transaction_pool::reorganize(const std::error_code& ec,
         << ") replace blocks (" << replaced_blocks.size() << ")";
 
     if (replaced_blocks.empty())
-        strand_.queue(&transaction_pool::delete_confirmed, this, new_blocks);
+        strand_.queue(
+            std::bind(&transaction_pool::delete_confirmed,
+                this, new_blocks));
     else
-        strand_.queue(&transaction_pool::invalidate_pool, this);
+        strand_.queue(
+            std::bind(&transaction_pool::invalidate_pool,
+                this));
 
     // new blocks come in - remove txs in new
     // old blocks taken out - resubmit txs in old

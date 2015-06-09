@@ -39,20 +39,21 @@ using path = boost::filesystem::path;
 
 static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
-    blockchain_impl::reorganize_subscriber_type::ptr reorganize_subscriber)
+    blockchain_impl::reorganize_subscriber_type::ptr subscriber)
 {
-    const auto reorg_handler = [reorganize_subscriber, &reorganize_strand](
+    const auto reorg_handler = [subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced)
     {
+        const auto relay = [code, fork_point, arrivals, replaced, subscriber]()
+        {
+            subscriber->relay(code, fork_point, arrivals, replaced);
+        };
+
         // Post this operation without using the same strand. Therefore calling
         // the reorganize callbacks won't prevent store() from continuing.
-        reorganize_strand.queue(
-            [code, fork_point, arrivals, replaced, reorganize_subscriber]()
-        {
-            reorganize_subscriber->relay(code, fork_point, arrivals, replaced);
-        });
+        reorganize_strand.queue(relay);
     };
 
     return organizer_impl(database, orphans, chain, reorg_handler);
@@ -121,8 +122,8 @@ void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
     write_strand_.randomly_queue(
-        &blockchain_impl::do_store,
-            this, block, handle_store);
+        std::bind(&blockchain_impl::do_store,
+            this, block, handle_store));
 }
 void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
