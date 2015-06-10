@@ -81,9 +81,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoints.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block_locator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
@@ -101,12 +103,14 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\db_interface.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\genesis_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\blockchain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphans_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pointer_array_source.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
@@ -116,6 +120,7 @@
     <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\block.cpp" />
     <ClCompile Include="..\..\..\..\src\blockchain.cpp" />
     <ClCompile Include="..\..\..\..\src\block_detail.cpp" />
     <ClCompile Include="..\..\..\..\src\fetch_block.cpp" />
@@ -133,6 +138,7 @@
     <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
     <ClCompile Include="..\..\..\..\src\db_interface.cpp" />
+    <ClCompile Include="..\..\..\..\src\genesis_block.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\simple_chain_impl.cpp" />
