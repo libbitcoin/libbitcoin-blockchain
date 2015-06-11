@@ -133,7 +133,10 @@ bool mmfile::resize(size_t new_size)
 {
     // Resize underlying file.
     if (ftruncate(file_handle_, new_size) == -1)
+    {
+        handle_error("resize", filename_);
         return false;
+    }
 
     const auto message = format("Resizing: %1% [%2%]") % filename_ % new_size;
     log_debug(LOG_DATABASE) << message.str();
