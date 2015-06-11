@@ -64,18 +64,12 @@ void transaction_pool::start()
 void transaction_pool::validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
-    log_debug(LOG_BLOCKCHAIN)
-        << "Transaction validate.";
-
     strand_.queue(&transaction_pool::do_validate,
         this, tx, handle_validate);
 }
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
-    log_debug(LOG_BLOCKCHAIN)
-        << "Transaction do validate.";
-
     // This must be allocated as a shared pointer reference in order for
     // start to create a shared pointer reference.
     const auto validate = std::make_shared<validate_transaction>(
@@ -90,9 +84,6 @@ void transaction_pool::validation_complete(
     const std::error_code& ec, const index_list& unconfirmed,
     const hash_digest& tx_hash, validate_handler handle_validate)
 {
-    log_debug(LOG_BLOCKCHAIN)
-        << "Transaction validate complete.";
-
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
@@ -144,10 +135,7 @@ void transaction_pool::store(const transaction_type& tx,
     const auto wrap_validate = [this, store_transaction, handle_validate]
         (const std::error_code& ec, const index_list& unconfirmed)
     {
-        if (ec)
-            log_debug(LOG_BLOCKCHAIN)
-                << "Transaction failed validation.";
-        else
+        if (!ec)
             store_transaction();
 
         handle_validate(ec, unconfirmed);
