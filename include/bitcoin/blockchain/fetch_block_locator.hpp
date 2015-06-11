@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LLOCATOR_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
+#define LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
 
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
