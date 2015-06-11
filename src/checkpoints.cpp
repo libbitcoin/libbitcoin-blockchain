@@ -92,8 +92,8 @@ bool passes_checkpoints(const size_t height, const hash_digest& block_hash)
         "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8");
     CHECKPOINT(337459,
         "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1");
-    CHECKPOINT(360400,
-        "0000000000000000033487aea3d0a4fe4028acfa6675be1fd3e0f5d31378c11e");
+    CHECKPOINT(360500,
+        "000000000000000008c046a2f5189c5081e76184a31609fab9d2383161d14f7e");
 #endif
     return true;
 }
