@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdexcept>
 #include <bitcoin/blockchain/checkpoints.hpp>
 
 namespace libbitcoin {
@@ -32,8 +33,9 @@ inline bool checkpoint_test(const size_t current_height,
 
     // Deserialize hash from hex string.
     hash_digest checkpoint_hash;
-    DEBUG_ONLY(bool success =) decode_hash(checkpoint_hash, checkpoint_hex);
-    BITCOIN_ASSERT_MSG(success, "Internal error: bad checkpoint hash!");
+    bool match = decode_hash(checkpoint_hash, checkpoint_hex);
+    if (!match)
+        throw std::runtime_error("Internal error: bad checkpoint hash!");
 
     // Both hashes should match.
     return current_hash == checkpoint_hash;
@@ -90,6 +92,8 @@ bool passes_checkpoints(const size_t height, const hash_digest& block_hash)
         "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8");
     CHECKPOINT(337459,
         "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1");
+    CHECKPOINT(360400,
+        "0000000000000000033487aea3d0a4fe4028acfa6675be1fd3e0f5d31378c11e");
 #endif
     return true;
 }
