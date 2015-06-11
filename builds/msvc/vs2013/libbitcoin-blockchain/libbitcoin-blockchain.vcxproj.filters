@@ -177,6 +177,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block_locator.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoints.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\organizer.cpp">
