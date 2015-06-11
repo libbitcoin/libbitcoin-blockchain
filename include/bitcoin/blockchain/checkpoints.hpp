@@ -29,7 +29,7 @@ namespace libbitcoin {
  * Blocks before this height are not fully validated using slower
  * checks, speeding up blockchain sync speed.
  */
-BC_CONSTEXPR size_t block_validation_cutoff_height = 360400;
+BC_CONSTEXPR size_t block_validation_cutoff_height = 360500;
 
 bool passes_checkpoints(size_t height, const hash_digest& block_hash);
 
