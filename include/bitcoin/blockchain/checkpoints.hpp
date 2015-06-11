@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
+/**
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -29,12 +29,11 @@ namespace libbitcoin {
  * Blocks before this height are not fully validated using slower
  * checks, speeding up blockchain sync speed.
  */
-BC_CONSTEXPR size_t block_validation_cutoff_height = 337459;
+BC_CONSTEXPR size_t block_validation_cutoff_height = 360400;
 
-bool passes_checkpoints(const size_t height, const hash_digest& block_hash);
+bool passes_checkpoints(size_t height, const hash_digest& block_hash);
 
     } // namespace chain
 } // namespace libbitcoin
 
 #endif
-

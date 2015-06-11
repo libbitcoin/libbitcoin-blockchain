@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_INTERFACE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_INTERFACE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_HPP
 
 #include <cstdint>
 #include <functional>
@@ -389,63 +389,6 @@ public:
     // .stop()
     // .shutdown() // close all file descriptors, called once threadpool has stopped.
 };
-
-typedef std::function<void (const std::error_code&, const block_type&)>
-    blockchain_fetch_handler_block;
-
-typedef std::function<void (const std::error_code&, const block_locator_type&)>
-    blockchain_fetch_handler_block_locator;
-
-/**
- * Fetch a block by height.
- *
- * If the blockchain reorganises, operation may fail halfway.
- *
- * @param[in]   chain           Blockchain service
- * @param[in]   height          Height of block to fetch.
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block header
- *  );
- * @endcode
- */
-BCB_API void fetch_block(blockchain& chain, uint64_t height,
-    blockchain_fetch_handler_block handle_fetch);
-
-/**
- * Fetch a block by hash.
- *
- * If the blockchain reorganises, operation may fail halfway.
- *
- * @param[in]   chain           Blockchain service
- * @param[in]   hash            Block hash
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block header
- *  );
- * @endcode
- */
-BCB_API void fetch_block(blockchain& chain, const hash_digest& hash,
-    blockchain_fetch_handler_block handle_fetch);
-
-/**
- * Creates a block_locator object used to download the blockchain.
- *
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,      // Status of operation
- *      const block_locator_type& loc   // Block locator object
- *  );
- * @endcode
- */
-BCB_API void fetch_block_locator(blockchain& chain,
-    blockchain_fetch_handler_block_locator handle_fetch);
-
 
 /**
  * Create checksum so spend can be matched with corresponding

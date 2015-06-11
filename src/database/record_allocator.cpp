@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
+#include <stdexcept>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
@@ -73,8 +74,13 @@ void record_allocator::reserve(size_t count)
 {
     // See comment in hsdb_shard::reserve()
     const size_t required_size = start_ + record_to_position(count_ + count);
-    DEBUG_ONLY(const auto success =) file_.reserve(required_size);
-    BITCOIN_ASSERT(success);
+    const auto reserved = file_.reserve(required_size);
+
+    // There is no way to recover from this.
+    if (!reserved)
+        throw std::runtime_error(
+            "The file could not be resized, disk space may be low.");
+
     count_ += count;
 }
 

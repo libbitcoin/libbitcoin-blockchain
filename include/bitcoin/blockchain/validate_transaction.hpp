@@ -83,7 +83,7 @@ private:
     void check_fees();
 
     async_strand& strand_;
-    blockchain& chain_;
+    blockchain& blockchain_;
     const transaction_type tx_;
     const hash_digest tx_hash_;
     const pool_buffer& pool_;

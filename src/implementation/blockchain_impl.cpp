@@ -39,19 +39,21 @@ using path = boost::filesystem::path;
 
 static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
-    blockchain_impl::reorganize_subscriber_type::ptr reorganize_subscriber)
+    blockchain_impl::reorganize_subscriber_type::ptr subscriber)
 {
-    const auto reorg_handler = [=, &reorganize_strand](
+    const auto reorg_handler = [subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced)
     {
+        const auto relay = [code, fork_point, arrivals, replaced, subscriber]()
+        {
+            subscriber->relay(code, fork_point, arrivals, replaced);
+        };
+
         // Post this operation without using the same strand. Therefore calling
         // the reorganize callbacks won't prevent store() from continuing.
-        reorganize_strand.queue([=]()
-        {
-            reorganize_subscriber->relay(code, fork_point, arrivals, replaced);
-        });
+        reorganize_strand.queue(relay);
     };
 
     return organizer_impl(database, orphans, chain, reorg_handler);
@@ -68,9 +70,15 @@ static file_lock init_lock(const std::string& prefix)
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity)
-  : ios_(pool.service()), write_strand_(pool), reorg_strand_(pool),
-    flock_(init_lock(prefix)), seqlock_(0), stopped_(false), db_paths_(prefix),
-    interface_(db_paths_, active_heights), orphans_(orphan_capacity),
+  : ios_(pool.service()),
+    write_strand_(pool),
+    reorg_strand_(pool),
+    flock_(init_lock(prefix)),
+    seqlock_(0),
+    stopped_(false),
+    db_paths_(prefix),
+    interface_(db_paths_, active_heights),
+    orphans_(orphan_capacity),
     chain_(simple_chain_impl(interface_)),
     reorganize_subscriber_(std::make_shared<reorganize_subscriber_type>(pool)),
     organizer_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
@@ -90,16 +98,16 @@ bool blockchain_impl::start()
     return true;
 }
 
-void blockchain_impl::stop()
+bool blockchain_impl::stop()
 {
-    const auto notify_stopped = [this]()
-    {
-        const uint64_t params = 0;
-        reorganize_subscriber_->relay(error::service_stopped, params,
-            block_list(), block_list());
-    };
-    write_strand_.randomly_queue(notify_stopped);
+    const uint64_t fork_point = 0;
+    reorganize_subscriber_->relay(error::service_stopped, fork_point,
+        block_list(), block_list());
+
+    // The relay is an asynchronous call that does not accept a callback.
+    // So we cannot currently block or set stopped_ at completion.
     stopped_ = true;
+    return stopped_;
 }
 
 void blockchain_impl::start_write()
@@ -114,7 +122,8 @@ void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
     write_strand_.randomly_queue(
-        std::bind(&blockchain_impl::do_store, this, block, handle_store));
+        std::bind(&blockchain_impl::do_store,
+            this, block, handle_store));
 }
 void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
@@ -153,28 +162,30 @@ void blockchain_impl::import(const block_type& block,
     {
         start_write();
         interface_.push(block);
-        stop_write(handle_import, std::error_code());
+        stop_write(handle_import, bc::error::success);
     };
     write_strand_.randomly_queue(do_import);
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
 {
-    // Implements the seqlock counter logic.
-    const auto try_read = [this, perform_read]
+    const auto try_read = [this, perform_read]() -> bool
     {
+        // Implements the seqlock counter logic.
         size_t slock = seqlock_;
         return ((slock % 2 != 1) && perform_read(slock));
     };
 
-    // Initiate async read operation.
-    ios_.post([this, try_read]
+    const auto do_read = [this, try_read]()
     {
         // Sleeping inside seqlock loop is fine since we
         // need to finish write op before we can read anyway.
         while (!try_read())
-            std::this_thread::sleep_for(std::chrono::microseconds(100000));
-    });
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    };
+
+    // Initiate async read operation.
+    ios_.post(do_read);
 }
 
 void blockchain_impl::fetch_block_header(uint64_t height,
@@ -188,7 +199,7 @@ void blockchain_impl::fetch_block_header(uint64_t height,
                 error::not_found, block_header_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.header());
+            bc::error::success, result.header());
     };
     fetch(do_fetch);
 }
@@ -204,7 +215,7 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
                 error::not_found, block_header_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.header());
+            bc::error::success, result.header());
     };
     fetch(do_fetch);
 }
@@ -225,7 +236,7 @@ void blockchain_impl::fetch_block_transaction_hashes(
             hashes.push_back(result.transaction_hash(index));
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), hashes);
+            bc::error::success, hashes);
     };
 }
 
@@ -240,7 +251,7 @@ void blockchain_impl::fetch_block_height(const hash_digest& hash,
                 error::not_found, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.height());
+            bc::error::success, result.height());
     };
     fetch(do_fetch);
 }
@@ -255,7 +266,7 @@ void blockchain_impl::fetch_last_height(
             return finish_fetch(slock, handle_fetch, error::not_found, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), last_height);
+            bc::error::success, last_height);
     };
     fetch(do_fetch);
 }
@@ -272,7 +283,7 @@ void blockchain_impl::fetch_transaction(
                 error::not_found, transaction_type());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.transaction());
+            bc::error::success, result.transaction());
     };
     fetch(do_fetch);
 }
@@ -289,7 +300,7 @@ void blockchain_impl::fetch_transaction_index(
                 error::not_found, 0, 0);
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), result.height(), result.index());
+            bc::error::success, result.height(), result.index());
     };
     fetch(do_fetch);
 }
@@ -305,7 +316,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
                 error::unspent_output, input_point());
 
         return finish_fetch(slock, handle_fetch,
-            std::error_code(), input_point{result.hash(), result.index()});
+            bc::error::success, input_point{result.hash(), result.index()});
     };
     fetch(do_fetch);
 }
@@ -314,11 +325,12 @@ void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch, const uint64_t limit, 
     const uint64_t from_height)
 {
-    const auto do_fetch = [=](size_t slock)
+    const auto do_fetch = 
+        [this, address, handle_fetch, limit, from_height](size_t slock)
     {
-        const auto history = interface_.history.get(
-            address.hash(), limit, from_height);
-        return finish_fetch(slock, handle_fetch, std::error_code(), history);
+        const auto history = interface_.history.get(address.hash(),
+            limit, from_height);
+        return finish_fetch(slock, handle_fetch, bc::error::success, history);
     };
     fetch(do_fetch);
 }
@@ -326,10 +338,11 @@ void blockchain_impl::fetch_history(const payment_address& address,
 void blockchain_impl::fetch_stealth(const binary_type& prefix,
     fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
-    const auto do_fetch = [=](size_t slock)
+    const auto do_fetch = 
+        [this, prefix, handle_fetch, from_height](size_t slock)
     {
         const auto stealth = interface_.stealth.scan(prefix, from_height);
-        return finish_fetch(slock, handle_fetch, std::error_code(), stealth);
+        return finish_fetch(slock, handle_fetch, bc::error::success, stealth);
     };
     fetch(do_fetch);
 }

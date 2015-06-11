@@ -72,17 +72,16 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, oft__ off)
 #pragma warning(disable: 4293)
 #endif
 
-    const DWORD fileOffsetLow = (sizeof(oft__) <= sizeof(DWORD)) ?
-        (DWORD)off : (DWORD)(off & 0xFFFFFFFFL);
-    const DWORD fileOffsetHigh = (sizeof(oft__) <= sizeof(DWORD)) ?
-        (DWORD)0 : (DWORD)((off >> 32) & 0xFFFFFFFFL);
+    const DWORD access  = __map_mmap_prot_file(prot);
     const DWORD protect = __map_mmap_prot_page(prot);
-    const DWORD desiredAccess = __map_mmap_prot_file(prot);
-    const oft__ maxSize = off + (oft__)len;
-    const DWORD maxSizeLow = (sizeof(oft__) <= sizeof(DWORD)) ?
-        (DWORD)maxSize : (DWORD)(maxSize & 0xFFFFFFFFL);
-    const DWORD maxSizeHigh = (sizeof(oft__) <= sizeof(DWORD)) ?
-        (DWORD)0 : (DWORD)((maxSize >> 32) & 0xFFFFFFFFL);
+
+    const oft__ max = off + (oft__)len;
+    const int less = (sizeof(oft__) <= sizeof(DWORD));
+
+    const DWORD maxLow   = less ? (DWORD)max : (DWORD)((max      ) & MAXDWORD);
+    const DWORD maxHigh  = less ? (DWORD)0   : (DWORD)((max >> 32) & MAXDWORD);
+    const DWORD fileLow  = less ? (DWORD)off : (DWORD)((off      ) & MAXDWORD);
+    const DWORD fileHigh = less ? (DWORD)0   : (DWORD)((off >> 32) & MAXDWORD);
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -109,8 +108,7 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, oft__ off)
         return MAP_FAILED;
     }
 
-    mapping = CreateFileMapping(handle, NULL, protect, maxSizeHigh, maxSizeLow,
-        NULL);
+    mapping = CreateFileMapping(handle, NULL, protect, maxHigh, maxLow, NULL);
 
     if (mapping == NULL)
     {
@@ -118,8 +116,7 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, oft__ off)
         return MAP_FAILED;
     }
 
-    map = MapViewOfFile(mapping, desiredAccess, fileOffsetHigh, fileOffsetLow,
-        len);
+    map = MapViewOfFile(mapping, access, fileHigh, fileLow, len);
 
     CloseHandle(mapping);
 
@@ -214,6 +211,9 @@ int ftruncate(int fd, oft__ size)
         {
             case ERROR_INVALID_HANDLE:
                 errno = EBADF;
+                break;
+            case ERROR_DISK_FULL:
+                errno = ENOSPC;
                 break;
             default:
                 errno = EIO;

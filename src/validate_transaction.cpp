@@ -45,7 +45,7 @@ enum validation_options : uint32_t
 
 validate_transaction::validate_transaction(blockchain& chain,
     const transaction_type& tx, const pool_buffer& pool, async_strand& strand)
-  : strand_(strand), chain_(chain),
+  : strand_(strand), blockchain_(chain),
     tx_(tx), tx_hash_(hash_transaction(tx)), pool_(pool)
 {
 }
@@ -61,10 +61,9 @@ void validate_transaction::start(validate_handler handle_validate)
     }
 
     // Check for duplicates in the blockchain
-    chain_.fetch_transaction(tx_hash_,
-        strand_.wrap(
-            &validate_transaction::handle_duplicate_check,
-                shared_from_this(), _1));
+    blockchain_.fetch_transaction(tx_hash_,
+        strand_.wrap(&validate_transaction::handle_duplicate_check,
+            shared_from_this(), _1));
 }
 
 std::error_code validate_transaction::basic_checks() const
@@ -88,7 +87,7 @@ std::error_code validate_transaction::basic_checks() const
         return error::duplicate;
 
     // Check for blockchain dups done next in start() after this exits.
-    return std::error_code();
+    return bc::error::success;
 }
 
 bool validate_transaction::is_standard() const
@@ -128,8 +127,9 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
 
     // Check inputs
     // We already know it is not a coinbase tx
-    chain_.fetch_last_height(strand_.wrap(
-        &validate_transaction::set_last_height, shared_from_this(), _1, _2));
+    blockchain_.fetch_last_height(
+        strand_.wrap(&validate_transaction::set_last_height,
+            shared_from_this(), _1, _2));
 }
 
 bool validate_transaction::is_spent(const output_point& outpoint) const
@@ -167,11 +167,10 @@ void validate_transaction::next_previous_transaction()
 
     // First we fetch the parent block height for a transaction.
     // Needed for checking the coinbase maturity.
-    chain_.fetch_transaction_index(
+    blockchain_.fetch_transaction_index(
         tx_.inputs[current_input_].previous_output.hash,
-        strand_.wrap(
-            &validate_transaction::previous_tx_index,
-                shared_from_this(), _1, _2));
+        strand_.wrap(&validate_transaction::previous_tx_index,
+            shared_from_this(), _1, _2));
 }
 
 void validate_transaction::previous_tx_index(const std::error_code& ec,
@@ -185,11 +184,10 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
 
     // Now fetch actual transaction body
     BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
-    chain_.fetch_transaction(
+    blockchain_.fetch_transaction(
         tx_.inputs[current_input_].previous_output.hash,
-        strand_.wrap(
-            &validate_transaction::handle_previous_tx,
-                shared_from_this(), _1, _2, parent_height));
+        strand_.wrap(&validate_transaction::handle_previous_tx,
+            shared_from_this(), _1, _2, parent_height));
 }
 
 void validate_transaction::search_pool_previous_tx()
@@ -206,7 +204,7 @@ void validate_transaction::search_pool_previous_tx()
 
     // parent_height ignored here as memory pool transactions can
     // never be a coinbase transaction.
-    handle_previous_tx(std::error_code(), *previous_tx, 0);
+    handle_previous_tx(bc::error::success, *previous_tx, 0);
     unconfirmed_.push_back(current_input_);
 }
 
@@ -228,17 +226,15 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
     }
 
     // Search for double spends...
-    chain_.fetch_spend(tx_.inputs[current_input_].previous_output,
-        strand_.wrap(
-            &validate_transaction::check_double_spend,
-                shared_from_this(), _1));
+    blockchain_.fetch_spend(tx_.inputs[current_input_].previous_output,
+        strand_.wrap(&validate_transaction::check_double_spend,
+            shared_from_this(), _1));
 }
 
 void validate_transaction::check_double_spend(const std::error_code& ec)
 {
     if (ec != error::unspent_output)
     {
-        BITCOIN_ASSERT(!ec || ec != error::unspent_output);
         handle_validate_(error::double_spend, index_list());
         return;
     }
@@ -267,7 +263,7 @@ void validate_transaction::check_fees()
     // Who cares?
     // Fuck the police
     // Every tx equal!
-    handle_validate_(std::error_code(), unconfirmed_);
+    handle_validate_(bc::error::success, unconfirmed_);
 }
 
 std::error_code validate_transaction::check_transaction(
@@ -306,7 +302,7 @@ std::error_code validate_transaction::check_transaction(
                 return error::previous_output_null;
     }
 
-    return std::error_code();
+    return bc::error::success;
 }
 
 // Validate script consensus conformance based on flags provided.
@@ -335,16 +331,22 @@ static bool check_consensus(const script_type& prevout_script,
         (result == verify_result::verify_result_eval_true) ||
         (result == verify_result::verify_result_eval_false));
 
-    return (result == verify_result::verify_result_eval_true);
+    const auto valid = (result == verify_result::verify_result_eval_true);
 #else
     // Copy the const prevout script so it can be run.
     auto previous_output_script = prevout_script;
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
     // TODO: expand support beyond BIP16 option.
-    return previous_output_script.run(current_input_script, current_tx,
-        input_index32, bip16_enabled);
+    const auto valid = previous_output_script.run(current_input_script,
+        current_tx, input_index32, bip16_enabled);
 #endif
+
+    if (!valid)
+        log_warning(LOG_VALIDATE) << "Invalid transaction ["
+            << encode_base16(hash_transaction(current_tx)) << "]";
+
+    return valid;
 }
 
 // Validate script consensus conformance, defaulting to p2sh.

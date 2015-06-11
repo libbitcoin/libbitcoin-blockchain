@@ -60,7 +60,7 @@ spend_result::operator bool() const
 
 hash_digest spend_result::hash() const
 {
-    BITCOIN_ASSERT(record_);
+    BITCOIN_ASSERT(record_ != nullptr);
     hash_digest result;
     std::copy(record_, record_ + hash_size, result.begin());
     return result;
@@ -68,7 +68,7 @@ hash_digest spend_result::hash() const
 
 uint32_t spend_result::index() const
 {
-    BITCOIN_ASSERT(record_);
+    BITCOIN_ASSERT(record_ != nullptr);
     return from_little_endian_unsafe<uint32_t>(record_ + hash_size);
 }
 

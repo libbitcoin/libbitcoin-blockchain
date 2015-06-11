@@ -60,13 +60,13 @@ static void handle_error(const char* context, const path& filename)
     const auto error = errno;
 #endif
     const auto message = format(form) % context % filename % error;
-    log_error(LOG_BLOCKCHAIN) << message.str();
+    log_fatal(LOG_DATABASE) << message.str();
 }
 
 mmfile::mmfile(const path& filename)
   : filename_(filename)
 {
-    log_info(LOG_BLOCKCHAIN) << "Mapping: " << filename_;
+    log_info(LOG_DATABASE) << "Mapping: " << filename_;
     file_handle_ = open_file(filename);
     size_ = file_size(file_handle_);
     const auto mapped = map(size_);
@@ -84,7 +84,7 @@ mmfile::mmfile(mmfile&& file)
 
 mmfile::~mmfile()
 {
-    log_info(LOG_BLOCKCHAIN) << "Unmapping: " << filename_;
+    log_info(LOG_DATABASE) << "Unmapping: " << filename_;
     const auto unmapped = unmap();
     if (!unmapped)
         handle_error("unmap", filename_);
@@ -133,10 +133,13 @@ bool mmfile::resize(size_t new_size)
 {
     // Resize underlying file.
     if (ftruncate(file_handle_, new_size) == -1)
+    {
+        handle_error("resize", filename_);
         return false;
+    }
 
     const auto message = format("Resizing: %1% [%2%]") % filename_ % new_size;
-    log_debug(LOG_BLOCKCHAIN) << message.str();
+    log_debug(LOG_DATABASE) << message.str();
 
     // Readjust memory map.
 #ifdef MREMAP_MAYMOVE
