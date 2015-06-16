@@ -348,7 +348,7 @@ static bool check_consensus(const chain::script& prevout_script,
 
     if (!valid)
         log_warning(LOG_VALIDATE) << "Invalid transaction ["
-            << encode_base16(hash_transaction(current_tx)) << "]";
+            << encode_base16(current_tx.hash()) << "]";
 
     return valid;
 }
