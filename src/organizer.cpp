@@ -108,7 +108,7 @@ void organizer::replace_chain(size_t fork_index,
             if (ec != error::service_stopped)
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
-                const auto block_hash = encode_hash(hash_block_header(header));
+                const auto block_hash = encode_hash(header.hash());
                 log_warning(LOG_VALIDATE)
                     << "Invalid block [" << block_hash << "] " << ec.message();
             }

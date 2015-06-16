@@ -29,8 +29,8 @@ namespace libbitcoin {
 namespace blockchain {
 
 // TODO: rename to block_locator_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&, const block_locator_type&)>
-    blockchain_fetch_handler_block_locator;
+typedef std::function<void (const std::error_code&,
+    const message::block_locator&)> blockchain_fetch_handler_block_locator;
 
 /**
  * Creates a block_locator object used to download the blockchain.

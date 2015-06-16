@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -50,7 +50,7 @@ public:
         // Keep the class in scope until this handler completes.
         const auto self = shared_from_this();
         const auto handle_fetch_header = [self](const std::error_code& ec,
-            const block_header_type& block_header)
+            const chain::block_header& block_header)
         {
             if (self->stop_on_error(ec))
                 return;
@@ -72,7 +72,7 @@ private:
         if (ec)
         {
             stopped_ = true;
-            handler_(ec, block_type());
+            handler_(ec, chain::block());
             return true;
         }
 
@@ -103,7 +103,7 @@ private:
     void fetch_tx(const hash_digest& tx_hash, size_t tx_index)
     {
         const auto handle_fetch = [this, tx_index](const std::error_code& ec,
-            const transaction_type& tx)
+            const chain::transaction& tx)
         {
             if (stop_on_error(ec))
                 return;
@@ -122,7 +122,7 @@ private:
     }
 
     blockchain& blockchain_;
-    block_type block_;
+    chain::block block_;
     block_fetch_handler handler_;
     std::atomic<size_t> handled_count_;
     bool stopped_;
@@ -142,5 +142,5 @@ void fetch_block(blockchain& chain, const hash_digest& block_hash,
     fetcher->start(block_hash, handle_fetch);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
