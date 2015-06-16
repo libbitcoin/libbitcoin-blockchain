@@ -23,10 +23,11 @@
 #include <cstdint>
 #include <memory>
 #include <system_error>
+#include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -57,7 +58,7 @@ private:
     {
         if (ec)
         {
-            handler_(ec, block_locator_type());
+            handler_(ec, message::block_locator());
             return true;
         }
 
@@ -96,13 +97,13 @@ private:
                 self, _1, _2, height));
     }
 
-    void append(const std::error_code& ec, const block_header_type& blk_header,
-        size_t /* height */)
+    void append(const std::error_code& ec,
+        const chain::block_header& blk_header, size_t /* height */)
     {
         if (stop_on_error(ec))
             return;
 
-        const auto block_hash = hash_block_header(blk_header);
+        const auto block_hash = blk_header.hash();
         locator_.push_back(block_hash);
 
         // Continue the loop.
@@ -110,8 +111,8 @@ private:
     }
 
     blockchain& blockchain_;
-    index_list indexes_;
-    block_locator_type locator_;
+    chain::index_list indexes_;
+    message::block_locator locator_;
     block_locator_fetch_handler handler_;
 };
 

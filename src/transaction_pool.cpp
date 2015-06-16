@@ -77,7 +77,7 @@ void transaction_pool::do_validate(const chain::transaction& tx,
 
     validate->start(
         strand_.wrap(&transaction_pool::validation_complete,
-            this, _1, _2, hash_transaction(tx), handle_validate));
+            this, _1, _2, tx.hash(), handle_validate));
 }
 
 void transaction_pool::validation_complete(const std::error_code& ec,
@@ -156,7 +156,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
                 return;
             }
 
-        handle_fetch(error::not_found, transaction_type());
+        handle_fetch(error::not_found, chain::transaction());
     };
 
     strand_.queue(tx_fetcher);
