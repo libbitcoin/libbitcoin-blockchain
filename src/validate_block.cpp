@@ -258,7 +258,7 @@ uint32_t validate_block::work_required()
     const auto last_non_special_bits = [this]()
     {
         // Return the last non-special block
-        block_header_type previous_block;
+        chain::block_header previous_block;
         auto previous_height = height_;
 
         // Loop backwards until we find a difficulty change point,
