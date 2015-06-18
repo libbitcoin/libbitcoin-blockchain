@@ -250,7 +250,8 @@ uint32_t validate_block::work_required()
             if (previous_height % readjustment_interval == 0)
                break;
 
-            previous_block = fetch_block(--previous_height);
+            --previous_height;
+            previous_block = fetch_block(previous_height);
             if (previous_block.bits != max_work_bits)
                break;
         }
