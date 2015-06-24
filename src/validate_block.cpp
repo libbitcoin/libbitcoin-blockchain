@@ -211,7 +211,7 @@ inline uint8_t decode_op_n(chain::opcode code)
 }
 
 inline size_t count_script_sigops(
-    const chain::operation_stack& operations, bool accurate)
+    const chain::operation::stack& operations, bool accurate)
 {
     size_t total_sigs = 0;
     chain::opcode last_opcode = chain::opcode::bad_operation;
