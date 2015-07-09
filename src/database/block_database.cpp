@@ -62,7 +62,7 @@ chain::block_header deserialize_header(const Iterator first)
 {
     chain::block_header header;
     auto deserial = make_deserializer_unsafe(first);
-    header.from_data(deserial);
+    header.from_data(deserial, false);
     return header;
 }
 
@@ -159,7 +159,7 @@ void block_database::store(const chain::block& block)
     const auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        data_chunk header_data = block.header.to_data();
+        data_chunk header_data = block.header.to_data(false);
         serial.write_data(header_data);
         serial.write_4_bytes_little_endian(height);
         serial.write_4_bytes_little_endian(number_txs32);
