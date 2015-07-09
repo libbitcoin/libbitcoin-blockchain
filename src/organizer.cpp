@@ -77,6 +77,8 @@ void organizer::replace_chain(size_t fork_index,
         const auto invalid_reason = verify(fork_index, orphan_chain, orphan);
         if (invalid_reason)
         {
+            // If a block is invalid for error::checkpoints_failed then we should
+            // drop the connection, but there is no reference to it from the block.
             const auto& header = orphan_chain[orphan]->actual().header;
             log_warning(LOG_VALIDATE) << "Invalid block ["
                 << encode_base16(hash_block_header(header)) << "] "

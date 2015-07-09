@@ -26,6 +26,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/checkpoints.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
@@ -39,7 +40,8 @@ using path = boost::filesystem::path;
 
 static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
-    blockchain_impl::reorganize_subscriber_type::ptr subscriber)
+    blockchain_impl::reorganize_subscriber_type::ptr subscriber,
+    const checkpoint& checkpoint)
 {
     const auto reorg_handler = [subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
@@ -56,7 +58,7 @@ static organizer_impl organizer_factory(async_strand& reorganize_strand,
         reorganize_strand.queue(relay);
     };
 
-    return organizer_impl(database, orphans, chain, reorg_handler);
+    return organizer_impl(database, orphans, chain, reorg_handler, checkpoint);
 }
 
 static file_lock init_lock(const std::string& prefix)
@@ -69,7 +71,8 @@ static file_lock init_lock(const std::string& prefix)
 }
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
-    const db_active_heights &active_heights, size_t orphan_capacity)
+    const db_active_heights &active_heights, size_t orphan_capacity,
+    const checkpoint& checkpoint)
   : ios_(pool.service()),
     write_strand_(pool),
     reorg_strand_(pool),
@@ -82,7 +85,7 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     chain_(simple_chain_impl(interface_)),
     reorganize_subscriber_(std::make_shared<reorganize_subscriber_type>(pool)),
     organizer_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
-        reorganize_subscriber_))
+        reorganize_subscriber_, checkpoint))
 {
 }
 blockchain_impl::~blockchain_impl()

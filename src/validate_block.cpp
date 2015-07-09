@@ -42,6 +42,9 @@ using boost::posix_time::hours;
 constexpr uint32_t max_block_size = 1000000;
 constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
 
+// The maximum height of version 1 blocks.
+constexpr uint64_t max_version1_height = 237370;
+
 // Every two weeks we readjust target
 constexpr uint64_t target_timespan = 14 * 24 * 60 * 60;
 
@@ -64,8 +67,9 @@ inline Value range_constraint(Value value, Value minimum, Value maximum)
     return value;
 }
 
-validate_block::validate_block(size_t height, const block_type& current_block)
-  : height_(height), current_block_(current_block)
+validate_block::validate_block(size_t height, const block_type& current_block,
+    const checkpoints& checkpoints)
+  : height_(height), current_block_(current_block), checkpoints_(checkpoints)
 {
 }
 
@@ -152,8 +156,8 @@ inline uint8_t decode_op_n(opcode code)
     return raw_code - op_1 + 1;
 }
 
-inline size_t count_script_sigops(
-    const operation_stack& operations, bool accurate)
+inline size_t count_script_sigops(const operation_stack& operations,
+    bool accurate)
 {
     size_t total_sigs = 0;
     opcode last_opcode = opcode::bad_operation;
@@ -206,29 +210,30 @@ size_t validate_block::legacy_sigops_count()
 
 std::error_code validate_block::accept_block()
 {
-    const auto& blk_header = current_block_.header;
-    if (blk_header.bits != work_required())
+    const auto& block_header = current_block_.header;
+    if (block_header.bits != work_required())
         return error::incorrect_proof_of_work;
 
-    if (blk_header.timestamp <= median_time_past())
+    if (block_header.timestamp <= median_time_past())
         return error::timestamp_too_early;
 
     // Txs should be final when included in a block
     for (const auto& tx: current_block_.transactions)
-        if (!is_final(tx, height_, blk_header.timestamp))
+        if (!is_final(tx, height_, block_header.timestamp))
             return error::non_final_transaction;
 
-    // See checkpoints.hpp header.
-    const auto block_hash = hash_block_header(blk_header);
-    if (!passes_checkpoints(height_, block_hash))
+    // Ensure that the block passes checkpoints.
+    // This is both DOS protection and performance optimization for sync.
+    const auto block_hash = hash_block_header(block_header);
+    if (checkpoints_.invalid(height_, block_hash))
         return error::checkpoints_failed;
 
     // Reject version=1 blocks after switchover point.
-    if (height_ > 237370 && blk_header.version < 2)
+    if (block_header.version < 2 && height_ > max_version1_height)
         return error::old_version_block;
 
     // Enforce version=2 rule that coinbase starts with serialized height.
-    if (blk_header.version >= 2 && !coinbase_height_match())
+    if (block_header.version >= 2 && !coinbase_height_match())
         return error::coinbase_height_mismatch;
 
     return bc::error::success;
