@@ -39,19 +39,29 @@ using boost::posix_time::from_time_t;
 using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
+// Max block size is 1,000,000.
 constexpr uint32_t max_block_size = 1000000;
+
+// Maximum signature operations per block is 20,000.
 constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
 
 // The maximum height of version 1 blocks.
+// Is this correct, looks like it should be 227835?
+// see: github.com/bitcoin/bips/blob/master/bip-0034.mediawiki#result
 constexpr uint64_t max_version1_height = 237370;
 
-// Every two weeks we readjust target
-constexpr uint64_t target_timespan = 14 * 24 * 60 * 60;
+// BIP30 exception blocks.
+// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+constexpr uint64_t bip30_exception_block1 = 91842;
+constexpr uint64_t bip30_exception_block2 = 91880;
 
-// Aim for blocks every 10 mins
+// Target readjustment every 2 weeks (in seconds).
+constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
+
+// Aim for blocks every 10 mins (in seconds).
 constexpr uint64_t target_spacing = 10 * 60;
 
-// Two weeks worth of blocks = readjust interval = 2016
+// Two weeks worth of blocks (count of blocks).
 constexpr uint64_t readjustment_interval = target_timespan / target_spacing;
 
 // TODO: move to misc utils.
@@ -302,7 +312,7 @@ uint32_t validate_block::work_required()
 bool validate_block::coinbase_height_match()
 {
     // There are old blocks with version incorrectly set to 2. Ignore them.
-    if (height_ < 237370)
+    if (height_ < max_version1_height)
         return true;
 
     // Checks whether the block height is in the coinbase tx input script.
@@ -332,7 +342,7 @@ bool validate_block::coinbase_height_match()
 std::error_code validate_block::connect_block()
 {
     // BIP 30 security fix
-    if (height_ != 91842 && height_ != 91880)
+    if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
         for (const auto& current_tx: current_block_.transactions)
             if (!not_duplicate_or_spent(current_tx))
                 return error::duplicate_or_spent;
