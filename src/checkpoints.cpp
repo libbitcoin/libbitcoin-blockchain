@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -19,84 +19,89 @@
  */
 #include <bitcoin/blockchain/checkpoints.hpp>
 
+#include <algorithm>
 #include <stdexcept>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-inline bool checkpoint_test(const size_t current_height, 
-    const hash_digest& current_hash, const size_t checkpoint_height,
-    const std::string& checkpoint_hex)
+#ifdef ENABLE_TESTNET
+const static std::vector<checkpoint> markers =
 {
-    // Not this checkpoint... Continue on with next check.
-    if (current_height != checkpoint_height)
-        return true;
+    { 546, "000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70" }
+};
+#else
+const static std::vector<checkpoint> markers =
+{
+    { 11111, "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d" },
+    { 33333, "000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6" },
+    { 68555, "00000000001e1b4903550a0b96e9a9405c8a95f387162e4944e8d9fbe501cd6a" },
+    { 70567, "00000000006a49b14bcf27462068f1264c961f11fa2e0eddd2be0791e1d4124a" },
+    { 74000, "0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20" },
+    { 105000, "00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97" },
+    { 118000, "000000000000774a7f8a7a12dc906ddb9e17e75d684f15e00f8767f9e8f36553" },
+    { 134444, "00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe" },
+    { 140700, "000000000000033b512028abb90e1626d8b346fd0ed598ac0a3c371138dce2bd" },
+    { 168000, "000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763" },
+    { 193000, "000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317" },
+    { 210000, "000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e" },
+    { 216116, "00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e" },
+    { 225430, "00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932" },
+    { 250000, "000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214" },
+    { 279000, "0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40" },
+    { 295000, "00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983" },
+    { 330791, "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8" },
+    { 337459, "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1" }
+};
+#endif
 
-    // Deserialize hash from hex string.
-    hash_digest checkpoint_hash;
-    DEBUG_ONLY(bool valid =) decode_hash(checkpoint_hash, checkpoint_hex);
-    BITCOIN_ASSERT_MSG(valid, "Invalid checkpoint hash.");
-
-    // Both hashes should match.
-    return current_hash == checkpoint_hash;
+checkpoint::checkpoint(size_t height, const std::string& hash)
+{
+    height_ = height;
+   if (!decode_hash(hash_, hash))
+        throw std::runtime_error("A checkpoint hash is invalid.");
 }
 
-bool passes_checkpoints(const size_t height, const hash_digest& block_hash)
+checkpoint::checkpoint(size_t height, const hash_digest& hash)
+    : height_(height), hash_(hash)
 {
-#define CHECKPOINT(checkpoint_height, checkpoint_hex) \
-    if (!checkpoint_test(height, block_hash, \
-        checkpoint_height, checkpoint_hex)) \
-    { \
-        return false; \
-    }
+}
 
-#ifdef ENABLE_TESTNET
-    CHECKPOINT(546,
-        "000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70");
-#else
-    CHECKPOINT(11111,
-        "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d");
-    CHECKPOINT(33333,
-        "000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6");
-    CHECKPOINT(68555,
-        "00000000001e1b4903550a0b96e9a9405c8a95f387162e4944e8d9fbe501cd6a");
-    CHECKPOINT(70567,
-        "00000000006a49b14bcf27462068f1264c961f11fa2e0eddd2be0791e1d4124a");
-    CHECKPOINT(74000,
-        "0000000000573993a3c9e41ce34471c079dcf5f52a0e824a81e7f953b8661a20");
-    CHECKPOINT(105000,
-        "00000000000291ce28027faea320c8d2b054b2e0fe44a773f3eefb151d6bdc97");
-    CHECKPOINT(118000,
-        "000000000000774a7f8a7a12dc906ddb9e17e75d684f15e00f8767f9e8f36553");
-    CHECKPOINT(134444,
-        "00000000000005b12ffd4cd315cd34ffd4a594f430ac814c91184a0d42d2b0fe");
-    CHECKPOINT(140700,
-        "000000000000033b512028abb90e1626d8b346fd0ed598ac0a3c371138dce2bd");
-    CHECKPOINT(168000,
-        "000000000000099e61ea72015e79632f216fe6cb33d7899acb35b75c8303b763");
-    CHECKPOINT(193000,
-        "000000000000059f452a5f7340de6682a977387c17010ff6e6c3bd83ca8b1317");
-    CHECKPOINT(210000,
-        "000000000000048b95347e83192f69cf0366076336c639f9b7228e9ba171342e");
-    CHECKPOINT(216116,
-        "00000000000001b4f4b433e81ee46494af945cf96014816a4e2370f11b23df4e");
-    CHECKPOINT(225430,
-        "00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932");
-    CHECKPOINT(250000,
-        "000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214");
-    CHECKPOINT(279000,
-        "0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40");
-    CHECKPOINT(295000,
-        "00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983");
-    CHECKPOINT(330791,
-        "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8");
-    CHECKPOINT(337459,
-        "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1");
-    CHECKPOINT(360500,
-        "000000000000000008c046a2f5189c5081e76184a31609fab9d2383161d14f7e");
-#endif
-    return true;
+bool checkpoint::invalid(size_t height, const hash_digest& hash) const
+{
+    return height == height_ && hash != hash_;
+}
+
+checkpoints::checkpoints(const checkpoint& top)
+{
+    auto inserter = std::back_inserter(checkpoints_);
+    std::copy(markers.begin(), markers.end(), inserter);
+    if (top.hash_ != null_hash)
+        checkpoints_.push_back(top);
+
+    const auto comparitor = [](const checkpoint& left, const checkpoint& right)
+    {
+        return left.height_ < right.height_;
+    };
+
+    // Sort checkpoints by height so that top is sure to be properly ordered.
+    std::sort(checkpoints_.begin(), checkpoints_.end(), comparitor);
+}
+
+bool checkpoints::invalid(const size_t height, const hash_digest& hash) const
+{
+    for (const auto& check: checkpoints_)
+        if (check.invalid(height, hash))
+            return true;
+
+    return false;
+}
+
+size_t checkpoints::last() const
+{
+    return (checkpoints_.empty() ? 0 : checkpoints_.back().height_);
 }
 
 } // namespace chain

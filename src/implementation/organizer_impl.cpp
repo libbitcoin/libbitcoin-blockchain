@@ -27,8 +27,9 @@ namespace libbitcoin {
 namespace chain {
 
 organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
-    simple_chain& chain, reorganize_handler handler)
-  : organizer(orphans, chain), interface_(database), handler_(handler)
+    simple_chain& chain, reorganize_handler handler, const checkpoint& top)
+  : organizer(orphans, chain), interface_(database), handler_(handler),
+    checkpoints_(top)
 {
 }
 
@@ -41,9 +42,8 @@ std::error_code organizer_impl::verify(size_t fork_index,
     BITCOIN_ASSERT(height != 0);
 
     validate_block_impl validate(interface_, fork_index, orphan_chain,
-        orphan_index, height, current_block);
+        orphan_index, height, current_block, checkpoints_);
 
-    // Perform checks.
     auto code = validate.check_block();
     if (code)
         return code;
@@ -52,12 +52,11 @@ std::error_code organizer_impl::verify(size_t fork_index,
     if (code)
         return code;
 
-    // Skip non-essential checks if before last checkpoint.
-    if (fork_index < block_validation_cutoff_height)
-        return bc::error::success;
+    // Skip strict validation if above last checkpoint.
+    if (fork_index > checkpoints_.last())
+        code = validate.connect_block();
 
-    // Perform strict but slow tests - connect_block()
-    return validate.connect_block();
+    return code;
 }
 
 void organizer_impl::reorganize_occured(size_t fork_point,

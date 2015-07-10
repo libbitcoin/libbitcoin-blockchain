@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/checkpoints.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -39,7 +40,8 @@ public:
     static bool check_proof_of_work(hash_digest hash, uint32_t bits);
 
 protected:
-    validate_block(size_t height, const block_type& current_block);
+    validate_block(size_t height, const block_type& current_block,
+        const checkpoints& checkpoints);
 
     virtual uint32_t previous_block_bits() = 0;
     virtual uint64_t actual_timespan(size_t interval) = 0;
@@ -71,6 +73,7 @@ private:
 
     const size_t height_;
     const block_type& current_block_;
+    const checkpoints& checkpoints_;
 };
 
 } // namespace chain
