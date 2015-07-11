@@ -232,12 +232,12 @@ std::error_code validate_block::accept_block()
 
     // Txs should be final when included in a block
     for (const auto& tx: current_block_.transactions)
-        if (!tx.is_final(height_, blk_header.timestamp))
+        if (!tx.is_final(height_, block_header.timestamp))
             return error::non_final_transaction;
 
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
-    const auto block_hash = blk_header.hash();
+    const auto block_hash = block_header.hash();
     if (checkpoints_.invalid(height_, block_hash))
         return error::checkpoints_failed;
 

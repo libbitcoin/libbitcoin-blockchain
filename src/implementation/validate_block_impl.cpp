@@ -30,7 +30,7 @@ validate_block_impl::validate_block_impl(db_interface& interface,
     int orphan_index, size_t height, const chain::block& current_block,
     const checkpoints& checkpoints)
   : validate_block(height, current_block, checkpoints),
-    interface_(database),
+    interface_(interface),
     height_(height),
     fork_index_(fork_index),
     orphan_index_(orphan_index),
