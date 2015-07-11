@@ -279,7 +279,6 @@ std::error_code validate_block::accept_block() const
 
     // Txs should be final when included in a block.
     for (const auto& tx: current_block_.transactions)
-    {
         if (!tx.is_final(height_, header.timestamp))
             return error::non_final_transaction;
 
