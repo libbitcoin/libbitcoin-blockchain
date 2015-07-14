@@ -30,7 +30,9 @@ namespace chain {
 #ifdef ENABLE_TESTNET
 const static std::vector<checkpoint> markers =
 {
-    { 546, "000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70" }
+    { 546, "000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70" },
+    { 100000, "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e" },
+    { 200000, "0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2" }
 };
 #else
 const static std::vector<checkpoint> markers =
