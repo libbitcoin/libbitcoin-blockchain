@@ -32,6 +32,7 @@ class checkpoints;
 class BCB_API checkpoint
 {
 public:
+    checkpoint(const std::string& hash, size_t height);
     checkpoint(size_t height, const std::string& hash);
     checkpoint(size_t height, const hash_digest& hash);
     bool invalid(size_t height, const hash_digest& hash) const;
