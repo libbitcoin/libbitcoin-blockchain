@@ -69,7 +69,7 @@ private:
     bool coinbase_height_match();
 
     // connect_block()
-    bool not_duplicate_or_spent(const transaction_type& tx);
+    bool is_spent_duplicate(const transaction_type& tx);
 
     const size_t height_;
     const block_type& current_block_;

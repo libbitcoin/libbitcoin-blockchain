@@ -83,10 +83,11 @@ validate_block::validate_block(size_t height, const block_type& current_block,
 {
 }
 
+// TODO: This method depends on the current time, isolate for testablity.
 std::error_code validate_block::check_block()
 {
-    // These are checks that are independent of context
-    // that can be validated before saving an orphan block
+    // These are checks that are independent of the blockchain
+    // that can be validated before saving an orphan block.
 
     if (current_block_.transactions.empty() ||
         current_block_.transactions.size() > max_block_size ||
@@ -100,8 +101,9 @@ std::error_code validate_block::check_block()
     if (!check_proof_of_work(current_block_hash, blk_header.bits))
         return error::proof_of_work;
 
+    const auto now = second_clock::universal_time();
+    const auto two_hour_future = now + hours(2);
     const auto block_time = from_time_t(blk_header.timestamp);
-    const auto two_hour_future = second_clock::universal_time() + hours(2);
     if (block_time > two_hour_future)
         return error::futuristic_timestamp;
 
@@ -227,7 +229,7 @@ std::error_code validate_block::accept_block()
     if (block_header.timestamp <= median_time_past())
         return error::timestamp_too_early;
 
-    // Txs should be final when included in a block
+    // Txs should be final when included in a block.
     for (const auto& tx: current_block_.transactions)
         if (!is_final(tx, height_, block_header.timestamp))
             return error::non_final_transaction;
@@ -344,7 +346,7 @@ std::error_code validate_block::connect_block()
     // BIP 30 security fix
     if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
         for (const auto& current_tx: current_block_.transactions)
-            if (!not_duplicate_or_spent(current_tx))
+            if (is_spent_duplicate(current_tx))
                 return error::duplicate_or_spent;
 
     uint64_t fees = 0;
@@ -353,6 +355,8 @@ std::error_code validate_block::connect_block()
     for (size_t tx_index = 0; tx_index < count; ++tx_index)
     {
         uint64_t value_in = 0;
+
+        // It appears that this is also checked in check_block().
         const auto& tx = current_block_.transactions[tx_index];
         total_sigops += tx_legacy_sigops_count(tx);
         if (total_sigops > max_block_script_sig_operations)
@@ -363,6 +367,7 @@ std::error_code validate_block::connect_block()
         if (is_coinbase(tx))
             continue;
 
+        // Consensus checks here.
         if (!validate_inputs(tx, tx_index, value_in, total_sigops))
             return error::validate_inputs_failed;
 
@@ -378,18 +383,21 @@ std::error_code validate_block::connect_block()
     return bc::error::success;
 }
 
-bool validate_block::not_duplicate_or_spent(const transaction_type& tx)
+bool validate_block::is_spent_duplicate(const transaction_type& tx)
 {
-    const auto& tx_hash = hash_transaction(tx);
+    const auto tx_hash = hash_transaction(tx);
 
     // Is there a matching previous tx?
     if (!transaction_exists(tx_hash))
-        return true;
+        return false;
 
-    // For a duplicate tx to exist, all its outputs must have been spent.
-    for (uint32_t output = 0; output < tx.outputs.size(); ++output)
-        if (!is_output_spent({tx_hash, output}))
+    // Are all outputs spent?
+    for (uint32_t output_index = 0; output_index < tx.outputs.size();
+        ++output_index)
+    {
+        if (!is_output_spent({ tx_hash, output_index }))
             return false;
+    }
 
     return true;
 }
@@ -490,7 +498,7 @@ bool validate_block::connect_input(size_t index_in_parent,
         return false;
     }
 
-    // Search for double spends
+    // Search for double spends.
     if (is_output_spent(previous_output, index_in_parent, input_index))
     {
         log_warning(LOG_VALIDATE) << "Double spend attempt.";
