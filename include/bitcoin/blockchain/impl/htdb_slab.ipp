@@ -58,6 +58,10 @@ slab_type htdb_slab<HashType>::get(const HashType& key) const
     // Find start item...
     auto current = read_bucket_value(key);
 
+    // For logging
+    size_t index = 0;
+    auto bucket = current;
+
     // Iterate through list...
     while (current != header_.empty)
     {
@@ -72,9 +76,13 @@ slab_type htdb_slab<HashType>::get(const HashType& key) const
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The slab database is corrupt (get).";
+                << "The slab database is corrupt getting ("
+                << bucket << ")[" << index << "]";
+
             throw std::runtime_error("The database is corrupt.");
         }
+
+        ++index;
     }
 
     // Not found.
@@ -94,6 +102,10 @@ bool htdb_slab<HashType>::unlink(const HashType& key)
         link(key, begin_item.next_position());
         return true;
     }
+
+    // For logging
+    size_t index = 1;
+    auto bucket = begin;
 
     // Continue on...
     auto previous = begin;
@@ -116,9 +128,13 @@ bool htdb_slab<HashType>::unlink(const HashType& key)
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The slab database is corrupt (unlink).";
+                << "The slab database is corrupt unlinking ("
+                << bucket << ")[" << index << "]";
+
             throw std::runtime_error("The database is corrupt.");
         }
+
+        ++index;
     }
 
     // Not found.

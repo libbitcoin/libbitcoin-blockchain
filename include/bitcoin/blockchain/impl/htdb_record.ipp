@@ -51,7 +51,11 @@ template <typename HashType>
 record_type htdb_record<HashType>::get(const HashType& key) const
 {
     // Find start item...
-    index_type current = read_bucket_value(key);
+    auto current = read_bucket_value(key);
+
+    // For logging
+    size_t index = 0;
+    auto bucket = current;
 
     // Iterate through list...
     while (current != header_.empty)
@@ -67,9 +71,13 @@ record_type htdb_record<HashType>::get(const HashType& key) const
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The record database is corrupt (get).";
+                << "The record database is corrupt getting ("
+                << bucket << ")[" << index << "]";
+
             throw std::runtime_error("The database is corrupt.");
         }
+
+        ++index;
     }
 
     // Not found.
@@ -89,6 +97,10 @@ bool htdb_record<HashType>::unlink(const HashType& key)
         link(key, begin_item.next_index());
         return true;
     }
+
+    // For logging
+    size_t index = 1;
+    auto bucket = begin;
 
     // Continue on...
     auto previous = begin;
@@ -111,9 +123,13 @@ bool htdb_record<HashType>::unlink(const HashType& key)
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The record database is corrupt (unlink).";
+                << "The record database is corrupt unlinking ("
+                << bucket << ")[" << index << "]";
+
             throw std::runtime_error("The database is corrupt.");
         }
+
+        ++index;
     }
 
     // Not found.
