@@ -17,18 +17,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 #include <algorithm>
 #include <stdexcept>
-#include <vector>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
 #ifdef ENABLE_TESTNET
-const static std::vector<checkpoint> markers =
+const checkpoint::list checkpoint::defaults
 {
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
     { "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 },
@@ -38,7 +37,7 @@ const static std::vector<checkpoint> markers =
     { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 }
 };
 #else
-const static std::vector<checkpoint> markers =
+const checkpoint::list checkpoint::defaults
 {
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
     { "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d", 11111 },
@@ -64,56 +63,48 @@ const static std::vector<checkpoint> markers =
 #endif
 
 checkpoint::checkpoint(const std::string& hash, size_t height)
+  : height_(height)
 {
-    height_ = height;
     if (!decode_hash(hash_, hash))
         throw std::runtime_error("A checkpoint hash is invalid.");
 }
 
-// Deprecated (reversed for better visual organization).
-checkpoint::checkpoint(size_t height, const std::string& hash)
-  : checkpoint(hash, height)
+checkpoint::checkpoint(const hash_digest& hash, size_t height)
+  : hash_(hash), height_(height)
 {
 }
 
-checkpoint::checkpoint(size_t height, const hash_digest& hash)
-    : height_(height), hash_(hash)
+size_t checkpoint::height() const
 {
+    return height_;
 }
 
-bool checkpoint::invalid(size_t height, const hash_digest& hash) const
+bool checkpoint::invalid(const hash_digest& hash, size_t height) const
 {
     return height == height_ && hash != hash_;
 }
 
-checkpoints::checkpoints(const checkpoint& top)
+checkpoint::list& checkpoint::sort(list& checks)
 {
-    auto inserter = std::back_inserter(checkpoints_);
-    std::copy(markers.begin(), markers.end(), inserter);
-    if (top.hash_ != null_hash)
-        checkpoints_.push_back(top);
-
     const auto comparitor = [](const checkpoint& left, const checkpoint& right)
     {
-        return left.height_ < right.height_;
+        return left.height() < right.height();
     };
 
-    // Sort checkpoints by height so that top is sure to be properly ordered.
-    std::sort(checkpoints_.begin(), checkpoints_.end(), comparitor);
+    std::sort(checks.begin(), checks.end(), comparitor);
+    return checks;
 }
 
-bool checkpoints::invalid(const size_t height, const hash_digest& hash) const
+bool checkpoint::validate(const hash_digest& hash, const size_t height,
+    const list& checks)
 {
-    for (const auto& check: checkpoints_)
-        if (check.invalid(height, hash))
-            return true;
+    const auto match_invalid = [&height, &hash](const checkpoint& item)
+    {
+        return item.invalid(hash, height);
+    };
 
-    return false;
-}
-
-size_t checkpoints::last() const
-{
-    return (checkpoints_.empty() ? 0 : checkpoints_.back().height_);
+    const auto it = std::find_if(checks.begin(), checks.end(), match_invalid);
+    return it == checks.end();
 }
 
 } // namespace chain

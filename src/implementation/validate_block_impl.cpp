@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -28,8 +28,8 @@ namespace chain {
 validate_block_impl::validate_block_impl(db_interface& database,
     int fork_index, const block_detail_list& orphan_chain,
     int orphan_index, size_t height, const block_type& current_block,
-    const checkpoints& checkpoints)
-  : validate_block(height, current_block, checkpoints),
+    const checkpoint::list& checks)
+  : validate_block(height, current_block, checks),
     interface_(database),
     height_(height),
     fork_index_(fork_index),

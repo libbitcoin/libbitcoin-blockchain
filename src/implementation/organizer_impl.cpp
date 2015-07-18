@@ -19,20 +19,24 @@
  */
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <sstream>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
 organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
-    simple_chain& chain, reorganize_handler handler, const checkpoint& top)
+    simple_chain& chain, reorganize_handler handler,
+    const checkpoint::list& checks)
   : organizer(orphans, chain), interface_(database), handler_(handler),
-    checkpoints_(top)
+    checkpoints_(checks)
 {
+    // Sort checkpoints by height so that top is sure to be properly obtained.
+    checkpoint::sort(checkpoints_);
 }
 
 // For logging.
@@ -45,15 +49,20 @@ static size_t count_inputs(const block_type& block)
     return total_inputs;
 }
 
-std::error_code organizer_impl::verify(size_t fork_index,
+bool organizer_impl::strict(size_t fork_point)
+{
+    return checkpoints_.empty() || fork_point > checkpoints_.back().height();
+}
+
+std::error_code organizer_impl::verify(size_t fork_point,
     const block_detail_list& orphan_chain, size_t orphan_index)
 {
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
     const auto& current_block = orphan_chain[orphan_index]->actual();
-    const size_t height = fork_index + orphan_index + 1;
+    const size_t height = fork_point + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
 
-    validate_block_impl validate(interface_, fork_index, orphan_chain,
+    validate_block_impl validate(interface_, fork_point, orphan_chain,
         orphan_index, height, current_block, checkpoints_);
 
     // Checks that are independent of the chain.
@@ -67,7 +76,7 @@ std::error_code organizer_impl::verify(size_t fork_index,
         return ec;
 
     // Start strict validation if past last checkpoint.
-    if (fork_index > checkpoints_.last())
+    if (strict(fork_point))
     {
         const auto total_inputs = count_inputs(current_block);
         const auto total_transactions = current_block.transactions.size();

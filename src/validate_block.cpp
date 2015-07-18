@@ -24,7 +24,7 @@
 #include <set>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 #ifdef WITH_CONSENSUS
@@ -78,8 +78,8 @@ inline Value range_constraint(Value value, Value minimum, Value maximum)
 }
 
 validate_block::validate_block(size_t height, const block_type& current_block,
-    const checkpoints& checkpoints)
-  : height_(height), current_block_(current_block), checkpoints_(checkpoints)
+    const checkpoint::list& checks)
+  : height_(height), current_block_(current_block), checkpoints_(checks)
 {
 }
 
@@ -237,7 +237,7 @@ std::error_code validate_block::accept_block()
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
     const auto block_hash = hash_block_header(block_header);
-    if (checkpoints_.invalid(height_, block_hash))
+    if (!checkpoint::validate(block_hash, height_, checkpoints_))
         return error::checkpoints_failed;
 
     // Reject version=1 blocks after switchover point.

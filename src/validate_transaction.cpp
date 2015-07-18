@@ -24,7 +24,7 @@
 #include <functional>
 #include <set>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>

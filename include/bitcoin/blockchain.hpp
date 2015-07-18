@@ -22,7 +22,7 @@
 
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/fetch_block.hpp>

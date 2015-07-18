@@ -177,7 +177,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block_locator.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoints.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
@@ -192,9 +192,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\checkpoints.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\database\mman-win32\mman.c">
@@ -258,6 +255,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\fetch_block_locator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\checkpoint.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

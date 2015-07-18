@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
@@ -36,20 +36,21 @@ public:
 
     organizer_impl(db_interface& database, orphans_pool& orphans,
         simple_chain& chain, reorganize_handler handler,
-        const checkpoint& top={0, bc::null_hash});
+        const checkpoint::list& checks=checkpoint::defaults);
 
 protected:
-    std::error_code verify(size_t fork_index,
+    std::error_code verify(size_t fork_point,
         const block_detail_list& orphan_chain, size_t orphan_index);
 
     void reorganize_occured(size_t fork_point,
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced);
+    bool strict(size_t fork_point);
 
 private:
     db_interface& interface_;
     reorganize_handler handler_;
-    const checkpoints checkpoints_;
+    checkpoint::list checkpoints_;
 };
 
 } // namespace chain
