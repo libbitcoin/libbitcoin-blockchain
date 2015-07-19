@@ -35,7 +35,7 @@ struct BCB_API settings
     uint32_t block_pool_capacity;
     uint32_t history_start_height;
     boost::filesystem::path database_path;
-    std::vector<config::checkpoint_type> checkpoints;
+    std::vector<config::checkpoint> checkpoints;
 };
 
 } // namespace chain
