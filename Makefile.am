@@ -290,6 +290,7 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/fetch_block_locator.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphans_pool.hpp \
+    include/bitcoin/blockchain/settings.hpp \
     include/bitcoin/blockchain/simple_chain.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
