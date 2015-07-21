@@ -28,7 +28,7 @@ namespace chain {
 validate_block_impl::validate_block_impl(db_interface& database,
     int fork_index, const block_detail_list& orphan_chain,
     int orphan_index, size_t height, const block_type& current_block,
-    const checkpoint::list& checks)
+    const config::checkpoint::list& checks)
   : validate_block(height, current_block, checks),
     interface_(database),
     height_(height),

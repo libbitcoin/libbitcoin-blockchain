@@ -41,7 +41,7 @@ using path = boost::filesystem::path;
 static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
     blockchain_impl::reorganize_subscriber_type::ptr subscriber,
-    const checkpoint::list& checks)
+    const config::checkpoint::list& checks)
 {
     const auto reorg_handler = [subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
@@ -72,7 +72,7 @@ static file_lock init_lock(const std::string& prefix)
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity,
-    const checkpoint::list& checks)
+    const config::checkpoint::list& checks)
   : ios_(pool.service()),
     write_strand_(pool),
     reorg_strand_(pool),

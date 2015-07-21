@@ -21,7 +21,6 @@
 #define LIBBITCOIN_BLOCKCHAIN_SETTINGS_HPP
 
 #include <cstdint>
-#include <vector>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -35,7 +34,7 @@ struct BCB_API settings
     uint32_t block_pool_capacity;
     uint32_t history_start_height;
     boost::filesystem::path database_path;
-    std::vector<config::checkpoint> checkpoints;
+    config::checkpoint::list checkpoints;
 };
 
 } // namespace chain

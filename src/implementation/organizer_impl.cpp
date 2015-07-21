@@ -31,7 +31,7 @@ namespace chain {
 
 organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
     simple_chain& chain, reorganize_handler handler,
-    const checkpoint::list& checks)
+    const config::checkpoint::list& checks)
   : organizer(orphans, chain), interface_(database), handler_(handler),
     checkpoints_(checks)
 {

@@ -78,7 +78,7 @@ inline Value range_constraint(Value value, Value minimum, Value maximum)
 }
 
 validate_block::validate_block(size_t height, const block_type& current_block,
-    const checkpoint::list& checks)
+    const config::checkpoint::list& checks)
   : height_(height), current_block_(current_block), checkpoints_(checks)
 {
 }

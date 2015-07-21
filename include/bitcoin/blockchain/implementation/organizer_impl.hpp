@@ -36,7 +36,7 @@ public:
 
     organizer_impl(db_interface& database, orphans_pool& orphans,
         simple_chain& chain, reorganize_handler handler,
-        const checkpoint::list& checks=checkpoint::defaults);
+        const config::checkpoint::list& checks=checkpoint::defaults);
 
 protected:
     std::error_code verify(size_t fork_point,
@@ -50,7 +50,7 @@ protected:
 private:
     db_interface& interface_;
     reorganize_handler handler_;
-    checkpoint::list checkpoints_;
+    config::checkpoint::list checkpoints_;
 };
 
 } // namespace chain

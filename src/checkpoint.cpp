@@ -27,7 +27,7 @@ namespace libbitcoin {
 namespace chain {
 
 #ifdef ENABLE_TESTNET
-const checkpoint::list checkpoint::defaults
+const config::checkpoint::list checkpoint::defaults
 {
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
     { "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 },
@@ -37,7 +37,7 @@ const checkpoint::list checkpoint::defaults
     { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 }
 };
 #else
-const checkpoint::list checkpoint::defaults
+const config::checkpoint::list checkpoint::defaults
 {
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
     { "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d", 11111 },
@@ -62,31 +62,10 @@ const checkpoint::list checkpoint::defaults
 };
 #endif
 
-checkpoint::checkpoint(const std::string& hash, size_t height)
-  : height_(height)
+config::checkpoint::list& checkpoint::sort(config::checkpoint::list& checks)
 {
-    if (!decode_hash(hash_, hash))
-        throw std::runtime_error("A checkpoint hash is invalid.");
-}
-
-checkpoint::checkpoint(const hash_digest& hash, size_t height)
-  : hash_(hash), height_(height)
-{
-}
-
-size_t checkpoint::height() const
-{
-    return height_;
-}
-
-bool checkpoint::invalid(const hash_digest& hash, size_t height) const
-{
-    return height == height_ && hash != hash_;
-}
-
-checkpoint::list& checkpoint::sort(list& checks)
-{
-    const auto comparitor = [](const checkpoint& left, const checkpoint& right)
+    const auto comparitor = [](const config::checkpoint& left,
+        const config::checkpoint& right)
     {
         return left.height() < right.height();
     };
@@ -96,11 +75,11 @@ checkpoint::list& checkpoint::sort(list& checks)
 }
 
 bool checkpoint::validate(const hash_digest& hash, const size_t height,
-    const list& checks)
+    const config::checkpoint::list& checks)
 {
-    const auto match_invalid = [&height, &hash](const checkpoint& item)
+    const auto match_invalid = [&height, &hash](const config::checkpoint& item)
     {
-        return item.invalid(hash, height);
+        return height == item.height() && hash != item.hash();
     };
 
     const auto it = std::find_if(checks.begin(), checks.end(), match_invalid);
