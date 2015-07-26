@@ -24,7 +24,7 @@
 #include <functional>
 #include <set>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>
@@ -321,15 +321,10 @@ static bool check_consensus(const script_type& prevout_script,
     data_chunk current_transaction(satoshi_raw_size(current_tx));
     satoshi_save(current_tx, current_transaction.begin());
 
-    // TODO: expand support beyond BIP16 option.
     const auto flags = (bip16_enabled ? verify_flags_p2sh : verify_flags_none);
     const auto result = verify_script(current_transaction.data(),
         current_transaction.size(), previous_output_script.data(),
         previous_output_script.size(), input_index32, flags);
-
-    BITCOIN_ASSERT(
-        (result == verify_result::verify_result_eval_true) ||
-        (result == verify_result::verify_result_eval_false));
 
     const auto valid = (result == verify_result::verify_result_eval_true);
 #else
@@ -337,7 +332,6 @@ static bool check_consensus(const script_type& prevout_script,
     auto previous_output_script = prevout_script;
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
-    // TODO: expand support beyond BIP16 option.
     const auto valid = previous_output_script.run(current_input_script,
         current_tx, input_index32, bip16_enabled);
 #endif

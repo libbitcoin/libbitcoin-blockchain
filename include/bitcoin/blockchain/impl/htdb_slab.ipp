@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_IPP
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_SLAB_IPP
 
+#include <stdexcept>
 #include <bitcoin/bitcoin.hpp>
 #include "htdb_slab_list_item.ipp"
 #include "remainder.ipp"
@@ -28,8 +29,8 @@ namespace libbitcoin {
 namespace chain {
 
 template <typename HashType>
-htdb_slab<HashType>::htdb_slab(
-    htdb_slab_header& header, slab_allocator& allocator)
+htdb_slab<HashType>::htdb_slab(htdb_slab_header& header,
+    slab_allocator& allocator)
   : header_(header), allocator_(allocator)
 {
 }
@@ -39,13 +40,14 @@ position_type htdb_slab<HashType>::store(const HashType& key,
     write_function write, const size_t value_size)
 {
     // Store current bucket value.
-    const position_type old_begin = read_bucket_value(key);
+    const auto old_begin = read_bucket_value(key);
     htdb_slab_list_item<HashType> item(allocator_);
-    const position_type new_begin =
-        item.create(key, value_size, old_begin);
+    const auto new_begin = item.create(key, value_size, old_begin);
     write(item.data());
+
     // Link record to header.
     link(key, new_begin);
+
     // Return position,
     return new_begin + item.value_begin;
 }
@@ -54,17 +56,36 @@ template <typename HashType>
 slab_type htdb_slab<HashType>::get(const HashType& key) const
 {
     // Find start item...
-    position_type current = read_bucket_value(key);
+    auto current = read_bucket_value(key);
+
+    // For logging
+    size_t index = 0;
+    auto bucket = current;
+
     // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_slab_list_item<HashType> item(allocator_, current);
-        // Found match, return data.
+
+        // Found.
         if (item.compare(key))
             return item.data();
+
+        const auto previous = current;
         current = item.next_position();
+        if (previous == current)
+        {
+            log_fatal(LOG_DATABASE)
+                << "The slab database is corrupt getting ("
+                << bucket << ")[" << index << "]";
+
+            throw std::runtime_error("The database is corrupt.");
+        }
+
+        ++index;
     }
-    // Nothing found.
+
+    // Not found.
     return nullptr;
 }
 
@@ -72,63 +93,80 @@ template <typename HashType>
 bool htdb_slab<HashType>::unlink(const HashType& key)
 {
     // Find start item...
-    const position_type begin = read_bucket_value(key);
+    const auto begin = read_bucket_value(key);
     const htdb_slab_list_item<HashType> begin_item(allocator_, begin);
+
     // If start item has the key then unlink from buckets.
     if (begin_item.compare(key))
     {
         link(key, begin_item.next_position());
         return true;
     }
+
+    // For logging
+    size_t index = 1;
+    auto bucket = begin;
+
     // Continue on...
-    position_type previous = begin;
-    position_type current = begin_item.next_position();
+    auto previous = begin;
+    auto current = begin_item.next_position();
+
     // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_slab_list_item<HashType> item(allocator_, current);
-        // Found match, unlink current item from previous.
+
+        // Found, unlink current item from previous.
         if (item.compare(key))
         {
             release(item, previous);
             return true;
         }
+
         previous = current;
         current = item.next_position();
+        if (previous == current)
+        {
+            log_fatal(LOG_DATABASE)
+                << "The slab database is corrupt unlinking ("
+                << bucket << ")[" << index << "]";
+
+            throw std::runtime_error("The database is corrupt.");
+        }
+
+        ++index;
     }
-    // Nothing found.
+
+    // Not found.
     return false;
 }
 
 template <typename HashType>
 index_type htdb_slab<HashType>::bucket_index(const HashType& key) const
 {
-    const index_type bucket = remainder(key, 
-        static_cast<uint32_t>(header_.size()));
+    const auto bucket = remainder(key, static_cast<uint32_t>(header_.size()));
     BITCOIN_ASSERT(bucket < header_.size());
     return bucket;
 }
 
 template <typename HashType>
-position_type htdb_slab<HashType>::read_bucket_value(
-    const HashType& key) const
+position_type htdb_slab<HashType>::read_bucket_value(const HashType& key) const
 {
     auto value = header_.read(bucket_index(key));
-    static_assert(sizeof(value) == sizeof(position_type), "Internal error");
+    static_assert(sizeof(value) == sizeof(position_type), "Invalid size");
     return value;
 }
 
 template <typename HashType>
-void htdb_slab<HashType>::link(
-    const HashType& key, const position_type begin)
+void htdb_slab<HashType>::link(const HashType& key, const position_type begin)
 {
     header_.write(bucket_index(key), begin);
 }
 
 template <typename HashType>
 template <typename ListItem>
-void htdb_slab<HashType>::release(
-    const ListItem& item, const position_type previous)
+void htdb_slab<HashType>::release(const ListItem& item,
+    const position_type previous)
 {
     ListItem previous_item(allocator_, previous);
     previous_item.write_next_position(item.next_position());

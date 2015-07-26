@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
@@ -36,7 +36,7 @@ public:
     validate_block_impl(db_interface& database, int fork_index,
         const block_detail_list& orphan_chain, int orphan_index,
         size_t height, const block_type& current_block,
-        const checkpoints& checkpoints);
+        const config::checkpoint::list& checkpoints);
 
 protected:
     uint32_t previous_block_bits();

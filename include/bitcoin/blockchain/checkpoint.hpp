@@ -20,38 +20,21 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_CHECKPOINTS_HPP
 #define LIBBITCOIN_BLOCKCHAIN_CHECKPOINTS_HPP
 
-#include <vector>
+#include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-class checkpoints;
-
 class BCB_API checkpoint
 {
 public:
-    checkpoint(size_t height, const std::string& hash);
-    checkpoint(size_t height, const hash_digest& hash);
-    bool invalid(size_t height, const hash_digest& hash) const;
+    static const config::checkpoint::list defaults;
 
-private:
-    size_t height_;
-    hash_digest hash_;
-
-    friend class checkpoints;
-};
-
-class BCB_API checkpoints
-{
-public:
-    checkpoints(const checkpoint& top);
-    bool invalid(size_t height, const hash_digest& hash) const;
-    size_t last() const;
-
-private:
-    std::vector<checkpoint> checkpoints_;
+    static config::checkpoint::list& sort(config::checkpoint::list& checks);
+    static bool validate(const hash_digest& hash, const size_t height,
+        const config::checkpoint::list& checks);
 };
 
 } // namespace chain

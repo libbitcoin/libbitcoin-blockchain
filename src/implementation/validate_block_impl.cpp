@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
 namespace chain {
@@ -28,8 +28,8 @@ namespace chain {
 validate_block_impl::validate_block_impl(db_interface& database,
     int fork_index, const block_detail_list& orphan_chain,
     int orphan_index, size_t height, const block_type& current_block,
-    const checkpoints& checkpoints)
-  : validate_block(height, current_block, checkpoints),
+    const config::checkpoint::list& checks)
+  : validate_block(height, current_block, checks),
     interface_(database),
     height_(height),
     fork_index_(fork_index),
@@ -48,6 +48,7 @@ block_header_type validate_block_impl::fetch_block(size_t fetch_height)
         return orphan_chain_[fetch_index]->actual().header;
     }
 
+    // TODO: This is over-requesting, can be optimized.
     // We only really need the bits and timestamp fields.
     auto result = interface_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);

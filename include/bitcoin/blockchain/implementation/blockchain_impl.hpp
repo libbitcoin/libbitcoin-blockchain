@@ -25,9 +25,10 @@
 #include <cstdint>
 #include <string>
 #include <system_error>
+#include <vector>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
@@ -48,7 +49,7 @@ public:
 
     blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights={0}, size_t orphan_capacity=20,
-        const checkpoint& checkpoint={0, bc::null_hash});
+        const config::checkpoint::list& checks=checkpoint::defaults);
     ~blockchain_impl();
 
     // Non-copyable

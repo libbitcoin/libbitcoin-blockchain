@@ -28,8 +28,8 @@ namespace libbitcoin {
 namespace chain {
 
 template <typename HashType>
-htdb_record<HashType>::htdb_record(
-    htdb_record_header& header, record_allocator& allocator)
+htdb_record<HashType>::htdb_record( htdb_record_header& header,
+    record_allocator& allocator)
   : header_(header), allocator_(allocator)
 {
 }
@@ -38,11 +38,11 @@ template <typename HashType>
 void htdb_record<HashType>::store(const HashType& key, write_function write)
 {
     // Store current bucket value.
-    const index_type old_begin = read_bucket_value(key);
+    const auto old_begin = read_bucket_value(key);
     htdb_record_list_item<HashType> item(allocator_);
-    const index_type new_begin =
-        item.create(key, old_begin);
+    const auto new_begin = item.create(key, old_begin);
     write(item.data());
+
     // Link record to header.
     link(key, new_begin);
 }
@@ -51,17 +51,36 @@ template <typename HashType>
 record_type htdb_record<HashType>::get(const HashType& key) const
 {
     // Find start item...
-    index_type current = read_bucket_value(key);
+    auto current = read_bucket_value(key);
+
+    // For logging
+    size_t index = 0;
+    auto bucket = current;
+
     // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_record_list_item<HashType> item(allocator_, current);
-        // Found match, return data.
+
+        // Found, return data.
         if (item.compare(key))
             return item.data();
+
+        const auto previous = current;
         current = item.next_index();
+        if (previous == current)
+        {
+            log_fatal(LOG_DATABASE)
+                << "The record database is corrupt getting ("
+                << bucket << ")[" << index << "]";
+
+            throw std::runtime_error("The database is corrupt.");
+        }
+
+        ++index;
     }
-    // Nothing found.
+
+    // Not found.
     return nullptr;
 }
 
@@ -69,45 +88,64 @@ template <typename HashType>
 bool htdb_record<HashType>::unlink(const HashType& key)
 {
     // Find start item...
-    const index_type begin = read_bucket_value(key);
+    const auto begin = read_bucket_value(key);
     const htdb_record_list_item<HashType> begin_item(allocator_, begin);
+
     // If start item has the key then unlink from buckets.
     if (begin_item.compare(key))
     {
         link(key, begin_item.next_index());
         return true;
     }
+
+    // For logging
+    size_t index = 1;
+    auto bucket = begin;
+
     // Continue on...
-    index_type previous = begin;
-    index_type current = begin_item.next_index();
+    auto previous = begin;
+    auto current = begin_item.next_index();
+
     // Iterate through list...
     while (current != header_.empty)
     {
         const htdb_record_list_item<HashType> item(allocator_, current);
-        // Found match, unlink current item from previous.
+
+        // Found, unlink current item from previous.
         if (item.compare(key))
         {
             release(item, previous);
             return true;
         }
+
         previous = current;
         current = item.next_index();
+        if (previous == current)
+        {
+            log_fatal(LOG_DATABASE)
+                << "The record database is corrupt unlinking ("
+                << bucket << ")[" << index << "]";
+
+            throw std::runtime_error("The database is corrupt.");
+        }
+
+        ++index;
     }
-    // Nothing found.
+
+    // Not found.
     return false;
 }
 
 template <typename HashType>
 index_type htdb_record<HashType>::bucket_index(const HashType& key) const
 {
-    const index_type bucket = remainder(key, header_.size());
+    const auto bucket = remainder(key, header_.size());
     BITCOIN_ASSERT(bucket < header_.size());
     return bucket;
 }
 
 template <typename HashType>
-index_type htdb_record<HashType>::read_bucket_value(
-    const HashType& key) const
+index_type htdb_record<HashType>::read_bucket_value(const HashType& key) const
 {
     auto value = header_.read(bucket_index(key));
     BITCOIN_ASSERT(sizeof(value) == sizeof(index_type));
@@ -123,8 +161,8 @@ void htdb_record<HashType>::link(
 
 template <typename HashType>
 template <typename ListItem>
-void htdb_record<HashType>::release(
-    const ListItem& item, const position_type previous)
+void htdb_record<HashType>::release(const ListItem& item,
+    const position_type previous)
 {
     ListItem previous_item(allocator_, previous);
     previous_item.write_next_index(item.next_index());
