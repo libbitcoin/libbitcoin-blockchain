@@ -81,7 +81,7 @@ void organizer::replace_chain(size_t fork_index,
             // drop the connection, but there is no reference to it from the block.
             const auto& header = orphan_chain[orphan]->actual().header;
             log_warning(LOG_VALIDATE) << "Invalid block ["
-                << encode_base16(hash_block_header(header)) << "] "
+                << encode_hash(hash_block_header(header)) << "] "
                 << invalid_reason.value();
 
             // Block is invalid, clip the orphans.
