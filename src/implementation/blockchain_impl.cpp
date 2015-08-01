@@ -40,17 +40,17 @@ using path = boost::filesystem::path;
 
 static organizer_impl organizer_factory(async_strand& reorganize_strand,
     db_interface& database, orphans_pool& orphans, simple_chain& chain,
-    blockchain_impl::reorganize_subscriber_type::ptr subscriber,
+    blockchain_impl::reorganize_subscriber& subscriber,
     const config::checkpoint::list& checks)
 {
-    const auto reorg_handler = [subscriber, &reorganize_strand](
+    const auto reorg_handler = [&subscriber, &reorganize_strand](
         const std::error_code& code, size_t fork_point, 
         const blockchain::block_list& arrivals,
         const blockchain::block_list& replaced)
     {
-        const auto relay = [code, fork_point, arrivals, replaced, subscriber]()
+        const auto relay = [code, fork_point, arrivals, replaced, &subscriber]()
         {
-            subscriber->relay(code, fork_point, arrivals, replaced);
+            subscriber.relay(code, fork_point, arrivals, replaced);
         };
 
         // Post this operation without using the same strand. Therefore calling
@@ -83,9 +83,9 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     interface_(db_paths_, active_heights),
     orphans_(orphan_capacity),
     chain_(simple_chain_impl(interface_)),
-    reorganize_subscriber_(std::make_shared<reorganize_subscriber_type>(pool)),
+    subscriber_(pool),
     organizer_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
-        reorganize_subscriber_, checks))
+        subscriber_, checks))
 {
 }
 blockchain_impl::~blockchain_impl()
@@ -104,8 +104,8 @@ bool blockchain_impl::start()
 bool blockchain_impl::stop()
 {
     const uint64_t fork_point = 0;
-    reorganize_subscriber_->relay(error::service_stopped, fork_point,
-        block_list(), block_list());
+    subscriber_.relay(error::service_stopped, fork_point, block_list(),
+        block_list());
 
     // The relay is an asynchronous call that does not accept a callback.
     // So we cannot currently block or set stopped_ at completion.
@@ -353,7 +353,7 @@ void blockchain_impl::fetch_stealth(const binary_type& prefix,
 void blockchain_impl::subscribe_reorganize(
     reorganize_handler handle_reorganize)
 {
-    reorganize_subscriber_->subscribe(handle_reorganize);
+    subscriber_.subscribe(handle_reorganize);
 }
 
 } // namespace chain

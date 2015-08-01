@@ -43,9 +43,8 @@ class BCB_API blockchain_impl
 {
 public:
     // Used by internal components so need public definitions here
-    typedef subscriber<
-        const std::error_code&, uint64_t, const block_list&, const block_list&>
-            reorganize_subscriber_type;
+    typedef subscriber<const std::error_code&, uint64_t, const block_list&,
+        const block_list&> reorganize_subscriber;
 
     blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights={0}, size_t orphan_capacity=20,
@@ -166,7 +165,7 @@ private:
     // Organize stuff
     orphans_pool orphans_;
     simple_chain_impl chain_;
-    reorganize_subscriber_type::ptr reorganize_subscriber_;
+    reorganize_subscriber subscriber_;
     organizer_impl organizer_;
 };
 
