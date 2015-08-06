@@ -165,7 +165,7 @@ private:
     // Organize stuff
     orphans_pool orphans_;
     simple_chain_impl chain_;
-    reorganize_subscriber subscriber_;
+    reorganize_subscriber::ptr subscriber_;
     organizer_impl organizer_;
 };
 
