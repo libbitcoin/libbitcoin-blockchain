@@ -329,11 +329,11 @@ void blockchain_impl::fetch_history(const payment_address& address,
     fetch_handler_history handle_fetch, const uint64_t limit, 
     const uint64_t from_height)
 {
-    const auto do_fetch = 
-        [this, address, handle_fetch, limit, from_height](size_t slock)
+    const auto do_fetch = [this, address, handle_fetch, limit, from_height](
+        size_t slock)
     {
-        const auto history = interface_.history.get(address.hash(),
-            limit, from_height);
+        const auto history = interface_.history.get(address.hash(), limit, 
+            from_height);
         return finish_fetch(slock, handle_fetch, bc::error::success, history);
     };
     fetch(do_fetch);
