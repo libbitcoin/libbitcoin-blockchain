@@ -160,8 +160,8 @@ bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
     for (size_t orphan_iter = 0; orphan_iter <= orphan_index_; ++orphan_iter)
     {
         const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
-        BITCOIN_ASSERT(orphan_block.transactions.size() >= 1);
-        BITCOIN_ASSERT(is_coinbase(orphan_block.transactions[0]));
+        BITCOIN_ASSERT(!orphan_block.transactions.empty());
+        BITCOIN_ASSERT(is_coinbase(orphan_block.transactions.front()));
 
         for (size_t tx_index = 0; tx_index < orphan_block.transactions.size();
             ++tx_index)
