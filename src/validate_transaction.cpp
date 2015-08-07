@@ -154,11 +154,11 @@ void validate_transaction::set_last_height(const std::error_code& ec,
     // Used for checking coinbase maturity
     last_block_height_ = last_height;
     value_in_ = 0;
-    BITCOIN_ASSERT(tx_.inputs.size() > 0);
     current_input_ = 0;
 
-    // Begin looping through the inputs, fetching the previous tx
-    next_previous_transaction();
+    // Begin looping through the inputs, fetching the previous tx.
+    if (tx_.inputs.size() > 0)
+        next_previous_transaction();
 }
 
 void validate_transaction::next_previous_transaction()
@@ -239,15 +239,15 @@ void validate_transaction::check_double_spend(const std::error_code& ec)
         return;
     }
 
-    // End of connect_input checks
+    // End of connect_input checks.
     ++current_input_;
     if (current_input_ < tx_.inputs.size())
     {
-        BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
         next_previous_transaction();
         return;
     }
 
+    // current_input_ will be invalid on last pass.
     check_fees();
 }
 
