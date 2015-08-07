@@ -107,8 +107,8 @@ block_detail_list orphans_pool::unprocessed()
         if (!current_block->is_processed())
             unprocessed_blocks.push_back(current_block);
 
-    // Earlier blocks come into pool first. Lets match that
-    // Helps avoid fragmentation, but isn't neccessary
+    // Earlier blocks come into pool first.
+    // Helps avoid fragmentation, but isn't neccessary.
     std::reverse(unprocessed_blocks.begin(), unprocessed_blocks.end());
     return unprocessed_blocks;
 }
