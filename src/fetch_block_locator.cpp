@@ -96,13 +96,13 @@ private:
                 self, _1, _2, height));
     }
 
-    void append(const std::error_code& ec, const block_header_type& blk_header,
+    void append(const std::error_code& ec, const block_header_type& header,
         size_t /* height */)
     {
         if (stop_on_error(ec))
             return;
 
-        const auto block_hash = hash_block_header(blk_header);
+        const auto block_hash = hash_block_header(header);
         locator_.push_back(block_hash);
 
         // Continue the loop.
