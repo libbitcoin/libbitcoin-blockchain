@@ -21,9 +21,13 @@
 
 #include <cstdint>
 #include <system_error>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace chain {
+
+// Service shutdown notification code, issued to subscribers on shutdown.
+const std::error_code blockchain::stop_code = error::service_stopped;
 
 // Fast modulus calculation where divisor is a power of 2.
 static uint64_t remainder_fast(const hash_digest& value,
