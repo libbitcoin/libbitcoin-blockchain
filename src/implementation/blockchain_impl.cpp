@@ -39,29 +39,6 @@ namespace chain {
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
 
-static organizer_impl organizer_factory(async_strand& reorganize_strand,
-    db_interface& database, orphans_pool& orphans, simple_chain& chain,
-    blockchain_impl::reorganize_subscriber::ptr subscriber,
-    const config::checkpoint::list& checks)
-{
-    const auto reorg_handler = [subscriber, &reorganize_strand](
-        const std::error_code& code, size_t fork_point, 
-        const blockchain::block_list& arrivals,
-        const blockchain::block_list& replaced)
-    {
-        const auto relay = [code, fork_point, arrivals, replaced, subscriber]()
-        {
-            subscriber->relay(code, fork_point, arrivals, replaced);
-        };
-
-        // Post this operation without using the same strand. Therefore calling
-        // the reorganize callbacks won't prevent store() from continuing.
-        reorganize_strand.queue(relay);
-    };
-
-    return organizer_impl(database, orphans, chain, reorg_handler, checks);
-}
-
 static file_lock init_lock(const std::string& prefix)
 {
     // Touch the lock file (open/close).
@@ -74,19 +51,15 @@ static file_lock init_lock(const std::string& prefix)
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity,
     const config::checkpoint::list& checks)
-  : ios_(pool.service()),
-    write_strand_(pool),
-    reorg_strand_(pool),
+  : strand_(pool),
     flock_(init_lock(prefix)),
     seqlock_(0),
-    stopped_(false),
+    stopped_(true),
     db_paths_(prefix),
     interface_(db_paths_, active_heights),
     orphans_(orphan_capacity),
-    chain_(simple_chain_impl(interface_)),
-    subscriber_(std::make_shared<reorganize_subscriber>(pool)),
-    organizer_(organizer_factory(reorg_strand_, interface_, orphans_, chain_,
-        subscriber_, checks))
+    chain_(interface_),
+    organizer_(pool, interface_, orphans_, chain_, checks)
 {
 }
 blockchain_impl::~blockchain_impl()
@@ -98,20 +71,30 @@ bool blockchain_impl::start()
     if (!flock_.try_lock())
         return false;
 
+    // TODO: can we actually restart?
+    stopped_ = false;
     interface_.start();
     return true;
 }
 
 bool blockchain_impl::stop()
 {
-    const uint64_t fork_point = 0;
-    subscriber_->relay(error::service_stopped, fork_point, block_list(),
-        block_list());
-
-    // The relay is an asynchronous call that does not accept a callback.
-    // So we cannot currently block or set stopped_ at completion.
+    // TODO: close all file descriptors, called once threadpool has stopped.
     stopped_ = true;
+    organizer_.stop();
+    return true;
+}
+
+bool blockchain_impl::stopped()
+{
     return stopped_;
+}
+
+void blockchain_impl::subscribe_reorganize(
+    reorganize_handler handle_reorganize)
+{
+    // Pass this through to the organizer, which issues the notifications.
+    organizer_.subscribe_reorganize(handle_reorganize);
 }
 
 void blockchain_impl::start_write()
@@ -125,16 +108,14 @@ void blockchain_impl::start_write()
 void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
-    write_strand_.randomly_queue(
+    strand_.randomly_queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
 void blockchain_impl::do_store(const block_type& block,
     store_block_handler handle_store)
 {
-    // Without this, when we try to stop, blockchain continue
-    // to process the queue which might be quite long.
-    if (stopped_)
+    if (stopped())
         return;
 
     start_write();
@@ -168,7 +149,7 @@ void blockchain_impl::import(const block_type& block,
         interface_.push(block);
         stop_write(handle_import, bc::error::success);
     };
-    write_strand_.randomly_queue(do_import);
+    strand_.randomly_queue(do_import);
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
@@ -189,7 +170,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
     };
 
     // Initiate async read operation.
-    ios_.post(do_read);
+    strand_.queue(do_read);
 }
 
 void blockchain_impl::fetch_block_header(uint64_t height,
@@ -349,12 +330,6 @@ void blockchain_impl::fetch_stealth(const binary_type& prefix,
         return finish_fetch(slock, handle_fetch, bc::error::success, stealth);
     };
     fetch(do_fetch);
-}
-
-void blockchain_impl::subscribe_reorganize(
-    reorganize_handler handle_reorganize)
-{
-    subscriber_->subscribe(handle_reorganize);
 }
 
 } // namespace chain

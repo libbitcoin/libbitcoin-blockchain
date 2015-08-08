@@ -19,7 +19,9 @@
  */
 #include <bitcoin/blockchain/organizer.hpp>
 
+#include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
@@ -30,18 +32,25 @@
 namespace libbitcoin {
 namespace chain {
 
-organizer::organizer(orphans_pool& orphans, simple_chain& chain)
-  : orphans_(orphans), chain_(chain)
+organizer::organizer(threadpool& pool, orphans_pool& orphans,
+    simple_chain& chain)
+  : orphans_(orphans),
+    chain_(chain),
+    subscriber_(std::make_shared<reorganize_subscriber>(pool)),
+    stopped_(true)
 {
 }
 
-void organizer::start()
+bool organizer::start()
 {
+    // TODO: can we actually restart?
+    stopped_ = false;
+
     // Load unprocessed blocks
     process_queue_ = orphans_.unprocessed();
 
     // As we loop, we pop blocks off and process them
-    while (!process_queue_.empty())
+    while (!process_queue_.empty() && !stopped())
     {
         const auto process_block = process_queue_.back();
         process_queue_.pop_back();
@@ -49,6 +58,20 @@ void organizer::start()
         // process() can remove blocks from the queue too
         process(process_block);
     }
+
+    return true;
+}
+
+bool organizer::stop()
+{
+    notify_stop();
+    stopped_ = true;
+    return true;
+}
+
+bool organizer::stopped()
+{
+    return stopped_;
 }
 
 void organizer::process(block_detail_ptr process_block)
@@ -74,18 +97,21 @@ void organizer::replace_chain(size_t fork_index,
     hash_number orphan_work = 0;
     for (size_t orphan = 0; orphan < orphan_chain.size(); ++orphan)
     {
-        const auto invalid_reason = verify(fork_index, orphan_chain, orphan);
-        if (invalid_reason)
+        const auto ec = verify(fork_index, orphan_chain, orphan);
+        if (ec)
         {
-            // If a block is invalid for error::checkpoints_failed then we should
-            // drop the connection, but there is no reference to it from the block.
-            const auto& header = orphan_chain[orphan]->actual().header;
-            log_warning(LOG_VALIDATE) << "Invalid block ["
-                << encode_hash(hash_block_header(header)) << "] "
-                << invalid_reason.value();
+            // If invalid for error::checkpoints_failed we should drop the
+            // connection, but there is no reference from here.
+            if (ec != blockchain::stop_code)
+            {
+                const auto& header = orphan_chain[orphan]->actual().header;
+                const auto block_hash = encode_hash(hash_block_header(header));
+                log_warning(LOG_VALIDATE)
+                    << "Invalid block [" << block_hash << "] " << ec.message();
+            }
 
             // Block is invalid, clip the orphans.
-            clip_orphans(orphan_chain, orphan, invalid_reason);
+            clip_orphans(orphan_chain, orphan, ec);
 
             // Stop summing work once we discover an invalid block
             break;
@@ -163,7 +189,7 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
         else
             (*it)->set_error(error::previous_block_invalid);
 
-        const static size_t height = 0;
+        static const size_t height = 0;
         const block_info info{ block_status::rejected, height };
         (*it)->set_info(info);
         orphans_.remove(*it);
@@ -180,15 +206,33 @@ void organizer::notify_reorganize(size_t fork_point,
     const block_detail_list& orphan_chain,
     const block_detail_list& replaced_chain)
 {
-    // Strip out meta-info, converting to format passed to subscribe handlers.
-    blockchain::block_list arrival_blocks, replaced_blocks;
-    for (const auto arrival_block: orphan_chain)
-        arrival_blocks.push_back(arrival_block->actual_ptr());
+    const auto to_raw_pointer = [](const block_detail_ptr& detail)
+    {
+        return detail->actual_ptr();
+    };
 
-    for (const auto replaced_block: replaced_chain)
-        replaced_blocks.push_back(replaced_block->actual_ptr());
+    blockchain::block_list arrivals(orphan_chain.size());
+    std::transform(orphan_chain.begin(), orphan_chain.end(),
+        arrivals.begin(), to_raw_pointer);
 
-    reorganize_occured(fork_point, arrival_blocks, replaced_blocks);
+    blockchain::block_list replacements(replaced_chain.size());
+    std::transform(replaced_chain.begin(), replaced_chain.end(),
+        replacements.begin(), to_raw_pointer);
+
+    subscriber_->relay(bc::error::success, fork_point, arrivals, replacements);
+}
+
+void organizer::subscribe_reorganize(
+    blockchain::reorganize_handler handle_reorganize)
+{
+    subscriber_->subscribe(handle_reorganize);
+}
+
+void organizer::notify_stop()
+{
+    static const uint64_t fork_point = 0;
+    subscriber_->relay(blockchain::stop_code, fork_point,
+        blockchain::block_list(), blockchain::block_list());
 }
 
 } // namespace chain

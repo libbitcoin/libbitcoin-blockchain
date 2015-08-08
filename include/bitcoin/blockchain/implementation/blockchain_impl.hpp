@@ -42,9 +42,6 @@ class BCB_API blockchain_impl
   : public blockchain
 {
 public:
-    // Used by internal components so need public definitions here
-    typedef subscriber<const std::error_code&, uint64_t, const block_list&,
-        const block_list&> reorganize_subscriber;
 
     blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights={0}, size_t orphan_capacity=20,
@@ -57,7 +54,6 @@ public:
 
     bool start();
     bool stop();
-
     void store(const block_type& block, store_block_handler handle_store);
     void import(const block_type& block, import_block_handler handle_import);
 
@@ -141,13 +137,10 @@ private:
         fetch_handler_stealth handle_fetch, uint64_t from_height,
         uint64_t slock);
 
-    boost::asio::io_service& ios_;
+    bool stopped();
 
     // Queue for writes to the blockchain.
-    async_strand write_strand_;
-
-    // Queue for serializing reorganization handler calls.
-    async_strand reorg_strand_;
+    async_strand strand_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;
@@ -155,7 +148,7 @@ private:
     // seqlock used for writes.
     seqlock_type seqlock_;
 
-    // Is the blockchain stopped.
+    // TODO: use lock-free std::atomic_flag?
     std::atomic<bool> stopped_;
 
     // Main database core.
@@ -165,7 +158,6 @@ private:
     // Organize stuff
     orphans_pool orphans_;
     simple_chain_impl chain_;
-    reorganize_subscriber::ptr subscriber_;
     organizer_impl organizer_;
 };
 

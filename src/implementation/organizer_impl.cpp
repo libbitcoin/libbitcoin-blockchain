@@ -24,26 +24,26 @@
 #include <sstream>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
+#include <bitcoin/blockchain/implementation/blockchain_impl.hpp>
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
-organizer_impl::organizer_impl(db_interface& database, orphans_pool& orphans,
-    simple_chain& chain, reorganize_handler handler,
+organizer_impl::organizer_impl(threadpool& pool, db_interface& database,
+    orphans_pool& orphans, simple_chain& chain,
     const config::checkpoint::list& checks)
-  : organizer(orphans, chain), interface_(database), handler_(handler),
-    checkpoints_(checks)
+  : organizer(pool, orphans, chain),
+    interface_(database), checkpoints_(checks)
 {
     // Sort checkpoints by height so that top is sure to be properly obtained.
     checkpoint::sort(checkpoints_);
 }
 
-// For logging.
 static size_t count_inputs(const block_type& block)
 {
     size_t total_inputs = 0;
-    for (const auto& tx : block.transactions)
+    for (const auto& tx: block.transactions)
         total_inputs += tx.inputs.size();
 
     return total_inputs;
@@ -57,13 +57,21 @@ bool organizer_impl::strict(size_t fork_point)
 std::error_code organizer_impl::verify(size_t fork_point,
     const block_detail_list& orphan_chain, size_t orphan_index)
 {
+    if (stopped())
+        return blockchain_impl::stop_code;
+
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
     const auto& current_block = orphan_chain[orphan_index]->actual();
     const size_t height = fork_point + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
 
-    validate_block_impl validate(interface_, fork_point, orphan_chain,
-        orphan_index, height, current_block, checkpoints_);
+    const auto callback = [this]()
+    {
+        return stopped();
+    };
+
+    const validate_block_impl validate(interface_, fork_point, orphan_chain,
+        orphan_index, height, current_block, checkpoints_, callback);
 
     // Checks that are independent of the chain.
     auto ec = validate.check_block();
@@ -107,13 +115,6 @@ std::error_code organizer_impl::verify(size_t fork_point,
     }
 
     return ec;
-}
-
-void organizer_impl::reorganize_occured(size_t fork_point,
-    const blockchain::block_list& arrivals,
-    const blockchain::block_list& replaced)
-{
-    handler_(bc::error::success, fork_point, arrivals, replaced);
 }
 
 } // namespace chain
