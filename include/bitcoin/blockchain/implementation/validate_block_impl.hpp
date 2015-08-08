@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 
+#include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
@@ -33,32 +34,34 @@ class BCB_API validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(db_interface& database, int fork_index,
-        const block_detail_list& orphan_chain, int orphan_index,
-        size_t height, const block_type& current_block,
-        const config::checkpoint::list& checkpoints);
+    validate_block_impl(db_interface& database, size_t fork_index,
+        const block_detail_list& orphan_chain, size_t orphan_index,
+        size_t height, const block_type& block,
+        const config::checkpoint::list& checkpoints,
+        stopped_callback stopped);
 
 protected:
-    uint32_t previous_block_bits();
-    uint64_t actual_timespan(size_t interval);
-    uint64_t median_time_past();
-    bool transaction_exists(const hash_digest& tx_hash);
-    bool is_output_spent(const output_point& outpoint);
+    uint64_t actual_timespan(size_t interval) const;
+    block_header_type fetch_block(size_t fetch_height) const;
     bool fetch_transaction(transaction_type& tx,
-        size_t& previous_height, const hash_digest& tx_hash);
+        size_t& previous_height, const hash_digest& tx_hash) const;
+    uint64_t median_time_past() const;
+    uint32_t previous_block_bits() const;
+    bool is_output_spent(const output_point& outpoint) const;
     bool is_output_spent(const output_point& previous_output,
-        size_t index_in_parent, size_t input_index);
+        size_t index_in_parent, size_t input_index) const;
+    bool transaction_exists(const hash_digest& tx_hash) const;
 
 private:
-    block_header_type fetch_block(size_t fetch_height);
-
     bool fetch_orphan_transaction(transaction_type& tx,
-        size_t& previous_height, const hash_digest& tx_hash);
+        size_t& previous_height, const hash_digest& tx_hash) const;
     bool orphan_is_spent(const output_point& previous_output,
-        size_t skip_tx, size_t skip_input);
+        size_t skip_tx, size_t skip_input) const;
 
     db_interface& interface_;
-    size_t height_, fork_index_, orphan_index_;
+    size_t height_;
+    size_t fork_index_;
+    size_t orphan_index_;
     const block_detail_list& orphan_chain_;
 };
 

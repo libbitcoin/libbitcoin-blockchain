@@ -19,10 +19,10 @@
  */
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <set>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 
@@ -44,9 +44,13 @@ enum validation_options : uint32_t
 };
 
 validate_transaction::validate_transaction(blockchain& chain,
-    const transaction_type& tx, const pool_buffer& pool, async_strand& strand)
-  : strand_(strand), blockchain_(chain),
-    tx_(tx), tx_hash_(hash_transaction(tx)), pool_(pool)
+    const transaction_type& tx, const pool_buffer& pool,
+    async_strand& strand)
+  : blockchain_(chain),
+    tx_(tx),
+    pool_(pool),
+    strand_(strand),
+    tx_hash_(hash_transaction(tx))
 {
 }
 
@@ -60,7 +64,7 @@ void validate_transaction::start(validate_handler handle_validate)
         return;
     }
 
-    // Check for duplicates in the blockchain
+    // Check for duplicates in the blockchain.
     blockchain_.fetch_transaction(tx_hash_,
         strand_.wrap(&validate_transaction::handle_duplicate_check,
             shared_from_this(), _1));
@@ -68,8 +72,7 @@ void validate_transaction::start(validate_handler handle_validate)
 
 std::error_code validate_transaction::basic_checks() const
 {
-    std::error_code ec;
-    ec = check_transaction(tx_);
+    const auto ec = check_transaction(tx_);
     if (ec)
         return ec;
 
@@ -82,11 +85,10 @@ std::error_code validate_transaction::basic_checks() const
     if (!is_standard())
         return error::is_not_standard;
 
-    // Check for conflicts
-    if (fetch(tx_hash_) != nullptr)
+    if (is_tx_in_pool(tx_hash_))
         return error::duplicate;
 
-    // Check for blockchain dups done next in start() after this exits.
+    // Check for blockchain duplicates in start (after this returns).
     return bc::error::success;
 }
 
@@ -95,17 +97,8 @@ bool validate_transaction::is_standard() const
     return true;
 }
 
-const transaction_type* validate_transaction::fetch(
-    const hash_digest& tx_hash) const
-{
-    for (const auto& entry: pool_)
-        if (entry.hash == tx_hash)
-            return &entry.tx;
-
-    return nullptr;
-}
-
-void validate_transaction::handle_duplicate_check(const std::error_code& ec)
+void validate_transaction::handle_duplicate_check(
+    const std::error_code& ec)
 {
     if (ec != error::not_found)
     {
@@ -113,33 +106,68 @@ void validate_transaction::handle_duplicate_check(const std::error_code& ec)
         return;
     }
 
-    // Check for conflicts with memory txs
-    for (size_t input_index = 0; input_index < tx_.inputs.size();
-        ++input_index)
+    if (is_spent_in_pool(tx_))
     {
-        const auto& previous_output = tx_.inputs[input_index].previous_output;
-        if (is_spent(previous_output))
-        {
-            handle_validate_(error::double_spend, index_list());
-            return;
-        }
+        handle_validate_(error::double_spend, index_list());
+        return;
     }
 
-    // Check inputs
-    // We already know it is not a coinbase tx
+    // Check inputs, we already know it is not a coinbase tx.
     blockchain_.fetch_last_height(
         strand_.wrap(&validate_transaction::set_last_height,
             shared_from_this(), _1, _2));
 }
 
-bool validate_transaction::is_spent(const output_point& outpoint) const
+pool_buffer::const_iterator validate_transaction::find_tx_in_pool(
+    const hash_digest& hash) const
 {
-    for (const auto& entry: pool_)
-        for (const auto& current_input: entry.tx.inputs)
-            if (current_input.previous_output == outpoint)
-                return true;
+    const auto found = [&hash](const transaction_entry_info& entry)
+    {
+        return entry.hash == hash;
+    };
 
-    return false;
+    return std::find_if(pool_.begin(), pool_.end(), found);
+}
+
+bool validate_transaction::is_tx_in_pool(const hash_digest& hash) const
+{
+    return find_tx_in_pool(hash) != pool_.end();
+}
+
+bool validate_transaction::is_spent_in_pool(const transaction_type& tx) const
+{
+    const auto found = [this, &tx](const transaction_input_type& input)
+    {
+        return is_spent_in_pool(input.previous_output);
+    };
+
+    const auto& inputs = tx.inputs;
+    const auto spend = std::find_if(inputs.begin(), inputs.end(), found);
+    return spend != inputs.end();
+}
+
+bool validate_transaction::is_spent_in_pool(const output_point& outpoint) const
+{
+    const auto found = [this, &outpoint](const transaction_entry_info& entry)
+    {
+        return is_spent_in_tx(outpoint, entry.tx);
+    };
+
+    const auto spend = std::find_if(pool_.begin(), pool_.end(), found);
+    return spend != pool_.end();
+}
+
+bool validate_transaction::is_spent_in_tx(const output_point& outpoint,
+    const transaction_type& tx) const
+{
+    const auto found = [&outpoint](const transaction_input_type& input)
+    {
+        return input.previous_output == outpoint;
+    };
+
+    const auto& inputs = tx.inputs;
+    const auto spend = std::find_if(inputs.begin(), inputs.end(), found);
+    return spend != inputs.end();
 }
 
 void validate_transaction::set_last_height(const std::error_code& ec,
@@ -153,11 +181,11 @@ void validate_transaction::set_last_height(const std::error_code& ec,
 
     // Used for checking coinbase maturity
     last_block_height_ = last_height;
-    value_in_ = 0;
     current_input_ = 0;
+    value_in_ = 0;
 
     // Begin looping through the inputs, fetching the previous tx.
-    if (tx_.inputs.size() > 0)
+    if (!tx_.inputs.empty())
         next_previous_transaction();
 }
 
@@ -182,10 +210,11 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
         return;
     }
 
-    // Now fetch actual transaction body
     BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
-    blockchain_.fetch_transaction(
-        tx_.inputs[current_input_].previous_output.hash,
+    const auto& prev_tx_hash = tx_.inputs[current_input_].previous_output.hash;
+    
+    // Now fetch actual transaction body
+    blockchain_.fetch_transaction(prev_tx_hash,
         strand_.wrap(&validate_transaction::handle_previous_tx,
             shared_from_this(), _1, _2, parent_height));
 }
@@ -193,18 +222,17 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
 void validate_transaction::search_pool_previous_tx()
 {
     const auto& prev_tx_hash = tx_.inputs[current_input_].previous_output.hash;
-    const auto previous_tx = fetch(prev_tx_hash);
-    if (previous_tx == nullptr)
+    const auto previous_tx_info = find_tx_in_pool(prev_tx_hash);
+    if (previous_tx_info == pool_.end())
     {
         handle_validate_(error::input_not_found, index_list{current_input_});
         return;
     }
 
-    BITCOIN_ASSERT(!is_coinbase(*previous_tx));
+    BITCOIN_ASSERT(!is_coinbase(previous_tx));
 
-    // parent_height ignored here as memory pool transactions can
-    // never be a coinbase transaction.
-    handle_previous_tx(bc::error::success, *previous_tx, 0);
+    // parent_height ignored here as mempool transactions cannot be coinbase.
+    handle_previous_tx(bc::error::success, previous_tx_info->tx, 0);
     unconfirmed_.push_back(current_input_);
 }
 
@@ -218,8 +246,8 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
     }
 
     // Should check for are inputs standard here...
-    if (!connect_input(tx_, current_input_, previous_tx,
-        parent_height, last_block_height_, value_in_))
+    if (!connect_input(tx_, current_input_, previous_tx, parent_height,
+        last_block_height_, value_in_))
     {
         handle_validate_(error::validate_inputs_failed, {current_input_});
         return;
@@ -397,7 +425,7 @@ bool validate_transaction::connect_input(const transaction_type& tx,
         return false;
 
     value_in += output_value;
-    return (value_in <= max_money());
+    return value_in <= max_money();
 }
 
 bool validate_transaction::tally_fees(const transaction_type& tx,
@@ -409,7 +437,7 @@ bool validate_transaction::tally_fees(const transaction_type& tx,
 
     const auto fee = value_in - value_out;
     total_fees += fee;
-    return (total_fees <= max_money());
+    return total_fees <= max_money();
 }
 
 } // namespace chain

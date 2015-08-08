@@ -39,8 +39,8 @@ class BCB_API validate_transaction
   : public std::enable_shared_from_this<validate_transaction>
 {
 public:
-    typedef std::function<
-        void (const std::error_code&, const index_list&)> validate_handler;
+    typedef std::function<void (const std::error_code&, const index_list&)>
+        validate_handler;
 
     validate_transaction(blockchain& chain, const transaction_type& tx,
         const pool_buffer& pool, async_strand& strand);
@@ -59,12 +59,16 @@ public:
 private:
     std::error_code basic_checks() const;
     bool is_standard() const;
-    const transaction_type* fetch(const hash_digest& tx_hash) const;
 
     void handle_duplicate_check(const std::error_code& ec);
-    bool is_spent(const output_point& outpoint) const;
+    bool is_tx_in_pool(const hash_digest& hash) const;
+    bool is_spent_in_pool(const transaction_type& tx) const;
+    bool is_spent_in_pool(const output_point& outpoint) const;
+    bool is_spent_in_tx(const output_point& outpoint,
+        const transaction_type& tx) const;
+    pool_buffer::const_iterator find_tx_in_pool(const hash_digest& hash) const;
 
-    // Used for checking coinbase maturity
+    // Last height used for checking coinbase maturity.
     void set_last_height(const std::error_code& ec, size_t last_height);
 
     // Begin looping through the inputs, fetching the previous tx
@@ -82,11 +86,12 @@ private:
     void check_double_spend(const std::error_code& ec);
     void check_fees();
 
-    async_strand& strand_;
     blockchain& blockchain_;
     const transaction_type tx_;
-    const hash_digest tx_hash_;
     const pool_buffer& pool_;
+    async_strand& strand_;
+
+    const hash_digest tx_hash_;
     size_t last_block_height_;
     uint64_t value_in_;
     size_t current_input_;
