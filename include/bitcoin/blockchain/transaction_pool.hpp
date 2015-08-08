@@ -65,11 +65,11 @@ typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 class BCB_API transaction_pool
 {
 public:
-    typedef std::function<void (const std::error_code&,
-        const index_list&)> validate_handler;
+    typedef std::function<void (const std::error_code&, const index_list&)>
+        validate_handler;
     typedef std::function<void (const std::error_code&,
         const transaction_type&)> fetch_handler;
-    typedef std::function<void (bool)> exists_handler;
+    typedef std::function<void(const std::error_code&, bool)> exists_handler;
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
     transaction_pool(threadpool& pool, blockchain& chain,

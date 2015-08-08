@@ -221,19 +221,18 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 void transaction_pool::exists(const hash_digest& transaction_hash,
     exists_handler handle_exists)
 {
-    // We can't reflect an error here, so continue.
-    //if (stopped())
-    //{
-    //    handle_exists(false);
-    //    return;
-    //}
-
-    const auto existence_tester = [this, transaction_hash, handle_exists]()
+    if (stopped())
     {
-        handle_exists(tx_exists(transaction_hash));
+        handle_exists(blockchain::stop_code, false);
+        return;
+    }
+
+    const auto get_existence = [this, transaction_hash, handle_exists]()
+    {
+        handle_exists(error::success, tx_exists(transaction_hash));
     };
 
-    strand_.queue(existence_tester);
+    strand_.queue(get_existence);
 }
 
 void transaction_pool::reorganize(const std::error_code& ec,
