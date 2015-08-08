@@ -19,9 +19,11 @@
  */
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
@@ -35,7 +37,7 @@ using std::placeholders::_4;
 
 transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
     size_t capacity)
-  : strand_(pool), blockchain_(chain), buffer_(capacity)
+  : strand_(pool), blockchain_(chain), buffer_(capacity), stopped_(true)
 {
 }
 
@@ -54,11 +56,32 @@ size_t transaction_pool::size() const
     return buffer_.size();
 }
 
-void transaction_pool::start()
+bool transaction_pool::start()
 {
+    // TODO: can we actually restart?
+    stopped_ = false;
+
+    // Subscribe to blockchain (organizer) reorg notifications.
     blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::reorganize,
             this, _1, _2, _3, _4));
+
+    return true;
+}
+
+bool transaction_pool::stop()
+{
+    // Stop doesn't need to be called externally and could be made private.
+    // This will arise from a reorg shutdown message, so transaction_pool
+    // is automatically registered for shutdown in the following sequence.
+    // blockchain->organizer(orphan/block pool)->transaction_pool
+    stopped_ = true;
+    return true;
+}
+
+bool transaction_pool::stopped()
+{
+    return stopped_;
 }
 
 void transaction_pool::validate(const transaction_type& tx,
@@ -70,6 +93,12 @@ void transaction_pool::validate(const transaction_type& tx,
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
+    if (stopped())
+    {
+        handle_validate(blockchain::stop_code, index_list());
+        return;
+    }
+
     // This must be allocated as a shared pointer reference in order for
     // start to create a shared pointer reference.
     const auto validate = std::make_shared<validate_transaction>(
@@ -84,37 +113,58 @@ void transaction_pool::validation_complete(
     const std::error_code& ec, const index_list& unconfirmed,
     const hash_digest& tx_hash, validate_handler handle_validate)
 {
+    if (stopped())
+    {
+        handle_validate(blockchain::stop_code, index_list());
+        return;
+    }
+
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
         //BITCOIN_ASSERT(unconfirmed[0] < tx.inputs.size());
         handle_validate(ec, unconfirmed);
+        return;
     }
-    else if (ec)
+
+    // We don't stop for a validation error.
+    if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
         handle_validate(ec, index_list());
+        return;
     }
+
     // Re-check as another transaction might have been added in the interim.
-    else if (tx_exists(tx_hash))
+    if (tx_exists(tx_hash))
         handle_validate(error::duplicate, index_list());
     else
         handle_validate(bc::error::success, unconfirmed);
 }
 
-bool transaction_pool::tx_exists(const hash_digest& tx_hash)
+bool transaction_pool::tx_exists(const hash_digest& hash)
 {
-    for (const auto& entry: buffer_)
-        if (entry.hash == tx_hash)
-            return true;
+    return tx_find(hash) != buffer_.end();
+}
 
-    return false;
+pool_buffer::const_iterator transaction_pool::tx_find(const hash_digest& hash)
+{
+    const auto found = [&hash](const transaction_entry_info& entry)
+    {
+        return entry.hash == hash;
+    };
+
+    return std::find_if(buffer_.begin(), buffer_.end(), found);
 }
 
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    const auto store_transaction = [this, tx, handle_confirm]
+    // We can pretend we did it here.
+    if (stopped())
+        return;
+
+    const auto store_transaction = [this, tx, handle_confirm]()
     {
         // When new tx are added to the circular buffer, any tx at the front
         // will be droppped. We notify the API user through the handler.
@@ -143,20 +193,27 @@ void transaction_pool::store(const transaction_type& tx,
 
     validate(tx, wrap_validate);
 }
-
+//auto orphan_start = orphan_chain.begin() + orphan_index;
+//for (auto it = orphan_start; it != orphan_chain.end(); ++it)
 void transaction_pool::fetch(const hash_digest& transaction_hash,
     fetch_handler handle_fetch)
 {
+    if (stopped())
+    {
+        handle_fetch(blockchain::stop_code, transaction_type());
+        return;
+    }
+
     const auto tx_fetcher = [this, transaction_hash, handle_fetch]()
     {
-        for (const auto& entry: buffer_)
-            if (entry.hash == transaction_hash)
-            {
-                handle_fetch(bc::error::success, entry.tx);
-                return;
-            }
+        const auto it = tx_find(transaction_hash);
+        if (it == buffer_.end())
+        {
+            handle_fetch(error::not_found, transaction_type());
+            return;
+        }
 
-        handle_fetch(error::not_found, transaction_type());
+        handle_fetch(bc::error::success, it->tx);
     };
 
     strand_.queue(tx_fetcher);
@@ -165,6 +222,13 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 void transaction_pool::exists(const hash_digest& transaction_hash,
     exists_handler handle_exists)
 {
+    // We can't reflect an error here, so continue.
+    //if (stopped())
+    //{
+    //    handle_exists(false);
+    //    return;
+    //}
+
     const auto existence_tester = [this, transaction_hash, handle_exists]()
     {
         handle_exists(tx_exists(transaction_hash));
@@ -177,9 +241,19 @@ void transaction_pool::reorganize(const std::error_code& ec,
     size_t /* fork_point */, const blockchain::block_list& new_blocks,
     const blockchain::block_list& replaced_blocks)
 {
+    if (ec == blockchain::stop_code)
+    {
+        log_debug(LOG_BLOCKCHAIN)
+            << "Stopping transaction pool: " << ec.message();
+        stop();
+        return;
+    }
+
     if (ec)
     {
-        BITCOIN_ASSERT(ec == error::service_stopped);
+        log_debug(LOG_BLOCKCHAIN)
+            << "Failure in tx pool reorganize handler: " << ec.message();
+        stop();
         return;
     }
 
@@ -206,6 +280,10 @@ void transaction_pool::reorganize(const std::error_code& ec,
 
 void transaction_pool::invalidate_pool()
 {
+    // We are shutting down, no need to do this.
+    if (stopped())
+        return;
+
     // See http://www.jwz.org/doc/worse-is-better.html
     // for why we take this approach.
     // We return with an error_code and don't handle this case.
@@ -218,25 +296,36 @@ void transaction_pool::invalidate_pool()
 void transaction_pool::delete_confirmed(
     const blockchain::block_list& new_blocks)
 {
+    // We are shutting down, no need to do this.
+    if (stopped())
+        return;
+
     // Optimization: there is nothing to delete, don't loop/hash.
     if (buffer_.empty())
         return;
 
     for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
-            try_delete(hash_transaction(new_tx));
+            try_delete_tx(hash_transaction(new_tx));
 }
 
-void transaction_pool::try_delete(const hash_digest& tx_hash)
+void transaction_pool::try_delete_tx(const hash_digest& hash)
 {
-    for (auto it = buffer_.begin(); it != buffer_.end(); ++it)
-        if (it->hash == tx_hash)
-        {
-            const auto handle_confirm = it->handle_confirm;
-            buffer_.erase(it);
-            handle_confirm(bc::error::success);
-            return;
-        }
+    // We are shutting down, no need to do this.
+    if (stopped())
+        return;
+
+    const auto match_and_confirm = [this, &hash](
+        const transaction_entry_info& entry)
+    {
+        const auto match = (entry.hash == hash);
+        if (match)
+            entry.handle_confirm(bc::error::success);
+
+        return match;
+    };
+
+    std::remove_if(buffer_.begin(), buffer_.end(), match_and_confirm);
 }
 
 // Deprecated, use constructor.

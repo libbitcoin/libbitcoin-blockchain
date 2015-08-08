@@ -82,7 +82,18 @@ public:
 
     bool empty() const;
     size_t size() const;
-    void start();
+
+    /**
+     * Start the transaction pool service, asynchronous.
+     * @return  True if successful.
+     */
+    bool start();
+
+    /**
+     * Stop the transaction service, asynchronous.
+     * @return  True if successful.
+     */
+    bool stop();
 
     /**
      * Validate a transaction without storing it.
@@ -186,19 +197,24 @@ private:
     void do_validate(const transaction_type& tx,
         validate_handler handle_validate);
     void validation_complete(const std::error_code& ec, 
-        const index_list& unconfirmed, const hash_digest& tx_hash,
+        const index_list& unconfirmed, const hash_digest& hash,
         validate_handler handle_validate);
     bool tx_exists(const hash_digest& tx_hash);
+    pool_buffer::const_iterator tx_find(const hash_digest& hash);
     void reorganize(const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
     void invalidate_pool();
     void delete_confirmed(const blockchain::block_list& new_blocks);
-    void try_delete(const hash_digest& tx_hash);
+    void try_delete_tx(const hash_digest& hash);
+    bool stopped();
 
     async_strand strand_;
     blockchain& blockchain_;
     pool_buffer buffer_;
+
+    // TODO: use lock-free std::atomic_flag?
+    std::atomic<bool> stopped_;
 };
 
 } // namespace chain
