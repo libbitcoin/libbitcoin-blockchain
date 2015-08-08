@@ -19,11 +19,14 @@
  */
 #include <bitcoin/blockchain/validate_block.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <set>
+#include <system_error>
+#include <vector>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
@@ -64,80 +67,116 @@ constexpr uint64_t target_spacing = 10 * 60;
 // Two weeks worth of blocks (count of blocks).
 constexpr uint64_t readjustment_interval = target_timespan / target_spacing;
 
-// TODO: move to misc utils.
-template<typename Value>
-inline Value range_constraint(Value value, Value minimum, Value maximum)
-{
-    if (value < minimum)
-        return minimum;
+// To improve readability.
+#define RETURN_IF_STOPPED() \
+if (stopped()) \
+    return blockchain::stop_code
 
-    if (value > maximum)
-        return maximum;
-
-    return value;
-}
-
-validate_block::validate_block(size_t height, const block_type& current_block,
-    const config::checkpoint::list& checks)
-  : height_(height), current_block_(current_block), checkpoints_(checks)
+// The nullptr option is for backward compatibility only.
+validate_block::validate_block(size_t height, const block_type& block,
+    const config::checkpoint::list& checks, stopped_callback stopped)
+  : height_(height),
+    current_block_(block),
+    checkpoints_(checks),
+    stopped_(stopped == nullptr ? [](){ return false; } : stopped)
 {
 }
 
-// TODO: This method depends on the current time, isolate for testablity.
-std::error_code validate_block::check_block()
+bool validate_block::stopped() const
+{
+    return stopped_();
+}
+
+std::error_code validate_block::check_block() const
 {
     // These are checks that are independent of the blockchain
     // that can be validated before saving an orphan block.
 
-    if (current_block_.transactions.empty() ||
-        current_block_.transactions.size() > max_block_size ||
+    const auto& transactions = current_block_.transactions;
+    if (transactions.empty() || transactions.size() > max_block_size ||
         satoshi_raw_size(current_block_) > max_block_size)
     {
         return error::size_limits;
     }
 
-    const auto& blk_header = current_block_.header;
-    const auto current_block_hash = hash_block_header(blk_header);
-    if (!check_proof_of_work(current_block_hash, blk_header.bits))
+    const auto& header = current_block_.header;
+    const auto hash = hash_block_header(header);
+    if (!is_valid_proof_of_work(hash, header.bits))
         return error::proof_of_work;
 
-    const auto now = second_clock::universal_time();
-    const auto two_hour_future = now + hours(2);
-    const auto block_time = from_time_t(blk_header.timestamp);
-    if (block_time > two_hour_future)
+    RETURN_IF_STOPPED();
+
+    if (!is_valid_time_stamp(header.timestamp))
         return error::futuristic_timestamp;
 
-    if (!is_coinbase(current_block_.transactions[0]))
+    RETURN_IF_STOPPED();
+
+    if (!is_coinbase(transactions.front()))
         return error::first_not_coinbase;
 
-    for (size_t index = 1; index < current_block_.transactions.size(); ++index)
-        if (is_coinbase(current_block_.transactions[index]))
-            return error::extra_coinbases;
-
-    std::set<hash_digest> unique_txs;
-    for (const auto& tx: current_block_.transactions)
+    for (auto it = ++transactions.begin(); it != transactions.end(); ++it)
     {
+        RETURN_IF_STOPPED();
+
+        if (is_coinbase(*it))
+            return error::extra_coinbases;
+    }
+
+    for (const auto& tx: transactions)
+    {
+        RETURN_IF_STOPPED();
+
         const auto ec = validate_transaction::check_transaction(tx);
         if (ec)
             return ec;
-
-        unique_txs.insert(hash_transaction(tx));
     }
 
-    if (unique_txs.size() != current_block_.transactions.size())
+    RETURN_IF_STOPPED();
+
+    if (!is_distinct_tx_set(transactions))
         return error::duplicate;
 
-    // Check that it's not full of nonstandard transactions
-    if (legacy_sigops_count() > max_block_script_sig_operations)
+    RETURN_IF_STOPPED();
+
+    const auto sigops = legacy_sigops_count(transactions);
+    if (sigops > max_block_script_sig_operations)
         return error::too_many_sigs;
 
-    if (blk_header.merkle != generate_merkle_root(current_block_.transactions))
+    RETURN_IF_STOPPED();
+
+    if (header.merkle != generate_merkle_root(transactions))
         return error::merkle_mismatch;
 
     return bc::error::success;
 }
 
-bool validate_block::check_proof_of_work(hash_digest block_hash, uint32_t bits)
+bool validate_block::is_distinct_tx_set(const transaction_list& txs)
+{
+    // We test distinctness by transaction hash.
+    const auto hasher = [](const transaction_type& transaction)
+    {
+        return hash_transaction(transaction);
+    };
+
+    std::vector<hash_digest> hashes(txs.size());
+    std::transform(txs.begin(), txs.end(), hashes.begin(), hasher);
+    auto distinct_end = std::unique(hashes.begin(), hashes.end());
+    return distinct_end == hashes.end();
+}
+
+ptime validate_block::current_time() const
+{
+    return second_clock::universal_time();
+}
+
+bool validate_block::is_valid_time_stamp(uint32_t timestamp) const
+{
+    const auto two_hour_future = current_time() + hours(2);
+    const auto block_time = from_time_t(timestamp);
+    return block_time <= two_hour_future;
+}
+
+bool validate_block::is_valid_proof_of_work(hash_digest hash, uint32_t bits)
 {
     hash_number target;
     if (!target.set_compact(bits))
@@ -147,7 +186,7 @@ bool validate_block::check_proof_of_work(hash_digest block_hash, uint32_t bits)
         return false;
 
     hash_number our_value;
-    our_value.set_hash(block_hash);
+    our_value.set_hash(hash);
     return (our_value <= target);
 }
 
@@ -158,6 +197,7 @@ inline bool within_op_n(opcode code)
     constexpr auto op_16 = static_cast<uint8_t>(opcode::op_16);
     return op_1 <= raw_code && raw_code <= op_16;
 }
+
 inline uint8_t decode_op_n(opcode code)
 {
     const auto raw_code = static_cast<uint8_t>(code);
@@ -194,7 +234,8 @@ inline size_t count_script_sigops(const operation_stack& operations,
 
     return total_sigs;
 }
-size_t tx_legacy_sigops_count(const transaction_type& tx)
+
+size_t validate_block::legacy_sigops_count(const transaction_type& tx)
 {
     size_t total_sigs = 0;
     for (const auto& input: tx.inputs)
@@ -211,47 +252,61 @@ size_t tx_legacy_sigops_count(const transaction_type& tx)
 
     return total_sigs;
 }
-size_t validate_block::legacy_sigops_count()
+
+size_t validate_block::legacy_sigops_count(const transaction_list& txs)
 {
     size_t total_sigs = 0;
-    for (const auto& tx: current_block_.transactions)
-        total_sigs += tx_legacy_sigops_count(tx);
+    for (const auto& tx: txs)
+        total_sigs += legacy_sigops_count(tx);
 
     return total_sigs;
 }
 
-std::error_code validate_block::accept_block()
+std::error_code validate_block::accept_block() const
 {
-    const auto& block_header = current_block_.header;
-    if (block_header.bits != work_required())
+    const auto& header = current_block_.header;
+    if (header.bits != work_required())
         return error::incorrect_proof_of_work;
 
-    if (block_header.timestamp <= median_time_past())
+    RETURN_IF_STOPPED();
+
+    if (header.timestamp <= median_time_past())
         return error::timestamp_too_early;
 
+    RETURN_IF_STOPPED();
+
     // Txs should be final when included in a block.
-    for (const auto& tx: current_block_.transactions)
-        if (!is_final(tx, height_, block_header.timestamp))
+    for (const auto& tx : current_block_.transactions)
+    {
+        if (!is_final(tx, height_, header.timestamp))
             return error::non_final_transaction;
+
+        RETURN_IF_STOPPED();
+    }
 
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
-    const auto block_hash = hash_block_header(block_header);
+    const auto block_hash = hash_block_header(header);
     if (!checkpoint::validate(block_hash, height_, checkpoints_))
         return error::checkpoints_failed;
 
+    RETURN_IF_STOPPED();
+
     // Reject version=1 blocks after switchover point.
-    if (block_header.version < 2 && height_ > max_version1_height)
+    if (header.version < 2 && height_ > max_version1_height)
         return error::old_version_block;
 
+    RETURN_IF_STOPPED();
+
     // Enforce version=2 rule that coinbase starts with serialized height.
-    if (block_header.version >= 2 && !coinbase_height_match())
+    if (header.version >= 2 &&
+        !is_valid_coinbase_height(height_, current_block_))
         return error::coinbase_height_mismatch;
 
     return bc::error::success;
 }
 
-uint32_t validate_block::work_required()
+uint32_t validate_block::work_required() const
 {
 #ifdef ENABLE_TESTNET
     const auto last_non_special_bits = [this]()
@@ -298,8 +353,8 @@ uint32_t validate_block::work_required()
     const auto actual = actual_timespan(readjustment_interval);
 
     // Now constrain the time between an upper and lower bound.
-    const auto constrained = range_constraint(
-        actual, target_timespan / 4, target_timespan * 4);
+    const auto constrained = range_constrain(actual,
+        target_timespan / 4, target_timespan * 4);
 
     hash_number retarget;
     retarget.set_compact(previous_block_bits());
@@ -311,71 +366,87 @@ uint32_t validate_block::work_required()
     return retarget.compact();
 }
 
-bool validate_block::coinbase_height_match()
+bool validate_block::is_valid_coinbase_height(size_t height, 
+    const block_type& block)
 {
     // There are old blocks with version incorrectly set to 2. Ignore them.
-    if (height_ < max_version1_height)
+    if (height < max_version1_height)
         return true;
 
     // Checks whether the block height is in the coinbase tx input script.
     // Version 2 blocks and onwards.
-    BITCOIN_ASSERT(current_block_.header.version >= 2);
-    BITCOIN_ASSERT(current_block_.transactions.size() > 0);
-    BITCOIN_ASSERT(current_block_.transactions[0].inputs.size() > 0);
+    if (block.header.version < 2 || block.transactions.empty() || 
+        block.transactions.front().inputs.empty())
+        return false;
 
     // First get the serialized coinbase input script as a series of bytes.
-    const auto& coinbase_tx = current_block_.transactions[0];
-    const auto& coinbase_script = coinbase_tx.inputs[0].script;
+    const auto& coinbase_tx = block.transactions.front();
+    const auto& coinbase_script = coinbase_tx.inputs.front().script;
     const auto raw_coinbase = save_script(coinbase_script);
 
     // Try to recreate the expected bytes.
     script_type expect_coinbase;
-    script_number expect_number(height_);
+    script_number expect_number(height);
     expect_coinbase.push_operation({opcode::special, expect_number.data()});
 
     // Save the expected coinbase script.
     const data_chunk expect = save_script(expect_coinbase);
 
     // Perform comparison of the first bytes with raw_coinbase.
-    BITCOIN_ASSERT(expect.size() <= raw_coinbase.size());
+    if (expect.size() > raw_coinbase.size())
+        return false;
+
     return std::equal(expect.begin(), expect.end(), raw_coinbase.begin());
 }
 
-std::error_code validate_block::connect_block()
+std::error_code validate_block::connect_block() const
 {
     // BIP 30 security fix
+    const auto& transactions = current_block_.transactions;
     if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
-        for (const auto& current_tx: current_block_.transactions)
-            if (is_spent_duplicate(current_tx))
+        for (const auto& tx: transactions)
+        {
+            if (is_spent_duplicate(tx))
                 return error::duplicate_or_spent;
+
+            RETURN_IF_STOPPED();
+        }
 
     uint64_t fees = 0;
     size_t total_sigops = 0;
-    const auto count = current_block_.transactions.size();
+    const auto count = transactions.size();
     for (size_t tx_index = 0; tx_index < count; ++tx_index)
     {
         uint64_t value_in = 0;
+        const auto& tx = transactions[tx_index];
 
         // It appears that this is also checked in check_block().
-        const auto& tx = current_block_.transactions[tx_index];
-        total_sigops += tx_legacy_sigops_count(tx);
+        total_sigops += legacy_sigops_count(tx);
         if (total_sigops > max_block_script_sig_operations)
             return error::too_many_sigs;
+
+        RETURN_IF_STOPPED();
 
         // Count sigops for tx 0, but we don't perform
         // the other checks on coinbase tx.
         if (is_coinbase(tx))
             continue;
 
+        RETURN_IF_STOPPED();
+
         // Consensus checks here.
         if (!validate_inputs(tx, tx_index, value_in, total_sigops))
             return error::validate_inputs_failed;
+
+        RETURN_IF_STOPPED();
 
         if (!validate_transaction::tally_fees(tx, value_in, fees))
             return error::fees_out_of_range;
     }
 
-    const auto& coinbase = current_block_.transactions[0];
+    RETURN_IF_STOPPED();
+
+    const auto& coinbase = transactions.front();
     const auto coinbase_value = total_output_value(coinbase);
     if (coinbase_value > block_value(height_) + fees)
         return error::coinbase_too_large;
@@ -383,7 +454,7 @@ std::error_code validate_block::connect_block()
     return bc::error::success;
 }
 
-bool validate_block::is_spent_duplicate(const transaction_type& tx)
+bool validate_block::is_spent_duplicate(const transaction_type& tx) const
 {
     const auto tx_hash = hash_transaction(tx);
 
@@ -403,11 +474,10 @@ bool validate_block::is_spent_duplicate(const transaction_type& tx)
 }
 
 bool validate_block::validate_inputs(const transaction_type& tx,
-    size_t index_in_parent, uint64_t& value_in, size_t& total_sigops)
+    size_t index_in_parent, uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(!is_coinbase(tx));
     for (size_t input_index = 0; input_index < tx.inputs.size(); ++input_index)
-    {
         if (!connect_input(index_in_parent, tx, input_index, value_in,
             total_sigops))
         {
@@ -416,7 +486,7 @@ bool validate_block::validate_inputs(const transaction_type& tx,
                 << input_index << "]";
             return false;
         }
-    }
+
     return true;
 }
 
@@ -436,7 +506,7 @@ size_t script_hash_signature_operations_count(
 
 bool validate_block::connect_input(size_t index_in_parent,
     const transaction_type& current_tx, size_t input_index, uint64_t& value_in,
-    size_t& total_sigops)
+    size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
 
@@ -515,6 +585,8 @@ bool validate_block::connect_input(size_t index_in_parent,
 
     return true;
 }
+
+#undef RETURN_IF_STOPPED
 
 } // namespace chain
 } // namespace libbitcoin
