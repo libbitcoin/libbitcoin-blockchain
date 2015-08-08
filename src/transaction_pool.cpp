@@ -193,8 +193,7 @@ void transaction_pool::store(const transaction_type& tx,
 
     validate(tx, wrap_validate);
 }
-//auto orphan_start = orphan_chain.begin() + orphan_index;
-//for (auto it = orphan_start; it != orphan_chain.end(); ++it)
+
 void transaction_pool::fetch(const hash_digest& transaction_hash,
     fetch_handler handle_fetch)
 {
