@@ -38,7 +38,7 @@ struct BCB_API transaction_entry_info
     confirm_handler handle_confirm;
 };
 
-// TODO: eliminate this and don't expose the internal transaction pool.
+// TODO: define in transaction_pool (compat break).
 typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 
 /**
