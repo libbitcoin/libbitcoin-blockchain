@@ -26,7 +26,7 @@ using namespace bc::chain;
 BOOST_AUTO_TEST_SUITE(validate_block)
 
 class validate_block_fixture
-  : public validate_block
+  : public bc::chain::validate_block
 {
 public:
     validate_block_fixture()
