@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <system_error>
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace chain {

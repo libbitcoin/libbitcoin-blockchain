@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
+#include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 
@@ -26,10 +27,10 @@ namespace libbitcoin {
 namespace chain {
 
 validate_block_impl::validate_block_impl(db_interface& database,
-    int fork_index, const block_detail_list& orphan_chain,
-    int orphan_index, size_t height, const block_type& current_block,
-    const config::checkpoint::list& checks)
-  : validate_block(height, current_block, checks),
+    size_t fork_index, const block_detail_list& orphan_chain,
+    size_t orphan_index, size_t height, const block_type& block,
+    const config::checkpoint::list& checks, stopped_callback stopped)
+  : validate_block(height, block, checks, stopped),
     interface_(database),
     height_(height),
     fork_index_(fork_index),
@@ -38,7 +39,7 @@ validate_block_impl::validate_block_impl(db_interface& database,
 {
 }
 
-block_header_type validate_block_impl::fetch_block(size_t fetch_height)
+block_header_type validate_block_impl::fetch_block(size_t fetch_height) const
 {
     if (fetch_height > fork_index_)
     {
@@ -48,20 +49,19 @@ block_header_type validate_block_impl::fetch_block(size_t fetch_height)
         return orphan_chain_[fetch_index]->actual().header;
     }
 
-    // TODO: This is over-requesting, can be optimized.
-    // We only really need the bits and timestamp fields.
+    // TODO: This is over-requesting, we only need the bits and timestamp.
     auto result = interface_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);
     return result.header();
 }
 
-uint32_t validate_block_impl::previous_block_bits()
+uint32_t validate_block_impl::previous_block_bits() const
 {
     // Read block d - 1 and return bits
     return fetch_block(height_ - 1).bits;
 }
 
-uint64_t validate_block_impl::actual_timespan(size_t interval)
+uint64_t validate_block_impl::actual_timespan(size_t interval) const
 {
     BITCOIN_ASSERT(height_ > 0 && height_ >= interval);
 
@@ -70,7 +70,7 @@ uint64_t validate_block_impl::actual_timespan(size_t interval)
         fetch_block(height_ - interval).timestamp;
 }
 
-uint64_t validate_block_impl::median_time_past()
+uint64_t validate_block_impl::median_time_past() const
 {
     // Read last 11 (or height if height < 11) block times into array.
     std::vector<uint64_t> times;
@@ -85,10 +85,10 @@ uint64_t validate_block_impl::median_time_past()
 
 bool tx_after_fork(size_t tx_height, size_t fork_index)
 {
-    return (tx_height > fork_index);
+    return tx_height > fork_index;
 }
 
-bool validate_block_impl::transaction_exists(const hash_digest& tx_hash)
+bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 {
     const auto result = interface_.transactions.get(tx_hash);
     if (!result)
@@ -98,7 +98,7 @@ bool validate_block_impl::transaction_exists(const hash_digest& tx_hash)
 }
 
 bool validate_block_impl::is_output_spent(
-    const output_point& outpoint)
+    const output_point& outpoint) const
 {
     const auto result = interface_.spends.get(outpoint);
     if (!result)
@@ -109,7 +109,7 @@ bool validate_block_impl::is_output_spent(
 }
 
 bool validate_block_impl::fetch_transaction(transaction_type& tx,
-    size_t& tx_height, const hash_digest& tx_hash)
+    size_t& tx_height, const hash_digest& tx_hash) const
 {
     const auto result = interface_.transactions.get(tx_hash);
     if (!result || tx_after_fork(result.height(), fork_index_))
@@ -120,18 +120,18 @@ bool validate_block_impl::fetch_transaction(transaction_type& tx,
     return true;
 }
 
-bool validate_block_impl::fetch_orphan_transaction(
-    transaction_type& tx, size_t& tx_height, const hash_digest& tx_hash)
+bool validate_block_impl::fetch_orphan_transaction(transaction_type& tx,
+    size_t& tx_height, const hash_digest& tx_hash) const
 {
-    for (size_t orphan_iter = 0; orphan_iter <= orphan_index_; ++orphan_iter)
+    for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
-        const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
-        for (const auto& orphan_tx: orphan_block.transactions)
+        const auto& orphan_block = orphan_chain_[orphan]->actual();
+        for (const auto& orphan_tx : orphan_block.transactions)
         {
             if (hash_transaction(orphan_tx) == tx_hash)
             {
                 tx = orphan_tx;
-                tx_height = fork_index_ + orphan_iter + 1;
+                tx_height = fork_index_ + orphan + 1;
                 return true;
             }
         }
@@ -140,7 +140,7 @@ bool validate_block_impl::fetch_orphan_transaction(
 }
 
 bool validate_block_impl::is_output_spent(const output_point& previous_output,
-    size_t index_in_parent, size_t input_index)
+    size_t index_in_parent, size_t input_index) const
 {
     // Search for double spends. This must be done in both chain AND orphan.
     // Searching chain when this tx is an orphan is redundant but it does not
@@ -155,24 +155,26 @@ bool validate_block_impl::is_output_spent(const output_point& previous_output,
 }
 
 bool validate_block_impl::orphan_is_spent(const output_point& previous_output,
-    size_t skip_tx, size_t skip_input)
+    size_t skip_tx, size_t skip_input) const
 {
-    for (size_t orphan_iter = 0; orphan_iter <= orphan_index_; ++orphan_iter)
+    for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
-        const auto& orphan_block = orphan_chain_[orphan_iter]->actual();
-        BITCOIN_ASSERT(orphan_block.transactions.size() >= 1);
-        BITCOIN_ASSERT(is_coinbase(orphan_block.transactions[0]));
+        const auto& orphan_block = orphan_chain_[orphan]->actual();
+        const auto& transactions = orphan_block.transactions;
 
-        for (size_t tx_index = 0; tx_index < orphan_block.transactions.size();
+        BITCOIN_ASSERT(!transactions.empty());
+        BITCOIN_ASSERT(is_coinbase(transactions.front()));
+
+        for (size_t tx_index = 0; tx_index < transactions.size();
             ++tx_index)
         {
             // TODO: too deep, move this section to subfunction.
-            const auto& orphan_tx = orphan_block.transactions[tx_index];
+            const auto& orphan_tx = transactions[tx_index];
             for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
                 ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
-                if (orphan_iter == orphan_index_ && tx_index == skip_tx &&
+                if (orphan == orphan_index_ && tx_index == skip_tx &&
                     input_index == skip_input)
                     continue;
 

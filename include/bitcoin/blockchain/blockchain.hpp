@@ -26,6 +26,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
+// TODO: rename this file to avoid conflicts with master include.
+
 namespace libbitcoin {
 namespace chain {
 
@@ -117,8 +119,22 @@ public:
 
     typedef std::function<void (const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
+    
+    virtual ~blockchain()
+    {
+    };
+    
+    /**
+     * Start the blockchain service, asynchronous.
+     * @return  True if successful.
+     */
+    virtual bool start() = 0;
 
-    virtual ~blockchain() {};
+    /**
+     * Stop the blockchain service, asynchronous.
+     * @return  True if successful.
+     */
+    virtual bool stop() = 0;
 
     /**
      * Store a new block.
@@ -372,6 +388,8 @@ public:
      *
      * Subscriber is notified exactly once of changes to the blockchain
      * and needs to re-subscribe to continue being notified.
+     * When this blockchain service is stopped, any subscribed handlers
+     * will be called with the error_code set to bc::error::service_stopped.
      *
      * @param[in]   handle_reorganize   Notification handler for changes
      * @code
@@ -385,9 +403,6 @@ public:
      */
     virtual void subscribe_reorganize(
         reorganize_handler handle_reorganize) = 0;
-
-    // .stop()
-    // .shutdown() // close all file descriptors, called once threadpool has stopped.
 };
 
 /**

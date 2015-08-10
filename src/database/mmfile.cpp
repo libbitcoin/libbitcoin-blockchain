@@ -53,7 +53,7 @@ using boost::filesystem::path;
 
 static void handle_error(const char* context, const path& filename)
 {
-    const static auto form = "The file failed to %1%: %2% error: %3%";
+    static const auto form = "The file failed to %1%: %2% error: %3%";
 #ifdef _WIN32
     const auto error = GetLastError();
 #else

@@ -58,18 +58,22 @@ namespace chain {
 class BCB_API organizer
 {
 public:
-    organizer(orphans_pool& orphans, simple_chain& chain);
+    organizer(threadpool& pool, orphans_pool& orphans, simple_chain& chain);
 
-    void start();
+    bool start();
+    bool stop();
+    void subscribe_reorganize(blockchain::reorganize_handler handle_reorganize);
 
 protected:
+    bool stopped();
     virtual std::error_code verify(size_t fork_index,
         const block_detail_list& orphan_chain, size_t orphan_index) = 0;
-    virtual void reorganize_occured(size_t fork_point,
-        const blockchain::block_list& arrivals,
-        const blockchain::block_list& replaced) = 0;
 
 private:
+    typedef subscriber<const std::error_code&, uint64_t, 
+        const blockchain::block_list&, const blockchain::block_list&> 
+        reorganize_subscriber;
+
     void process(block_detail_ptr process_block);
     void replace_chain(size_t fork_index, block_detail_list& orphan_chain);
     void clip_orphans(block_detail_list& orphan_chain, size_t orphan_index,
@@ -77,10 +81,15 @@ private:
     void notify_reorganize(size_t fork_point,
         const block_detail_list& orphan_chain,
         const block_detail_list& replaced_chain);
+    void notify_stop();
 
     orphans_pool& orphans_;
     simple_chain& chain_;
+    reorganize_subscriber::ptr subscriber_;
     block_detail_list process_queue_;
+
+    // TODO: use lock-free std::atomic_flag?
+    std::atomic<bool> stopped_;
 };
 
 // TODO: define in organizer (compat break).

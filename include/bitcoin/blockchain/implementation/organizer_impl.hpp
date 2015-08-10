@@ -32,24 +32,18 @@ class BCB_API organizer_impl
   : public organizer
 {
 public:
-    typedef blockchain::reorganize_handler reorganize_handler;
-
-    organizer_impl(db_interface& database, orphans_pool& orphans,
-        simple_chain& chain, reorganize_handler handler,
+    organizer_impl(threadpool& pool, db_interface& database,
+        orphans_pool& orphans, simple_chain& chain,
         const config::checkpoint::list& checks=checkpoint::defaults);
 
 protected:
     std::error_code verify(size_t fork_point,
         const block_detail_list& orphan_chain, size_t orphan_index);
 
-    void reorganize_occured(size_t fork_point,
-        const blockchain::block_list& arrivals,
-        const blockchain::block_list& replaced);
+private:
     bool strict(size_t fork_point);
 
-private:
     db_interface& interface_;
-    reorganize_handler handler_;
     config::checkpoint::list checkpoints_;
 };
 
