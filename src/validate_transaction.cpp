@@ -89,7 +89,7 @@ std::error_code validate_transaction::basic_checks() const
         return error::duplicate;
 
     // Check for blockchain duplicates in start (after this returns).
-    return bc::error::success;
+    return error::success;
 }
 
 bool validate_transaction::is_standard() const
@@ -229,10 +229,10 @@ void validate_transaction::search_pool_previous_tx()
         return;
     }
 
-    BITCOIN_ASSERT(!is_coinbase(previous_tx));
+    BITCOIN_ASSERT(!is_coinbase(previous_tx_info->tx));
 
     // parent_height ignored here as mempool transactions cannot be coinbase.
-    handle_previous_tx(bc::error::success, previous_tx_info->tx, 0);
+    handle_previous_tx(error::success, previous_tx_info->tx, 0);
     unconfirmed_.push_back(current_input_);
 }
 
@@ -291,7 +291,7 @@ void validate_transaction::check_fees()
     // Who cares?
     // Fuck the police
     // Every tx equal!
-    handle_validate_(bc::error::success, unconfirmed_);
+    handle_validate_(error::success, unconfirmed_);
 }
 
 std::error_code validate_transaction::check_transaction(
@@ -330,7 +330,7 @@ std::error_code validate_transaction::check_transaction(
                 return error::previous_output_null;
     }
 
-    return bc::error::success;
+    return error::success;
 }
 
 // Validate script consensus conformance based on flags provided.

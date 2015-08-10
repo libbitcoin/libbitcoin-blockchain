@@ -219,7 +219,7 @@ void organizer::notify_reorganize(size_t fork_point,
     std::transform(replaced_chain.begin(), replaced_chain.end(),
         replacements.begin(), to_raw_pointer);
 
-    subscriber_->relay(bc::error::success, fork_point, arrivals, replacements);
+    subscriber_->relay(error::success, fork_point, arrivals, replacements);
 }
 
 void organizer::subscribe_reorganize(

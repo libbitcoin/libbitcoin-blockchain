@@ -111,7 +111,7 @@ private:
             block_.transactions[tx_index] = tx;
             ++count_;
             if (count_ == block_.transactions.size())
-                handler_(bc::error::success, block_);
+                handler_(error::success, block_);
         };
 
         blockchain_.fetch_transaction(tx_hash, handle_fetch);

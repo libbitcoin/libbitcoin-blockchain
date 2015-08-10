@@ -139,7 +139,7 @@ void transaction_pool::validation_complete(
     if (tx_exists(tx_hash))
         handle_validate(error::duplicate, index_list());
     else
-        handle_validate(bc::error::success, unconfirmed);
+        handle_validate(error::success, unconfirmed);
 }
 
 bool transaction_pool::tx_exists(const hash_digest& hash)
@@ -212,7 +212,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
             return;
         }
 
-        handle_fetch(bc::error::success, it->tx);
+        handle_fetch(error::success, it->tx);
     };
 
     strand_.queue(tx_fetcher);
@@ -318,7 +318,7 @@ void transaction_pool::try_delete_tx(const hash_digest& hash)
     {
         const auto match = (entry.hash == hash);
         if (match)
-            entry.handle_confirm(bc::error::success);
+            entry.handle_confirm(error::success);
 
         return match;
     };
