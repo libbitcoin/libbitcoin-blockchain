@@ -95,12 +95,12 @@ void transaction_pool::do_validate(const transaction_type& tx,
 {
     if (stopped())
     {
-        handle_validate(blockchain::stop_code, index_list());
+        handle_validate(error::service_stopped, index_list());
         return;
     }
 
     // This must be allocated as a shared pointer reference in order for
-    // start to create a shared pointer reference.
+    // validate_transaction::start to create a second reference.
     const auto validate = std::make_shared<validate_transaction>(
         blockchain_, tx, buffer_, strand_);
 
@@ -115,7 +115,7 @@ void transaction_pool::validation_complete(
 {
     if (stopped())
     {
-        handle_validate(blockchain::stop_code, index_list());
+        handle_validate(error::service_stopped, index_list());
         return;
     }
 
@@ -199,7 +199,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 {
     if (stopped())
     {
-        handle_fetch(blockchain::stop_code, transaction_type());
+        handle_fetch(error::service_stopped, transaction_type());
         return;
     }
 
@@ -223,7 +223,7 @@ void transaction_pool::exists(const hash_digest& transaction_hash,
 {
     if (stopped())
     {
-        handle_exists(blockchain::stop_code, false);
+        handle_exists(error::service_stopped, false);
         return;
     }
 
@@ -239,7 +239,7 @@ void transaction_pool::reorganize(const std::error_code& ec,
     size_t /* fork_point */, const blockchain::block_list& new_blocks,
     const blockchain::block_list& replaced_blocks)
 {
-    if (ec == blockchain::stop_code)
+    if (ec == error::service_stopped)
     {
         log_debug(LOG_BLOCKCHAIN)
             << "Stopping transaction pool: " << ec.message();

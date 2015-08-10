@@ -102,7 +102,7 @@ void organizer::replace_chain(size_t fork_index,
         {
             // If invalid for error::checkpoints_failed we should drop the
             // connection, but there is no reference from here.
-            if (ec != blockchain::stop_code)
+            if (ec != error::service_stopped)
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
                 const auto block_hash = encode_hash(hash_block_header(header));
@@ -231,7 +231,7 @@ void organizer::subscribe_reorganize(
 void organizer::notify_stop()
 {
     static const uint64_t fork_point = 0;
-    subscriber_->relay(blockchain::stop_code, fork_point,
+    subscriber_->relay(error::service_stopped, fork_point,
         blockchain::block_list(), blockchain::block_list());
 }
 

@@ -70,7 +70,7 @@ constexpr uint64_t readjustment_interval = target_timespan / target_spacing;
 // To improve readability.
 #define RETURN_IF_STOPPED() \
 if (stopped()) \
-    return blockchain::stop_code
+    return error::service_stopped
 
 // The nullptr option is for backward compatibility only.
 validate_block::validate_block(size_t height, const block_type& block,

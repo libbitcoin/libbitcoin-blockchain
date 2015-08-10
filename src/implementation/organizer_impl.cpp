@@ -58,7 +58,7 @@ std::error_code organizer_impl::verify(size_t fork_point,
     const block_detail_list& orphan_chain, size_t orphan_index)
 {
     if (stopped())
-        return blockchain_impl::stop_code;
+        return error::service_stopped;
 
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
     const auto& current_block = orphan_chain[orphan_index]->actual();

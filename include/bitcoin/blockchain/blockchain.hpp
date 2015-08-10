@@ -120,11 +120,6 @@ public:
     typedef std::function<void (const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
     
-    /**
-     * This value in a notification indicates that the service is stopping.
-     */
-    static const std::error_code stop_code;
-
     virtual ~blockchain()
     {
     };
@@ -394,7 +389,7 @@ public:
      * Subscriber is notified exactly once of changes to the blockchain
      * and needs to re-subscribe to continue being notified.
      * When this blockchain service is stopped, any subscribed handlers
-     * will be called with the error_code set to blockchain::stop_code.
+     * will be called with the error_code set to bc::error::service_stopped.
      *
      * @param[in]   handle_reorganize   Notification handler for changes
      * @code
