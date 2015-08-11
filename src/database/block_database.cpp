@@ -184,6 +184,8 @@ void block_database::write_position(const position_type position)
     const auto record = index_.allocate();
     const auto data = index_.get(record);
     auto serial = make_serializer(data);
+
+    // MUST BE ATOMIC ???
     serial.write_8_bytes(position);
 }
 

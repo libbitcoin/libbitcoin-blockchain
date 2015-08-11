@@ -37,20 +37,21 @@ public:
     static BC_CONSTEXPR size_t hash_size = std::tuple_size<HashType>::value;
     static BC_CONSTEXPR position_type value_begin = hash_size + 8;
 
-    htdb_slab_list_item(
-        slab_allocator& allocator, const position_type position=0);
+    htdb_slab_list_item(slab_allocator& allocator,
+        const position_type position=0);
 
-    position_type create(
-        const HashType& key, const size_t value_size,
+    position_type create(const HashType& key, const size_t value_size,
         const position_type next);
 
     // Does this match?
     bool compare(const HashType& key) const;
+
     // The actual user data.
     slab_type data() const;
 
     // Position of next item in the chained list.
     position_type next_position() const;
+
     // Write a new next position.
     void write_next_position(position_type next);
 
@@ -69,11 +70,12 @@ htdb_slab_list_item<HashType>::htdb_slab_list_item(
 }
 
 template <typename HashType>
-position_type htdb_slab_list_item<HashType>::create(
-    const HashType& key, const size_t value_size, const position_type next)
+position_type htdb_slab_list_item<HashType>::create(const HashType& key,
+    const size_t value_size, const position_type next)
 {
     const position_type info_size = key.size() + 8;
     BITCOIN_ASSERT(sizeof(position_type) == 8);
+
     // Create new slab.
     //   [ HashType ]
     //   [ next:8   ]
@@ -81,9 +83,12 @@ position_type htdb_slab_list_item<HashType>::create(
     const size_t slab_size = info_size + value_size;
     const position_type slab = allocator_.allocate(slab_size);
     raw_data_ = allocator_.get(slab);
+
     // Write to slab.
     auto serial = make_serializer(raw_data_);
     serial.write_data(key);
+
+    // MUST BE ATOMIC ???
     serial.write_8_bytes(next);
     return slab;
 }
@@ -92,7 +97,7 @@ template <typename HashType>
 bool htdb_slab_list_item<HashType>::compare(const HashType& key) const
 {
     // Key data is at the start.
-    const uint8_t* key_data = raw_data_;
+    const auto key_data = raw_data_;
     return std::equal(key.begin(), key.end(), key_data);
 }
 
@@ -106,16 +111,17 @@ slab_type htdb_slab_list_item<HashType>::data() const
 template <typename HashType>
 position_type htdb_slab_list_item<HashType>::next_position() const
 {
-    const uint8_t* next_data = raw_next_data();
-    // Read the next position.
+    const auto next_data = raw_next_data();
     return from_little_endian_unsafe<position_type>(next_data);
 }
 
 template <typename HashType>
 void htdb_slab_list_item<HashType>::write_next_position(position_type next)
 {
-    uint8_t* next_data = raw_next_data();
+    auto next_data = raw_next_data();
     auto serial = make_serializer(next_data);
+
+    // MUST BE ATOMIC ???
     serial.write_8_bytes(next);
 }
 

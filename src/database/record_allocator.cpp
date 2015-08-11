@@ -85,6 +85,7 @@ void record_allocator::reserve(size_t count)
 }
 
 // Read the count value from the first chunk of the file.
+// Since the write is not atomic this must be read before write is enabled.
 void record_allocator::read_count()
 {
     BITCOIN_ASSERT(file_.size() >= sizeof(count_));
@@ -92,6 +93,7 @@ void record_allocator::read_count()
 }
 
 // Write the count value to the first chunk of the file.
+// This write is not atomic and therefore assumes there are no readers.
 void record_allocator::write_count()
 {
     BITCOIN_ASSERT(file_.size() >= sizeof(count_));

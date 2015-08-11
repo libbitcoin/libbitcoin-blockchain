@@ -24,8 +24,8 @@ namespace libbitcoin {
 namespace chain {
 
 template <typename HashType>
-multimap_records<HashType>::multimap_records(
-    htdb_type& map, linked_records& linked_rows)
+multimap_records<HashType>::multimap_records(htdb_type& map,
+    linked_records& linked_rows)
   : map_(map), linked_rows_(linked_rows)
 {
 }
@@ -36,65 +36,72 @@ index_type multimap_records<HashType>::lookup(const HashType& key) const
     const record_type start_info = map_.get(key);
     if (!start_info)
         return linked_rows_.empty;
-    const index_type first = from_little_endian_unsafe<index_type>(start_info);
+
+    const auto first = from_little_endian_unsafe<index_type>(start_info);
     return first;
 }
 
 template <typename HashType>
-void multimap_records<HashType>::add_row(
-    const HashType& key, write_function write)
+void multimap_records<HashType>::add_row(const HashType& key,
+    write_function write)
 {
-    record_type start_info = map_.get(key);
+    auto start_info = map_.get(key);
     if (!start_info)
     {
         create_new(key, write);
         return;
     }
+
     add_to_list(start_info, write);
 }
 
 template <typename HashType>
 void multimap_records<HashType>::delete_last_row(const HashType& key)
 {
-    record_type start_info = map_.get(key);
+    auto start_info = map_.get(key);
     BITCOIN_ASSERT(start_info != nullptr);
-    const index_type old_begin = 
-        from_little_endian_unsafe<index_type>(start_info);
+    const auto old_begin = from_little_endian_unsafe<index_type>(start_info);
     BITCOIN_ASSERT(old_begin != linked_rows_.empty);
-    const index_type new_begin = linked_rows_.next(old_begin);
+    const auto new_begin = linked_rows_.next(old_begin);
     if (new_begin == linked_rows_.empty)
     {
         DEBUG_ONLY(bool success =) map_.unlink(key);
         BITCOIN_ASSERT(success);
         return;
     }
+
     auto serial = make_serializer(start_info);
+
+    // MUST BE ATOMIC ???
     serial.write_4_bytes(new_begin);
 }
 
 template <typename HashType>
-void multimap_records<HashType>::add_to_list(
-    record_type start_info, write_function write)
+void multimap_records<HashType>::add_to_list(record_type start_info,
+    write_function write)
 {
-    const index_type old_begin = 
-        from_little_endian_unsafe<index_type>(start_info);
-    const index_type new_begin = linked_rows_.insert(old_begin);
-    record_type record = linked_rows_.get(new_begin);
+    const auto old_begin = from_little_endian_unsafe<index_type>(start_info);
+    const auto new_begin = linked_rows_.insert(old_begin);
+    auto record = linked_rows_.get(new_begin);
     write(record);
     auto serial = make_serializer(start_info);
+
+    // MUST BE ATOMIC ???
     serial.write_4_bytes(new_begin);
 }
 
 template <typename HashType>
-void multimap_records<HashType>::create_new(
-    const HashType& key, write_function write)
+void multimap_records<HashType>::create_new(const HashType& key,
+    write_function write)
 {
-    const index_type first = linked_rows_.create();
-    record_type record = linked_rows_.get(first);
+    const auto first = linked_rows_.create();
+    auto record = linked_rows_.get(first);
     write(record);
-    auto write_start_info = [first](uint8_t* data)
+    const auto write_start_info = [first](uint8_t* data)
     {
         auto serial = make_serializer(data);
+
+        // MUST BE ATOMIC ???
         serial.write_4_bytes(first);
     };
     map_.store(key, write_start_info);

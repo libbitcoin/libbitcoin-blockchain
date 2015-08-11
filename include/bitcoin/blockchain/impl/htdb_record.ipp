@@ -28,14 +28,15 @@ namespace libbitcoin {
 namespace chain {
 
 template <typename HashType>
-htdb_record<HashType>::htdb_record( htdb_record_header& header,
+htdb_record<HashType>::htdb_record(htdb_record_header& header,
     record_allocator& allocator)
   : header_(header), allocator_(allocator)
 {
 }
 
 template <typename HashType>
-void htdb_record<HashType>::store(const HashType& key, write_function write)
+void htdb_record<HashType>::store(const HashType& key,
+    const write_function write)
 {
     // Store current bucket value.
     const auto old_begin = read_bucket_value(key);
@@ -153,8 +154,7 @@ index_type htdb_record<HashType>::read_bucket_value(const HashType& key) const
 }
 
 template <typename HashType>
-void htdb_record<HashType>::link(
-    const HashType& key, const index_type begin)
+void htdb_record<HashType>::link(const HashType& key, const index_type begin)
 {
     header_.write(bucket_index(key), begin);
 }
