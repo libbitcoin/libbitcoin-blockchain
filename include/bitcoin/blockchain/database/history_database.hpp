@@ -103,7 +103,7 @@ private:
     typedef htdb_record<short_hash> map_type;
     typedef multimap_records<short_hash> multimap_type;
 
-    /// The hashtable used for looking start index for a
+    /// The hashtable used for looking up start index for a
     /// linked list by address hash.
     mmfile lookup_file_;
     htdb_record_header header_;

@@ -41,18 +41,20 @@ index_type linked_records::insert(index_type next)
         "index_type incorrect size");
 
     // Create new record.
-    index_type record = allocator_.allocate();
-    record_type data = allocator_.get(record);
+    auto record = allocator_.allocate();
+    auto data = allocator_.get(record);
 
     // Write next value at first 4 bytes of record.
     auto serial = make_serializer(data);
+
+    // MUST BE ATOMIC ???
     serial.write_4_bytes(next);
     return record;
 }
 
 index_type linked_records::next(index_type index) const
 {
-    const uint8_t* data = allocator_.get(index);
+    const auto data = allocator_.get(index);
     return from_little_endian_unsafe<index_type>(data);
 }
 

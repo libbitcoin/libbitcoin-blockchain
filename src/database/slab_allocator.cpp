@@ -80,6 +80,7 @@ void slab_allocator::reserve(size_t bytes_needed)
 }
 
 // Read the size value from the first chunk of the file.
+// Since the write is not atomic this must be read before write is enabled.
 void slab_allocator::read_size()
 {
     BITCOIN_ASSERT(file_.size() >= sizeof(size_));
@@ -87,6 +88,7 @@ void slab_allocator::read_size()
 }
 
 // Write the size value to the first chunk of the file.
+// This write is not atomic and therefore assumes there are no readers.
 void slab_allocator::write_size()
 {
     BITCOIN_ASSERT(size_ <= file_.size());

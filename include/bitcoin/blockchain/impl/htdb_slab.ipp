@@ -160,6 +160,7 @@ position_type htdb_slab<HashType>::read_bucket_value(const HashType& key) const
 template <typename HashType>
 void htdb_slab<HashType>::link(const HashType& key, const position_type begin)
 {
+    // MUST BE ATOMIC
     header_.write(bucket_index(key), begin);
 }
 
@@ -169,6 +170,8 @@ void htdb_slab<HashType>::release(const ListItem& item,
     const position_type previous)
 {
     ListItem previous_item(allocator_, previous);
+
+    // MUST BE ATOMIC
     previous_item.write_next_position(item.next_position());
 }
 

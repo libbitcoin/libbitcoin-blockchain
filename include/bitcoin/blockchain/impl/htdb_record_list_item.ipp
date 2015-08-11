@@ -34,18 +34,20 @@ template <typename HashType>
 class htdb_record_list_item
 {
 public:
-    htdb_record_list_item(
-        record_allocator& allocator, const index_type index=0);
+    htdb_record_list_item(record_allocator& allocator,
+        const index_type index=0);
 
     index_type create(const HashType& key, const index_type next);
 
     // Does this match?
     bool compare(const HashType& key) const;
+
     // The actual user data.
     record_type data() const;
 
     // Position of next item in the chained list.
     index_type next_index() const;
+
     // Write a new next index.
     void write_next_index(index_type next);
 
@@ -74,9 +76,12 @@ index_type htdb_record_list_item<HashType>::create(
     //   [ value... ]
     index_ = allocator_.allocate();
     record_type data = allocator_.get(index_);
+
     // Write record.
     auto serial = make_serializer(data);
     serial.write_data(key);
+
+    // MUST BE ATOMIC ???
     serial.write_4_bytes(next);
     return index_;
 }
@@ -85,7 +90,7 @@ template <typename HashType>
 bool htdb_record_list_item<HashType>::compare(const HashType& key) const
 {
     // Key data is at the start.
-    const uint8_t* key_data = raw_data(0);
+    const auto key_data = raw_data(0);
     return std::equal(key.begin(), key.end(), key_data);
 }
 
@@ -101,15 +106,17 @@ record_type htdb_record_list_item<HashType>::data() const
 template <typename HashType>
 index_type htdb_record_list_item<HashType>::next_index() const
 {
-    const uint8_t* next_data = raw_next_data();
+    const auto next_data = raw_next_data();
     return from_little_endian_unsafe<index_type>(next_data);
 }
 
 template <typename HashType>
 void htdb_record_list_item<HashType>::write_next_index(index_type next)
 {
-    uint8_t* next_data = raw_next_data();
+    const auto next_data = raw_next_data();
     auto serial = make_serializer(next_data);
+
+    // MUST BE ATOMIC ???
     serial.write_4_bytes(next);
 }
 

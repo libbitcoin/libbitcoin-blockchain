@@ -108,9 +108,7 @@ void history_database::delete_last_row(const short_hash& key)
 inline point_ident marker_to_id(uint8_t marker)
 {
     BITCOIN_ASSERT(marker == 0 || marker == 1);
-    if (marker == 0)
-        return point_ident::output;
-    return point_ident::spend;
+    return marker == 0 ? point_ident::output : point_ident::spend;
 }
 
 history_list history_database::get(const short_hash& key,
@@ -122,12 +120,14 @@ history_list history_database::get(const short_hash& key,
         constexpr position_type height_position = 1 + 36;
         return from_little_endian_unsafe<uint32_t>(data + height_position);
     };
+
     // Read a row from the data into the history list.
     history_list history;
     auto read_row = [&history](const uint8_t* data)
     {
         auto deserial = make_deserializer_unsafe(data);
-        return history_row {
+        return history_row
+        {
             // output or spend?
             marker_to_id(deserial.read_byte()),
             // point
@@ -136,7 +136,8 @@ history_list history_database::get(const short_hash& key,
             // height
             deserial.read_4_bytes(),
             // value or checksum
-            deserial.read_8_bytes()};
+            deserial.read_8_bytes()
+        };
     };
     const index_type start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
@@ -151,6 +152,7 @@ history_list history_database::get(const short_hash& key,
         // Read this row into the list.
         history.emplace_back(read_row(data));
     }
+
     return history;
 }
 
@@ -162,7 +164,8 @@ void history_database::sync()
 
 history_statinfo history_database::statinfo() const
 {
-    return {
+    return
+    {
         header_.size(),
         allocator_.count(),
         rows_.count()

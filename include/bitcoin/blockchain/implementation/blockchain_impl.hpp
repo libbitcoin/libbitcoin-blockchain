@@ -118,7 +118,7 @@ private:
 
     void do_store(const block_type& block, store_block_handler handle_store);
 
-    // Uses sequence looks to try to read shared data.
+    // Uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
     // sleep for a small amount of time and then retry read operation.
     void fetch(perform_read_functor perform_read);

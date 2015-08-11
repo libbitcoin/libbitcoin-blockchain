@@ -26,8 +26,8 @@ namespace libbitcoin {
 namespace chain {
 
 template <typename IndexType, typename ValueType>
-disk_array<IndexType, ValueType>::disk_array(
-    mmfile& file, position_type sector_start)
+disk_array<IndexType, ValueType>::disk_array(mmfile& file, 
+    position_type sector_start)
   : file_(file), sector_start_(sector_start), size_(0)
 {
     static_assert(std::is_unsigned<ValueType>::value,
@@ -35,9 +35,9 @@ disk_array<IndexType, ValueType>::disk_array(
 }
 
 template <typename IndexType, typename ValueType>
-void disk_array<IndexType, ValueType>::create(
-    IndexType size)
+void disk_array<IndexType, ValueType>::create(IndexType size)
 {
+    // MUST BE ATOMIC ???
     auto serial = make_serializer(data(0));
     serial.write_little_endian(size);
     for (IndexType i = 0; i < size; ++i)
@@ -52,28 +52,32 @@ void disk_array<IndexType, ValueType>::start()
 }
 
 template <typename IndexType, typename ValueType>
-ValueType disk_array<IndexType, ValueType>::read(
-    IndexType index) const
+ValueType disk_array<IndexType, ValueType>::read(IndexType index) const
 {
     BITCOIN_ASSERT_MSG(size_ != 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
+
     // Find our item.
-    const position_type position = item_position(index);
-    const uint8_t* begin = data(position);
+    const auto position = item_position(index);
+    const auto begin = data(position);
+
     // Deserialize value.
     return from_little_endian_unsafe<ValueType>(begin);
 }
 
 template <typename IndexType, typename ValueType>
-void disk_array<IndexType, ValueType>::write(
-    IndexType index, ValueType value)
+void disk_array<IndexType, ValueType>::write(IndexType index, ValueType value)
 {
     BITCOIN_ASSERT_MSG(size_ > 0, "disk_array::start() wasn't called.");
     BITCOIN_ASSERT(index < size_);
+
     // Find our item.
     const position_type position = item_position(index);
+
     // Write the value.
     auto serial = make_serializer(data(position));
+
+    // MUST BE ATOMIC ???
     serial.write_little_endian(value);
 }
 
