@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_HPP
 #define LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_HPP
 
+#include <string>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database/linked_records.hpp>
@@ -44,25 +45,25 @@ BC_CONSTEXPR size_t map_record_fsize_multimap()
  *      const record_type rec = linked_recs.get(idx);
  * @endcode
  */
-class multimap_records_iterator
+class BCB_API multimap_records_iterator
 {
 public:
-    BCB_API multimap_records_iterator(
-        const linked_records& linked_rows, index_type index);
+    multimap_records_iterator(const linked_records& linked_rows,
+        index_type index);
 
     /**
      * Next value in the chain.
      */
-    BCB_API void operator++();
+    void operator++();
 
     /**
      * Dereference the record index.
      */
-    BCB_API index_type operator*() const;
+    index_type operator*() const;
 
 private:
-    friend bool operator!=(
-        multimap_records_iterator iter_a, multimap_records_iterator iter_b);
+    friend bool operator!=(multimap_records_iterator iter_a,
+        multimap_records_iterator iter_b);
 
     const linked_records& linked_rows_;
     index_type index_;
@@ -71,21 +72,21 @@ private:
 /**
  * Compare too multimap value iterators for (lack of) equivalency.
  */
-BCB_API bool operator!=(
-    multimap_records_iterator iter_a, multimap_records_iterator iter_b);
+BCB_API bool operator!=(multimap_records_iterator iter_a,
+    multimap_records_iterator iter_b);
 
 /**
  * Result of a multimap database query. This is a container wrapper
  * allowing the values to be iteratable.
  */
-class multimap_iterable
+class BCB_API multimap_iterable
 {
 public:
-    BCB_API multimap_iterable(
-        const linked_records& linked_rows, index_type begin_index);
+    multimap_iterable(const linked_records& linked_rows,
+        index_type begin_index);
 
-    BCB_API multimap_records_iterator begin() const;
-    BCB_API multimap_records_iterator end() const;
+    multimap_records_iterator begin() const;
+    multimap_records_iterator end() const;
 
 private:
     const linked_records& linked_rows_;
@@ -108,7 +109,8 @@ public:
     typedef htdb_record<HashType> htdb_type;
     typedef std::function<void (uint8_t*)> write_function;
 
-    multimap_records(htdb_type& map, linked_records& linked_rows);
+    multimap_records(htdb_type& map, linked_records& linked_rows, 
+        const std::string& name);
 
     /**
      * Lookup a key, returning an iterable result with multiple values.
@@ -134,6 +136,7 @@ private:
     /// Create new key with a single value.
     void create_new(const HashType& key, write_function write);
 
+    const std::string name_;
     htdb_type& map_;
     linked_records& linked_rows_;
 };

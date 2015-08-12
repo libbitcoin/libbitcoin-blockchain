@@ -29,7 +29,7 @@
 namespace libbitcoin {
 namespace chain {
 
-struct history_statinfo
+struct BCB_API history_statinfo
 {
     /// Number of buckets used in the hashtable.
     /// load factor = addrs / buckets
@@ -44,7 +44,7 @@ struct history_statinfo
  * history_database is a multimap where the key is the Bitcoin address hash,
  * which returns several rows giving the history for that address.
  */
-class history_database
+class BCB_API history_database
 {
 public:
     BCB_API history_database(const boost::filesystem::path& lookup_filename,
@@ -64,16 +64,15 @@ public:
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_output(
-        const short_hash& key, const output_point& outpoint,
-        const uint32_t output_height, const uint64_t value);
+    BCB_API void add_output(const short_hash& key,
+        const output_point& outpoint, const uint32_t output_height,
+        const uint64_t value);
 
     /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_spend(
-        const short_hash& key, const output_point& previous,
+    BCB_API void add_spend(const short_hash& key, const output_point& previous,
         const input_point& spend, const size_t spend_height);
 
     /**

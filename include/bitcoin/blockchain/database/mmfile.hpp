@@ -32,21 +32,21 @@
 namespace libbitcoin {
 namespace chain {
 
-class mmfile
+class BCB_API mmfile
 {
 public:
-    BCB_API mmfile(const boost::filesystem::path& filename);
-    BCB_API mmfile(mmfile&& file);
-    BCB_API ~mmfile();
+    mmfile(const boost::filesystem::path& filename);
+    mmfile(mmfile&& file);
+    ~mmfile();
 
     mmfile(const mmfile&) = delete;
     void operator=(const mmfile&) = delete;
 
-    BCB_API uint8_t* data();
-    BCB_API const uint8_t* data() const;
-    BCB_API size_t size() const;
-    BCB_API bool reserve(size_t size);
-    BCB_API bool resize(size_t new_size);
+    uint8_t* data();
+    const uint8_t* data() const;
+    size_t size() const;
+    bool reserve(size_t size);
+    bool resize(size_t new_size);
 
 private:
     size_t file_size(int file_handle);

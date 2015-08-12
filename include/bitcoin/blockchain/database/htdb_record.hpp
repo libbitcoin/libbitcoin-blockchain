@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <tuple>
 #include <bitcoin/blockchain/database/disk_array.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
@@ -61,7 +62,8 @@ class htdb_record
 public:
     typedef std::function<void (uint8_t*)> write_function;
 
-    htdb_record(htdb_record_header& header, record_allocator& allocator);
+    htdb_record(htdb_record_header& header, record_allocator& allocator,
+        const std::string& name);
 
     /**
      * Store a value. The provided write() function must write the correct
@@ -90,6 +92,7 @@ private:
     template <typename ListItem>
     void release(const ListItem& item, const position_type previous);
 
+    const std::string name_;
     htdb_record_header& header_;
     record_allocator& allocator_;
 };

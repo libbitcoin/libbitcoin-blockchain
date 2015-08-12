@@ -28,7 +28,7 @@
 namespace libbitcoin {
 namespace chain {
 
-class spend_result
+class BCB_API spend_result
 {
 public:
     spend_result(const record_type record);
@@ -36,17 +36,17 @@ public:
     /**
      * Test whether the result exists, return false otherwise.
      */
-    BCB_API operator bool() const;
+    operator bool() const;
 
     /**
      * Transaction hash for spend.
      */
-    BCB_API hash_digest hash() const;
+    hash_digest hash() const;
 
     /**
      * Index of input within transaction for spend.
      */
-    BCB_API uint32_t index() const;
+    uint32_t index() const;
 
 private:
     const record_type record_;
@@ -65,47 +65,46 @@ struct spend_statinfo
  * spend_database enables you to lookup the spend of an output point,
  * returning the input point. It is a simple map.
  */
-class spend_database
+class BCB_API spend_database
 {
 public:
-    BCB_API spend_database(const boost::filesystem::path& filename);
+    spend_database(const boost::filesystem::path& filename);
 
     /**
      * Initialize a new spend database.
      */
-    BCB_API void create();
+    void create();
 
     /**
      * You must call start() before using the database.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Get input spend of an output point.
      */
-    BCB_API spend_result get(const output_point& outpoint) const;
+    spend_result get(const output_point& outpoint) const;
 
     /**
      * Store a spend in the database.
      */
-    BCB_API void store(
-        const output_point& outpoint, const input_point& spend);
+    void store(const output_point& outpoint, const input_point& spend);
 
     /**
      * Delete outpoint spend item from database.
      */
-    BCB_API void remove(const output_point& outpoint);
+    void remove(const output_point& outpoint);
 
     /**
      * Synchronise storage with disk so things are consistent.
      * Should be done at the end of every block write.
      */
-    BCB_API void sync();
+    void sync();
 
     /**
      * Return statistical info about the database.
      */
-    BCB_API spend_statinfo statinfo() const;
+    spend_statinfo statinfo() const;
 
 private:
     typedef htdb_record<hash_digest> map_type;

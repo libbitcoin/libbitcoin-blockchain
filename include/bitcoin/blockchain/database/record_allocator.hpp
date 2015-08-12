@@ -44,47 +44,47 @@ BC_CONSTFUNC size_t htdb_record_header_fsize(size_t buckets)
  * data referenced by an index. The file will be resized accordingly
  * and the total number of records updated so new chunks can be allocated.
  */
-class record_allocator
+class BCB_API record_allocator
 {
 public:
-    BCB_API record_allocator(
-        mmfile& file, position_type sector_start, size_t record_size);
+    record_allocator(mmfile& file, position_type sector_start,
+        size_t record_size);
 
     /**
       * Create record allocator.
       */
-    BCB_API void create();
+    void create();
 
     /**
      * Prepare allocator for usage.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Allocate a record and return its logical index.
      * Call sync() after writing the record.
      */
-    BCB_API index_type allocate(/* size_t records=1 */);
+    index_type allocate(/* size_t records=1 */);
 
     /**
      * Synchronise to disk.
      */
-    BCB_API void sync();
+    void sync();
 
     /**
      * Return a record from its logical index.
      */
-    BCB_API record_type get(index_type record) const;
+    record_type get(index_type record) const;
 
     /**
      * The number of records in this container.
      */
-    BCB_API index_type count() const;
+    index_type count() const;
 
     /**
      * Change the number of records of this container.
      */
-    BCB_API void count(const index_type records);
+    void count(const index_type records);
 
 private:
     /// File data access, by byte-wise position relative to start.

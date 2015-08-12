@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_IPP
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_IPP
 
+#include <string>
 #include <bitcoin/bitcoin.hpp>
 #include "htdb_record_list_item.ipp"
 #include "remainder.ipp"
@@ -29,8 +30,8 @@ namespace chain {
 
 template <typename HashType>
 htdb_record<HashType>::htdb_record(htdb_record_header& header,
-    record_allocator& allocator)
-  : header_(header), allocator_(allocator)
+    record_allocator& allocator, const std::string& name)
+  : header_(header), allocator_(allocator), name_(name)
 {
 }
 
@@ -72,8 +73,8 @@ record_type htdb_record<HashType>::get(const HashType& key) const
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The record database is corrupt getting ("
-                << bucket << ")[" << index << "]";
+                << "Record database " << this->name_ << " is corrupt ("
+                << bucket << ")[" << index << "] via get";
 
             throw std::runtime_error("The database is corrupt.");
         }
@@ -124,8 +125,8 @@ bool htdb_record<HashType>::unlink(const HashType& key)
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The record database is corrupt unlinking ("
-                << bucket << ")[" << index << "]";
+                << "Record database " << this->name_ << " is corrupt ("
+                << bucket << ")[" << index << "] via unlink";
 
             throw std::runtime_error("The database is corrupt.");
         }
