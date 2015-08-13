@@ -34,7 +34,7 @@ int mmr_add_row(
     record_allocator alloc(ht_file, records_start, record_size);
     alloc.start();
 
-    htdb_record<hash_type> ht(header, alloc);
+    htdb_record<hash_type> ht(header, alloc, "test");
 
     mmfile lrs_file(rows_filename);
     BITCOIN_ASSERT(lrs_file.data());
@@ -44,7 +44,7 @@ int mmr_add_row(
     recs.start();
     linked_records lrs(recs);
 
-    multimap_records<hash_type> multimap(ht, lrs);
+    multimap_records<hash_type> multimap(ht, lrs, "test");
     auto write = [&value](uint8_t* data)
     {
         std::copy(value.begin(), value.end(), data);
