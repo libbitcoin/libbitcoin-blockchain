@@ -76,7 +76,7 @@ spend_database::spend_database(const boost::filesystem::path& filename)
   : file_(filename), 
     header_(file_, 0),
     allocator_(file_, allocator_offset, record_size),
-    map_(header_, allocator_)
+    map_(header_, allocator_, filename.string())
 {
     BITCOIN_ASSERT(file_.data() != nullptr);
 }

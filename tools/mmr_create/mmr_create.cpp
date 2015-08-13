@@ -35,7 +35,7 @@ void mmr_create(const size_t value_size,
     alloc.create();
     alloc.start();
 
-    htdb_record<hash_type> ht(header, alloc);
+    htdb_record<hash_type> ht(header, alloc, "test");
 
     touch_file(rows_filename);
     mmfile lrs_file(rows_filename);
@@ -48,7 +48,7 @@ void mmr_create(const size_t value_size,
     recs.start();
     linked_records lrs(recs);
 
-    multimap_records<hash_type> multimap(ht, lrs);
+    multimap_records<hash_type> multimap(ht, lrs, "test");
 }
 
 int main(int argc, char** argv)

@@ -10,7 +10,7 @@ record_type get_record(htdb_record_header& header, record_allocator& alloc,
     const data_chunk& key_data)
 {
     typedef byte_array<N> hash_type;
-    htdb_record<hash_type> ht(header, alloc);
+    htdb_record<hash_type> ht(header, alloc, "test");
     hash_type key;
     BITCOIN_ASSERT(key.size() == key_data.size());
     std::copy(key_data.begin(), key_data.end(), key.begin());

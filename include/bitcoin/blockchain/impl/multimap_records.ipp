@@ -20,13 +20,15 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_IPP
 #define LIBBITCOIN_BLOCKCHAIN_MULTIMAP_RECORDS_IPP
 
+#include <string>
+
 namespace libbitcoin {
 namespace chain {
 
 template <typename HashType>
 multimap_records<HashType>::multimap_records(htdb_type& map,
-    linked_records& linked_rows)
-  : map_(map), linked_rows_(linked_rows)
+    linked_records& linked_rows, const std::string& name)
+  : map_(map), linked_rows_(linked_rows), name_(name)
 {
 }
 

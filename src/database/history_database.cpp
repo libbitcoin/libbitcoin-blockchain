@@ -39,11 +39,11 @@ history_database::history_database(const boost::filesystem::path& lookup_filenam
   : lookup_file_(lookup_filename), 
     header_(lookup_file_, 0),
     allocator_(lookup_file_, allocator_offset, alloc_record_size),
-    start_lookup_(header_, allocator_),
+    start_lookup_(header_, allocator_, lookup_filename.string()),
     rows_file_(rows_filename), 
     rows_(rows_file_, 0, row_record_size),
     linked_rows_(rows_),
-    map_(start_lookup_, linked_rows_)
+    map_(start_lookup_, linked_rows_, rows_filename.string())
 {
     BITCOIN_ASSERT(lookup_file_.data() != nullptr);
     BITCOIN_ASSERT(rows_file_.data() != nullptr);

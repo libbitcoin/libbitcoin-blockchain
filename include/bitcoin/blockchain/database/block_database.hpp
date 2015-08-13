@@ -29,7 +29,7 @@
 namespace libbitcoin {
 namespace chain {
 
-class block_result
+class BCB_API block_result
 {
 public:
     block_result(const slab_type slab);
@@ -37,27 +37,27 @@ public:
     /**
      * Test whether the result exists, return false otherwise.
      */
-    BCB_API operator bool() const;
+    operator bool() const;
 
     /**
      * Read block header.
      */
-    BCB_API block_header_type header() const;
+    block_header_type header() const;
 
     /**
      * The height of this block in the blockchain.
      */
-    BCB_API size_t height() const;
+    size_t height() const;
 
     /**
      * Read the number of transactions in this block.
      */
-    BCB_API size_t transactions_size() const;
+    size_t transactions_size() const;
 
     /**
      * Read a transaction hash where i < transactions_size().
      */
-    BCB_API hash_digest transaction_hash(size_t i) const;
+    hash_digest transaction_hash(size_t i) const;
 
 private:
     const slab_type slab_;
@@ -69,55 +69,55 @@ typedef std::vector<index_type> transaction_index_list;
  * Stores block_headers each with a list of transaction indexes.
  * Lookup possible by hash or height.
  */
-class block_database
+class BCB_API block_database
 {
 public:
     static BC_CONSTEXPR size_t null_height = bc::max_size_t;
 
-    BCB_API block_database(const boost::filesystem::path& map_filename,
+    block_database(const boost::filesystem::path& map_filename,
         const boost::filesystem::path& index_filename);
 
     /**
      * Initialize a new transaction database.
      */
-    BCB_API void create();
+    void create();
 
     /**
      * You must call start() before using the database.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Fetch block by height using the index table.
      */
-    BCB_API block_result get(const size_t height) const;
+    block_result get(const size_t height) const;
 
     /**
      * Fetch block by hash using the hashtable.
      */
-    BCB_API block_result get(const hash_digest& hash) const;
+    block_result get(const hash_digest& hash) const;
 
     /**
      * Store a block in the database.
      */
-    BCB_API void store(const block_type& block);
+    void store(const block_type& block);
 
     /**
      * Unlink all blocks upwards from (and including) from_height.
      */
-    BCB_API void unlink(const size_t from_height);
+    void unlink(const size_t from_height);
 
     /**
      * Synchronise storage with disk so things are consistent.
      * Should be done at the end of every block write.
      */
-    BCB_API void sync();
+    void sync();
 
     /**
      * Latest block height in our chain. Returns block_database::null_height
      * if no blocks exist.
      */
-    BCB_API size_t last_height() const;
+    size_t last_height() const;
 
 private:
     typedef htdb_slab<hash_digest> map_type;

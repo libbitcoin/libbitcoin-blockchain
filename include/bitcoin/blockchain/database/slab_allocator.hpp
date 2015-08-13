@@ -44,36 +44,36 @@ BC_CONSTFUNC size_t htdb_slab_header_fsize(size_t buckets)
  * slabs of data on disk. It will resize the file accordingly and keep
  * track of the current end pointer so new slabs can be allocated.
  */
-class slab_allocator
+class BCB_API slab_allocator
 {
 public:
-    BCB_API slab_allocator(mmfile& file, position_type sector_start);
+    slab_allocator(mmfile& file, position_type sector_start);
 
     /**
       * Create slab allocator.
       */
-    BCB_API void create();
+    void create();
 
     /**
      * Prepare allocator for usage.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Allocate a slab.
      * Call sync() after writing the record.
      */
-    BCB_API position_type allocate(size_t bytes_needed);
+    position_type allocate(size_t bytes_needed);
 
     /**
      * Synchronise slab allocator to disk.
      */
-    BCB_API void sync();
+    void sync();
 
     /**
      * Return a slab from its byte-wise position relative to start.
      */
-    BCB_API slab_type get(position_type position) const;
+    slab_type get(position_type position) const;
 
 private:
     /// File data access, by byte-wise position relative to start.

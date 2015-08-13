@@ -29,12 +29,12 @@
 namespace libbitcoin {
 namespace chain {
 
-struct transaction_metainfo
+struct BCB_API transaction_metainfo
 {
     size_t height, index;
 };
 
-class transaction_result
+class BCB_API transaction_result
 {
 public:
     transaction_result(const slab_type slab);
@@ -42,22 +42,22 @@ public:
     /**
      * Test whether the result exists, return false otherwise.
      */
-    BCB_API operator bool() const;
+    operator bool() const;
 
     /**
      * Height of the block which includes this transaction.
      */
-    BCB_API size_t height() const;
+    size_t height() const;
 
     /**
      * Index of transaction within a block.
      */
-    BCB_API size_t index() const;
+    size_t index() const;
 
     /**
      * Actual transaction itself.
      */
-    BCB_API transaction_type transaction() const;
+    transaction_type transaction() const;
 
 private:
     const slab_type slab_;
@@ -70,43 +70,43 @@ private:
  * This is so we can quickly reconstruct blocks given a list of tx indexes
  * belonging to that block. These are stored with the block.
  */
-class transaction_database
+class BCB_API transaction_database
 {
 public:
-    BCB_API transaction_database(const boost::filesystem::path& map_filename);
+    transaction_database(const boost::filesystem::path& map_filename);
 
     /**
      * Initialize a new transaction database.
      */
-    BCB_API void create();
+    void create();
 
     /**
      * You must call start() before using the database.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Fetch transaction from its hash.
      */
-    BCB_API transaction_result get(const hash_digest& hash) const;
+    transaction_result get(const hash_digest& hash) const;
 
     /**
      * Store a transaction in the database. Returns a unique index
      * which can be used to reference the transaction.
      */
-    BCB_API void store(
-        const transaction_metainfo& info, const transaction_type& tx);
+    void store(const transaction_metainfo& info,
+        const transaction_type& tx);
 
     /**
      * Delete a transaction from database.
      */
-    BCB_API void remove(const hash_digest& hash);
+    void remove(const hash_digest& hash);
 
     /**
      * Synchronise storage with disk so things are consistent.
      * Should be done at the end of every block write.
      */
-    BCB_API void sync();
+    void sync();
 
 private:
     typedef htdb_slab<hash_digest> map_type;

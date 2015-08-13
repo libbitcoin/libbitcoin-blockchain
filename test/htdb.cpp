@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
     alloc.create();
     alloc.start();
 
-    htdb_record<tiny_hash> ht(header, alloc);
+    htdb_record<tiny_hash> ht(header, alloc, "test");
 
     tiny_hash key{{0xde, 0xad, 0xbe, 0xef}};
     auto write = [](uint8_t* data)
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_64)
     alloc.create();
     alloc.start();
 
-    htdb_record<tiny_hash> ht(header, alloc);
+    htdb_record<tiny_hash> ht(header, alloc, "test");
 
     tiny_hash key{{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}};
     auto write = [](uint8_t* data)

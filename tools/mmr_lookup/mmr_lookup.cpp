@@ -34,7 +34,7 @@ int mmr_lookup(
     record_allocator alloc(ht_file, records_start, record_size);
     alloc.start();
 
-    htdb_record<hash_type> ht(header, alloc);
+    htdb_record<hash_type> ht(header, alloc, "test");
 
     mmfile lrs_file(rows_filename);
     BITCOIN_ASSERT(lrs_file.data());
@@ -44,7 +44,7 @@ int mmr_lookup(
     recs.start();
     linked_records lrs(recs);
 
-    multimap_records<hash_type> multimap(ht, lrs);
+    multimap_records<hash_type> multimap(ht, lrs, "test");
     multimap_iterable container(lrs, multimap.lookup(key));
     for (const index_type index: container)
     {

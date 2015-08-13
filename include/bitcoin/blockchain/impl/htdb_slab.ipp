@@ -76,8 +76,8 @@ slab_type htdb_slab<HashType>::get(const HashType& key) const
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The slab database is corrupt getting ("
-                << bucket << ")[" << index << "]";
+                << "Slab database is corrupt ("
+                << bucket << ")[" << index << "] via get";
 
             throw std::runtime_error("The database is corrupt.");
         }
@@ -128,8 +128,8 @@ bool htdb_slab<HashType>::unlink(const HashType& key)
         if (previous == current)
         {
             log_fatal(LOG_DATABASE)
-                << "The slab database is corrupt unlinking ("
-                << bucket << ")[" << index << "]";
+                << "Slab database is corrupt ("
+                << bucket << ")[" << index << "] via unlink";
 
             throw std::runtime_error("The database is corrupt.");
         }
