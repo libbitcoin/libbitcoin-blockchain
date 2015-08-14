@@ -109,8 +109,11 @@ private:
 
             BITCOIN_ASSERT(tx_index < block_.transactions.size());
             block_.transactions[tx_index] = tx;
-            ++count_;
-            if (count_ == block_.transactions.size())
+
+            // Atomicity: must increment and read value in one instruction.
+            const auto incremented_count = ++count_;
+
+            if (incremented_count == block_.transactions.size())
                 handler_(error::success, block_);
         };
 
@@ -119,7 +122,7 @@ private:
 
     blockchain& blockchain_;
     block_type block_;
-    atomic_counter count_;
+    std::atomic<size_t> count_;
     block_fetch_handler handler_;
 
     // TODO: use lock-free std::atomic_flag?
