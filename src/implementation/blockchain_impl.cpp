@@ -163,8 +163,7 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
 
     const auto do_read = [this, try_read]()
     {
-        // Sleeping inside seqlock loop is fine since we
-        // need to finish write op before we can read anyway.
+        // Sleeping while waiting for write to complete.
         while (!try_read())
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
     };

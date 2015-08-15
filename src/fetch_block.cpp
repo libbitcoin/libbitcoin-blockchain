@@ -93,6 +93,7 @@ private:
         if (stop_on_error(ec))
             return;
 
+        ////////////////// TODO: use synchronizer //////////////////
         block_.transactions.resize(tx_hashes.size());
         handled_count_ = 0;
         for (size_t tx_index = 0; tx_index < tx_hashes.size(); ++tx_index)

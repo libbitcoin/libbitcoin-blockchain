@@ -126,7 +126,7 @@ bool validate_block_impl::fetch_orphan_transaction(transaction_type& tx,
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
-        for (const auto& orphan_tx : orphan_block.transactions)
+        for (const auto& orphan_tx: orphan_block.transactions)
         {
             if (hash_transaction(orphan_tx) == tx_hash)
             {
