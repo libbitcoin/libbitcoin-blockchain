@@ -34,33 +34,33 @@ BC_CONSTEXPR size_t linked_record_offset = sizeof(index_type);
  * Records can be dropped by forgetting an index, and updating to the next
  * value. We can think of this as a LIFO queue.
  */
-class linked_records
+class BCB_API linked_records
 {
 public:
     // std::numeric_limits<index_type>::max()
     static BC_CONSTEXPR index_type empty = bc::max_uint32;
 
-    BCB_API linked_records(record_allocator& allocator);
+    linked_records(record_allocator& allocator);
 
     /**
      * Create new list with a single record.
      */
-    BCB_API index_type create();
+    index_type create();
 
     /**
      * Insert new record before index. Returns index of new record.
      */
-    BCB_API index_type insert(index_type next);
+    index_type insert(index_type next);
 
     /**
      * Read next index for record in list.
      */
-    BCB_API index_type next(index_type index) const;
+    index_type next(index_type index) const;
 
     /**
      * Get underlying record data.
      */
-    BCB_API record_type get(index_type index) const; 
+    record_type get(index_type index) const; 
 
 private:
     record_allocator& allocator_;
