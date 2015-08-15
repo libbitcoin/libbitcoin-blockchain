@@ -43,7 +43,7 @@ protected:
 
     validate_block(size_t height, const block_type& block,
         const config::checkpoint::list& checks,
-        stopped_callback stopped=nullptr);
+        stopped_callback stop_callback=nullptr);
 
     virtual uint64_t actual_timespan(size_t interval) const = 0;
     virtual block_header_type fetch_block(size_t fetch_height) const = 0;
@@ -82,7 +82,7 @@ private:
     const size_t height_;
     const block_type& current_block_;
     const config::checkpoint::list& checkpoints_;
-    const stopped_callback stopped_;
+    const stopped_callback stop_callback_;
 };
 
 } // namespace chain
