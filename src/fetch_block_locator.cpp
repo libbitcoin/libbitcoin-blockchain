@@ -40,7 +40,7 @@ class block_locator_fetcher
 {
 public:
     block_locator_fetcher(blockchain& chain)
-      : blockchain_(chain)
+      : blockchain_(chain), stopped_(false)
     {
     }
 
@@ -55,6 +55,9 @@ public:
 private:
     bool stop_on_error(const std::error_code& ec)
     {
+        if (stopped_)
+            return true;
+
         if (ec)
         {
             handler_(ec, block_locator_type());
@@ -113,6 +116,7 @@ private:
     index_list indexes_;
     block_locator_type locator_;
     block_locator_fetch_handler handler_;
+    bool stopped_;
 };
 
 void fetch_block_locator(blockchain& blockchain, 
