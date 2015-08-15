@@ -94,7 +94,7 @@ private:
             return;
 
         block_.transactions.resize(tx_hashes.size());
-        count_ = 0;
+        handled_count_ = 0;
         for (size_t tx_index = 0; tx_index < tx_hashes.size(); ++tx_index)
             fetch_tx(tx_hashes[tx_index], tx_index);
     }
@@ -111,9 +111,9 @@ private:
             block_.transactions[tx_index] = tx;
 
             // Atomicity: must increment and read value in one instruction.
-            const auto incremented_count = ++count_;
+            const auto handled_count = ++handled_count_;
 
-            if (incremented_count == block_.transactions.size())
+            if (handled_count == block_.transactions.size())
                 handler_(error::success, block_);
         };
 
@@ -122,11 +122,9 @@ private:
 
     blockchain& blockchain_;
     block_type block_;
-    std::atomic<size_t> count_;
     block_fetch_handler handler_;
-
-    // TODO: use lock-free std::atomic_flag?
-    std::atomic<bool> stopped_;
+    std::atomic<size_t> handled_count_;
+    bool stopped_;
 };
 
 void fetch_block(blockchain& chain, size_t height,
