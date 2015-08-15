@@ -74,17 +74,17 @@ if (stopped()) \
 
 // The nullptr option is for backward compatibility only.
 validate_block::validate_block(size_t height, const block_type& block,
-    const config::checkpoint::list& checks, stopped_callback stopped)
+    const config::checkpoint::list& checks, stopped_callback callback)
   : height_(height),
     current_block_(block),
     checkpoints_(checks),
-    stopped_(stopped == nullptr ? [](){ return false; } : stopped)
+    stop_callback_(callback == nullptr ? [](){ return false; } : callback)
 {
 }
 
 bool validate_block::stopped() const
 {
-    return stopped_();
+    return stop_callback_();
 }
 
 std::error_code validate_block::check_block() const
@@ -276,7 +276,7 @@ std::error_code validate_block::accept_block() const
     RETURN_IF_STOPPED();
 
     // Txs should be final when included in a block.
-    for (const auto& tx : current_block_.transactions)
+    for (const auto& tx: current_block_.transactions)
     {
         if (!is_final(tx, height_, header.timestamp))
             return error::non_final_transaction;
@@ -390,7 +390,7 @@ bool validate_block::is_valid_coinbase_height(size_t height,
     expect_coinbase.push_operation({opcode::special, expect_number.data()});
 
     // Save the expected coinbase script.
-    const data_chunk expect = save_script(expect_coinbase);
+    const auto expect = save_script(expect_coinbase);
 
     // Perform comparison of the first bytes with raw_coinbase.
     if (expect.size() > raw_coinbase.size())
@@ -404,6 +404,8 @@ std::error_code validate_block::connect_block() const
     // BIP 30 security fix
     const auto& transactions = current_block_.transactions;
     if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
+    {
+        ////////////// TODO: parallelize. //////////////
         for (const auto& tx: transactions)
         {
             if (is_spent_duplicate(tx))
@@ -411,10 +413,13 @@ std::error_code validate_block::connect_block() const
 
             RETURN_IF_STOPPED();
         }
+    }
 
     uint64_t fees = 0;
     size_t total_sigops = 0;
     const auto count = transactions.size();
+
+    ////////////// TODO: parallelize. //////////////
     for (size_t tx_index = 0; tx_index < count; ++tx_index)
     {
         uint64_t value_in = 0;
@@ -463,6 +468,7 @@ bool validate_block::is_spent_duplicate(const transaction_type& tx) const
         return false;
 
     // Are all outputs spent?
+    ////////////// TODO: parallelize. //////////////
     for (uint32_t output_index = 0; output_index < tx.outputs.size();
         ++output_index)
     {
@@ -477,6 +483,8 @@ bool validate_block::validate_inputs(const transaction_type& tx,
     size_t index_in_parent, uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(!is_coinbase(tx));
+
+    ////////////// TODO: parallelize. //////////////
     for (size_t input_index = 0; input_index < tx.inputs.size(); ++input_index)
         if (!connect_input(index_in_parent, tx, input_index, value_in,
             total_sigops))

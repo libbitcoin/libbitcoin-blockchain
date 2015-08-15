@@ -45,7 +45,7 @@ enum validation_options : uint32_t
 
 validate_transaction::validate_transaction(blockchain& chain,
     const transaction_type& tx, const pool_buffer& pool,
-    async_strand& strand)
+    sequencer& strand)
   : blockchain_(chain),
     tx_(tx),
     pool_(pool),

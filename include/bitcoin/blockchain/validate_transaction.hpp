@@ -43,7 +43,7 @@ public:
         validate_handler;
 
     validate_transaction(blockchain& chain, const transaction_type& tx,
-        const pool_buffer& pool, async_strand& strand);
+        const pool_buffer& pool, sequencer& strand);
     void start(validate_handler handle_validate);
 
     static std::error_code check_transaction(const transaction_type& tx);
@@ -89,7 +89,7 @@ private:
     blockchain& blockchain_;
     const transaction_type tx_;
     const pool_buffer& pool_;
-    async_strand& strand_;
+    sequencer& strand_;
 
     const hash_digest tx_hash_;
     size_t last_block_height_;

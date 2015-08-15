@@ -157,20 +157,19 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
     const auto try_read = [this, perform_read]() -> bool
     {
         // Implements the seqlock counter logic.
-        size_t slock = seqlock_;
+        const size_t slock = seqlock_;
         return ((slock % 2 != 1) && perform_read(slock));
     };
 
     const auto do_read = [this, try_read]()
     {
-        // Sleeping inside seqlock loop is fine since we
-        // need to finish write op before we can read anyway.
+        // Sleeping while waiting for write to complete.
         while (!try_read())
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
     };
 
     // Initiate async read operation.
-    strand_.queue(do_read);
+    strand_.async(do_read);
 }
 
 void blockchain_impl::fetch_block_header(uint64_t height,

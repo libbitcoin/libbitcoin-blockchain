@@ -209,12 +209,10 @@ private:
     void try_delete_tx(const hash_digest& hash);
     bool stopped();
 
-    async_strand strand_;
+    sequencer strand_;
     blockchain& blockchain_;
     pool_buffer buffer_;
-
-    // TODO: use lock-free std::atomic_flag?
-    std::atomic<bool> stopped_;
+    bool stopped_;
 };
 
 } // namespace chain

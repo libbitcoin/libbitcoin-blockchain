@@ -47,56 +47,55 @@ struct BCB_API history_statinfo
 class BCB_API history_database
 {
 public:
-    BCB_API history_database(const boost::filesystem::path& lookup_filename,
+    history_database(const boost::filesystem::path& lookup_filename,
         const boost::filesystem::path& rows_filename);
 
     /**
      * Initialize a new history database.
      */
-    BCB_API void create();
+    void create();
 
     /**
      * You must call start() before using the database.
      */
-    BCB_API void start();
+    void start();
 
     /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_output(const short_hash& key,
-        const output_point& outpoint, const uint32_t output_height,
-        const uint64_t value);
+    void add_output(const short_hash& key, const output_point& outpoint,
+        const uint32_t output_height, const uint64_t value);
 
     /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    BCB_API void add_spend(const short_hash& key, const output_point& previous,
+    void add_spend(const short_hash& key, const output_point& previous,
         const input_point& spend, const size_t spend_height);
 
     /**
      * Delete the last row that was added to key.
      */
-    BCB_API void delete_last_row(const short_hash& key);
+    void delete_last_row(const short_hash& key);
 
     /**
      * Gets the output points, output values, corresponding input point
      * spends and the block heights associated with a Bitcoin address.
      * The returned history is a list of rows and a stop index.
      */
-    BCB_API history_list get(const short_hash& key,
-        const size_t limit=0, const size_t from_height=0) const;
+    history_list get(const short_hash& key, const size_t limit=0,
+        const size_t from_height=0) const;
 
     /**
      * Synchonise with disk.
      */
-    BCB_API void sync();
+    void sync();
 
     /**
      * Return statistical info about the database.
      */
-    BCB_API history_statinfo statinfo() const;
+    history_statinfo statinfo() const;
 
 private:
     typedef htdb_record<short_hash> map_type;
