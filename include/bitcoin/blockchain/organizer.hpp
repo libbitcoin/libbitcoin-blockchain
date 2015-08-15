@@ -87,9 +87,7 @@ private:
     simple_chain& chain_;
     reorganize_subscriber::ptr subscriber_;
     block_detail_list process_queue_;
-
-    // TODO: use lock-free std::atomic_flag?
-    std::atomic<bool> stopped_;
+    bool stopped_;
 };
 
 // TODO: define in organizer (compat break).
