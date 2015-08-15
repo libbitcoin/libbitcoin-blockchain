@@ -100,7 +100,7 @@ public:
     void subscribe_reorganize(reorganize_handler handle_reorganize);
 
 private:
-    typedef std::atomic<size_t> seqlock_type;
+    typedef std::atomic<size_t> sequential_lock;
     typedef std::function<bool(uint64_t)> perform_read_functor;
 
     void initialize_lock(const std::string& prefix);
@@ -140,16 +140,14 @@ private:
     bool stopped();
 
     // Queue for writes to the blockchain.
-    async_strand strand_;
+    sequencer strand_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;
 
-    // seqlock used for writes.
-    seqlock_type seqlock_;
-
-    // TODO: use lock-free std::atomic_flag?
-    std::atomic<bool> stopped_;
+    // sequential lock used for writes.
+    sequential_lock seqlock_;
+    bool stopped_;
 
     // Main database core.
     db_paths db_paths_;
