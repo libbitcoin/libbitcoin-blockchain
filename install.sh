@@ -551,9 +551,9 @@ build_all()
 {
     build_from_tarball_boost $BOOST_URL $BOOST_ARCHIVE boost $PARALLEL $BOOST_OPTIONS
     build_from_github libbitcoin secp256k1 version3 $PARALLEL "$@" $SECP256K1_OPTIONS
-    build_from_github libbitcoin libbitcoin version2 $PARALLEL "$@" $BITCOIN_OPTIONS
+    build_from_github libbitcoin libbitcoin master $PARALLEL "$@" $BITCOIN_OPTIONS
     build_from_github libbitcoin libbitcoin-consensus version1 $PARALLEL "$@" $BITCOIN_CONSENSUS_OPTIONS
-    build_from_travis libbitcoin libbitcoin-blockchain version2 $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
+    build_from_travis libbitcoin libbitcoin-blockchain master $PARALLEL "$@" $BITCOIN_BLOCKCHAIN_OPTIONS
 }
 
 
