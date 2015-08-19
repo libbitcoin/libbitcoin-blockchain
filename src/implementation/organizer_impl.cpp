@@ -40,7 +40,7 @@ organizer_impl::organizer_impl(threadpool& pool, db_interface& database,
     checkpoint::sort(checkpoints_);
 }
 
-static size_t count_inputs(const block_type& block)
+static size_t count_inputs(const chain::block& block)
 {
     size_t total_inputs = 0;
     for (const auto& tx: block.transactions)

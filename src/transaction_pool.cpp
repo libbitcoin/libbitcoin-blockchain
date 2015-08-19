@@ -95,7 +95,7 @@ void transaction_pool::do_validate(const chain::transaction& tx,
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, index_list());
+        handle_validate(error::service_stopped, chain::index_list());
         return;
     }
 
@@ -115,7 +115,7 @@ void transaction_pool::validation_complete(const std::error_code& ec,
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, index_list());
+        handle_validate(error::service_stopped, chain::index_list());
         return;
     }
 
@@ -199,7 +199,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 {
     if (stopped())
     {
-        handle_fetch(error::service_stopped, transaction_type());
+        handle_fetch(error::service_stopped, chain::transaction());
         return;
     }
 
@@ -304,7 +304,7 @@ void transaction_pool::delete_confirmed(
 
     for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
-            try_delete(new_tx.hash());
+            try_delete_tx(new_tx.hash());
 }
 
 void transaction_pool::try_delete_tx(const hash_digest& hash)

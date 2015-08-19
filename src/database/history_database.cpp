@@ -157,11 +157,6 @@ history_list history_database::get(const short_hash& key,
             // value or checksum
             deserial.read_8_bytes_little_endian()
         };
-
-//        if (!istream)
-//            throw end_of_stream();
-
-        return result;
     };
 
     const index_type start = map_.lookup(key);

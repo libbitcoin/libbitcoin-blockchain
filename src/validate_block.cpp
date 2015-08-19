@@ -27,7 +27,7 @@
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/checkpoints.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 #ifdef WITH_CONSENSUS
@@ -73,7 +73,7 @@ if (stopped()) \
     return error::service_stopped
 
 // The nullptr option is for backward compatibility only.
-validate_block::validate_block(size_t height, const block_type& block,
+validate_block::validate_block(size_t height, const chain::block& block,
     const config::checkpoint::list& checks, stopped_callback callback)
   : height_(height),
     current_block_(block),
@@ -152,12 +152,12 @@ std::error_code validate_block::check_block() const
     return error::success;
 }
 
-bool validate_block::is_distinct_tx_set(const transaction_list& txs)
+bool validate_block::is_distinct_tx_set(const chain::transaction::list& txs)
 {
     // We test distinctness by transaction hash.
-    const auto hasher = [](const transaction_type& transaction)
+    const auto hasher = [](const chain::transaction& transaction)
     {
-        return hash_transaction(transaction);
+        return transaction.hash();
     };
 
     std::vector<hash_digest> hashes(txs.size());
@@ -255,7 +255,7 @@ size_t validate_block::legacy_sigops_count(const chain::transaction& tx)
     return total_sigs;
 }
 
-size_t validate_block::legacy_sigops_count(const transaction_list& txs)
+size_t validate_block::legacy_sigops_count(const chain::transaction::list& txs)
 {
     size_t total_sigs = 0;
     for (const auto& tx: txs)
@@ -279,6 +279,7 @@ std::error_code validate_block::accept_block() const
 
     // Txs should be final when included in a block.
     for (const auto& tx: current_block_.transactions)
+    {
         if (!tx.is_final(height_, header.timestamp))
             return error::non_final_transaction;
 
@@ -368,7 +369,7 @@ uint32_t validate_block::work_required() const
 }
 
 bool validate_block::is_valid_coinbase_height(size_t height, 
-    const block_type& block)
+    const chain::block& block)
 {
     // There are old blocks with version incorrectly set to 2. Ignore them.
     if (height < max_version1_height)
@@ -523,7 +524,7 @@ size_t script_hash_signature_operations_count(
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const chain::transaction& current_tx, size_t input_index
+    const chain::transaction& current_tx, size_t input_index,
     uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());

@@ -167,7 +167,7 @@ bool validate_block_impl::orphan_is_spent(
         const auto& transactions = orphan_block.transactions;
 
         BITCOIN_ASSERT(!transactions.empty());
-        BITCOIN_ASSERT(is_coinbase(transactions.front()));
+        BITCOIN_ASSERT(transactions.front().is_coinbase());
 
         for (size_t tx_index = 0; tx_index < transactions.size();
             ++tx_index)

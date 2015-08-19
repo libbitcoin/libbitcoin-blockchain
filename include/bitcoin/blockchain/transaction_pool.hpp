@@ -69,7 +69,7 @@ public:
         const chain::index_list&)> validate_handler;
     typedef std::function<void (const std::error_code&,
         const chain::transaction&)> fetch_handler;
-    typedef std::function<void (bool)> exists_handler;
+    typedef std::function<void (const std::error_code&, bool)> exists_handler;
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
     transaction_pool(threadpool& pool, blockchain& chain,
