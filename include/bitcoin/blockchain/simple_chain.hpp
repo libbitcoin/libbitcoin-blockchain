@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 // The actual blockchain is encapsulated by this.
 class BCB_API simple_chain
@@ -45,7 +45,7 @@ public:
 // TODO: define in simple_chain (compat break).
 typedef std::shared_ptr<simple_chain> simple_chain_ptr;
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

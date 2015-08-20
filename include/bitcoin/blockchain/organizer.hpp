@@ -25,12 +25,13 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/block_info.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/orphans_pool.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 /**
  * Dependency graph:
@@ -93,7 +94,7 @@ private:
 // TODO: define in organizer (compat break).
 typedef std::shared_ptr<organizer> organizer_ptr;
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

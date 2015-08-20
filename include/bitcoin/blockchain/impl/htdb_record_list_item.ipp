@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_HTDB_RECORD_LIST_ITEM_IPP
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 /**
  * Item for htdb_record. A chained list with the key included.
@@ -82,7 +82,7 @@ index_type htdb_record_list_item<HashType>::create(
     serial.write_data(key);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
     return index_;
 }
 
@@ -117,7 +117,7 @@ void htdb_record_list_item<HashType>::write_next_index(index_type next)
     auto serial = make_serializer(next_data);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
 }
 
 template <typename HashType>
@@ -136,8 +136,7 @@ uint8_t* htdb_record_list_item<HashType>::raw_next_data() const
     return raw_data(next_begin);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

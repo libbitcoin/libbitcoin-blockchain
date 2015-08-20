@@ -22,7 +22,7 @@
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t bitfield_size = 4;
 
@@ -84,11 +84,11 @@ stealth_list stealth_database::scan(const binary_type& prefix,
     return result;
 }
 
-void stealth_database::store(const script_type& stealth_script,
+void stealth_database::store(const chain::script& stealth_script,
     const stealth_row& row)
 {
     // Create prefix.
-    const auto prefix = calculate_stealth_prefix(stealth_script);
+    const auto prefix = wallet::calculate_stealth_prefix(stealth_script);
     BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
 
     // Allocate new row.
@@ -125,7 +125,7 @@ void stealth_database::write_index()
     auto serial = make_serializer(data);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(block_start_);
+    serial.write_4_bytes_little_endian(block_start_);
 
     // Synchronise data.
     index_.sync();
@@ -141,6 +141,5 @@ index_type stealth_database::read_index(size_t from_height) const
     return from_little_endian_unsafe<index_type>(record);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

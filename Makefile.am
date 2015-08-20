@@ -35,12 +35,14 @@ lib_LTLIBRARIES = src/libbitcoin-blockchain.la
 src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
+    src/block.cpp \
     src/block_detail.cpp \
     src/blockchain.cpp \
     src/checkpoint.cpp \
     src/db_interface.cpp \
     src/fetch_block.cpp \
     src/fetch_block_locator.cpp \
+    src/genesis_block.cpp \
     src/organizer.cpp \
     src/orphans_pool.cpp \
     src/transaction_pool.cpp \
@@ -282,15 +284,19 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
+    include/bitcoin/blockchain/block.hpp \
     include/bitcoin/blockchain/block_detail.hpp \
+    include/bitcoin/blockchain/block_info.hpp \
     include/bitcoin/blockchain/blockchain.hpp \
     include/bitcoin/blockchain/checkpoint.hpp \
     include/bitcoin/blockchain/db_interface.hpp \
     include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/fetch_block.hpp \
     include/bitcoin/blockchain/fetch_block_locator.hpp \
+    include/bitcoin/blockchain/genesis_block.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphans_pool.hpp \
+    include/bitcoin/blockchain/pointer_array_source.hpp \
     include/bitcoin/blockchain/settings.hpp \
     include/bitcoin/blockchain/simple_chain.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \

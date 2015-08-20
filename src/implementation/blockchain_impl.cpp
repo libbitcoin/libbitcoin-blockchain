@@ -34,7 +34,7 @@
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
@@ -105,22 +105,24 @@ void blockchain_impl::start_write()
     BITCOIN_ASSERT(seqlock_ % 2 == 1);
 }
 
-void blockchain_impl::store(const block_type& block,
+void blockchain_impl::store(const chain::block& block,
     store_block_handler handle_store)
 {
     strand_.randomly_queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
-void blockchain_impl::do_store(const block_type& block,
+void blockchain_impl::do_store(const chain::block& block,
     store_block_handler handle_store)
 {
     if (stopped())
         return;
 
     start_write();
+
     const auto stored_detail = std::make_shared<block_detail>(block);
-    const auto height = chain_.find_height(hash_block_header(block.header));
+    const auto height = chain_.find_height(block.header.hash());
+
     if (height != simple_chain::null_height)
     {
         const auto info = block_info{ block_status::confirmed, height };
@@ -140,7 +142,7 @@ void blockchain_impl::do_store(const block_type& block,
     stop_write(handle_store, stored_detail->error(), stored_detail->info());
 }
 
-void blockchain_impl::import(const block_type& block,
+void blockchain_impl::import(const chain::block& block,
     import_block_handler handle_import)
 {
     const auto do_import = [this, block, handle_import]()
@@ -179,12 +181,15 @@ void blockchain_impl::fetch_block_header(uint64_t height,
     {
         const auto result = interface_.blocks.get(height);
         if (!result)
+        {
             return finish_fetch(slock, handle_fetch,
-                error::not_found, block_header_type());
+                error::not_found, chain::block_header());
+        }
 
         return finish_fetch(slock, handle_fetch,
             error::success, result.header());
     };
+
     fetch(do_fetch);
 }
 
@@ -195,12 +200,15 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     {
         const auto result = interface_.blocks.get(hash);
         if (!result)
+        {
             return finish_fetch(slock, handle_fetch,
-                error::not_found, block_header_type());
+                error::not_found, chain::block_header());
+        }
 
         return finish_fetch(slock, handle_fetch,
             error::success, result.header());
     };
+
     fetch(do_fetch);
 }
 
@@ -262,9 +270,12 @@ void blockchain_impl::fetch_transaction(
     const auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
         const auto result = interface_.transactions.get(hash);
+
         if (!result)
+        {
             return finish_fetch(slock, handle_fetch,
-                error::not_found, transaction_type());
+                error::not_found, chain::transaction());
+        }
 
         return finish_fetch(slock, handle_fetch,
             error::success, result.transaction());
@@ -289,24 +300,28 @@ void blockchain_impl::fetch_transaction_index(
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_spend(const output_point& outpoint,
+void blockchain_impl::fetch_spend(const chain::output_point& outpoint,
     fetch_handler_spend handle_fetch)
 {
     const auto do_fetch = [this, outpoint, handle_fetch](size_t slock)
     {
         const auto result = interface_.spends.get(outpoint);
+
         if (!result)
+        {
             return finish_fetch(slock, handle_fetch,
-                error::unspent_output, input_point());
+                error::unspent_output, chain::input_point());
+        }
 
         return finish_fetch(slock, handle_fetch,
-            error::success, input_point{result.hash(), result.index()});
+            error::success, chain::input_point{result.hash(), result.index()});
     };
+
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_history(const payment_address& address,
-    fetch_handler_history handle_fetch, const uint64_t limit, 
+void blockchain_impl::fetch_history(const wallet::payment_address& address,
+    fetch_handler_history handle_fetch, const uint64_t limit,
     const uint64_t from_height)
 {
     const auto do_fetch = [this, address, handle_fetch, limit, from_height](
@@ -316,6 +331,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
             from_height);
         return finish_fetch(slock, handle_fetch, error::success, history);
     };
+
     fetch(do_fetch);
 }
 
@@ -328,8 +344,9 @@ void blockchain_impl::fetch_stealth(const binary_type& prefix,
         const auto stealth = interface_.stealth.scan(prefix, from_height);
         return finish_fetch(slock, handle_fetch, error::success, stealth);
     };
+
     fetch(do_fetch);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

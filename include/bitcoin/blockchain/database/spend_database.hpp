@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API spend_result
 {
@@ -83,17 +83,18 @@ public:
     /**
      * Get input spend of an output point.
      */
-    spend_result get(const output_point& outpoint) const;
+    spend_result get(const chain::output_point& outpoint) const;
 
     /**
      * Store a spend in the database.
      */
-    void store(const output_point& outpoint, const input_point& spend);
+    void store(const chain::output_point& outpoint,
+        const chain::input_point& spend);
 
     /**
      * Delete outpoint spend item from database.
      */
-    void remove(const output_point& outpoint);
+    void remove(const chain::output_point& outpoint);
 
     /**
      * Synchronise storage with disk so things are consistent.
@@ -116,8 +117,7 @@ private:
     map_type map_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

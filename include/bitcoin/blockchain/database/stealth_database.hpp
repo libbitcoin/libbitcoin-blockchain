@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API stealth_database
 {
@@ -54,7 +54,8 @@ public:
     /**
      * Add a stealth row to the database.
      */
-    void store(const script_type& stealth_script, const stealth_row& row);
+    BCB_API void store(const chain::script& stealth_script,
+        const stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.
@@ -83,7 +84,7 @@ private:
     record_allocator rows_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

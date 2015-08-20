@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 typedef uint8_t* record_type;
 typedef disk_array<index_type, index_type> htdb_record_header;
@@ -111,8 +111,7 @@ private:
     const size_t record_size_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

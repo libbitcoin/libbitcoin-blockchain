@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename IndexType, typename ValueType>
 disk_array<IndexType, ValueType>::disk_array(mmfile& file, 
@@ -101,8 +101,7 @@ uint8_t* disk_array<IndexType, ValueType>::data(position_type position) const
     return file_.data() + sector_start_ + position;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

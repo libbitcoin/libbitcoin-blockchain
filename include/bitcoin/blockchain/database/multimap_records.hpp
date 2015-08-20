@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/htdb_record.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 template <typename HashType>
 BC_CONSTEXPR size_t map_record_fsize_multimap()
@@ -141,10 +141,9 @@ private:
     linked_records& linked_rows_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #include <bitcoin/blockchain/impl/multimap_records.ipp>
 
 #endif
-

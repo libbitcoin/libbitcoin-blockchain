@@ -22,7 +22,7 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 linked_records::linked_records(record_allocator& allocator)
   : allocator_(allocator)
@@ -48,7 +48,7 @@ index_type linked_records::insert(index_type next)
     auto serial = make_serializer(data);
 
     // MUST BE ATOMIC ???
-    serial.write_4_bytes(next);
+    serial.write_4_bytes_little_endian(next);
     return record;
 }
 
@@ -63,6 +63,5 @@ record_type linked_records::get(index_type index) const
     return allocator_.get(index) + sizeof(index_type);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

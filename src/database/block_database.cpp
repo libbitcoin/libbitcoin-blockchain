@@ -20,11 +20,13 @@
 #include <bitcoin/blockchain/database/block_database.hpp>
 
 #include <boost/filesystem.hpp>
+//#include <boost/iostreams/stream.hpp>
 #include <bitcoin/bitcoin.hpp>
+//#include <bitcoin/blockchain/pointer_array_source.hpp>
 #include <bitcoin/blockchain/database/slab_allocator.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t number_buckets = 600000;
 BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(number_buckets);
@@ -42,16 +44,30 @@ BC_CONSTEXPR position_type allocator_offset = header_size;
 //  [ [ tx_hash:32 ] ]
 //  [ [    ...     ] ]
 
+//chain::block_header deserialize_header(const slab_type begin, uint64_t length)
+//{
+//    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
+//    istream.exceptions(std::ios_base::failbit);
+//    chain::block_header header;
+//    header.from_data(istream);
+//
+////    if (!istream)
+////        throw end_of_stream();
+//
+//    return header;
+//}
+
 template <typename Iterator>
-block_header_type deserialize(const Iterator first)
+chain::block_header deserialize_header(const Iterator first)
 {
-    block_header_type header;
-    satoshi_load<Iterator, false>(first, nullptr, header);
+    chain::block_header header;
+    auto deserial = make_deserializer_unsafe(first);
+    header.from_data(deserial, false);
     return header;
 }
 
-block_result::block_result(const slab_type slab)
-  : slab_(slab)
+block_result::block_result(const slab_type slab, uint64_t size_limit)
+  : slab_(slab), size_limit_(size_limit)
 {
 }
 
@@ -60,10 +76,11 @@ block_result::operator bool() const
     return slab_ != nullptr;
 }
 
-block_header_type block_result::header() const
+chain::block_header block_result::header() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
-    return deserialize(slab_);
+//    return deserialize_header(slab_, size_limit_);
+    return deserialize_header(slab_);
 }
 
 size_t block_result::height() const
@@ -119,20 +136,20 @@ void block_database::start()
 block_result block_database::get(const size_t height) const
 {
     if (height >= index_.count())
-        return block_result(nullptr);
+        return block_result(nullptr, 0);
 
     const auto position = read_position(height);
     const auto slab = allocator_.get(position);
-    return block_result(slab);
+    return block_result(slab, allocator_.to_eof(slab));
 }
 
 block_result block_database::get(const hash_digest& hash) const
 {
     const auto slab = map_.get(hash);
-    return block_result(slab);
+    return block_result(slab, allocator_.to_eof(slab));
 }
 
-void block_database::store(const block_type& block)
+void block_database::store(const chain::block& block)
 {
     const uint32_t height = index_.count();
     const auto number_txs = block.transactions.size();
@@ -141,18 +158,20 @@ void block_database::store(const block_type& block)
     // Write block data.
     const auto write = [&](uint8_t* data)
     {
-        satoshi_save(block.header, data);
-        auto serial = make_serializer(data + 80);
-        serial.write_4_bytes(height);
-        serial.write_4_bytes(number_txs32);
+        auto serial = make_serializer(data);
+        data_chunk header_data = block.header.to_data(false);
+        serial.write_data(header_data);
+        serial.write_4_bytes_little_endian(height);
+        serial.write_4_bytes_little_endian(number_txs32);
+
         for (const auto& tx: block.transactions)
         {
-            const auto tx_hash = hash_transaction(tx);
+            const auto tx_hash = tx.hash();
             serial.write_hash(tx_hash);
         }
     };
 
-    const auto key = hash_block_header(block.header);
+    const auto key = block.header.hash();
     const auto value_size = 80 + 4 + 4 + number_txs * hash_size;
     const auto position = map_.store(key, write, value_size);
 
@@ -186,7 +205,7 @@ void block_database::write_position(const position_type position)
     auto serial = make_serializer(data);
 
     // MUST BE ATOMIC ???
-    serial.write_8_bytes(position);
+    serial.write_8_bytes_little_endian(position);
 }
 
 position_type block_database::read_position(const index_type index) const
@@ -195,6 +214,5 @@ position_type block_database::read_position(const index_type index) const
     return from_little_endian_unsafe<position_type>(record);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

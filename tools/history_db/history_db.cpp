@@ -3,7 +3,7 @@
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -75,11 +75,13 @@ bool parse_point(Point& point, const std::string& arg)
         return false;
     }
     const std::string& hex_string = strs[0];
-    if (!decode_hash(point.hash, hex_string))
+    hash_digest hash;
+    if (!decode_hash(hash, hex_string))
     {
         std::cerr << "history_db: bad point provided." << std::endl;
         return false;
     }
+    point.hash = hash;
     const std::string& index_string = strs[1];
     try
     {
@@ -95,13 +97,16 @@ bool parse_point(Point& point, const std::string& arg)
 
 bool parse_key(short_hash& key, const std::string& arg)
 {
-    payment_address payaddr;
-    if (!payaddr.set_encoded(arg))
+    wallet::payment_address payaddr;
+
+    if (!payaddr.from_string(arg))
     {
         std::cerr << "history_db: bad KEY." << std::endl;
         return false;
     }
+
     key = payaddr.hash();
+
     return true;
 }
 
@@ -170,7 +175,7 @@ int main(int argc, char** argv)
         short_hash key;
         if (!parse_key(key, args[0]))
             return -1;
-        output_point outpoint;
+        chain::output_point outpoint;
         if (!parse_point(outpoint, args[1]))
             return -1;
         uint32_t output_height;
@@ -194,10 +199,10 @@ int main(int argc, char** argv)
         short_hash key;
         if (!parse_key(key, args[0]))
             return -1;
-        output_point previous;
+        chain::output_point previous;
         if (!parse_point(previous, args[1]))
             return -1;
-        input_point spend;
+        chain::input_point spend;
         if (!parse_point(spend, args[2]))
             return -1;
         uint32_t spend_height;
@@ -249,8 +254,9 @@ int main(int argc, char** argv)
                 std::cout << "OUTPUT: ";
             else //if (row.id == point_ident::spend)
                 std::cout << "SPEND:  ";
-            std::cout << encode_hash(row.point.hash) << ":" << row.point.index
-                << " " << row.height << " " << row.value << std::endl;
+            std::cout << encode_hash(row.point.hash) << ":"
+                << row.point.index << " " << row.height << " " << row.value
+                << std::endl;
         }
         return 0;
     }

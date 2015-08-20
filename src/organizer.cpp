@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/block.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -30,7 +31,7 @@
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 organizer::organizer(threadpool& pool, orphans_pool& orphans,
     simple_chain& chain)
@@ -81,8 +82,10 @@ void organizer::process(block_detail_ptr process_block)
     // Trace the chain in the orphan pool
     auto orphan_chain = orphans_.trace(process_block);
     BITCOIN_ASSERT(orphan_chain.size() >= 1);
+
     const auto& hash = orphan_chain[0]->actual().header.previous_block_hash;
     const auto fork_index = chain_.find_height(hash);
+
     if (fork_index != simple_chain::null_height)
         replace_chain(fork_index, orphan_chain);
 
@@ -105,7 +108,7 @@ void organizer::replace_chain(size_t fork_index,
             if (ec != error::service_stopped)
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
-                const auto block_hash = encode_hash(hash_block_header(header));
+                const auto block_hash = encode_hash(header.hash());
                 log_warning(LOG_VALIDATE)
                     << "Invalid block [" << block_hash << "] " << ec.message();
             }
@@ -235,5 +238,5 @@ void organizer::notify_stop()
         blockchain::block_list(), blockchain::block_list());
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

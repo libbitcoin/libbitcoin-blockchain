@@ -30,7 +30,7 @@
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
 
@@ -66,8 +66,8 @@ public:
     void create();
     void start();
 
-    void push(const block_type& block);
-    block_type pop();
+    void push(const chain::block& block);
+    chain::block pop();
 
     block_database blocks;
     spend_database spends;
@@ -80,20 +80,20 @@ public:
 private:
     void push_inputs(
         const hash_digest& tx_hash, const size_t block_height,
-        const transaction_input_list& inputs);
+        const chain::transaction_input::list& inputs);
     void push_outputs(
         const hash_digest& tx_hash, const size_t block_height,
-        const transaction_output_list& outputs);
+        const chain::transaction_output::list& outputs);
     void push_stealth_outputs(
         const hash_digest& tx_hash,
-        const transaction_output_list& outputs);
+        const chain::transaction_output::list& outputs);
 
     void pop_inputs(
         const size_t block_height,
-        const transaction_input_list& inputs);
+        const chain::transaction_input::list& inputs);
     void pop_outputs(
         const size_t block_height,
-        const transaction_output_list& outputs);
+        const chain::transaction_output::list& outputs);
 
     const db_active_heights active_heights_;
 };
@@ -105,7 +105,7 @@ BCB_API bool initialize_blockchain(const boost::filesystem::path& prefix);
 
 BCB_API bool touch_file(const boost::filesystem::path& file);
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

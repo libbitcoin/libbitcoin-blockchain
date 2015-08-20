@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -84,18 +84,18 @@ bool transaction_pool::stopped()
     return stopped_;
 }
 
-void transaction_pool::validate(const transaction_type& tx,
+void transaction_pool::validate(const chain::transaction& tx,
     validate_handler handle_validate)
 {
     strand_.queue(&transaction_pool::do_validate,
         this, tx, handle_validate);
 }
-void transaction_pool::do_validate(const transaction_type& tx,
+void transaction_pool::do_validate(const chain::transaction& tx,
     validate_handler handle_validate)
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, index_list());
+        handle_validate(error::service_stopped, chain::index_list());
         return;
     }
 
@@ -106,16 +106,16 @@ void transaction_pool::do_validate(const transaction_type& tx,
 
     validate->start(
         strand_.wrap(&transaction_pool::validation_complete,
-            this, _1, _2, hash_transaction(tx), handle_validate));
+            this, _1, _2, tx.hash(), handle_validate));
 }
 
-void transaction_pool::validation_complete(
-    const std::error_code& ec, const index_list& unconfirmed,
-    const hash_digest& tx_hash, validate_handler handle_validate)
+void transaction_pool::validation_complete(const std::error_code& ec,
+    const chain::index_list& unconfirmed, const hash_digest& tx_hash,
+    validate_handler handle_validate)
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, index_list());
+        handle_validate(error::service_stopped, chain::index_list());
         return;
     }
 
@@ -131,13 +131,13 @@ void transaction_pool::validation_complete(
     if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handle_validate(ec, index_list());
+        handle_validate(ec, chain::index_list());
         return;
     }
 
     // Re-check as another transaction might have been added in the interim.
     if (tx_exists(tx_hash))
-        handle_validate(error::duplicate, index_list());
+        handle_validate(error::duplicate, chain::index_list());
     else
         handle_validate(error::success, unconfirmed);
 }
@@ -157,7 +157,7 @@ pool_buffer::const_iterator transaction_pool::tx_find(const hash_digest& hash)
     return std::find_if(buffer_.begin(), buffer_.end(), found);
 }
 
-void transaction_pool::store(const transaction_type& tx,
+void transaction_pool::store(const chain::transaction& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     // We can pretend we did it here.
@@ -176,14 +176,14 @@ void transaction_pool::store(const transaction_type& tx,
         }
 
         // We store a precomputed tx hash to make lookups faster.
-        buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
+        buffer_.push_back({ tx.hash(), tx, handle_confirm });
 
         log_debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
     };
 
     const auto wrap_validate = [this, store_transaction, handle_validate]
-        (const std::error_code& ec, const index_list& unconfirmed)
+        (const std::error_code& ec, const chain::index_list& unconfirmed)
     {
         if (!ec)
             store_transaction();
@@ -199,7 +199,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 {
     if (stopped())
     {
-        handle_fetch(error::service_stopped, transaction_type());
+        handle_fetch(error::service_stopped, chain::transaction());
         return;
     }
 
@@ -208,7 +208,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
         const auto it = tx_find(transaction_hash);
         if (it == buffer_.end())
         {
-            handle_fetch(error::not_found, transaction_type());
+            handle_fetch(error::not_found, chain::transaction());
             return;
         }
 
@@ -304,7 +304,7 @@ void transaction_pool::delete_confirmed(
 
     for (const auto new_block: new_blocks)
         for (const auto& new_tx: new_block->transactions)
-            try_delete_tx(hash_transaction(new_tx));
+            try_delete_tx(new_tx.hash());
 }
 
 void transaction_pool::try_delete_tx(const hash_digest& hash)
@@ -334,6 +334,5 @@ void transaction_pool::set_capacity(size_t capacity)
     buffer_.set_capacity(capacity);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

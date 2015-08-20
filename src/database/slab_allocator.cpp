@@ -23,7 +23,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 slab_allocator::slab_allocator(mmfile& file, position_type sector_start)
   : file_(file), start_(sector_start), size_(0)
@@ -63,6 +63,23 @@ slab_type slab_allocator::get(position_type position) const
     return data(position);
 }
 
+
+// retrieve eof/memory boundary
+uint64_t slab_allocator::to_eof(slab_type slab) const
+{
+    uint64_t result = 0;
+
+    if (slab > file_.data())
+    {
+        uint64_t offset_position = (slab - file_.data());
+
+        if (offset_position < file_.size())
+            result = file_.size() - offset_position;
+    }
+
+    return result;
+}
+
 // File data access, by byte-wise position relative to start.
 uint8_t* slab_allocator::data(const position_type position) const
 {
@@ -96,6 +113,5 @@ void slab_allocator::write_size()
     serial.write_little_endian(size_);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

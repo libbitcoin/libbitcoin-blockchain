@@ -21,20 +21,20 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 BOOST_AUTO_TEST_SUITE(validate_block)
 
 class validate_block_fixture
-  : public bc::chain::validate_block
+  : public bc::blockchain::validate_block
 {
 public:
     validate_block_fixture()
-        : validate_block(0, block_type(), config::checkpoint::list())
+        : validate_block(0, chain::block(), config::checkpoint::list())
     {
     }
 
-    validate_block_fixture(size_t height, const block_type& block,
+    validate_block_fixture(size_t height, const chain::block& block,
         const config::checkpoint::list& checks)
       : validate_block(height, block, checks)
     {
@@ -62,26 +62,26 @@ public:
         return false;
     }
 
-    bool is_output_spent(const output_point& outpoint) const
+    bool is_output_spent(const chain::output_point& outpoint) const
     {
         return false;
     }
 
-    bool fetch_transaction(transaction_type& tx,
+    bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const
     {
         return false;
     }
 
-    bool is_output_spent(const output_point& previous_output,
+    bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const
     {
         return false;
     }
 
-    block_header_type fetch_block(size_t fetch_height) const
+    chain::block_header fetch_block(size_t fetch_height) const
     {
-        return block_header_type();
+        return chain::block_header();
     }
 
     // protected virtuals (accessors)
@@ -103,7 +103,7 @@ public:
     //{
     //}
 
-    static bool is_distinct_tx_set(const transaction_list& txs)
+    static bool is_distinct_tx_set(const chain::transaction::list& txs)
     {
         return validate_block::is_distinct_tx_set(txs);
     }
@@ -127,30 +127,30 @@ BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__empty__true)
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__single__true)
 {
-    const transaction_type tx1{ 1, 0 };
+    const chain::transaction tx1{ 1, 0 };
     BOOST_REQUIRE(validate_block_fixture::is_distinct_tx_set({ tx1 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__duplicate__false)
 {
-    const transaction_type tx1{ 1, 0 };
-    const transaction_type tx2{ 1, 0 };
+    const chain::transaction tx1{ 1, 0 };
+    const chain::transaction tx2{ 1, 0 };
     BOOST_REQUIRE(!validate_block_fixture::is_distinct_tx_set({ tx1, tx2 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__distinct_by_version__true)
 {
-    const transaction_type tx1{ 1, 0 };
-    const transaction_type tx2{ 2, 0 };
-    const transaction_type tx3{ 3, 0 };
+    const chain::transaction tx1{ 1, 0 };
+    const chain::transaction tx2{ 2, 0 };
+    const chain::transaction tx3{ 3, 0 };
     BOOST_REQUIRE(validate_block_fixture::is_distinct_tx_set({ tx1, tx2, tx3 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__partialy_distinct_by_version__false)
 {
-    const transaction_type tx1{ 1, 0 };
-    const transaction_type tx2{ 2, 0 };
-    const transaction_type tx3{ 2, 0 };
+    const chain::transaction tx1{ 1, 0 };
+    const chain::transaction tx2{ 2, 0 };
+    const chain::transaction tx3{ 2, 0 };
     BOOST_REQUIRE(!validate_block_fixture::is_distinct_tx_set({ tx1, tx2, tx3 }));
 }
 

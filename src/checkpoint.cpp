@@ -21,10 +21,10 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 #ifdef ENABLE_TESTNET
 const config::checkpoint::list checkpoint::defaults

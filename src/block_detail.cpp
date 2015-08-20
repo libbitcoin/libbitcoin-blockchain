@@ -22,28 +22,31 @@
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
-block_detail::block_detail(const block_type& actual_block)
-  : block_hash_(hash_block_header(actual_block.header)),
-    processed_(false), info_({ block_status::orphan, 0 }),
-    actual_block_(std::make_shared<block_type>(actual_block))
-{
-}
-block_detail::block_detail(const block_header_type& actual_block_header)
-  : block_detail(block_type{ actual_block_header, {} })
+block_detail::block_detail(const chain::block& actual_block)
+  : block_hash_(actual_block.header.hash()), processed_(false),
+    info_({ block_status::orphan, 0 }),
+    actual_block_(std::make_shared<chain::block>(actual_block))
 {
 }
 
-block_type& block_detail::actual()
+block_detail::block_detail(const chain::block_header& actual_block_header)
+  : block_detail(chain::block{ actual_block_header, {} })
+{
+}
+
+chain::block& block_detail::actual()
 {
     return *actual_block_;
 }
-const block_type& block_detail::actual() const
+
+const chain::block& block_detail::actual() const
 {
     return *actual_block_;
 }
-std::shared_ptr<block_type> block_detail::actual_ptr() const
+
+std::shared_ptr<chain::block> block_detail::actual_ptr() const
 {
     return actual_block_;
 }
@@ -66,6 +69,7 @@ void block_detail::set_info(const block_info& replace_info)
 {
     info_ = replace_info;
 }
+
 const block_info& block_detail::info() const
 {
     return info_;
@@ -75,10 +79,11 @@ void block_detail::set_error(const std::error_code& code)
 {
     code_ = code;
 }
+
 const std::error_code& block_detail::error() const
 {
     return code_;
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

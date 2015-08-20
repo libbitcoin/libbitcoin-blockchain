@@ -30,7 +30,7 @@
     "Failed to initialize blockchain files.\n"
 
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 using namespace boost::filesystem;
 using namespace boost::system;
 using boost::format;
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     db_interface interface(paths, {0});
 
     interface.start();
-    const block_type genesis = genesis_block();
+    const chain::block genesis = genesis_block();
     interface.push(genesis);
 
     return 0;

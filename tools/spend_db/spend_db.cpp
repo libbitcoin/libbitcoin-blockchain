@@ -2,8 +2,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -68,11 +69,13 @@ bool parse_point(Point& point, const std::string& arg)
         return false;
     }
     const std::string& hex_string = strs[0];
-    if (!decode_hash(point.hash, hex_string))
+    hash_digest hash;
+    if (!decode_hash(hash, hex_string))
     {
         std::cerr << "spend_db: bad point provided." << std::endl;
         return false;
     }
+    point.hash = hash;
     const std::string& index_string = strs[1];
     try
     {
@@ -88,13 +91,16 @@ bool parse_point(Point& point, const std::string& arg)
 
 bool parse_key(short_hash& key, const std::string& arg)
 {
-    payment_address payaddr;
-    if (!payaddr.set_encoded(arg))
+    wallet::payment_address payaddr;
+
+    if (!payaddr.from_string(arg))
     {
         std::cerr << "spend_db: bad KEY." << std::endl;
         return false;
     }
+
     key = payaddr.hash();
+
     return true;
 }
 
@@ -158,16 +164,21 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        output_point outpoint;
+
+        chain::output_point outpoint;
+
         if (!parse_point(outpoint, args[0]))
             return -1;
+
         db.start();
         spend_result result = db.get(outpoint);
+
         if (!result)
         {
             std::cout << "Not found!" << std::endl;
             return -1;
         }
+
         std::cout << encode_hash(result.hash()) << ":"
             << result.index() << std::endl;
     }
@@ -178,12 +189,17 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        output_point outpoint;
+
+        chain::output_point outpoint;
+
         if (!parse_point(outpoint, args[0]))
             return -1;
-        input_point spend;
+
+        chain::input_point spend;
+
         if (!parse_point(spend, args[1]))
             return -1;
+
         db.start();
         db.store(outpoint, spend);
         db.sync();
@@ -195,9 +211,12 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        output_point outpoint;
+
+        chain::output_point outpoint;
+
         if (!parse_point(outpoint, args[0]))
             return -1;
+
         db.start();
         db.remove(outpoint);
         db.sync();
@@ -209,6 +228,7 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
+
         db.start();
         auto info = db.statinfo();
         std::cout << "Buckets: " << info.buckets << std::endl;
@@ -219,8 +239,10 @@ int main(int argc, char** argv)
         std::cout << "spend_db: '" << command
             << "' is not a spend_db command. "
             << "See 'spend_db --help'." << std::endl;
+
         return -1;
     }
+
     return 0;
 }
 

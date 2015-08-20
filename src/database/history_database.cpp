@@ -20,9 +20,11 @@
 #include <bitcoin/blockchain/database/history_database.hpp>
 
 #include <boost/filesystem.hpp>
+//#include <boost/iostreams/stream.hpp>
+//#include <bitcoin/blockchain/pointer_array_source.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 constexpr size_t number_buckets = 97210744;
 BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
@@ -67,33 +69,33 @@ void history_database::start()
 }
 
 void history_database::add_output(
-    const short_hash& key, const output_point& outpoint,
+    const short_hash& key, const chain::output_point& outpoint,
     const uint32_t output_height, const uint64_t value)
 {
     auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
         serial.write_byte(0);
-        serial.write_hash(outpoint.hash);
-        serial.write_4_bytes(outpoint.index);
-        serial.write_4_bytes(output_height);
-        serial.write_8_bytes(value);
+        data_chunk raw_outpoint = outpoint.to_data();
+        serial.write_data(raw_outpoint);
+        serial.write_4_bytes_little_endian(output_height);
+        serial.write_8_bytes_little_endian(value);
     };
     map_.add_row(key, write);
 }
 
 void history_database::add_spend(
-    const short_hash& key, const output_point& previous,
-    const input_point& spend, const size_t spend_height)
+    const short_hash& key, const chain::output_point& previous,
+    const chain::input_point& spend, const size_t spend_height)
 {
     auto write = [&](uint8_t* data)
     {
         auto serial = make_serializer(data);
         serial.write_byte(1);
-        serial.write_hash(spend.hash);
-        serial.write_4_bytes(spend.index);
-        serial.write_4_bytes(spend_height);
-        serial.write_8_bytes(spend_checksum(previous));
+        data_chunk raw_spend = spend.to_data();
+        serial.write_data(raw_spend);
+        serial.write_4_bytes_little_endian(spend_height);
+        serial.write_8_bytes_little_endian(spend_checksum(previous));
     };
     map_.add_row(key, write);
 }
@@ -123,22 +125,40 @@ history_list history_database::get(const short_hash& key,
 
     // Read a row from the data into the history list.
     history_list history;
-    auto read_row = [&history](const uint8_t* data)
+    auto read_row = [&history](const uint8_t* data/*, std::streamsize length*/)
     {
+//        boost::iostreams::stream<byte_pointer_array_source> istream(data, length);
+//        istream.exceptions(std::ios_base::failbit);
+//
+//        history_row result{
+//            // output or spend?
+//            marker_to_id(read_byte(istream)),
+//            // point
+//            chain::point::factory_from_data(istream),
+//            // height
+//            read_4_bytes(istream),
+//            // value or checksum
+//            read_8_bytes(istream)
+//        };
+//
+////        if (!istream)
+////            throw end_of_stream();
+//
+//        return result;
+
         auto deserial = make_deserializer_unsafe(data);
-        return history_row
-        {
+        return history_row {
             // output or spend?
             marker_to_id(deserial.read_byte()),
             // point
-            deserial.read_hash(),
-            deserial.read_4_bytes(),
+            chain::point::factory_from_data(deserial),
             // height
-            deserial.read_4_bytes(),
+            deserial.read_4_bytes_little_endian(),
             // value or checksum
-            deserial.read_8_bytes()
+            deserial.read_8_bytes_little_endian()
         };
     };
+
     const index_type start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
     {
@@ -150,7 +170,7 @@ history_list history_database::get(const short_hash& key,
         if (from_height && read_height(data) < from_height)
             continue;
         // Read this row into the list.
-        history.emplace_back(read_row(data));
+        history.emplace_back(read_row(data /*, value_size*/));
     }
 
     return history;
@@ -172,6 +192,5 @@ history_statinfo history_database::statinfo() const
     };
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
-

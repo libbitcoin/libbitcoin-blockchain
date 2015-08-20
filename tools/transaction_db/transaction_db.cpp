@@ -2,8 +2,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
-using namespace bc::chain;
+using namespace bc::blockchain;
 
 void show_help()
 {
@@ -125,8 +126,7 @@ int main(int argc, char** argv)
         std::cout << "height: " << result.height() << std::endl;
         std::cout << "index: " << result.index() << std::endl;
         auto tx = result.transaction();
-        data_chunk data(satoshi_raw_size(tx));
-        satoshi_save(tx, data.begin());
+        data_chunk data = tx.to_data();
         std::cout << "tx: " << encode_base16(data) << std::endl;
     }
     else if (command == "store")
@@ -142,8 +142,11 @@ int main(int argc, char** argv)
         if (!parse_uint(info.index, args[1]))
             return -1;
         data_chunk data = decode_hex(args[2]);
-        transaction_type tx;
-        satoshi_load(data.begin(), data.end(), tx);
+        chain::transaction tx;
+
+        if (!tx.from_data(data))
+            throw end_of_stream();
+
         db.start();
         db.store(info, tx);
         db.sync();

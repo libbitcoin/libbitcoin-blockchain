@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/database/mmfile.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 typedef uint8_t* slab_type;
 typedef disk_array<index_type, position_type> htdb_slab_header;
@@ -75,6 +75,11 @@ public:
      */
     slab_type get(position_type position) const;
 
+    /**
+     * Return distance from slab to eof providing a read boundary.
+     */
+    BCB_API uint64_t to_eof(slab_type slab) const;
+
 private:
     /// File data access, by byte-wise position relative to start.
     uint8_t* data(const position_type position) const;
@@ -93,8 +98,7 @@ private:
     position_type size_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

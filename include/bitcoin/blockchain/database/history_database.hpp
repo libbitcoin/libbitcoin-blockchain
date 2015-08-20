@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/database/multimap_records.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 struct BCB_API history_statinfo
 {
@@ -64,15 +64,15 @@ public:
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    void add_output(const short_hash& key, const output_point& outpoint,
+    void add_output(const short_hash& key, const chain::output_point& outpoint,
         const uint32_t output_height, const uint64_t value);
 
     /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
-    void add_spend(const short_hash& key, const output_point& previous,
-        const input_point& spend, const size_t spend_height);
+    void add_spend(const short_hash& key, const chain::output_point& previous,
+        const chain::input_point& spend, const size_t spend_height);
 
     /**
      * Delete the last row that was added to key.
@@ -115,8 +115,7 @@ private:
     multimap_type map_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

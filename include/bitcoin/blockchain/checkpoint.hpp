@@ -25,7 +25,7 @@
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 class BCB_API checkpoint
 {
@@ -37,7 +37,7 @@ public:
         const config::checkpoint::list& checks);
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
