@@ -64,7 +64,14 @@ int main(int argc, char** argv)
         show_usage();
         return -1;
     }
-    const data_chunk key_data = decode_hex(argv[1]);
+
+    data_chunk key_data;
+    if (!decode_base16(key_data, argv[1]))
+    {
+        std::cerr << "key data is not valid" << std::endl;
+        return -1;
+    }
+
     const size_t value_size = boost::lexical_cast<size_t>(argv[2]);
     const std::string map_filename = argv[3];
     const std::string rows_filename = argv[4];

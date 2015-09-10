@@ -218,15 +218,22 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        data_chunk data = decode_hex(args[0]);
+
+        data_chunk data;
+        if (!decode_base16(data, args[0]))
+        {
+            std::cerr << "block_db: BLOCK_DATA is not valid" << std::endl;
+            return -1;
+        }
+
         if (data.size() < 80)
         {
             std::cerr << "block_db: BLOCK_DATA must be greater than 80 bytes"
                 << std::endl;
             return -1;
         }
-        chain::block block;
 
+        chain::block block;
         if (block.from_data(data))
             throw end_of_stream();
 
