@@ -31,6 +31,8 @@
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
+INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
+
 namespace libbitcoin {
 namespace blockchain {
 
