@@ -113,12 +113,12 @@ transaction_result transaction_database::get(const hash_digest& hash) const
     return transaction_result(slab, allocator_.to_eof(slab));
 }
 
-void transaction_database::store(
-    const transaction_metainfo& info, const chain::transaction& tx)
+void transaction_database::store(const transaction_metainfo& info,
+    const chain::transaction& tx)
 {
     // Write block data.
     const hash_digest key = tx.hash();
-    const size_t value_size = 4 + 4 + tx.satoshi_size();
+    const size_t value_size = 4 + 4 + tx.serialized_size();
     auto write = [&info, &tx](uint8_t* data)
     {
         auto serial = make_serializer(data);

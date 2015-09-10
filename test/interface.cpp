@@ -45,6 +45,7 @@ void test_block_exists(const db_interface& interface,
     const hash_digest blk_hash = block0.header.hash();
     auto r0 = interface.blocks.get(height);
     auto r0_byhash = interface.blocks.get(blk_hash);
+
     BOOST_REQUIRE(r0);
     BOOST_REQUIRE(r0_byhash);
     BOOST_REQUIRE(r0.header().hash() == blk_hash);
@@ -53,6 +54,7 @@ void test_block_exists(const db_interface& interface,
     BOOST_REQUIRE(r0_byhash.height() == height);
     BOOST_REQUIRE(r0.transactions_size() == block0.transactions.size());
     BOOST_REQUIRE(r0_byhash.transactions_size() == block0.transactions.size());
+
     for (size_t i = 0; i < block0.transactions.size(); ++i)
     {
         const chain::transaction& tx = block0.transactions[i];
@@ -70,8 +72,8 @@ void test_block_exists(const db_interface& interface,
         {
             for (size_t j = 0; j < tx.inputs.size(); ++j)
             {
-                const chain::transaction_input& input = tx.inputs[j];
-                chain::input_point spend{tx_hash, static_cast<uint32_t>(j)};
+                const auto& input = tx.inputs[j];
+                chain::input_point spend{ tx_hash, static_cast<uint32_t>(j) };
                 auto r0_spend = interface.spends.get(input.previous_output);
                 BOOST_REQUIRE(r0_spend);
                 BOOST_REQUIRE(r0_spend.hash() == spend.hash);
@@ -102,18 +104,17 @@ void test_block_exists(const db_interface& interface,
 
         for (size_t j = 0; j < tx.outputs.size(); ++j)
         {
-            const chain::transaction_output& output = tx.outputs[j];
+            const auto& output = tx.outputs[j];
             chain::output_point outpoint{ tx_hash, static_cast<uint32_t>(j) };
-
             wallet::payment_address address;
 
             if (!extract(address, output.script))
                 continue;
 
             auto history = interface.history.get(address.hash());
-            bool found = false;
+            auto found = false;
 
-            for (const auto row: history)
+            for (const auto& row: history)
             {
                 bool is_valid = row.point.is_valid();
 
@@ -128,6 +129,7 @@ void test_block_exists(const db_interface& interface,
                     break;
                 }
             }
+
             BOOST_REQUIRE(found);
         }
     }
@@ -148,7 +150,7 @@ void test_block_not_exists(
         {
             for (size_t j = 0; j < tx.inputs.size(); ++j)
             {
-                const chain::transaction_input& input = tx.inputs[j];
+                const auto& input = tx.inputs[j];
                 chain::input_point spend{ tx_hash, static_cast<uint32_t>(j) };
                 auto r0_spend = interface.spends.get(input.previous_output);
                 BOOST_REQUIRE(!r0_spend);
@@ -159,9 +161,9 @@ void test_block_not_exists(
                     continue;
 
                 auto history = interface.history.get(address.hash());
-                bool found = false;
+                auto found = false;
 
-                for (const auto row: history)
+                for (const auto& row: history)
                 {
                     if (row.point.hash == spend.hash &&
                         row.point.index == spend.index)
@@ -177,18 +179,17 @@ void test_block_not_exists(
 
         for (size_t j = 0; j < tx.outputs.size(); ++j)
         {
-            const chain::transaction_output& output = tx.outputs[j];
+            const auto& output = tx.outputs[j];
             chain::output_point outpoint{ tx_hash, static_cast<uint32_t>(j) };
-
             wallet::payment_address address;
 
             if (!extract(address, output.script))
                 continue;
 
             auto history = interface.history.get(address.hash());
-            bool found = false;
+            auto found = false;
 
-            for (const auto row: history)
+            for (const auto& row: history)
             {
                 if (row.point.hash == outpoint.hash &&
                     row.point.index == outpoint.index)
@@ -205,7 +206,8 @@ void test_block_not_exists(
 
 chain::block read_block(const std::string hex)
 {
-    data_chunk data = decode_hex(hex);
+    data_chunk data;
+    BOOST_REQUIRE(decode_base16(data, hex));
     chain::block result;
     BOOST_REQUIRE(result.from_data(data));
     return result;

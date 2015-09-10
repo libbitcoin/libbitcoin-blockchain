@@ -211,7 +211,7 @@ chain::block db_interface::pop()
 }
 
 void db_interface::push_inputs(const hash_digest& tx_hash,
-    const size_t block_height, const chain::transaction_input::list& inputs)
+    const size_t block_height, const chain::input::list& inputs)
 {
     for (uint32_t i = 0; i < inputs.size(); ++i)
     {
@@ -234,7 +234,7 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
 }
 
 void db_interface::push_outputs(const hash_digest& tx_hash,
-    const size_t block_height, const chain::transaction_output::list& outputs)
+    const size_t block_height, const chain::output::list& outputs)
 {
     for (uint32_t i = 0; i < outputs.size(); ++i)
     {
@@ -266,7 +266,7 @@ hash_digest read_ephemkey(const data_chunk& stealth_data)
 }
 
 void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
-    const chain::transaction_output::list& outputs)
+    const chain::output::list& outputs)
 {
     // Stealth cannot be in last output because there needs
     // to be a matching following output.
@@ -299,7 +299,7 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
 }
 
 void db_interface::pop_inputs(const size_t block_height,
-    const chain::transaction_input::list& inputs)
+    const chain::input::list& inputs)
 {
     // Loop in reverse.
     for (int i = inputs.size() - 1; i >= 0; --i)
@@ -322,7 +322,7 @@ void db_interface::pop_inputs(const size_t block_height,
 }
 
 void db_interface::pop_outputs(const size_t block_height,
-    const chain::transaction_output::list& outputs)
+    const chain::output::list& outputs)
 {
     // Loop in reverse.
     for (int i = outputs.size() - 1; i >= 0; --i)

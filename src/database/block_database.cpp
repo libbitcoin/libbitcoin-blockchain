@@ -44,11 +44,11 @@ BC_CONSTEXPR position_type allocator_offset = header_size;
 //  [ [ tx_hash:32 ] ]
 //  [ [    ...     ] ]
 
-//chain::block_header deserialize_header(const slab_type begin, uint64_t length)
+//chain::header deserialize_header(const slab_type begin, uint64_t length)
 //{
 //    boost::iostreams::stream<byte_pointer_array_source> istream(begin, length);
 //    istream.exceptions(std::ios_base::failbit);
-//    chain::block_header header;
+//    chain::header header;
 //    header.from_data(istream);
 //
 ////    if (!istream)
@@ -58,9 +58,9 @@ BC_CONSTEXPR position_type allocator_offset = header_size;
 //}
 
 template <typename Iterator>
-chain::block_header deserialize_header(const Iterator first)
+chain::header deserialize_header(const Iterator first)
 {
-    chain::block_header header;
+    chain::header header;
     auto deserial = make_deserializer_unsafe(first);
     header.from_data(deserial, false);
     return header;
@@ -76,7 +76,7 @@ block_result::operator bool() const
     return slab_ != nullptr;
 }
 
-chain::block_header block_result::header() const
+chain::header block_result::header() const
 {
     BITCOIN_ASSERT(slab_ != nullptr);
 //    return deserialize_header(slab_, size_limit_);

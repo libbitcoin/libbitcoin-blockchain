@@ -43,7 +43,7 @@ public:
         validate_handler;
 
     validate_transaction(blockchain& chain, const chain::transaction& tx,
-        const pool_buffer& pool, sequencer& strand);
+        const pool_buffer& pool, dispatcher& dispatch);
     void start(validate_handler handle_validate);
 
     static std::error_code check_transaction(const chain::transaction& tx);
@@ -55,7 +55,7 @@ public:
 
     static bool validate_consensus(const chain::script& prevout_script,
         const chain::transaction& current_tx, size_t input_index,
-        const chain::block_header& header, const size_t height);
+        const chain::header& header, const size_t height);
 
 private:
     std::error_code basic_checks() const;
@@ -90,7 +90,7 @@ private:
     blockchain& blockchain_;
     const chain::transaction tx_;
     const pool_buffer& pool_;
-    sequencer& strand_;
+    dispatcher& dispatch_;
 
     const hash_digest tx_hash_;
     size_t last_block_height_;

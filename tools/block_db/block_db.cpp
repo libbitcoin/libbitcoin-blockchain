@@ -184,7 +184,7 @@ int main(int argc, char** argv)
             delete result;
             return -1;
         }
-        const chain::block_header blk_header = result->header();
+        const chain::header blk_header = result->header();
 
         // Show details.
         std::cout << "height: " << result->height() << std::endl;

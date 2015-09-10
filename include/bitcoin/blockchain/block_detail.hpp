@@ -36,7 +36,7 @@ class BCB_API block_detail
 public:
 
     block_detail(const chain::block& actual_block);
-    block_detail(const chain::block_header& actual_block_header);
+    block_detail(const chain::header& actual_block_header);
     chain::block& actual();
     const chain::block& actual() const;
     std::shared_ptr<chain::block> actual_ptr() const;

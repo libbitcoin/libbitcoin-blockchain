@@ -31,7 +31,7 @@ block_detail::block_detail(const chain::block& actual_block)
 {
 }
 
-block_detail::block_detail(const chain::block_header& actual_block_header)
+block_detail::block_detail(const chain::header& actual_block_header)
   : block_detail(chain::block{ actual_block_header, {} })
 {
 }

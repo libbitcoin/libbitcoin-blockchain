@@ -45,11 +45,11 @@ enum validation_options : uint32_t
 
 validate_transaction::validate_transaction(blockchain& chain,
     const chain::transaction& tx, const pool_buffer& pool,
-    sequencer& strand)
+    dispatcher& dispatch)
   : blockchain_(chain),
     tx_(tx),
     pool_(pool),
-    strand_(strand),
+    dispatch_(dispatch),
     tx_hash_(tx.hash())
 {
 }
@@ -66,8 +66,9 @@ void validate_transaction::start(validate_handler handle_validate)
 
     // Check for duplicates in the blockchain.
     blockchain_.fetch_transaction(tx_hash_,
-        strand_.wrap(&validate_transaction::handle_duplicate_check,
-            shared_from_this(), _1));
+        dispatch_.unordered_delegate(
+            &validate_transaction::handle_duplicate_check,
+                shared_from_this(), _1));
 }
 
 std::error_code validate_transaction::basic_checks() const
@@ -114,7 +115,7 @@ void validate_transaction::handle_duplicate_check(
 
     // Check inputs, we already know it is not a coinbase tx.
     blockchain_.fetch_last_height(
-        strand_.wrap(&validate_transaction::set_last_height,
+        dispatch_.unordered_delegate(&validate_transaction::set_last_height,
             shared_from_this(), _1, _2));
 }
 
@@ -136,7 +137,7 @@ bool validate_transaction::is_tx_in_pool(const hash_digest& hash) const
 
 bool validate_transaction::is_spent_in_pool(const chain::transaction& tx) const
 {
-    const auto found = [this, &tx](const chain::transaction_input& input)
+    const auto found = [this, &tx](const chain::input& input)
     {
         return is_spent_in_pool(input.previous_output);
     };
@@ -161,7 +162,7 @@ bool validate_transaction::is_spent_in_pool(
 bool validate_transaction::is_spent_in_tx(const chain::output_point& outpoint,
     const chain::transaction& tx) const
 {
-    const auto found = [&outpoint](const chain::transaction_input& input)
+    const auto found = [&outpoint](const chain::input& input)
     {
         return input.previous_output == outpoint;
     };
@@ -198,8 +199,9 @@ void validate_transaction::next_previous_transaction()
     // Needed for checking the coinbase maturity.
     blockchain_.fetch_transaction_index(
         tx_.inputs[current_input_].previous_output.hash,
-        strand_.wrap(&validate_transaction::previous_tx_index,
-            shared_from_this(), _1, _2));
+            dispatch_.unordered_delegate(
+                &validate_transaction::previous_tx_index,
+                    shared_from_this(), _1, _2));
 }
 
 void validate_transaction::previous_tx_index(const std::error_code& ec,
@@ -216,7 +218,7 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
     
     // Now fetch actual transaction body
     blockchain_.fetch_transaction(prev_tx_hash,
-        strand_.wrap(&validate_transaction::handle_previous_tx,
+        dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
             shared_from_this(), _1, _2, parent_height));
 }
 
@@ -260,7 +262,7 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
 
     // Search for double spends...
     blockchain_.fetch_spend(tx_.inputs[current_input_].previous_output,
-        strand_.wrap(&validate_transaction::check_double_spend,
+        dispatch_.unordered_delegate(&validate_transaction::check_double_spend,
             shared_from_this(), _1));
 }
 
@@ -324,8 +326,8 @@ std::error_code validate_transaction::check_transaction(
     if (tx.is_coinbase())
     {
         const auto& coinbase_script = tx.inputs[0].script;
-        const auto coinbase_script_size = coinbase_script.satoshi_size(false);
-        if (coinbase_script_size < 2 || coinbase_script_size > 100)
+        const auto coinbase_size = coinbase_script.serialized_size(false);
+        if (coinbase_size < 2 || coinbase_size > 100)
             return error::invalid_coinbase_script_size;
     }
     else
@@ -384,7 +386,7 @@ static bool check_consensus(const chain::script& prevout_script,
 }
 
 // Determine if BIP16 compliance is required for this block.
-static bool is_bip_16_enabled(const chain::block_header& header, size_t height)
+static bool is_bip_16_enabled(const chain::header& header, size_t height)
 {
     // Block 170060 contains an invalid BIP 16 transaction before switchover date.
     const auto bip16_enabled = header.timestamp >= bip16_switchover_timestamp;
@@ -395,7 +397,7 @@ static bool is_bip_16_enabled(const chain::block_header& header, size_t height)
 // Validate script consensus conformance, calculating p2sh based on block/height.
 bool validate_transaction::validate_consensus(const chain::script& prevout_script,
     const chain::transaction& current_tx, size_t input_index,
-    const chain::block_header& header, const size_t height)
+    const chain::header& header, const size_t height)
 {
     uint32_t options = validation_options::none;
     if (is_bip_16_enabled(header, height))

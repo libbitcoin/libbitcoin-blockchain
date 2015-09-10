@@ -42,7 +42,7 @@ public:
     /**
      * Read block header.
      */
-    chain::block_header header() const;
+    chain::header header() const;
 
     /**
      * The height of this block in the blockchain.
