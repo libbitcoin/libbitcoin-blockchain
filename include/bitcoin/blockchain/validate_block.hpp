@@ -46,7 +46,7 @@ protected:
         stopped_callback stop_callback=nullptr);
 
     virtual uint64_t actual_timespan(size_t interval) const = 0;
-    virtual chain::block_header fetch_block(size_t fetch_height) const = 0;
+    virtual chain::header fetch_block(size_t fetch_height) const = 0;
     virtual bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const = 0;
     virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;

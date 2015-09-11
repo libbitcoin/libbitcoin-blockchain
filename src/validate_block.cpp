@@ -95,7 +95,7 @@ std::error_code validate_block::check_block() const
     const auto& transactions = current_block_.transactions;
 
     if (transactions.empty() || transactions.size() > max_block_size ||
-        current_block_.satoshi_size() > max_block_size)
+        current_block_.serialized_size() > max_block_size)
     {
         return error::size_limits;
     }
@@ -314,7 +314,7 @@ uint32_t validate_block::work_required() const
     const auto last_non_special_bits = [this]()
     {
         // Return the last non-special block
-        chain::block_header previous_block;
+        chain::header previous_block;
         auto previous_height = height_;
 
         // Loop backwards until we find a difficulty change point,

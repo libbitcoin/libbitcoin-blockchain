@@ -92,7 +92,7 @@ public:
     using fetch_handler = std::function<
         void (const std::error_code&, const Message&)>;
 
-    typedef fetch_handler<chain::block_header> fetch_handler_block_header;
+    typedef fetch_handler<chain::header> fetch_handler_block_header;
 
     typedef fetch_handler<hash_list> fetch_handler_block_transaction_hashes;
 

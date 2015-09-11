@@ -27,7 +27,14 @@ int main(int argc, char** argv)
         return 0;
     }
     const std::string filename = argv[1];
-    const data_chunk key_data = decode_hex(argv[2]);
+
+    data_chunk key_data;
+    if (!decode_base16(key_data, argv[2]))
+    {
+        std::cerr << "key data is not valid" << std::endl;
+        return -1;
+    }
+
     const size_t value_size = boost::lexical_cast<size_t>(argv[3]);
     position_type offset = 0;
     if (argc == 5)

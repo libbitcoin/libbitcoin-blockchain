@@ -32,9 +32,9 @@ constexpr size_t row_size = 4 + 32 + 20 + 32;
 
 stealth_database::stealth_database(const boost::filesystem::path& index_filename, 
     const boost::filesystem::path& rows_filename)
-  : index_file_(index_filename), 
+  : index_file_(index_filename),
     index_(index_file_, 0, sizeof(index_type)),
-    rows_file_(rows_filename), 
+    rows_file_(rows_filename),
     rows_(rows_file_, 0, row_size)
 {
 }

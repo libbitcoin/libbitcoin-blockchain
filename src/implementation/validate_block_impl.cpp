@@ -39,7 +39,7 @@ validate_block_impl::validate_block_impl(db_interface& database,
 {
 }
 
-chain::block_header validate_block_impl::fetch_block(size_t fetch_height) const
+chain::header validate_block_impl::fetch_block(size_t fetch_height) const
 {
     if (fetch_height > fork_index_)
     {

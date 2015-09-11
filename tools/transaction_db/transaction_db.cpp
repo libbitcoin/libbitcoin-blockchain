@@ -141,7 +141,14 @@ int main(int argc, char** argv)
             return -1;
         if (!parse_uint(info.index, args[1]))
             return -1;
-        data_chunk data = decode_hex(args[2]);
+
+        data_chunk data;
+        if (!decode_base16(data, argv[2]))
+        {
+            std::cerr << "data is not valid" << std::endl;
+            return -1;
+        }
+
         chain::transaction tx;
 
         if (!tx.from_data(data))

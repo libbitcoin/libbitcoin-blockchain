@@ -79,9 +79,9 @@ public:
         return false;
     }
 
-    chain::block_header fetch_block(size_t fetch_height) const
+    chain::header fetch_block(size_t fetch_height) const
     {
-        return chain::block_header();
+        return chain::header();
     }
 
     // protected virtuals (accessors)

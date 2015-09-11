@@ -243,10 +243,11 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
 {
     transaction_metainfo info1{110, 88};
 
-    data_chunk raw_tx1 = decode_hex(
+    data_chunk raw_tx1;
+    BOOST_REQUIRE(decode_base16(raw_tx1,
         "0100000001537c9d05b5f7d67b09e5108e3bd5e466909cc9403ddd98bc42973f"
         "366fe729410600000000ffffffff0163000000000000001976a914fe06e7b4c8"
-        "8a719e92373de489c08244aee4520b88ac00000000");
+        "8a719e92373de489c08244aee4520b88ac00000000"));
 
     chain::transaction tx1;
     BOOST_REQUIRE(tx1.from_data(raw_tx1));
@@ -255,10 +256,11 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
 
     transaction_metainfo info2{4, 6};
 
-    data_chunk raw_tx2 = decode_hex(
+    data_chunk raw_tx2;
+    BOOST_REQUIRE(decode_base16(raw_tx2,
         "010000000147811c3fc0c0e750af5d0ea7343b16ea2d0c291c002e3db7786692"
         "16eb689de80000000000ffffffff0118ddf505000000001976a914575c2f0ea8"
-        "8fcbad2389a372d942dea95addc25b88ac00000000");
+        "8fcbad2389a372d942dea95addc25b88ac00000000"));
 
     chain::transaction tx2;
     BOOST_REQUIRE(tx2.from_data(raw_tx2));
