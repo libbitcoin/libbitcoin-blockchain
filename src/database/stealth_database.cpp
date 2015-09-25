@@ -84,12 +84,10 @@ stealth_list stealth_database::scan(const binary_type& prefix,
     return result;
 }
 
-void stealth_database::store(const chain::script& stealth_script,
+void stealth_database::store(const binary_type& stealth_prefix,
     const stealth_row& row)
 {
-    // Create prefix.
-    const auto prefix = wallet::calculate_stealth_prefix(stealth_script);
-    BITCOIN_ASSERT(prefix.blocks().size() == bitfield_size);
+    BITCOIN_ASSERT(valid && stealth_prefix.blocks().size() == bitfield_size);
 
     // Allocate new row.
     const auto index = rows_.allocate();
@@ -97,12 +95,12 @@ void stealth_database::store(const chain::script& stealth_script,
 
     // Write data.
     auto serial = make_serializer(data);
-    serial.write_data(prefix.blocks());
+    serial.write_data(stealth_prefix.blocks());
     serial.write_hash(row.ephemkey);
     serial.write_short_hash(row.address);
     serial.write_hash(row.transaction_hash);
-    BITCOIN_ASSERT(serial.iterator() ==
-        data + bitfield_size + hash_size + short_hash_size + hash_size);
+    BITCOIN_ASSERT(serial.iterator() == data + bitfield_size + hash_size + 
+        short_hash_size + hash_size);
 }
 
 void stealth_database::unlink(size_t from_height)

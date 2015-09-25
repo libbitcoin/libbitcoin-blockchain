@@ -502,25 +502,28 @@ bool validate_block::validate_inputs(const chain::transaction& tx,
     return true;
 }
 
-size_t script_hash_signature_operations_count(
+bool script_hash_signature_operations_count(size_t& out_count,
     const chain::script& output_script, const chain::script& input_script)
 {
-    if (output_script.type() != chain::payment_type::script_hash)
-        return 0;
+    using namespace chain;
+    constexpr auto strict = script::parse_mode::strict;
 
-    if (input_script.operations.empty())
-        return 0;
+    if (input_script.operations.empty() ||
+        output_script.pattern() != script_pattern::pay_script_hash)
+    {
+        out_count = 0;
+        return true;
+    }
 
     const auto& last_data = input_script.operations.back().data;
+    script eval_script;
+    if (!eval_script.from_data(last_data, false, strict))
+    {
+        return false;
+    }
 
-    // ignore possible failure?
-    chain::script eval_script;
-
-    if (!eval_script.from_data(last_data, false,
-        chain::script::parse_mode::strict))
-        throw end_of_stream();
-
-    return count_script_sigops(eval_script.operations, true);
+    out_count = count_script_sigops(eval_script.operations, true);
+    return true;
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
@@ -544,17 +547,15 @@ bool validate_block::connect_input(size_t index_in_parent,
     const auto& previous_tx_out = previous_tx.outputs[previous_output.index];
 
     // Signature operations count if script_hash payment type.
-    try
-    {
-        total_sigops += script_hash_signature_operations_count(
-            previous_tx_out.script, input.script);
-    }
-    catch (end_of_stream)
+    size_t count;
+    if (!script_hash_signature_operations_count(count,
+        previous_tx_out.script, input.script))
     {
         log_warning(LOG_VALIDATE) << "Invalid eval script.";
         return false;
     }
 
+    total_sigops += count;
     if (total_sigops > max_block_script_sig_operations)
     {
         log_warning(LOG_VALIDATE) << "Total sigops exceeds block maximum.";

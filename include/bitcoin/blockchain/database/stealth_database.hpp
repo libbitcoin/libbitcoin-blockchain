@@ -54,7 +54,7 @@ public:
     /**
      * Add a stealth row to the database.
      */
-    BCB_API void store(const chain::script& stealth_script,
+    BCB_API void store(const binary_type& stealth_prefix,
         const stealth_row& row);
 
     /**
