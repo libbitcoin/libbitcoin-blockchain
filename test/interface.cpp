@@ -23,6 +23,7 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::wallet;
 
 struct low_thread_priority_fixture
 {
@@ -79,13 +80,12 @@ void test_block_exists(const db_interface& interface,
                 BOOST_REQUIRE(r0_spend.hash() == spend.hash);
                 BOOST_REQUIRE(r0_spend.index() == spend.index);
 
-                wallet::payment_address address;
-
-                if (!extract(address, input.script))
+                const auto address = payment_address::extract(input.script);
+                if (!address)
                     continue;
 
                 auto history = interface.history.get(address.hash());
-                bool found = false;
+                auto found = false;
 
                 for (const auto row: history)
                 {
@@ -106,9 +106,8 @@ void test_block_exists(const db_interface& interface,
         {
             const auto& output = tx.outputs[j];
             chain::output_point outpoint{ tx_hash, static_cast<uint32_t>(j) };
-            wallet::payment_address address;
-
-            if (!extract(address, output.script))
+            const auto address = payment_address::extract(output.script);
+            if (!address)
                 continue;
 
             auto history = interface.history.get(address.hash());
@@ -155,9 +154,8 @@ void test_block_not_exists(
                 auto r0_spend = interface.spends.get(input.previous_output);
                 BOOST_REQUIRE(!r0_spend);
 
-                wallet::payment_address address;
-
-                if (!extract(address, input.script))
+                const auto address = payment_address::extract(input.script);
+                if (!address)
                     continue;
 
                 auto history = interface.history.get(address.hash());
@@ -181,9 +179,8 @@ void test_block_not_exists(
         {
             const auto& output = tx.outputs[j];
             chain::output_point outpoint{ tx_hash, static_cast<uint32_t>(j) };
-            wallet::payment_address address;
-
-            if (!extract(address, output.script))
+            const auto address = payment_address::extract(output.script);
+            if (!address)
                 continue;
 
             auto history = interface.history.get(address.hash());

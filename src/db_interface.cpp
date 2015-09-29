@@ -26,6 +26,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace wallet;
 using boost::filesystem::path;
 
 bool touch_file(const path& filepath)
@@ -224,12 +225,12 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
             continue;
 
         // Try to extract an address.
-        wallet::payment_address address;
-        if (!extract(address, input.script))
+        const auto address = payment_address::extract(input.script);
+        if (!address)
             continue;
 
-        history.add_spend(address.hash(),
-            input.previous_output, spend, block_height);
+        history.add_spend(address.hash(), input.previous_output, spend,
+            block_height);
     }
 }
 
@@ -246,23 +247,13 @@ void db_interface::push_outputs(const hash_digest& tx_hash,
             continue;
 
         // Try to extract an address.
-        wallet::payment_address address;
-        if (!extract(address, output.script))
+        const auto address = payment_address::extract(output.script);
+        if (!address)
             continue;
 
-        history.add_output(address.hash(),
-            outpoint, block_height, output.value);
+        history.add_output(address.hash(), outpoint, block_height,
+            output.value);
     }
-}
-
-hash_digest read_ephemkey(const data_chunk& stealth_data)
-{
-    // Read ephemkey
-    hash_digest ephemkey;
-    BITCOIN_ASSERT(stealth_data.size() >= hash_size);
-    std::copy(stealth_data.begin(), stealth_data.begin() + hash_size,
-        ephemkey.begin());
-    return ephemkey;
 }
 
 void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
@@ -273,28 +264,33 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
     const int last_possible = outputs.size() - 1;
     for (int i = 0; i < last_possible; ++i)
     {
-        const auto& output = outputs[i];
-        const auto& next_output = outputs[i + 1];
+        const auto& ephemeral_script = outputs[i].script;
+        const auto& payment_script = outputs[i + 1].script;
 
-        // Skip past output if not stealth data.
-        if (output.script.type() != chain::payment_type::stealth_info)
+        // Try to extract an unsigned ephemeral key.
+        hash_digest unsigned_ephemeral_key;
+        if (!extract_ephemeral_key(unsigned_ephemeral_key, ephemeral_script))
             continue;
 
-        // Try to extract an address.
-        wallet::payment_address address;
-        if (!extract(address, next_output.script))
+        // Try to extract the stealth prefix.
+        binary_type prefix;
+        if (!to_stealth_prefix(prefix, ephemeral_script))
+            continue;
+
+        // Try to extract the payment address.
+        const auto address = payment_address::extract(payment_script);
+        if (!address)
             continue;
 
         // Stealth data.
-        BITCOIN_ASSERT(output.script.operations.size() == 2);
-        const auto& stealth_data = output.script.operations[1].data;
-        stealth_row row
+        const stealth_row row
         {
-            read_ephemkey(stealth_data),
+            unsigned_ephemeral_key,
             address.hash(),
             tx_hash
         };
-        stealth.store(output.script, row);
+
+        stealth.store(prefix, row);
     }
 }
 
@@ -312,12 +308,9 @@ void db_interface::pop_inputs(const size_t block_height,
             continue;
 
         // Try to extract an address.
-        wallet::payment_address address;
-
-        if (!extract(address, input.script))
-            continue;
-
-        history.delete_last_row(address.hash());
+        auto address = payment_address::extract(input.script);
+        if (address)
+            history.delete_last_row(address.hash());
     }
 }
 
@@ -334,12 +327,9 @@ void db_interface::pop_outputs(const size_t block_height,
             continue;
 
         // Try to extract an address.
-        wallet::payment_address address;
-
-        if (!extract(address, output.script))
-            continue;
-
-        history.delete_last_row(address.hash());
+        auto address = payment_address::extract(output.script);
+        if (address)
+            history.delete_last_row(address.hash());
     }
 }
 

@@ -132,40 +132,40 @@ int main(int argc, char** argv)
             std::cout << std::endl;
         }
     }
-    else if (command == "store")
-    {
-        if (args.size() != 4)
-        {
-            show_command_help(command);
-            return -1;
-        }
-        // bitfield
-        std::string script_str(args[0]);
-        chain::script script;
-        script.from_string(script_str);
-        stealth_row row;
-        // ephemkey
-        if (!decode_hash(row.ephemkey, args[1]))
-        {
-            std::cerr << "Unable to read ephemeral pubkey." << std::endl;
-            return -1;
-        }
-        // address
-        if (!decode_base16(row.address, args[2]))
-        {
-            std::cerr << "Unable to read address hash." << std::endl;
-            return -1;
-        }
-        // tx hash
-        if (!decode_hash(row.transaction_hash, args[3]))
-        {
-            std::cerr << "Unable to read transaction hash." << std::endl;
-            return -1;
-        }
-        db.start();
-        db.store(script, row);
-        db.sync();
-    }
+    ////else if (command == "store")
+    ////{
+    ////    if (args.size() != 4)
+    ////    {
+    ////        show_command_help(command);
+    ////        return -1;
+    ////    }
+    ////    // bitfield
+    ////    std::string script_str(args[0]);
+    ////    chain::script script;
+    ////    script.from_string(script_str);
+    ////    stealth_row row;
+    ////    // ephemkey
+    ////    if (!decode_hash(row.ephemkey, args[1]))
+    ////    {
+    ////        std::cerr << "Unable to read ephemeral pubkey." << std::endl;
+    ////        return -1;
+    ////    }
+    ////    // address
+    ////    if (!decode_base16(row.address, args[2]))
+    ////    {
+    ////        std::cerr << "Unable to read address hash." << std::endl;
+    ////        return -1;
+    ////    }
+    ////    // tx hash
+    ////    if (!decode_hash(row.transaction_hash, args[3]))
+    ////    {
+    ////        std::cerr << "Unable to read transaction hash." << std::endl;
+    ////        return -1;
+    ////    }
+    ////    db.start();
+    ////    db.store(script, row);
+    ////    db.sync();
+    ////}
     else if (command == "unlink")
     {
         if (args.size() != 1)
