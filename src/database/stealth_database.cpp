@@ -87,7 +87,7 @@ stealth_list stealth_database::scan(const binary_type& prefix,
 void stealth_database::store(const binary_type& stealth_prefix,
     const stealth_row& row)
 {
-    BITCOIN_ASSERT(valid && stealth_prefix.blocks().size() == bitfield_size);
+    BITCOIN_ASSERT(stealth_prefix.blocks().size() == bitfield_size);
 
     // Allocate new row.
     const auto index = rows_.allocate();
