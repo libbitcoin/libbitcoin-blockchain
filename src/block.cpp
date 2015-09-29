@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <bitcoin/blockchain/block.hpp>
+
+#include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -46,7 +47,7 @@ chain::index_list block_locator_indexes(int top_height)
 
 uint64_t block_value(size_t height)
 {
-    uint64_t subsidy = coin_price(block_reward);
+    uint64_t subsidy = coin_price(initial_block_reward);
     subsidy >>= (height / reward_interval);
     return subsidy;
 }

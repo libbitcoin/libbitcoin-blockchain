@@ -19,6 +19,9 @@
     <ClCompile Include="..\..\..\..\test\validate_block.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\genesis_block.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -27,5 +30,10 @@
     <Filter Include="src">
       <UniqueIdentifier>{06e89e32-13d0-4dde-9a91-875885613217}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\genesis_block.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
