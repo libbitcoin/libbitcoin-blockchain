@@ -91,16 +91,15 @@ bool parse_point(Point& point, const std::string& arg)
 
 bool parse_key(short_hash& key, const std::string& arg)
 {
-    wallet::payment_address payaddr;
+    const wallet::payment_address address(arg);
 
-    if (!payaddr.from_string(arg))
+    if (!address)
     {
         std::cerr << "spend_db: bad KEY." << std::endl;
         return false;
     }
 
-    key = payaddr.hash();
-
+    key = address.hash();
     return true;
 }
 
