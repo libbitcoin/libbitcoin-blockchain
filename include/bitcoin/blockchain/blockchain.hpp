@@ -80,7 +80,7 @@ typedef std::vector<stealth_row> stealth_list;
 /**
  * An interface to a blockchain backend.
  */
-class blockchain
+class BCB_API blockchain
 {
 public:
     typedef std::function<void (const std::error_code&, block_info)>
@@ -295,7 +295,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_spend(const chain::output_point& outpoint,
+    virtual void fetch_spend(const chain::output_point& outpoint,
         fetch_handler_spend handle_fetch) = 0;
 
     /**

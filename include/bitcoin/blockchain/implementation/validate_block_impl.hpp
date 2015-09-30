@@ -36,7 +36,7 @@ class BCB_API validate_block_impl
 public:
     validate_block_impl(db_interface& database, size_t fork_index,
         const block_detail_list& orphan_chain, size_t orphan_index,
-        size_t height, const chain::block& block,
+        size_t height, const chain::block& block, bool testnet,
         const config::checkpoint::list& checkpoints,
         stopped_callback stopped);
 

@@ -30,13 +30,13 @@ class validate_block_fixture
 {
 public:
     validate_block_fixture()
-        : validate_block(0, chain::block(), config::checkpoint::list())
+        : validate_block(0, chain::block(), false, config::checkpoint::list())
     {
     }
 
     validate_block_fixture(size_t height, const chain::block& block,
-        const config::checkpoint::list& checks)
-      : validate_block(height, block, checks)
+        bool testnet, const config::checkpoint::list& checks)
+      : validate_block(height, block, testnet, checks)
     {
     }
 
@@ -86,7 +86,7 @@ public:
 
     // protected virtuals (accessors)
 
-    //uint32_t work_required() const
+    //uint32_t work_required(bool is_testnet) const
     //{
     //}
 

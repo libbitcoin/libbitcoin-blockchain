@@ -43,29 +43,32 @@ using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
 // Max block size is 1,000,000.
-constexpr uint32_t max_block_size = 1000000;
+static constexpr uint32_t max_block_size = 1000000;
 
 // Maximum signature operations per block is 20,000.
-constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
+static constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
 
 // The maximum height of version 1 blocks.
 // Is this correct, looks like it should be 227835?
 // see: github.com/bitcoin/bips/blob/master/bip-0034.mediawiki#result
-constexpr uint64_t max_version1_height = 237370;
+static constexpr uint64_t max_version1_height = 237370;
 
 // BIP30 exception blocks.
 // see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
-constexpr uint64_t bip30_exception_block1 = 91842;
-constexpr uint64_t bip30_exception_block2 = 91880;
+static constexpr uint64_t bip30_exception_block1 = 91842;
+static constexpr uint64_t bip30_exception_block2 = 91880;
 
 // Target readjustment every 2 weeks (in seconds).
-constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
+static constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
 
 // Aim for blocks every 10 mins (in seconds).
-constexpr uint64_t target_spacing = 10 * 60;
+static constexpr uint64_t target_spacing = 10 * 60;
+
+// Value used to define retargeting range constraint.
+static constexpr uint64_t retargeting_factor = 4;
 
 // Two weeks worth of blocks (count of blocks).
-constexpr uint64_t readjustment_interval = target_timespan / target_spacing;
+static constexpr uint64_t retargeting_interval = target_timespan / target_spacing;
 
 // To improve readability.
 #define RETURN_IF_STOPPED() \
@@ -74,8 +77,10 @@ if (stopped()) \
 
 // The nullptr option is for backward compatibility only.
 validate_block::validate_block(size_t height, const chain::block& block,
-    const config::checkpoint::list& checks, stopped_callback callback)
-  : height_(height),
+    bool testnet, const config::checkpoint::list& checks,
+    stopped_callback callback)
+  : testnet_(testnet),
+    height_(height),
     current_block_(block),
     checkpoints_(checks),
     stop_callback_(callback == nullptr ? [](){ return false; } : callback)
@@ -154,7 +159,7 @@ std::error_code validate_block::check_block() const
 
 bool validate_block::is_distinct_tx_set(const chain::transaction::list& txs)
 {
-    // We test distinctness by transaction hash.
+    // We define distinctness by transaction hash.
     const auto hasher = [](const chain::transaction& transaction)
     {
         return transaction.hash();
@@ -267,7 +272,7 @@ size_t validate_block::legacy_sigops_count(const chain::transaction::list& txs)
 std::error_code validate_block::accept_block() const
 {
     const auto& header = current_block_.header;
-    if (header.bits != work_required())
+    if (header.bits != work_required(testnet_))
         return error::incorrect_proof_of_work;
 
     RETURN_IF_STOPPED();
@@ -308,64 +313,69 @@ std::error_code validate_block::accept_block() const
     return error::success;
 }
 
-uint32_t validate_block::work_required() const
+uint32_t validate_block::work_required(bool is_testnet) const
 {
-#ifdef ENABLE_TESTNET
-    const auto last_non_special_bits = [this]()
+    if (height_ == 0)
+        return max_work_bits;
+
+    const auto is_retarget_height = [](size_t height)
     {
-        // Return the last non-special block
+        return height % retargeting_interval == 0;
+    };
+
+    if (is_retarget_height(height_))
+    {
+        // This is the total time it took for the last 2016 blocks.
+        const auto actual = actual_timespan(retargeting_interval);
+
+        // Now constrain the time between an upper and lower bound.
+        const auto constrained = range_constrain(actual,
+            target_timespan / retargeting_factor,
+            target_timespan * retargeting_factor);
+
+        hash_number retarget;
+        retarget.set_compact(previous_block_bits());
+        retarget *= constrained;
+        retarget /= target_timespan;
+        if (retarget > max_target())
+            retarget = max_target();
+
+        return retarget.compact();
+    }
+
+    if (!is_testnet)
+        return previous_block_bits();
+
+    // Remainder is testnet in not-retargeting scenario.
+    // ------------------------------------------------------------------------
+
+    const auto max_time_gap = fetch_block(height_ - 1).timestamp + 
+        2 * target_spacing;
+
+    if (current_block_.header.timestamp > max_time_gap)
+        return max_work_bits;
+
+    const auto last_non_special_bits = [this, is_retarget_height]()
+    {
         chain::header previous_block;
         auto previous_height = height_;
 
         // Loop backwards until we find a difficulty change point,
         // or we find a block which does not have max_bits (is not special).
-        while (true)
+        while (!is_retarget_height(previous_height))
         {
-            if (previous_height % readjustment_interval == 0)
-               break;
-
             --previous_height;
+
+            // Test for non-special block.
             previous_block = fetch_block(previous_height);
             if (previous_block.bits != max_work_bits)
-               break;
+                break;
         }
 
         return previous_block.bits;
     };
-#endif
 
-    if (height_ == 0)
-        return max_work_bits;
-
-    if (height_ % readjustment_interval != 0)
-    {
-#ifdef ENABLE_TESTNET
-        uint32_t max_time_gap =
-            fetch_block(height_ - 1).timestamp + 2 * target_spacing;
-        if (current_block_.header.timestamp > max_time_gap)
-            return max_work_bits;
-
-        return last_non_special_bits();
-#else
-        return previous_block_bits();
-#endif
-    }
-
-    // This is the total time it took for the last 2016 blocks.
-    const auto actual = actual_timespan(readjustment_interval);
-
-    // Now constrain the time between an upper and lower bound.
-    const auto constrained = range_constrain(actual,
-        target_timespan / 4, target_timespan * 4);
-
-    hash_number retarget;
-    retarget.set_compact(previous_block_bits());
-    retarget *= constrained;
-    retarget /= target_timespan;
-    if (retarget > max_target())
-        retarget = max_target();
-
-    return retarget.compact();
+    return last_non_special_bits();
 }
 
 bool validate_block::is_valid_coinbase_height(size_t height, 
