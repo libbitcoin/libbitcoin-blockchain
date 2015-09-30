@@ -36,9 +36,10 @@ namespace blockchain {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-// [April 1 2012]
 static constexpr uint32_t bip16_switchover_timestamp = 1333238400;
+/// Block 173805 is the first block after [April 1 2012]
 ////static constexpr uint32_t bip16_switchover_height_mainnet = 173805;
+//// Block 514 is the first block after [Feb 15 2014].
 ////static constexpr uint32_t bip16_switchover_height_testnet = 514;
 
 enum validation_options : uint32_t
