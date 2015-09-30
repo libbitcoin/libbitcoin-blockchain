@@ -42,7 +42,6 @@ class BCB_API blockchain_impl
   : public blockchain
 {
 public:
-
     blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights = { 0 },
         size_t orphan_capacity=20, bool testnet=false,
