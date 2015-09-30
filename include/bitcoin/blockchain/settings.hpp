@@ -33,9 +33,9 @@ struct BCB_API settings
     uint32_t threads;
     uint32_t block_pool_capacity;
     uint32_t history_start_height;
+    bool use_testnet_rules;
     boost::filesystem::path database_path;
     config::checkpoint::list checkpoints;
-    bool testnet_rules;
 };
 
 } // namespace chain
