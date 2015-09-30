@@ -35,6 +35,7 @@ struct BCB_API settings
     uint32_t history_start_height;
     boost::filesystem::path database_path;
     config::checkpoint::list checkpoints;
+    bool testnet_rules;
 };
 
 } // namespace chain
