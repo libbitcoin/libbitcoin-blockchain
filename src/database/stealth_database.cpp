@@ -67,8 +67,8 @@ stealth_list stealth_database::scan(const binary_type& filter,
     {
         // see if prefix matches
         const auto record = rows_.get(index);
-        const auto prefix = from_little_endian_unsafe<uint32_t>(record);
-        if (!is_filter_match(filter, prefix))
+        const auto field = from_little_endian_unsafe<uint32_t>(record);
+        if (!filter.is_prefix_of(field))
             continue;
 
         // Add row to results.
