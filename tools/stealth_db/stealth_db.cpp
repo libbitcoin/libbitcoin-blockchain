@@ -114,13 +114,13 @@ int main(int argc, char** argv)
             return -1;
         }
         db.start();
-        std::string prefix_str(args[0]);
-        binary_type prefix(prefix_str);
+        std::string filter_str(args[0]);
+        binary_type filter(filter_str);
         size_t from_height;
         if (!parse_uint(from_height, args[1]))
             return -1;
         db.start();
-        stealth_list rows = db.scan(prefix, from_height);
+        stealth_list rows = db.scan(filter, from_height);
         for (const auto row: rows)
         {
             std::cout << "Ephemkey: "

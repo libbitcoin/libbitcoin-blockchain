@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_STEALTH_DATABASE_HPP
 
+#include <cstdint>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
@@ -49,13 +50,12 @@ public:
     /**
      * Linearly scans all entries starting at from_height.
      */
-    stealth_list scan(const binary_type& prefix, size_t from_height) const;
+    stealth_list scan(const binary_type& filter, size_t from_height) const;
 
     /**
      * Add a stealth row to the database.
      */
-    BCB_API void store(const binary_type& stealth_prefix,
-        const stealth_row& row);
+    void store(uint32_t prefix, const stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.

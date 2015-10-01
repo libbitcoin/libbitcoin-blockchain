@@ -335,13 +335,13 @@ void blockchain_impl::fetch_history(const wallet::payment_address& address,
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_stealth(const binary_type& prefix,
+void blockchain_impl::fetch_stealth(const binary_type& filter,
     fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
-    const auto do_fetch = [this, prefix, handle_fetch, from_height](
+    const auto do_fetch = [this, filter, handle_fetch, from_height](
         size_t slock)
     {
-        const auto stealth = interface_.stealth.scan(prefix, from_height);
+        const auto stealth = interface_.stealth.scan(filter, from_height);
         return finish_fetch(slock, handle_fetch, error::success, stealth);
     };
 
