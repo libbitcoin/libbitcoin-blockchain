@@ -278,6 +278,7 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
             continue;
 
         // Try to extract the payment address from the even output.
+        // The payment address versions are arbitrary and unused here.
         const auto address = payment_address::extract(payment_script);
         if (!address)
             continue;
