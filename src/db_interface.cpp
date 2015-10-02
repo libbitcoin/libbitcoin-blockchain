@@ -267,22 +267,22 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
         const auto& ephemeral_script = outputs[i].script;
         const auto& payment_script = outputs[i + 1].script;
 
-        // Try to extract an unsigned ephemeral key.
+        // Try to extract an unsigned ephemeral key from the odd output.
         hash_digest unsigned_ephemeral_key;
         if (!extract_ephemeral_key(unsigned_ephemeral_key, ephemeral_script))
             continue;
 
-        // Try to extract the stealth prefix.
-        binary_type prefix;
+        // Try to extract a stealth prefix from the odd output.
+        uint32_t prefix;
         if (!to_stealth_prefix(prefix, ephemeral_script))
             continue;
 
-        // Try to extract the payment address.
+        // Try to extract the payment address from the even output.
+        // The payment address versions are arbitrary and unused here.
         const auto address = payment_address::extract(payment_script);
         if (!address)
             continue;
 
-        // Stealth data.
         const stealth_row row
         {
             unsigned_ephemeral_key,

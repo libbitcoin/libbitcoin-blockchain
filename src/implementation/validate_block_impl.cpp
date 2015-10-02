@@ -29,8 +29,9 @@ namespace blockchain {
 validate_block_impl::validate_block_impl(db_interface& database,
     size_t fork_index, const block_detail_list& orphan_chain,
     size_t orphan_index, size_t height, const chain::block& block,
-    const config::checkpoint::list& checks, stopped_callback stopped)
-  : validate_block(height, block, checks, stopped),
+    bool testnet, const config::checkpoint::list& checks,
+    stopped_callback stopped)
+  : validate_block(height, block, testnet, checks, stopped),
     interface_(database),
     height_(height),
     fork_index_(fork_index),

@@ -19,16 +19,17 @@
  */
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 
+#include <cstdint>
 #include <boost/filesystem.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-constexpr size_t bitfield_size = 4;
-
 // ephemkey is without sign byte and address is without version byte.
+constexpr size_t prefix_size = sizeof(uint32_t);
+
 // [ prefix_bitfield:4 ][ ephemkey:32 ][ address:20 ][ tx_id:32 ]
-constexpr size_t row_size = 4 + 32 + 20 + 32;
+constexpr size_t row_size = prefix_size + 2 * hash_size + short_hash_size;
 
 stealth_database::stealth_database(const boost::filesystem::path& index_filename, 
     const boost::filesystem::path& rows_filename)
@@ -54,7 +55,7 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-stealth_list stealth_database::scan(const binary_type& prefix,
+stealth_list stealth_database::scan(const binary_type& filter,
     size_t from_height) const
 {
     if (from_height >= index_.count())
@@ -66,13 +67,12 @@ stealth_list stealth_database::scan(const binary_type& prefix,
     {
         // see if prefix matches
         const auto record = rows_.get(index);
-        const data_slice bitfield(record, record + bitfield_size);
-        const binary_type compare(prefix.size(), bitfield);
-        if (prefix != compare)
+        const auto field = from_little_endian_unsafe<uint32_t>(record);
+        if (!filter.is_prefix_of(field))
             continue;
 
         // Add row to results.
-        auto deserial = make_deserializer_unsafe(record + bitfield_size);
+        auto deserial = make_deserializer_unsafe(record + prefix_size);
         result.push_back(
         {
             deserial.read_hash(),
@@ -84,22 +84,20 @@ stealth_list stealth_database::scan(const binary_type& prefix,
     return result;
 }
 
-void stealth_database::store(const binary_type& stealth_prefix,
-    const stealth_row& row)
+void stealth_database::store(uint32_t prefix, const stealth_row& row)
 {
-    BITCOIN_ASSERT(stealth_prefix.blocks().size() == bitfield_size);
-
     // Allocate new row.
     const auto index = rows_.allocate();
     const auto data = rows_.get(index);
 
     // Write data.
     auto serial = make_serializer(data);
-    serial.write_data(stealth_prefix.blocks());
+    serial.write_4_bytes_little_endian(prefix);
     serial.write_hash(row.ephemkey);
     serial.write_short_hash(row.address);
     serial.write_hash(row.transaction_hash);
-    BITCOIN_ASSERT(serial.iterator() == data + bitfield_size + hash_size + 
+
+    BITCOIN_ASSERT(serial.iterator() == data + prefix_size + hash_size +
         short_hash_size + hash_size);
 }
 

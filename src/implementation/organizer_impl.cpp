@@ -31,16 +31,16 @@ namespace libbitcoin {
 namespace blockchain {
 
 organizer_impl::organizer_impl(threadpool& pool, db_interface& database,
-    orphans_pool& orphans, simple_chain& chain,
+    orphans_pool& orphans, simple_chain& chain, bool testnet,
     const config::checkpoint::list& checks)
   : organizer(pool, orphans, chain),
-    interface_(database), checkpoints_(checks)
+    testnet_(testnet), interface_(database), checkpoints_(checks)
 {
     // Sort checkpoints by height so that top is sure to be properly obtained.
     checkpoint::sort(checkpoints_);
 }
 
-static size_t count_inputs(const chain::block& block)
+size_t organizer_impl::count_inputs(const chain::block& block)
 {
     size_t total_inputs = 0;
     for (const auto& tx: block.transactions)
@@ -71,7 +71,7 @@ std::error_code organizer_impl::verify(size_t fork_point,
     };
 
     const validate_block_impl validate(interface_, fork_point, orphan_chain,
-        orphan_index, height, current_block, checkpoints_, callback);
+        orphan_index, height, current_block, testnet_, checkpoints_, callback);
 
     // Checks that are independent of the chain.
     auto ec = validate.check_block();

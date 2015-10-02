@@ -42,7 +42,7 @@ protected:
     typedef std::function<bool()> stopped_callback;
 
     validate_block(size_t height, const chain::block& block,
-        const config::checkpoint::list& checks,
+        bool testnet, const config::checkpoint::list& checks,
         stopped_callback stop_callback=nullptr);
 
     virtual uint64_t actual_timespan(size_t interval) const = 0;
@@ -69,7 +69,7 @@ protected:
     virtual bool stopped() const;
     virtual bool is_spent_duplicate(const chain::transaction& tx) const;
     virtual bool is_valid_time_stamp(uint32_t timestamp) const;
-    virtual uint32_t work_required() const;
+    virtual uint32_t work_required(bool is_testnet) const;
 
     static bool is_distinct_tx_set(const chain::transaction::list& txs);
     static bool is_valid_proof_of_work(hash_digest hash, uint32_t bits);
@@ -79,6 +79,7 @@ protected:
     static size_t legacy_sigops_count(const chain::transaction::list& txs);
 
 private:
+    bool testnet_;
     const size_t height_;
     const chain::block& current_block_;
     const config::checkpoint::list& checkpoints_;

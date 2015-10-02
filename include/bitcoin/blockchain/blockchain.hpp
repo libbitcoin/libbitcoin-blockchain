@@ -80,7 +80,7 @@ typedef std::vector<stealth_row> stealth_list;
 /**
  * An interface to a blockchain backend.
  */
-class blockchain
+class BCB_API blockchain
 {
 public:
     typedef std::function<void (const std::error_code&, block_info)>
@@ -295,7 +295,7 @@ public:
      *  );
      * @endcode
      */
-    BCB_API virtual void fetch_spend(const chain::output_point& outpoint,
+    virtual void fetch_spend(const chain::output_point& outpoint,
         fetch_handler_spend handle_fetch) = 0;
 
     /**
@@ -369,7 +369,7 @@ public:
      * from_height is guarantees to return results from that height.
      * It is provided as an optimisation.
      *
-     * @param[in]   prefix          Stealth prefix information.
+     * @param[in]   filter          Stealth prefix filter.
      * @param[in]   handle_fetch    Completion handler for fetch operation.
      * @param[in]   from_height     Starting block height for stealth results.
      *
@@ -380,7 +380,7 @@ public:
      *  );
      * @endcode
      */
-    virtual void fetch_stealth(const binary_type& prefix,
+    virtual void fetch_stealth(const binary_type& filter,
         fetch_handler_stealth handle_fetch, uint64_t from_height=0) = 0;
 
     /**

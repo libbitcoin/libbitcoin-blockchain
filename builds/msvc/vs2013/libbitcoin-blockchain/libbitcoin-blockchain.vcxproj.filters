@@ -177,10 +177,14 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\fetch_block_locator.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoints.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pointer_array_source.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
@@ -263,5 +267,6 @@
     <ClCompile Include="..\..\..\..\src\checkpoint.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\block.cpp" />
   </ItemGroup>
 </Project>

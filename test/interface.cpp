@@ -20,6 +20,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain.hpp>
+#include "genesis_block.hpp"
 
 using namespace bc;
 using namespace bc::blockchain;

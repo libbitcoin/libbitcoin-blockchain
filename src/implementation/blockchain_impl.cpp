@@ -50,7 +50,7 @@ static file_lock init_lock(const std::string& prefix)
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity,
-    const config::checkpoint::list& checks)
+    bool testnet, const config::checkpoint::list& checks)
   : dispatch_(pool),
     flock_(init_lock(prefix)),
     seqlock_(0),
@@ -59,7 +59,7 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     interface_(db_paths_, active_heights),
     orphans_(orphan_capacity),
     chain_(interface_),
-    organizer_(pool, interface_, orphans_, chain_, checks)
+    organizer_(pool, interface_, orphans_, chain_, testnet, checks)
 {
 }
 blockchain_impl::~blockchain_impl()
@@ -335,13 +335,13 @@ void blockchain_impl::fetch_history(const wallet::payment_address& address,
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_stealth(const binary_type& prefix,
+void blockchain_impl::fetch_stealth(const binary_type& filter,
     fetch_handler_stealth handle_fetch, uint64_t from_height)
 {
-    const auto do_fetch = [this, prefix, handle_fetch, from_height](
+    const auto do_fetch = [this, filter, handle_fetch, from_height](
         size_t slock)
     {
-        const auto stealth = interface_.stealth.scan(prefix, from_height);
+        const auto stealth = interface_.stealth.scan(filter, from_height);
         return finish_fetch(slock, handle_fetch, error::success, stealth);
     };
 

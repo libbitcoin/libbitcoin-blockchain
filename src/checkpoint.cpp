@@ -26,18 +26,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-#ifdef ENABLE_TESTNET
-const config::checkpoint::list checkpoint::defaults
-{
-    { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
-    { "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 },
-    { "0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2", 200000 },
-    { "000000000000000082ccf8f1557c5d40b21edabb18d2d691cfbf87118bac7254", 300000 },
-    { "000000000598cbbb1e79057b79eef828c495d4fc31050e6b179c57d07d00367c", 400000 },
-    { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 }
-};
-#else
-const config::checkpoint::list checkpoint::defaults
+const config::checkpoint::list checkpoint::mainnet
 {
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
     { "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d", 11111 },
@@ -61,7 +50,16 @@ const config::checkpoint::list checkpoint::defaults
     { "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1", 337459 },
     { "0000000000000000086672a8c97ad666f89cf04736951791150015419810d586", 368991 }
 };
-#endif
+
+const config::checkpoint::list checkpoint::testnet
+{
+    { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
+    { "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 },
+    { "0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2", 200000 },
+    { "000000000000000082ccf8f1557c5d40b21edabb18d2d691cfbf87118bac7254", 300000 },
+    { "000000000598cbbb1e79057b79eef828c495d4fc31050e6b179c57d07d00367c", 400000 },
+    { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 }
+};
 
 config::checkpoint::list& checkpoint::sort(config::checkpoint::list& checks)
 {
