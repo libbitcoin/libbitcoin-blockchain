@@ -122,7 +122,6 @@ void transaction_pool::validation_complete(const std::error_code& ec,
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
-        //BITCOIN_ASSERT(unconfirmed[0] < tx.inputs.size());
         handle_validate(ec, unconfirmed);
         return;
     }
@@ -135,7 +134,7 @@ void transaction_pool::validation_complete(const std::error_code& ec,
         return;
     }
 
-    // Re-check as another transaction might have been added in the interim.
+    // Recheck the memory pool, as a duplicate may have been added.
     if (tx_exists(tx_hash))
         handle_validate(error::duplicate, chain::index_list());
     else
@@ -262,7 +261,7 @@ void transaction_pool::reorganize(const std::error_code& ec,
 
     if (replaced_blocks.empty())
         dispatch_.ordered(
-            std::bind(&transaction_pool::delete_confirmed,
+            std::bind(&transaction_pool::delete_confirmed_txs,
                 this, new_blocks));
     else
         dispatch_.ordered(
@@ -276,6 +275,7 @@ void transaction_pool::reorganize(const std::error_code& ec,
             this, _1, _2, _3, _4));
 }
 
+// There has been a reorg, clear the memory pool.
 void transaction_pool::invalidate_pool()
 {
     // We are shutting down, no need to do this.
@@ -285,13 +285,16 @@ void transaction_pool::invalidate_pool()
     // See http://www.jwz.org/doc/worse-is-better.html
     // for why we take this approach.
     // We return with an error_code and don't handle this case.
-    for (const auto& entry: buffer_)
-        entry.handle_confirm(error::blockchain_reorganized);
+    // The alternative would be resubmit all tx from the cleared blocks.
+    // Ordering would be reverse of chain age and then mempool by age.
+    for (const auto& tx: buffer_)
+        tx.handle_confirm(error::blockchain_reorganized);
 
     buffer_.clear();
 }
 
-void transaction_pool::delete_confirmed(
+// Delete txs in a new block from the mempool based on tx hash.
+void transaction_pool::delete_confirmed_txs(
     const blockchain::block_list& new_blocks)
 {
     // We are shutting down, no need to do this.
@@ -307,6 +310,7 @@ void transaction_pool::delete_confirmed(
             try_delete_tx(new_tx.hash());
 }
 
+// Delete a tx by hash from the mempool if it is found.
 void transaction_pool::try_delete_tx(const hash_digest& hash)
 {
     // We are shutting down, no need to do this.
@@ -324,14 +328,6 @@ void transaction_pool::try_delete_tx(const hash_digest& hash)
     };
 
     std::remove_if(buffer_.begin(), buffer_.end(), match_and_confirm);
-}
-
-// Deprecated, use constructor.
-void transaction_pool::set_capacity(size_t capacity)
-{
-    //BITCOIN_ASSERT_MSG(false, 
-    //    "transaction_pool::set_capacity deprecated, set on construct");
-    buffer_.set_capacity(capacity);
 }
 
 } // namespace blockchain

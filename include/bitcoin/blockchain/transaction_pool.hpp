@@ -190,9 +190,6 @@ public:
     void exists(const hash_digest& transaction_hash,
         exists_handler handle_exists);
 
-    /// Deprecated, unsafe after startup, use constructor.
-    void set_capacity(size_t capacity);
-
 private:
 
     void do_validate(const chain::transaction& tx,
@@ -209,7 +206,7 @@ private:
 
     void invalidate_pool();
 
-    void delete_confirmed(const blockchain::block_list& new_blocks);
+    void delete_confirmed_txs(const blockchain::block_list& new_blocks);
     void try_delete_tx(const hash_digest& hash);
     bool stopped();
 

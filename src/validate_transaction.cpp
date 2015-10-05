@@ -36,6 +36,9 @@ namespace blockchain {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+// Max transaction size is set to max block size (1,000,000).
+static constexpr uint32_t max_transaction_size = 1000000;
+
 static constexpr uint32_t bip16_switchover_timestamp = 1333238400;
 /// Block 173805 is the first block after [April 1 2012]
 ////static constexpr uint32_t bip16_switchover_height_mainnet = 173805;
@@ -83,6 +86,7 @@ std::error_code validate_transaction::basic_checks() const
     if (ec)
         return ec;
 
+    // This should probably preceed check_transaction.
     if (tx_.is_coinbase())
         return error::coinbase_transaction;
 
@@ -313,9 +317,8 @@ std::error_code validate_transaction::check_transaction(
     if (tx.inputs.empty() || tx.outputs.empty())
         return error::empty_transaction;
 
-    // Maybe not needed since we try to serialise block in CheckBlock()
-    //if (exporter_->save(tx, false).size() > max_block_size)
-    //    return false;
+    if (tx.serialized_size() > max_transaction_size)
+        return error::size_limits;
 
     // Check for negative or overflow output values
     uint64_t total_output_value = 0;
