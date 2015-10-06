@@ -193,7 +193,7 @@ public:
     /// Deprecated, unsafe after startup, use constructor.
     void set_capacity(size_t capacity);
 
-private:
+protected:
     typedef std::error_code code;
     typedef std::function<bool (const transaction_input_type&)>
         input_comparison;
