@@ -386,7 +386,6 @@ void transaction_pool::delete_package(const std::error_code& ec)
     const auto& oldest = buffer_.front();
     oldest.handle_confirm(ec);
     const auto hash = oldest.hash;
-    buffer_.pop_front();
     delete_package(hash, ec);
 }
 
