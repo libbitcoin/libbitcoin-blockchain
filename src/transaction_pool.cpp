@@ -404,6 +404,7 @@ void transaction_pool::delete_package(const hash_digest& tx_hash,
     const auto it = std::find_if(buffer_.begin(), buffer_.end(), matched);
     if (it != buffer_.end())
     {
+        it->handle_confirm(ec);
         buffer_.erase(it);
         delete_dependencies(tx_hash, ec);
     }
