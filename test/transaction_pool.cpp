@@ -24,7 +24,7 @@
 using namespace bc;
 using namespace bc::chain;
 
-BOOST_AUTO_TEST_SUITE(transaction_pool)
+BOOST_AUTO_TEST_SUITE(transaction_pool_tests)
 
 class threadpool_fixture
   : public threadpool
