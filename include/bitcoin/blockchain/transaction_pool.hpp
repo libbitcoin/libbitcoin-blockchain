@@ -194,6 +194,11 @@ public:
     void set_capacity(size_t capacity);
 
 private:
+    typedef std::error_code code;
+    typedef std::function<bool (const transaction_input_type&)>
+        input_comparison;
+
+    bool stopped();
     void do_validate(const transaction_type& tx,
         validate_handler handle_validate);
     void validation_complete(const std::error_code& ec, 
@@ -204,10 +209,17 @@ private:
     void reorganize(const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
-    void invalidate_pool();
-    void delete_confirmed(const blockchain::block_list& new_blocks);
-    void try_delete_tx(const hash_digest& hash);
-    bool stopped();
+
+    void delete_all();
+    void delete_package(const std::error_code& ec);
+    void delete_package(const hash_digest& tx_hash, const code& ec);
+    void delete_package(const transaction_type& tx, const code& ec);
+    void delete_dependencies(const hash_digest& tx_hash, const code& ec);
+    void delete_dependencies(const output_point& point, const code& ec);
+    void delete_dependencies(input_comparison is_dependency, const code& ec);
+    void delete_superseded(const blockchain::block_list& blocks);
+    void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
+    void delete_spent_in_blocks(const blockchain::block_list& blocks);
 
     sequencer strand_;
     blockchain& blockchain_;
