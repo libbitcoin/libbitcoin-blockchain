@@ -43,7 +43,7 @@ transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
 
 transaction_pool::~transaction_pool()
 {
-    // This was reportedly required for use with circular_buffer.
+    delete_all(error::service_stopped);
 }
 
 bool transaction_pool::empty() const
@@ -160,9 +160,11 @@ pool_buffer::const_iterator transaction_pool::tx_find(const hash_digest& hash)
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    // We can pretend we did it here.
     if (stopped())
+    {
+        handle_validate(error::service_stopped, index_list());
         return;
+    }
 
     const auto store_transaction = [this, tx, handle_confirm]()
     {
@@ -267,7 +269,7 @@ void transaction_pool::reorganize(const std::error_code& ec,
     else
         strand_.queue(
             std::bind(&transaction_pool::delete_all,
-                this));
+                this, error::blockchain_reorganized));
 
     // new blocks come in - remove txs in new
     // old blocks taken out - resubmit txs in old
@@ -279,17 +281,13 @@ void transaction_pool::reorganize(const std::error_code& ec,
 // There has been a reorg, clear the memory pool.
 // The alternative would be resubmit all tx from the cleared blocks.
 // Ordering would be reverse of chain age and then mempool by age.
-void transaction_pool::delete_all()
+void transaction_pool::delete_all(const std::error_code& ec)
 {
-    // We are shutting down, no need to do this.
-    if (stopped())
-        return;
-
     // See http://www.jwz.org/doc/worse-is-better.html
     // for why we take this approach.
     // We return with an error_code and don't handle this case.
     for (const auto& entry: buffer_)
-        entry.handle_confirm(error::blockchain_reorganized);
+        entry.handle_confirm(ec);
 
     buffer_.clear();
 }
@@ -391,7 +389,7 @@ void transaction_pool::delete_package(const std::error_code& ec)
     oldest.handle_confirm(ec);
     const auto hash = oldest.hash;
     buffer_.pop_front();
-    delete_dependencies(hash, ec);
+    delete_package(hash, ec);
 }
 
 void transaction_pool::delete_package(const hash_digest& tx_hash,
@@ -400,18 +398,17 @@ void transaction_pool::delete_package(const hash_digest& tx_hash,
     if (stopped())
         return;
 
-    const auto found = [this, &ec, &tx_hash](
-        const transaction_entry_info& entry)
+    const auto matched = [&tx_hash](const transaction_entry_info& entry)
     {
-        const auto match = (entry.hash == tx_hash);
-        if (match)
-            entry.handle_confirm(ec);
-
-        return match;
+        return entry.hash == tx_hash;
     };
 
-    if (std::remove_if(buffer_.begin(), buffer_.end(), found) != buffer_.end())
+    const auto it = std::find_if(buffer_.begin(), buffer_.end(), matched);
+    if (it != buffer_.end())
+    {
+        buffer_.erase(it);
         delete_dependencies(tx_hash, ec);
+    }
 }
 
 void transaction_pool::delete_package(const transaction_type& tx,

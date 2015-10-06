@@ -210,8 +210,8 @@ protected:
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
 
-    void delete_all();
-    void delete_package(const std::error_code& ec);
+    void delete_all(const code& ec);
+    void delete_package(const code& ec);
     void delete_package(const hash_digest& tx_hash, const code& ec);
     void delete_package(const transaction_type& tx, const code& ec);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
