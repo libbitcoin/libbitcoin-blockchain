@@ -210,6 +210,7 @@ protected:
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
 
+    void add(const transaction_type& tx, confirm_handler handler);
     void delete_all(const code& ec);
     void delete_package(const code& ec);
     void delete_package(const hash_digest& tx_hash, const code& ec);

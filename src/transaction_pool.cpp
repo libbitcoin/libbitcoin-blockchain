@@ -157,6 +157,7 @@ pool_buffer::const_iterator transaction_pool::tx_find(const hash_digest& hash)
     return std::find_if(buffer_.begin(), buffer_.end(), found);
 }
 
+// handle_confirm will never fire if handle_validate returns a failure code.
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
@@ -166,29 +167,16 @@ void transaction_pool::store(const transaction_type& tx,
         return;
     }
 
-    const auto store_transaction = [this, tx, handle_confirm]()
-    {
-        // When new tx are added to the circular buffer, any tx at the front
-        // will be droppped. We notify the API user through the handler.
-        if (buffer_.size() == buffer_.capacity())
-        {
-            // There is no guarantee that handle_confirm will fire.
-            const auto handle_confirm = buffer_.front().handle_confirm;
-            handle_confirm(error::pool_filled);
-        }
-
-        // We store a precomputed tx hash to make lookups faster.
-        buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
-
-        log_debug(LOG_BLOCKCHAIN)
-            << "Transaction saved to mempool (" << buffer_.size() << ")";
-    };
-
-    const auto wrap_validate = [this, store_transaction, handle_validate]
+    const auto wrap_validate = [this, tx, handle_confirm, handle_validate]
         (const std::error_code& ec, const index_list& unconfirmed)
     {
         if (!ec)
-            store_transaction();
+        {
+            add(tx, handle_confirm);
+
+            log_debug(LOG_BLOCKCHAIN)
+                << "Transaction saved to mempool (" << buffer_.size() << ")";
+        }
 
         handle_validate(ec, unconfirmed);
     };
@@ -276,6 +264,16 @@ void transaction_pool::reorganize(const std::error_code& ec,
     blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::reorganize,
             this, _1, _2, _3, _4));
+}
+
+void transaction_pool::add(const transaction_type& tx, confirm_handler handler)
+{
+    // When a new tx is added to the buffer drop the oldest.
+    if (buffer_.size() == buffer_.capacity())
+        delete_package(error::pool_filled);
+
+    // Store a precomputed tx hash to make lookups faster.
+    buffer_.push_back({ hash_transaction(tx), tx, handler });
 }
 
 // There has been a reorg, clear the memory pool.
@@ -382,7 +380,7 @@ void transaction_pool::delete_dependencies(input_comparison is_dependency,
 
 void transaction_pool::delete_package(const std::error_code& ec)
 {
-    if (stopped())
+    if (stopped() || buffer_.empty())
         return;
 
     const auto& oldest = buffer_.front();
