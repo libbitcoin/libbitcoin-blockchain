@@ -234,15 +234,20 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__empty__empty)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__two__expected_handler_calls)
 {
-    const auto handle_confirm = [](const std::error_code& ec)
+    const auto handle_confirm1 = [](const std::error_code& ec)
+    {
+        BOOST_REQUIRE_EQUAL(ec.value(), error::blockchain_reorganized);
+    };
+
+    const auto handle_confirm2 = [](const std::error_code& ec)
     {
         BOOST_REQUIRE_EQUAL(ec.value(), error::blockchain_reorganized);
     };
 
     transaction_type tx;
     hash_digest hash(null_hash);
-    transaction_entry_info entry1{ hash, tx, handle_confirm };
-    transaction_entry_info entry2{ hash, tx, handle_confirm };
+    transaction_entry_info entry1{ hash, tx, handle_confirm1 };
+    transaction_entry_info entry2{ hash, tx, handle_confirm2 };
 
     pool_buffer transactions(2);
     transactions.push_back(entry1);
@@ -251,6 +256,26 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__two__expected_handler_calls)
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
     mempool.delete_all();
     BOOST_REQUIRE(mempool.transactions().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__stopped_two__no_handler_calls_two)
+{
+    const auto handle_confirm = [](const std::error_code& ec)
+    {
+        BOOST_REQUIRE(false);
+    };
+
+    transaction_type tx;
+    hash_digest hash(null_hash);
+    transaction_entry_info entry{ hash, tx, handle_confirm };
+
+    pool_buffer transactions(2);
+    transactions.push_back(entry);
+    transactions.push_back(entry);
+    DECLARE_TRANSACTION_POOL_TXS(mempool, transactions);
+    mempool.stopped(true);
+    mempool.delete_all();
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
