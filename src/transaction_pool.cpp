@@ -324,7 +324,7 @@ void transaction_pool::delete_spent_in_blocks(
                     error::double_spend);
 }
 
-// Delete any tx that spends any output of this tx.
+// Delete any tx that spends this output point.
 void transaction_pool::delete_dependencies(const output_point& point,
     const std::error_code& ec)
 {
