@@ -278,7 +278,7 @@ void transaction_pool::delete_confirmed_in_blocks(
 
     for (const auto block: blocks)
         for (const auto& tx: block->transactions)
-            delete_package(tx, error::success);
+            delete_single(tx, error::success);
 }
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
@@ -355,8 +355,21 @@ void transaction_pool::delete_package(const code& ec)
 void transaction_pool::delete_package(const hash_digest& tx_hash,
     const code& ec)
 {
+    if (delete_single(tx_hash, ec))
+        delete_dependencies(tx_hash, ec);
+}
+
+void transaction_pool::delete_package(const chain::transaction& tx,
+    const code& ec)
+{
+    delete_package(tx.hash(), ec);
+}
+
+bool transaction_pool::delete_single(const hash_digest& tx_hash,
+    const code& ec)
+{
     if (stopped())
-        return;
+        return false;
 
     const auto matched = [&tx_hash](const entry& entry)
     {
@@ -364,18 +377,18 @@ void transaction_pool::delete_package(const hash_digest& tx_hash,
     };
 
     const auto it = std::find_if(buffer_.begin(), buffer_.end(), matched);
-    if (it != buffer_.end())
-    {
-        it->handle_confirm(ec);
-        buffer_.erase(it);
-        delete_dependencies(tx_hash, ec);
-    }
+    if (it == buffer_.end())
+        return false;
+
+    it->handle_confirm(ec);
+    buffer_.erase(it);
+    return true;
 }
 
-void transaction_pool::delete_package(const chain::transaction& tx,
+bool transaction_pool::delete_single(const chain::transaction& tx,
     const code& ec)
 {
-    delete_package(tx.hash(), ec);
+    return delete_single(tx.hash(), ec);
 }
 
 bool transaction_pool::find(chain::transaction& out_tx,

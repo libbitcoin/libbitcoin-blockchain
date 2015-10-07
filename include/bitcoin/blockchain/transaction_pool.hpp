@@ -73,6 +73,7 @@ public:
         validate_handler validate_handler);
 
     // TODO: these should be access-limited to validate_transaction.
+    // These are not stranded and therefore represent a thread safety issue.
     bool is_in_pool(const hash_digest& tx_hash) const;
     bool is_spent_in_pool(const chain::transaction& tx) const;
     bool is_spent_in_pool(const chain::output_point& outpoint) const;
@@ -108,6 +109,8 @@ protected:
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
     void delete_superseded(const blockchain::block_list& blocks);
+    bool delete_single(const hash_digest& tx_hash, const code& ec);
+    bool delete_single(const chain::transaction& tx, const code& ec);
     void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
     void delete_spent_in_blocks(const blockchain::block_list& blocks);
 
