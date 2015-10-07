@@ -90,6 +90,7 @@ void transaction_pool::validate(const transaction_type& tx,
     strand_.queue(&transaction_pool::do_validate,
         this, tx, handle_validate);
 }
+
 void transaction_pool::do_validate(const transaction_type& tx,
     validate_handler handle_validate)
 {
@@ -350,30 +351,22 @@ void transaction_pool::delete_dependencies(const hash_digest& tx_hash,
     delete_dependencies(comparison, ec);
 }
 
+// This is horribly inefficient, but it's simple.
+// TODO: Create persistent multi-indexed memory pool (including age and
+// children) and perform this pruning trivialy (and add policy over it).
 void transaction_pool::delete_dependencies(input_comparison is_dependency,
     const std::error_code& ec)
 {
     std::vector<hash_digest> dependencies;
-
-    // This is horribly inefficient, but it's simple.
-    // TODO: Create persistent multi-indexed memory pool (including age and
-    // children) and perform this pruning trivialy (and add policy over it).
     for (const auto& entry: buffer_)
-    {
-        if (stopped())
-            return;
-
         for (const auto& input: entry.tx.inputs)
-        {
             if (is_dependency(input))
             {
-                // We queue deletion to protect the iterator.
                 dependencies.push_back(hash_transaction(entry.tx));
                 break;
             }
-        }
-    }
 
+    // We queue deletion to protect the iterator.
     for (const auto& dependency: dependencies)
         delete_package(dependency, ec);
 }
