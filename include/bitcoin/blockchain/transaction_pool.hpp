@@ -219,6 +219,8 @@ protected:
     void delete_dependencies(const output_point& point, const code& ec);
     void delete_dependencies(input_comparison is_dependency, const code& ec);
     void delete_superseded(const blockchain::block_list& blocks);
+    bool delete_single(const hash_digest& tx_hash, const code& ec);
+    bool delete_single(const transaction_type& tx, const code& ec);
     void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
     void delete_spent_in_blocks(const blockchain::block_list& blocks);
 
