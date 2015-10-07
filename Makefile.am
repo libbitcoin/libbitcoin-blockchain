@@ -78,6 +78,7 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/htdb.cpp \
     test/interface.cpp \
     test/main.cpp \
+    test/transaction_pool.cpp \
     test/validate_block.cpp
 
 endif WITH_TESTS

@@ -43,7 +43,7 @@ transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
 
 transaction_pool::~transaction_pool()
 {
-    // This was reportedly required for use with circular_buffer.
+    delete_all(error::service_stopped);
 }
 
 bool transaction_pool::empty() const
@@ -157,36 +157,26 @@ pool_buffer::const_iterator transaction_pool::tx_find(const hash_digest& hash)
     return std::find_if(buffer_.begin(), buffer_.end(), found);
 }
 
+// handle_confirm will never fire if handle_validate returns a failure code.
 void transaction_pool::store(const transaction_type& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    // We can pretend we did it here.
     if (stopped())
-        return;
-
-    const auto store_transaction = [this, tx, handle_confirm]()
     {
-        // When new tx are added to the circular buffer, any tx at the front
-        // will be droppped. We notify the API user through the handler.
-        if (buffer_.size() == buffer_.capacity())
-        {
-            // There is no guarantee that handle_confirm will fire.
-            const auto handle_confirm = buffer_.front().handle_confirm;
-            handle_confirm(error::pool_filled);
-        }
+        handle_validate(error::service_stopped, index_list());
+        return;
+    }
 
-        // We store a precomputed tx hash to make lookups faster.
-        buffer_.push_back({hash_transaction(tx), tx, handle_confirm});
-
-        log_debug(LOG_BLOCKCHAIN)
-            << "Transaction saved to mempool (" << buffer_.size() << ")";
-    };
-
-    const auto wrap_validate = [this, store_transaction, handle_validate]
+    const auto wrap_validate = [this, tx, handle_confirm, handle_validate]
         (const std::error_code& ec, const index_list& unconfirmed)
     {
         if (!ec)
-            store_transaction();
+        {
+            add(tx, handle_confirm);
+
+            log_debug(LOG_BLOCKCHAIN)
+                << "Transaction saved to mempool (" << buffer_.size() << ")";
+        }
 
         handle_validate(ec, unconfirmed);
     };
@@ -262,12 +252,12 @@ void transaction_pool::reorganize(const std::error_code& ec,
 
     if (replaced_blocks.empty())
         strand_.queue(
-            std::bind(&transaction_pool::delete_confirmed,
+            std::bind(&transaction_pool::delete_superseded,
                 this, new_blocks));
     else
         strand_.queue(
-            std::bind(&transaction_pool::invalidate_pool,
-                this));
+            std::bind(&transaction_pool::delete_all,
+                this, error::blockchain_reorganized));
 
     // new blocks come in - remove txs in new
     // old blocks taken out - resubmit txs in old
@@ -276,54 +266,153 @@ void transaction_pool::reorganize(const std::error_code& ec,
             this, _1, _2, _3, _4));
 }
 
-void transaction_pool::invalidate_pool()
+void transaction_pool::add(const transaction_type& tx, confirm_handler handler)
 {
-    // We are shutting down, no need to do this.
-    if (stopped())
-        return;
+    // When a new tx is added to the buffer drop the oldest.
+    if (buffer_.size() == buffer_.capacity())
+        delete_package(error::pool_filled);
 
+    // Store a precomputed tx hash to make lookups faster.
+    buffer_.push_back({ hash_transaction(tx), tx, handler });
+}
+
+// There has been a reorg, clear the memory pool.
+// The alternative would be resubmit all tx from the cleared blocks.
+// Ordering would be reverse of chain age and then mempool by age.
+void transaction_pool::delete_all(const std::error_code& ec)
+{
     // See http://www.jwz.org/doc/worse-is-better.html
     // for why we take this approach.
     // We return with an error_code and don't handle this case.
     for (const auto& entry: buffer_)
-        entry.handle_confirm(error::blockchain_reorganized);
+        entry.handle_confirm(ec);
 
     buffer_.clear();
 }
 
-void transaction_pool::delete_confirmed(
-    const blockchain::block_list& new_blocks)
+// Delete mempool txs that are obsoleted by new blocks acceptance.
+void transaction_pool::delete_superseded(const blockchain::block_list& blocks)
 {
-    // We are shutting down, no need to do this.
-    if (stopped())
-        return;
-
-    // Optimization: there is nothing to delete, don't loop/hash.
-    if (buffer_.empty())
-        return;
-
-    for (const auto new_block: new_blocks)
-        for (const auto& new_tx: new_block->transactions)
-            try_delete_tx(hash_transaction(new_tx));
+    // Deletion by hash returns success code, the other a double-spend error.
+    delete_confirmed_in_blocks(blocks);
+    delete_spent_in_blocks(blocks);
 }
 
-void transaction_pool::try_delete_tx(const hash_digest& hash)
+// Delete mempool txs that are duplicated in the new blocks.
+void transaction_pool::delete_confirmed_in_blocks(
+    const blockchain::block_list& blocks)
 {
-    // We are shutting down, no need to do this.
+    if (stopped() || buffer_.empty())
+        return;
+
+    for (const auto block: blocks)
+        for (const auto& tx: block->transactions)
+            delete_package(tx, error::success);
+}
+
+// Delete all txs that spend a previous output of any tx in the new blocks.
+void transaction_pool::delete_spent_in_blocks(
+    const blockchain::block_list& blocks)
+{
+    if (stopped() || buffer_.empty())
+        return;
+
+    for (const auto block: blocks)
+        for (const auto& tx: block->transactions)
+            for (const auto& input: tx.inputs)
+                delete_dependencies(input.previous_output,
+                    error::double_spend);
+}
+
+// Delete any tx that spends this output point.
+void transaction_pool::delete_dependencies(const output_point& point,
+    const std::error_code& ec)
+{
+    // TODO: implement output_point comparison operator.
+    const auto comparison = [&point](const transaction_input_type& input)
+    {
+        return input.previous_output.index == point.index &&
+            input.previous_output.hash == point.hash;
+    };
+
+    delete_dependencies(comparison, ec);
+}
+
+// Delete any tx that spends any output of this tx.
+void transaction_pool::delete_dependencies(const hash_digest& tx_hash,
+    const std::error_code& ec)
+{
+    const auto comparison = [&tx_hash](const transaction_input_type& input)
+    {
+        return input.previous_output.hash == tx_hash;
+    };
+
+    delete_dependencies(comparison, ec);
+}
+
+void transaction_pool::delete_dependencies(input_comparison is_dependency,
+    const std::error_code& ec)
+{
+    std::vector<hash_digest> dependencies;
+
+    // This is horribly inefficient, but it's simple.
+    // TODO: Create persistent multi-indexed memory pool (including age and
+    // children) and perform this pruning trivialy (and add policy over it).
+    for (const auto& entry: buffer_)
+    {
+        if (stopped())
+            return;
+
+        for (const auto& input: entry.tx.inputs)
+        {
+            if (is_dependency(input))
+            {
+                // We queue deletion to protect the iterator.
+                dependencies.push_back(hash_transaction(entry.tx));
+                break;
+            }
+        }
+    }
+
+    for (const auto& dependency: dependencies)
+        delete_package(dependency, ec);
+}
+
+void transaction_pool::delete_package(const std::error_code& ec)
+{
+    if (stopped() || buffer_.empty())
+        return;
+
+    const auto& oldest = buffer_.front();
+    oldest.handle_confirm(ec);
+    const auto hash = oldest.hash;
+    delete_package(hash, ec);
+}
+
+void transaction_pool::delete_package(const hash_digest& tx_hash,
+    const std::error_code& ec)
+{
     if (stopped())
         return;
 
-    const auto match_and_confirm = [this, &hash](
-        const transaction_entry_info& entry)
+    const auto matched = [&tx_hash](const transaction_entry_info& entry)
     {
-        const auto match = (entry.hash == hash);
-        if (match)
-            entry.handle_confirm(error::success);
-
-        return match;
+        return entry.hash == tx_hash;
     };
 
-    std::remove_if(buffer_.begin(), buffer_.end(), match_and_confirm);
+    const auto it = std::find_if(buffer_.begin(), buffer_.end(), matched);
+    if (it != buffer_.end())
+    {
+        it->handle_confirm(ec);
+        buffer_.erase(it);
+        delete_dependencies(tx_hash, ec);
+    }
+}
+
+void transaction_pool::delete_package(const transaction_type& tx,
+    const std::error_code& ec)
+{
+    delete_package(hash_transaction(tx), ec);
 }
 
 // Deprecated, use constructor.
