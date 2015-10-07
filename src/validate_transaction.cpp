@@ -118,6 +118,7 @@ void validate_transaction::handle_duplicate_check(
         return;
     }
 
+    // TODO: we may want to allow spent-in-pool (RBF).
     if (pool_.is_spent_in_pool(tx_))
     {
         handle_validate_(error::double_spend, chain::index_list());
