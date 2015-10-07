@@ -30,17 +30,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-struct BCB_API transaction_entry_info
-{
-    typedef std::function<void (const std::error_code&)> confirm_handler;
-    hash_digest hash;
-    chain::transaction tx;
-    confirm_handler handle_confirm;
-};
-
-// TODO: define in transaction_pool (compat break).
-typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
-
 /**
  * Before bitcoin transactions make it into a block, they go into
  * a transaction memory pool. This class encapsulates that functionality
@@ -52,25 +41,19 @@ typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
  * a store/fetch paradigm. Tracking must be performed externally and make
  * use of store's handle_store and handle_confirm to manage changes in the
  * state of memory pool transactions.
- *
- * @code
- *  threadpool pool(1);
- *  // transaction_pool needs access to the blockchain
- *  blockchain* chain = load_our_backend();
- *  // create and initialize the transaction memory pool
- *  transaction_pool txpool(pool, *chain);
- *  txpool.start();
- * @endcode
  */
 class BCB_API transaction_pool
 {
 public:
-    typedef std::function<void (const std::error_code&,
-        const chain::index_list&)> validate_handler;
-    typedef std::function<void (const std::error_code&,
-        const chain::transaction&)> fetch_handler;
-    typedef std::function<void (const std::error_code&, bool)> exists_handler;
-    typedef transaction_entry_info::confirm_handler confirm_handler;
+    typedef std::function<void(const code&)> exists_handler;
+    typedef std::function<void(const code&)> confirm_handler;
+    typedef std::function<void(const code&, const chain::index_list&)>
+        validate_handler;
+    typedef std::function<void(const code&, const chain::transaction&)>
+        fetch_handler;
+
+    static bool is_spent_by_tx(const chain::output_point& outpoint,
+        const chain::transaction& tx);
 
     transaction_pool(threadpool& pool, blockchain& chain,
         size_t capacity=2000);
@@ -80,143 +63,61 @@ public:
     transaction_pool(const transaction_pool&) = delete;
     void operator=(const transaction_pool&) = delete;
 
-    bool empty() const;
-    size_t size() const;
-
-    /**
-     * Start the transaction pool service, asynchronous.
-     * @return  True if successful.
-     */
     bool start();
-
-    /**
-     * Stop the transaction service, asynchronous.
-     * @return  True if successful.
-     */
     bool stop();
 
-    /**
-     * Validate a transaction without storing it.
-     *
-     * handle_validate is called on completion. The second argument is a list
-     * of unconfirmed input indexes. These inputs refer to a transaction
-     * that is not in the blockchain and is currently in the memory pool.
-     *
-     * In the case where store results in error::input_not_found, the
-     * unconfirmed field refers to the single problematic input.
-     *
-     * If the maximum capacity of this container is reached and a
-     * transaction is removed prematurely, then handle_confirm()
-     * will be called with the error_code error::forced_removal.
-     *
-     * @param[in]   tx                  Transaction to store
-     * @param[in]   handle_confirm      Handler for when transaction
-     *                                  becomes confirmed.
-     * @code
-     *  void handle_confirm(
-     *      const std::error_code& ec    // Status of operation
-     *  );
-     * @endcode
-     * @param[in]   handle_validate     Completion handler for
-     *                                  validate operation.
-     * @code
-     *  void handle_validate(
-     *      const std::error_code& ec,      // Status of operation
-     *      const index_list& unconfirmed   // Unconfirmed input indexes
-     *  );
-     * @endcode
-     */
-    void validate(const chain::transaction& tx,
-        validate_handler handle_validate);
+    void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    void validate(const chain::transaction& tx, validate_handler handler);
+    void exists(const hash_digest& transaction_hash, exists_handler handler);
+    void store(const chain::transaction& tx, confirm_handler confirm_handler,
+        validate_handler validate_handler);
 
-    /**
-     * Attempt to validate and store a transaction.
-     *
-     * handle_validate is called on completion. The second argument is a list
-     * of unconfirmed input indexes. These inputs refer to a transaction
-     * that is not in the blockchain and is currently in the memory pool.
-     *
-     * In the case where store results in error::input_not_found, the
-     * unconfirmed field refers to the single problematic input.
-     *
-     * If the maximum capacity of this container is reached and a
-     * transaction is removed prematurely, then handle_confirm()
-     * will be called with the error_code error::forced_removal.
-     *
-     * @param[in]   tx                  Transaction to store
-     * @param[in]   handle_confirm      Handler for when transaction
-     *                                  becomes confirmed.
-     * @code
-     *  void handle_confirm(
-     *      const std::error_code& ec    // Status of operation
-     *  );
-     * @endcode
-     * @param[in]   handle_validate     Completion handler for
-     *                                  validate and store operation.
-     * @code
-     *  void handle_validate(
-     *      const std::error_code& ec,      // Status of operation
-     *      const index_list& unconfirmed   // Unconfirmed input indexes
-     *  );
-     * @endcode
-     */
-    void store(const chain::transaction& tx,
-        confirm_handler handle_confirm, validate_handler handle_validate);
+    // TODO: these should be access-limited to validate_transaction.
+    // These are not stranded and therefore represent a thread safety issue.
+    bool is_in_pool(const hash_digest& tx_hash) const;
+    bool is_spent_in_pool(const chain::transaction& tx) const;
+    bool is_spent_in_pool(const chain::output_point& outpoint) const;
+    bool find(chain::transaction& out_tx, const hash_digest& tx_hash) const;
 
-    /**
-     * Fetch transaction by hash.
-     *
-     * @param[in]   transaction_hash  Transaction's hash
-     * @param[in]   handle_fetch      Completion handler for fetch operation.
-     * @code
-     *  void handle_fetch(
-     *      const std::error_code& ec,  // Status of operation
-     *      const transaction_type& tx  // Transaction
-     *  );
-     * @endcode
-     */
-    void fetch(const hash_digest& transaction_hash,
-        fetch_handler handle_fetch);
+protected:
+    struct entry
+    {
+        hash_digest hash;
+        chain::transaction tx;
+        confirm_handler handle_confirm;
+    };
+    typedef boost::circular_buffer<entry> buffer;
+    typedef buffer::const_iterator iterator;
+    typedef std::function<bool(const chain::input&)> input_compare;
 
-    /**
-     * Is this transaction in the pool?
-     *
-     * @param[in]   transaction_hash  Transaction's hash
-     * @param[in]   handle_exists     Completion handler for exists operation.
-     * @code
-     *  void handle_exists(bool);
-     * @endcode
-     */
-    void exists(const hash_digest& transaction_hash,
-        exists_handler handle_exists);
-
-    /// Deprecated, unsafe after startup, use constructor.
-    void set_capacity(size_t capacity);
-
-private:
-
-    void do_validate(const chain::transaction& tx,
-        validate_handler handle_validate);
-    void validation_complete(const std::error_code& ec, 
+    bool stopped();
+    void do_validate(const chain::transaction& tx, validate_handler handler);
+    void validation_complete(const code& ec,
         const chain::index_list& unconfirmed, const hash_digest& hash,
-        validate_handler handle_validate);
-
-    bool tx_exists(const hash_digest& tx_hash);
-    pool_buffer::const_iterator tx_find(const hash_digest& hash);
-    void reorganize(const std::error_code& ec, size_t fork_point,
+        validate_handler handler);
+    void reorganize(const code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
+    iterator find(const hash_digest& tx_hash) const;
 
-    void invalidate_pool();
+    void add(const chain::transaction& tx, confirm_handler handler);
+    void delete_all(const code& ec);
+    void delete_package(const code& ec);
+    void delete_package(const hash_digest& tx_hash, const code& ec);
+    void delete_package(const chain::transaction& tx, const code& ec);
+    void delete_dependencies(const hash_digest& tx_hash, const code& ec);
+    void delete_dependencies(const chain::output_point& point, const code& ec);
+    void delete_dependencies(input_compare is_dependency, const code& ec);
+    void delete_superseded(const blockchain::block_list& blocks);
+    bool delete_single(const hash_digest& tx_hash, const code& ec);
+    bool delete_single(const chain::transaction& tx, const code& ec);
+    void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
+    void delete_spent_in_blocks(const blockchain::block_list& blocks);
 
-    void delete_confirmed(const blockchain::block_list& new_blocks);
-    void try_delete_tx(const hash_digest& hash);
-    bool stopped();
-
+    bool stopped_;
+    buffer buffer_;
     dispatcher dispatch_;
     blockchain& blockchain_;
-    pool_buffer buffer_;
-    bool stopped_;
 };
 
 } // namespace blockchain

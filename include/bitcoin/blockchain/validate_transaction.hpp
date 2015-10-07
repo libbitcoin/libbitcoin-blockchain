@@ -43,7 +43,7 @@ public:
         validate_handler;
 
     validate_transaction(blockchain& chain, const chain::transaction& tx,
-        const pool_buffer& pool, dispatcher& dispatch);
+        const transaction_pool& pool, dispatcher& dispatch);
     void start(validate_handler handle_validate);
 
     static std::error_code check_transaction(const chain::transaction& tx);
@@ -60,14 +60,7 @@ public:
 private:
     std::error_code basic_checks() const;
     bool is_standard() const;
-
     void handle_duplicate_check(const std::error_code& ec);
-    bool is_tx_in_pool(const hash_digest& hash) const;
-    bool is_spent_in_pool(const chain::transaction& tx) const;
-    bool is_spent_in_pool(const chain::output_point& outpoint) const;
-    bool is_spent_in_tx(const chain::output_point& outpoint,
-        const chain::transaction& tx) const;
-    pool_buffer::const_iterator find_tx_in_pool(const hash_digest& hash) const;
 
     // Last height used for checking coinbase maturity.
     void set_last_height(const std::error_code& ec, size_t last_height);
@@ -89,7 +82,7 @@ private:
 
     blockchain& blockchain_;
     const chain::transaction tx_;
-    const pool_buffer& pool_;
+    const transaction_pool& pool_;
     dispatcher& dispatch_;
 
     const hash_digest tx_hash_;

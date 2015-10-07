@@ -30,10 +30,6 @@
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
-#ifdef WITH_CONSENSUS
-#include <bitcoin/consensus.hpp>
-#endif
-
 namespace libbitcoin {
 namespace blockchain {
 
@@ -197,22 +193,22 @@ bool validate_block::is_valid_proof_of_work(hash_digest hash, uint32_t bits)
     return (our_value <= target);
 }
 
+// Determine if code is in the op_n range.
 inline bool within_op_n(chain::opcode code)
 {
-    const auto raw_code = static_cast<uint8_t>(code);
+    const auto value = static_cast<uint8_t>(code);
     constexpr auto op_1 = static_cast<uint8_t>(chain::opcode::op_1);
     constexpr auto op_16 = static_cast<uint8_t>(chain::opcode::op_16);
-    return op_1 <= raw_code && raw_code <= op_16;
+    return op_1 <= value && value <= op_16;
 }
 
+// Return the op_n index (i.e. value of n).
 inline uint8_t decode_op_n(chain::opcode code)
 {
-    const auto raw_code = static_cast<uint8_t>(code);
     BITCOIN_ASSERT(within_op_n(code));
-
-    // Add 1 because we minus opcode::op_1, not the value before.
-    constexpr auto op_1 = static_cast<uint8_t>(chain::opcode::op_1);
-    return raw_code - op_1 + 1;
+    const auto value = static_cast<uint8_t>(code);
+    constexpr auto op_0 = static_cast<uint8_t>(chain::opcode::op_1) - 1;
+    return value - op_0;
 }
 
 inline size_t count_script_sigops(
@@ -227,7 +223,8 @@ inline size_t count_script_sigops(
         {
             total_sigs++;
         }
-        else if (op.code == chain::opcode::checkmultisig ||
+        else if (
+            op.code == chain::opcode::checkmultisig ||
             op.code == chain::opcode::checkmultisigverify)
         {
             if (accurate && within_op_n(last_opcode))
