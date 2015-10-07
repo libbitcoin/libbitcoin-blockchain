@@ -71,6 +71,7 @@
     <ClCompile Include="..\..\..\..\test\htdb.cpp" />
     <ClCompile Include="..\..\..\..\test\interface.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
+    <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -105,49 +106,15 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
   </Target>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLEXE|Win32'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDEXE|Win32'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseSEXE|Win32'">
-    <PostBuildEvent />
-    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>"$(TargetPath)" --log_level=message --run_test=validate_block --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
+      <Command>"$(TargetPath)" --run_test=transaction_pool_tests --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
     </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugSEXE|Win32'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDEXE|Win32'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLEXE|Win32'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLEXE|x64'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDEXE|x64'">
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseSEXE|x64'">
-    <PostBuildEvent />
-    <PostBuildEvent />
     <PostBuildEvent>
-      <Command>"$(TargetPath)" --log_level=message --run_test=validate_block --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
+      <Command>"$(TargetPath)" --run_test=transaction_pool_tests --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
     </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugSEXE|x64'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDEXE|x64'">
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLEXE|x64'">
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-blockchain\libbitcoin-blockchain.vcxproj">

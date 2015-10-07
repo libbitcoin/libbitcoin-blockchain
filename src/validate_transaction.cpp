@@ -25,6 +25,7 @@
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
+#include <bitcoin/blockchain/transaction_pool.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>
@@ -39,11 +40,11 @@ using std::placeholders::_2;
 // Max transaction size is set to max block size (1,000,000).
 static constexpr uint32_t max_transaction_size = 1000000;
 
-static constexpr uint32_t bip16_switchover_timestamp = 1333238400;
 /// Block 173805 is the first block after [April 1 2012]
 ////static constexpr uint32_t bip16_switchover_height_mainnet = 173805;
 //// Block 514 is the first block after [Feb 15 2014].
 ////static constexpr uint32_t bip16_switchover_height_testnet = 514;
+static constexpr uint32_t bip16_switchover_timestamp = 1333238400;
 
 enum validation_options : uint32_t
 {
@@ -53,7 +54,7 @@ enum validation_options : uint32_t
 };
 
 validate_transaction::validate_transaction(blockchain& chain,
-    const chain::transaction& tx, const pool_buffer& pool,
+    const chain::transaction& tx, const transaction_pool& pool,
     dispatcher& dispatch)
   : blockchain_(chain),
     tx_(tx),
@@ -96,7 +97,7 @@ std::error_code validate_transaction::basic_checks() const
     if (!is_standard())
         return error::is_not_standard;
 
-    if (is_tx_in_pool(tx_hash_))
+    if (pool_.is_in_pool(tx_hash_))
         return error::duplicate;
 
     // Check for blockchain duplicates in start (after this returns).
@@ -117,7 +118,7 @@ void validate_transaction::handle_duplicate_check(
         return;
     }
 
-    if (is_spent_in_pool(tx_))
+    if (pool_.is_spent_in_pool(tx_))
     {
         handle_validate_(error::double_spend, chain::index_list());
         return;
@@ -127,59 +128,6 @@ void validate_transaction::handle_duplicate_check(
     blockchain_.fetch_last_height(
         dispatch_.unordered_delegate(&validate_transaction::set_last_height,
             shared_from_this(), _1, _2));
-}
-
-pool_buffer::const_iterator validate_transaction::find_tx_in_pool(
-    const hash_digest& hash) const
-{
-    const auto found = [&hash](const transaction_entry_info& entry)
-    {
-        return entry.hash == hash;
-    };
-
-    return std::find_if(pool_.begin(), pool_.end(), found);
-}
-
-bool validate_transaction::is_tx_in_pool(const hash_digest& hash) const
-{
-    return find_tx_in_pool(hash) != pool_.end();
-}
-
-bool validate_transaction::is_spent_in_pool(const chain::transaction& tx) const
-{
-    const auto found = [this, &tx](const chain::input& input)
-    {
-        return is_spent_in_pool(input.previous_output);
-    };
-
-    const auto& inputs = tx.inputs;
-    const auto spend = std::find_if(inputs.begin(), inputs.end(), found);
-    return spend != inputs.end();
-}
-
-bool validate_transaction::is_spent_in_pool(
-    const chain::output_point& outpoint) const
-{
-    const auto found = [this, &outpoint](const transaction_entry_info& entry)
-    {
-        return is_spent_in_tx(outpoint, entry.tx);
-    };
-
-    const auto spend = std::find_if(pool_.begin(), pool_.end(), found);
-    return spend != pool_.end();
-}
-
-bool validate_transaction::is_spent_in_tx(const chain::output_point& outpoint,
-    const chain::transaction& tx) const
-{
-    const auto found = [&outpoint](const chain::input& input)
-    {
-        return input.previous_output == outpoint;
-    };
-
-    const auto& inputs = tx.inputs;
-    const auto spend = std::find_if(inputs.begin(), inputs.end(), found);
-    return spend != inputs.end();
 }
 
 void validate_transaction::set_last_height(const std::error_code& ec,
@@ -234,20 +182,19 @@ void validate_transaction::previous_tx_index(const std::error_code& ec,
 
 void validate_transaction::search_pool_previous_tx()
 {
-    const auto& prev_tx_hash = tx_.inputs[current_input_].previous_output.hash;
-    const auto previous_tx_info = find_tx_in_pool(prev_tx_hash);
-    if (previous_tx_info == pool_.end())
+    chain::transaction previous_tx;
+    const auto& current_input = tx_.inputs[current_input_];
+    if (!pool_.find(previous_tx, current_input.previous_output.hash))
     {
-        handle_validate_(error::input_not_found,
-            chain::index_list{ current_input_ });
-
+        const auto input_list = chain::index_list{ current_input_ };
+        handle_validate_(error::input_not_found, input_list);
         return;
     }
 
-    BITCOIN_ASSERT(!(previous_tx_info->tx).is_coinbase());
-
     // parent_height ignored here as mempool transactions cannot be coinbase.
-    handle_previous_tx(error::success, previous_tx_info->tx, 0);
+    BITCOIN_ASSERT(!previous_tx.is_coinbase());
+    static constexpr size_t parent_height = 0;
+    handle_previous_tx(error::success, previous_tx, parent_height);
     unconfirmed_.push_back(current_input_);
 }
 
@@ -256,9 +203,8 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
 {
     if (ec)
     {
-        handle_validate_(error::input_not_found,
-            chain::index_list{ current_input_});
-
+        const auto input_list = chain::index_list{ current_input_ };
+        handle_validate_(error::input_not_found, input_list);
         return;
     }
 

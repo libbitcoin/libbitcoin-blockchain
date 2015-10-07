@@ -19,9 +19,10 @@
     <ClCompile Include="..\..\..\..\test\validate_block.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\genesis_block.cpp">
+    <ClCompile Include="..\..\..\..\test\transaction_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\genesis_block.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
