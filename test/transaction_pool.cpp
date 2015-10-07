@@ -567,6 +567,155 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_package3__dependencies__deletes_se
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE(transaction_pool__delete_single)
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__empty__empty)
+{
+    transaction_pool_fixture::buffer buffer(5);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(null_hash, error::futuristic_timestamp);
+    BOOST_REQUIRE(mempool.transactions().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__three__match_removed_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    DECLARE_TRANSACTION(1, error::futuristic_timestamp);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(hash1, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx0_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx2_id);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__no_match__no_change_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    DECLARE_TRANSACTION(1, error::service_stopped);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(null_hash, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 3u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx0_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx1_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 2), tx2_id);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__stopped__unchanged_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.stopped(true);
+    mempool.delete_single(hash0, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__dependencies__deletes_self_only)
+{
+    DECLARE_TRANSACTION(0, error::futuristic_timestamp);
+    DECLARE_TRANSACTION(1, error::service_stopped);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+    ADD_INPUT_TO_TX_NUMBER(1, hash0, 42);
+    ADD_INPUT_TO_TX_NUMBER(2, hash1, 24);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(hash0, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx1_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx2_id);
+    REQUIRE_CALLBACK(0, error::futuristic_timestamp);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__empty__empty)
+{
+    DECLARE_TRANSACTION(0, 42);
+    transaction_pool_fixture::buffer buffer(5);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(tx0, error::futuristic_timestamp);
+    BOOST_REQUIRE(mempool.transactions().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__three__match_removed_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    DECLARE_TRANSACTION(1, error::futuristic_timestamp);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(tx1, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx0_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx2_id);
+    REQUIRE_CALLBACK(1, error::futuristic_timestamp);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__no_match__no_change_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    DECLARE_TRANSACTION(1, error::service_stopped);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+    DECLARE_TRANSACTION(3, 42);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(tx3, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 3u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx0_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx1_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 2), tx2_id);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__stopped__unchanged_expected_callbacks)
+{
+    DECLARE_TRANSACTION(0, error::service_stopped);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.stopped(true);
+    mempool.delete_single(tx0, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__dependencies__deletes_self_only)
+{
+    DECLARE_TRANSACTION(0, error::futuristic_timestamp);
+    DECLARE_TRANSACTION(1, error::service_stopped);
+    DECLARE_TRANSACTION(2, error::service_stopped);
+    ADD_INPUT_TO_TX_NUMBER(1, hash0, 42);
+    ADD_INPUT_TO_TX_NUMBER(2, hash1, 24);
+    transaction_pool_fixture::buffer buffer(5);
+    buffer.push_back(entry0);
+    buffer.push_back(entry1);
+    buffer.push_back(entry2);
+    DECLARE_TRANSACTION_POOL(mempool, buffer);
+    mempool.delete_single(tx0, error::futuristic_timestamp);
+    BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx1_id);
+    BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx2_id);
+    REQUIRE_CALLBACK(0, error::futuristic_timestamp);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(transaction_pool__delete_dependencies)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__empty__empty)
@@ -798,19 +947,6 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies3__custom_comparison_p
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx0_id);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx2_id);
     REQUIRE_CALLBACK(1, error::futuristic_timestamp);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE(transaction_pool__delete_single)
-
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_single1__empty__expected)
-{
-    // TODO
-}
-
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_single2__empty__expected)
-{
-    // TODO
 }
 
 BOOST_AUTO_TEST_SUITE_END()
