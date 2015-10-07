@@ -79,7 +79,7 @@ public:
     bool find(chain::transaction& out_tx, const hash_digest& tx_hash) const;
 
 protected:
-    typedef struct entry
+    struct entry
     {
         hash_digest hash;
         chain::transaction tx;
