@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_DB_INTERFACE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_DB_INTERFACE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_DATABASE_HPP
+#define LIBBITCOIN_BLOCKCHAIN_DATABASE_HPP
 
 #include <cstddef>
 #include <boost/filesystem.hpp>
@@ -32,36 +32,30 @@
 namespace libbitcoin {
 namespace blockchain {
 
-BC_CONSTEXPR size_t disabled_database = bc::max_size_t;
-
-// TODO: consider eliminating this struct (interface break).
-struct BCB_API db_active_heights
-{
-    const size_t history;
-};
-
-// TODO: rename to 'store' (interface break).
-struct BCB_API db_paths
-{
-    db_paths(const boost::filesystem::path& prefix);
-    bool touch_all() const;
-
-    boost::filesystem::path blocks_lookup;
-    boost::filesystem::path blocks_rows;
-    boost::filesystem::path spends;
-    boost::filesystem::path transactions;
-    boost::filesystem::path history_lookup;
-    boost::filesystem::path history_rows;
-    boost::filesystem::path stealth_index;
-    boost::filesystem::path stealth_rows;
-};
-
-// TODO: rename to 'database' (interface break).
-class BCB_API db_interface
+class BCB_API database
 {
 public:
-    db_interface(const db_paths& paths,
-        const db_active_heights &active_heights);
+    class store
+    {
+    public:
+        store(const boost::filesystem::path& prefix);
+        bool touch_all() const;
+
+        boost::filesystem::path blocks_lookup;
+        boost::filesystem::path blocks_rows;
+        boost::filesystem::path spends;
+        boost::filesystem::path transactions;
+        boost::filesystem::path history_lookup;
+        boost::filesystem::path history_rows;
+        boost::filesystem::path stealth_index;
+        boost::filesystem::path stealth_rows;
+    };
+
+    /// Create a new blockchain with a given path prefix and default paths.
+    static bool initialize(const boost::filesystem::path& prefix);
+    static bool touch_file(const boost::filesystem::path& file);
+
+    database(const store& paths, size_t history_height=0);
 
     void create();
     void start();
@@ -78,32 +72,19 @@ public:
     stealth_database stealth;
 
 private:
-    void push_inputs(
-        const hash_digest& tx_hash, const size_t block_height,
-        const chain::input::list& inputs);
-    void push_outputs(
-        const hash_digest& tx_hash, const size_t block_height,
+    void push_inputs(const hash_digest& tx_hash,
+        const size_t block_height, const chain::input::list& inputs);
+    void push_outputs(const hash_digest& tx_hash, const size_t block_height,
         const chain::output::list& outputs);
-    void push_stealth_outputs(
-        const hash_digest& tx_hash,
+    void push_stealth_outputs(const hash_digest& tx_hash,
+        const chain::output::list& outputs);
+    void pop_inputs(const size_t block_height,
+        const chain::input::list& inputs);
+    void pop_outputs(const size_t block_height,
         const chain::output::list& outputs);
 
-    void pop_inputs(
-        const size_t block_height,
-        const chain::input::list& inputs);
-    void pop_outputs(
-        const size_t block_height,
-        const chain::output::list& outputs);
-
-    const db_active_heights active_heights_;
+    const size_t history_height_;
 };
-
-/**
- * Create a new blockchain with a given prefix and default paths.
- */
-BCB_API bool initialize_blockchain(const boost::filesystem::path& prefix);
-
-BCB_API bool touch_file(const boost::filesystem::path& file);
 
 } // namespace blockchain
 } // namespace libbitcoin

@@ -17,37 +17,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_FETCHER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_FETCHER_HPP
 
-#include <system_error>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
-#include <bitcoin/blockchain/define.hpp>
+#include <cstddef>
+#include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// TODO: rename to block_locator_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&,
-    const message::block_locator&)> blockchain_fetch_handler_block_locator;
+class BCB_API block_locator_fetcher
+  : public std::enable_shared_from_this<block_locator_fetcher>
+{
+public:
+    typedef block_chain::block_locator_fetch_handler handler;
 
-/**
- * Creates a block_locator object used to download the blockchain.
- *
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,      // Status of operation
- *      const block_locator_type& loc   // Block locator object
- *  );
- * @endcode
- */
-BCB_API void fetch_block_locator(blockchain& chain,
-    blockchain_fetch_handler_block_locator handle_fetch);
+    static void fetch(block_chain& chain, handler handle_fetch);
+
+    block_locator_fetcher(block_chain& chain);
+
+    void start(handler handle_fetch);
+
+private:
+    void loop();
+    bool stop_on_error(const code& ec);
+    void populate(const code& ec, size_t last_height);
+    void append(const code& ec, const chain::header& header,
+        size_t /* height */);
+
+    block_chain& blockchain_;
+    chain::index_list indexes_;
+    message::block_locator locator_;
+    handler handler_;
+    bool stopped_;
+};
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

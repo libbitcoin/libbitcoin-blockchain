@@ -73,8 +73,6 @@ typedef std::vector<index_type> transaction_index_list;
 class BCB_API block_database
 {
 public:
-    static BC_CONSTEXPR size_t null_height = bc::max_size_t;
-
     block_database(const boost::filesystem::path& map_filename,
         const boost::filesystem::path& index_filename);
 
@@ -115,10 +113,9 @@ public:
     void sync();
 
     /**
-     * Latest block height in our chain. Returns block_database::null_height
-     * if no blocks exist.
+     * Latest block height in our chain. Returns false if no blocks exist.
      */
-    size_t last_height() const;
+    bool top(size_t& out_height) const;
 
 private:
     typedef htdb_slab<hash_digest> map_type;

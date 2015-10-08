@@ -34,6 +34,8 @@ namespace blockchain {
 class BCB_API block_detail
 {
 public:
+    typedef std::shared_ptr<block_detail> ptr;
+    typedef std::vector<block_detail::ptr> list;
 
     block_detail(const chain::block& actual_block);
     block_detail(const chain::header& actual_block_header);
@@ -45,21 +47,16 @@ public:
     const hash_digest& hash() const;
     void set_info(const block_info& replace_info);
     const block_info& info() const;
-    void set_error(const std::error_code& code);
-    const std::error_code& error() const;
+    void set_error(const code& code);
+    const code& error() const;
 
 private:
-
     std::shared_ptr<chain::block> actual_block_;
     const hash_digest block_hash_;
     bool processed_;
     block_info info_;
-    std::error_code code_;
+    code code_;
 };
-
-// TODO: define in block_detail (compat break).
-typedef std::shared_ptr<block_detail> block_detail_ptr;
-typedef std::vector<block_detail_ptr> block_detail_list;
 
 } // namespace chain
 } // namespace libbitcoin

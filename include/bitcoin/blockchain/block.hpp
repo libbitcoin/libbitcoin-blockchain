@@ -20,15 +20,16 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
 
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-BCB_API chain::index_list block_locator_indexes(int top_height);
+BCB_API chain::index_list block_locator_indexes(uint64_t top_height);
 
-BCB_API uint64_t block_value(size_t height);
+BCB_API uint64_t block_value(uint64_t height);
 
 BCB_API hash_number block_work(uint32_t bits);
 

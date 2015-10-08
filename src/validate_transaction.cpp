@@ -53,7 +53,7 @@ enum validation_options : uint32_t
     // dersig
 };
 
-validate_transaction::validate_transaction(blockchain& chain,
+validate_transaction::validate_transaction(block_chain& chain,
     const chain::transaction& tx, const transaction_pool& pool,
     dispatcher& dispatch)
   : blockchain_(chain),
@@ -64,9 +64,9 @@ validate_transaction::validate_transaction(blockchain& chain,
 {
 }
 
-void validate_transaction::start(validate_handler handle_validate)
+void validate_transaction::start(validate_handler handler)
 {
-    handle_validate_ = handle_validate;
+    handle_validate_ = handler;
     const auto ec = basic_checks();
     if (ec)
     {
@@ -81,7 +81,7 @@ void validate_transaction::start(validate_handler handle_validate)
                 shared_from_this(), _1));
 }
 
-std::error_code validate_transaction::basic_checks() const
+code validate_transaction::basic_checks() const
 {
     const auto ec = check_transaction(tx_);
     if (ec)
@@ -110,7 +110,7 @@ bool validate_transaction::is_standard() const
 }
 
 void validate_transaction::handle_duplicate_check(
-    const std::error_code& ec)
+    const code& ec)
 {
     if (ec != error::not_found)
     {
@@ -131,7 +131,7 @@ void validate_transaction::handle_duplicate_check(
             shared_from_this(), _1, _2));
 }
 
-void validate_transaction::set_last_height(const std::error_code& ec,
+void validate_transaction::set_last_height(const code& ec,
     size_t last_height)
 {
     if (ec)
@@ -163,7 +163,7 @@ void validate_transaction::next_previous_transaction()
                     shared_from_this(), _1, _2));
 }
 
-void validate_transaction::previous_tx_index(const std::error_code& ec,
+void validate_transaction::previous_tx_index(const code& ec,
     size_t parent_height)
 {
     if (ec)
@@ -199,7 +199,7 @@ void validate_transaction::search_pool_previous_tx()
     unconfirmed_.push_back(current_input_);
 }
 
-void validate_transaction::handle_previous_tx(const std::error_code& ec,
+void validate_transaction::handle_previous_tx(const code& ec,
     const chain::transaction& previous_tx, size_t parent_height)
 {
     if (ec)
@@ -223,7 +223,7 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
             shared_from_this(), _1));
 }
 
-void validate_transaction::check_double_spend(const std::error_code& ec)
+void validate_transaction::check_double_spend(const code& ec)
 {
     if (ec != error::unspent_output)
     {
@@ -258,7 +258,7 @@ void validate_transaction::check_fees()
     handle_validate_(error::success, unconfirmed_);
 }
 
-std::error_code validate_transaction::check_transaction(
+code validate_transaction::check_transaction(
     const chain::transaction& tx)
 {
     if (tx.inputs.empty() || tx.outputs.empty())

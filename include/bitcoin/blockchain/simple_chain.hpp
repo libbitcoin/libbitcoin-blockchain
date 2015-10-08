@@ -32,18 +32,15 @@ namespace blockchain {
 class BCB_API simple_chain
 {
 public:
-    // TODO: merge with block_database::null_height (interface break).
-    static BC_CONSTEXPR size_t null_height = bc::max_size_t;
+    typedef std::shared_ptr<simple_chain> ptr;
 
-    virtual void append(block_detail_ptr incoming_block) = 0;
-    virtual size_t find_height(const hash_digest& search_block_hash) = 0;
-    virtual hash_number sum_difficulty(size_t begin_index) = 0;
-    virtual bool release(size_t begin_index,
-        block_detail_list& released_blocks) = 0;
+    virtual void append(block_detail::ptr incoming_block) = 0;
+    virtual hash_number sum_difficulty(uint64_t begin_index) = 0;
+    virtual bool release(uint64_t begin_index,
+        block_detail::list& released_blocks) = 0;
+    virtual bool find_height(uint64_t& out_height,
+        const hash_digest& search_block_hash) = 0;
 };
-
-// TODO: define in simple_chain (compat break).
-typedef std::shared_ptr<simple_chain> simple_chain_ptr;
 
 } // namespace blockchain
 } // namespace libbitcoin

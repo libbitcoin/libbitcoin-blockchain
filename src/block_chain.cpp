@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block.hpp>
 
 #include <cstdint>
@@ -28,7 +28,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 // Fast modulus calculation where divisor is a power of 2.
-static uint64_t remainder_fast(const hash_digest& value,
+uint64_t block_chain::remainder_fast(const hash_digest& value,
     const uint64_t divisor)
 {
     BITCOIN_ASSERT(divisor % 2 == 0);
@@ -40,11 +40,11 @@ static uint64_t remainder_fast(const hash_digest& value,
     return hash_value & (divisor - 1);
 }
 
-uint64_t spend_checksum(chain::output_point outpoint)
+uint64_t block_chain::spend_checksum(chain::output_point outpoint)
 {
     // Assuming outpoint hash is sufficiently random, this method works well
     // for generating row checksums. Max pow2 value for a uint64_t is 1 << 63.
-    constexpr uint64_t divisor = uint64_t{1} << 63;
+    static constexpr uint64_t divisor = uint64_t{ 1 } << 63;
     static_assert(divisor == 9223372036854775808ull, "Wrong divisor value.");
 
     // Write index onto outpoint hash.

@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_SUITE(disk_objs)
 
 BOOST_AUTO_TEST_CASE(slab)
 {
-    touch_file("slabs");
+    database::touch_file("slabs");
     mmfile file("slabs");
     BITCOIN_ASSERT(file.data());
     file.resize(200);
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(slab)
 
 BOOST_AUTO_TEST_CASE(array)
 {
-    touch_file("array");
+    database::touch_file("array");
     mmfile file("array");
     BITCOIN_ASSERT(file.data());
     file.resize(4 + 4 * 10);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(array)
 
 BOOST_AUTO_TEST_CASE(record)
 {
-    touch_file("records");
+    database::touch_file("records");
     mmfile file("records");
     BITCOIN_ASSERT(file.data());
     file.resize(4);
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(record)
 
 BOOST_AUTO_TEST_CASE(linked_records_tst)
 {
-    touch_file("lrs");
+    database::touch_file("lrs");
     mmfile file("lrs");
     BITCOIN_ASSERT(file.data());
     file.resize(4);
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
 
 BOOST_AUTO_TEST_CASE(htdb_slab_tst)
 {
-    touch_file("htdb_slab");
+    database::touch_file("htdb_slab");
     mmfile file("htdb_slab");
     BITCOIN_ASSERT(file.data());
     file.resize(4 + 8 * 100 + 8);

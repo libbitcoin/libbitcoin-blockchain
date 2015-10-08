@@ -88,7 +88,7 @@ bool validate_block::stopped() const
     return stop_callback_();
 }
 
-std::error_code validate_block::check_block() const
+code validate_block::check_block() const
 {
     // These are checks that are independent of the blockchain
     // that can be validated before saving an orphan block.
@@ -266,7 +266,7 @@ size_t validate_block::legacy_sigops_count(const chain::transaction::list& txs)
     return total_sigs;
 }
 
-std::error_code validate_block::accept_block() const
+code validate_block::accept_block() const
 {
     const auto& header = current_block_.header;
     if (header.bits != work_required(testnet_))
@@ -409,7 +409,7 @@ bool validate_block::is_valid_coinbase_height(size_t height,
     return std::equal(expect.begin(), expect.end(), raw_coinbase.begin());
 }
 
-std::error_code validate_block::connect_block() const
+code validate_block::connect_block() const
 {
     // BIP 30 security fix
     const auto& transactions = current_block_.transactions;

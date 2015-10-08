@@ -95,7 +95,7 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        touch_file(map_filename);
+        database::touch_file(map_filename);
     }
     transaction_database db(map_filename);
     if (command == "initialize_new")

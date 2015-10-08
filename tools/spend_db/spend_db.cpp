@@ -148,7 +148,7 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        touch_file(filename);
+        database::touch_file(filename);
     }
     spend_database db(filename);
     if (command == "initialize_new")

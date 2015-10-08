@@ -39,14 +39,14 @@ class BCB_API validate_transaction
   : public std::enable_shared_from_this<validate_transaction>
 {
 public:
-    typedef std::function<void (const std::error_code&, const chain::index_list&)>
-        validate_handler;
+    typedef std::shared_ptr<validate_transaction> ptr;
+    typedef handle1<chain::index_list> validate_handler;
 
-    validate_transaction(blockchain& chain, const chain::transaction& tx,
+    validate_transaction(block_chain& chain, const chain::transaction& tx,
         const transaction_pool& pool, dispatcher& dispatch);
-    void start(validate_handler handle_validate);
+    void start(validate_handler handler);
 
-    static std::error_code check_transaction(const chain::transaction& tx);
+    static code check_transaction(const chain::transaction& tx);
     static bool connect_input(const chain::transaction& tx,
         size_t current_input, const chain::transaction& previous_tx,
         size_t parent_height, size_t last_block_height, uint64_t& value_in);
@@ -58,29 +58,29 @@ public:
         const chain::header& header, const size_t height);
 
 private:
-    std::error_code basic_checks() const;
+    code basic_checks() const;
     bool is_standard() const;
-    void handle_duplicate_check(const std::error_code& ec);
+    void handle_duplicate_check(const code& ec);
 
     // Last height used for checking coinbase maturity.
-    void set_last_height(const std::error_code& ec, size_t last_height);
+    void set_last_height(const code& ec, size_t last_height);
 
     // Begin looping through the inputs, fetching the previous tx
     void next_previous_transaction();
-    void previous_tx_index(const std::error_code& ec, size_t parent_height);
+    void previous_tx_index(const code& ec, size_t parent_height);
 
     // If previous_tx_index didn't find it then check in pool instead
     void search_pool_previous_tx();
-    void handle_previous_tx(const std::error_code& ec,
+    void handle_previous_tx(const code& ec,
         const chain::transaction& previous_tx, size_t parent_height);
 
     // After running connect_input, we check whether this validated previous
     // output was not already spent by another input in the blockchain.
     // is_spent() earlier already checked in the pool.
-    void check_double_spend(const std::error_code& ec);
+    void check_double_spend(const code& ec);
     void check_fees();
 
-    blockchain& blockchain_;
+    block_chain& blockchain_;
     const chain::transaction tx_;
     const transaction_pool& pool_;
     dispatcher& dispatch_;
@@ -92,9 +92,6 @@ private:
     chain::index_list unconfirmed_;
     validate_handler handle_validate_;
 };
-
-// TODO: define in validate_transaction (compat break).
-typedef std::shared_ptr<validate_transaction> validate_transaction_ptr;
 
 } // namespace blockchain
 } // namespace libbitcoin

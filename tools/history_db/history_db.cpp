@@ -156,8 +156,8 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        touch_file(map_filename);
-        touch_file(rows_filename);
+        database::touch_file(map_filename);
+        database::touch_file(rows_filename);
     }
     history_database db(map_filename, rows_filename);
     if (command == "initialize_new")
@@ -250,7 +250,7 @@ int main(int argc, char** argv)
         auto history = db.get(key, limit, from_height);
         for (const auto& row: history)
         {
-            if (row.id == point_ident::output)
+            if (row.kind == block_chain::point_kind::output)
                 std::cout << "OUTPUT: ";
             else //if (row.id == point_ident::spend)
                 std::cout << "SPEND:  ";

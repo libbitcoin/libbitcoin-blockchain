@@ -17,8 +17,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/database.hpp>
 
+#include <cstdint>
+#include <stdexcept>
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
@@ -29,7 +31,7 @@ namespace blockchain {
 using namespace wallet;
 using boost::filesystem::path;
 
-bool touch_file(const path& filepath)
+bool database::touch_file(const path& filepath)
 {
     bc::ofstream file(filepath.string());
     if (file.bad())
@@ -40,20 +42,20 @@ bool touch_file(const path& filepath)
     return true;
 }
 
-bool initialize_blockchain(const path& prefix)
+bool database::initialize(const path& prefix)
 {
     // Create paths.
-    db_paths paths(prefix);
+    store paths(prefix);
     bool result = paths.touch_all();
 
     // Initialize databases.
-    db_interface database(paths, { 0 });
-    database.create();
+    database instance(paths, 0);
+    instance.create();
 
     return result;
 }
 
-db_paths::db_paths(const path& prefix)
+database::store::store(const path& prefix)
 {
     blocks_lookup = prefix / "blocks_lookup";
     blocks_rows = prefix / "blocks_rows";
@@ -65,7 +67,7 @@ db_paths::db_paths(const path& prefix)
     stealth_rows = prefix / "stealth_rows";
 }
 
-bool db_paths::touch_all() const
+bool database::store::touch_all() const
 {
     return
         touch_file(blocks_lookup) &&
@@ -78,18 +80,17 @@ bool db_paths::touch_all() const
         touch_file(stealth_rows);
 }
 
-db_interface::db_interface(const db_paths& paths,
-    const db_active_heights &active_heights)
+database::database(const store& paths, size_t history_height)
   : blocks(paths.blocks_lookup, paths.blocks_rows),
     spends(paths.spends),
     transactions(paths.transactions),
     history(paths.history_lookup, paths.history_rows),
     stealth(paths.stealth_index, paths.stealth_rows),
-    active_heights_(active_heights)
+    history_height_(history_height)
 {
 }
 
-void db_interface::create()
+void database::create()
 {
     blocks.create();
     spends.create();
@@ -98,7 +99,7 @@ void db_interface::create()
     stealth.create();
 }
 
-void db_interface::start()
+void database::start()
 {
     blocks.start();
     spends.start();
@@ -107,32 +108,36 @@ void db_interface::start()
     stealth.start();
 }
 
-size_t next_height(const size_t current_height)
+static size_t get_next_height(const block_database& blocks)
 {
-    if (current_height == block_database::null_height)
-        return 0;
-
-    return current_height + 1;
+    size_t current_height;
+    const auto empty_chain = !blocks.top(current_height);
+    return empty_chain ? 0 : current_height + 1;
 }
 
 // There are 2 duplicated transactions in the blockchain.
 // Since then this part of Bitcoin was changed to disallow duplicates.
-bool is_special_duplicate(const transaction_metainfo& info)
+static bool is_special_duplicate(const transaction_metainfo& metadata)
 {
-    return (info.height == 91842 || info.height == 91880) &&
-        info.index == 0;
+    return (metadata.height == 91842 || metadata.height == 91880) &&
+        metadata.index == 0;
 }
 
-void db_interface::push(const chain::block& block)
+void database::push(const chain::block& block)
 {
-    const auto block_height = next_height(blocks.last_height());
-    for (size_t i = 0; i < block.transactions.size(); ++i)
+    const auto block_height = get_next_height(blocks);
+
+    for (size_t index = 0; index < block.transactions.size(); ++index)
     {
-        const auto& tx = block.transactions[i];
-        const transaction_metainfo info{block_height, i};
+        const auto& tx = block.transactions[index];
+        const transaction_metainfo metadata
+        {
+            block_height,
+            index
+        };
 
         // Skip special duplicate transactions.
-        if (is_special_duplicate(info))
+        if (is_special_duplicate(metadata))
             continue;
 
         const auto tx_hash = tx.hash();
@@ -148,7 +153,7 @@ void db_interface::push(const chain::block& block)
         push_stealth_outputs(tx_hash, tx.outputs);
 
         // Add transaction
-        transactions.store(info, tx);
+        transactions.store(metadata, tx);
     }
 
     // Add block itself.
@@ -167,25 +172,32 @@ void db_interface::push(const chain::block& block)
     blocks.sync();
 }
 
-chain::block db_interface::pop()
+chain::block database::pop()
 {
     chain::block result;
-    const auto block_height = blocks.last_height();
-    auto block_result = blocks.get(block_height);
-    BITCOIN_ASSERT(block_result);
+    size_t block_height;
 
-    // Set result header
+    if (!blocks.top(block_height))
+        throw std::runtime_error("The blockchain is empty.");
+
+    auto block_result = blocks.get(block_height);
+
+    // Set result header.
     result.header = block_result.header();
     const auto txs_size = block_result.transactions_size();
 
+    // TODO: unreverse the loop so we can avoid this.
+    BITCOIN_ASSERT_MSG(txs_size <= max_int64, "overflow");
+    const auto unsigned_txs_size = static_cast<int64_t>(txs_size);
+
     // Loop backwards (in reverse to how we added).
-    for (int i = txs_size - 1; i >= 0; --i)
+    for (int64_t index = unsigned_txs_size - 1; index >= 0; --index)
     {
-        const auto tx_hash = block_result.transaction_hash(i);
+        const auto tx_hash = block_result.transaction_hash(index);
         auto tx_result = transactions.get(tx_hash);
         BITCOIN_ASSERT(tx_result);
         BITCOIN_ASSERT(tx_result.height() == block_height);
-        BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(i));
+        BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(index));
 
         const auto tx = tx_result.transaction();
 
@@ -206,22 +218,22 @@ chain::block db_interface::pop()
     stealth.unlink(block_height);
     blocks.unlink(block_height);
 
-    // Since we looped backwards
+    // Reverse, since we looped backwards.
     std::reverse(result.transactions.begin(), result.transactions.end());
     return result;
 }
 
-void db_interface::push_inputs(const hash_digest& tx_hash,
+void database::push_inputs(const hash_digest& tx_hash,
     const size_t block_height, const chain::input::list& inputs)
 {
-    for (uint32_t i = 0; i < inputs.size(); ++i)
+    for (uint32_t index = 0; index < inputs.size(); ++index)
     {
-        const auto& input = inputs[i];
-        const chain::input_point spend{tx_hash, i};
+        const auto& input = inputs[index];
+        const chain::input_point spend{ tx_hash, index };
         spends.store(input.previous_output, spend);
 
         // Skip history if not at the right level yet.
-        if (block_height < active_heights_.history)
+        if (block_height < history_height_)
             continue;
 
         // Try to extract an address.
@@ -234,16 +246,16 @@ void db_interface::push_inputs(const hash_digest& tx_hash,
     }
 }
 
-void db_interface::push_outputs(const hash_digest& tx_hash,
+void database::push_outputs(const hash_digest& tx_hash,
     const size_t block_height, const chain::output::list& outputs)
 {
-    for (uint32_t i = 0; i < outputs.size(); ++i)
+    for (uint32_t index = 0; index < outputs.size(); ++index)
     {
-        const auto& output = outputs[i];
-        const chain::output_point outpoint{tx_hash, i};
+        const auto& output = outputs[index];
+        const chain::output_point outpoint{ tx_hash, index };
 
         // Skip history if not at the right level yet.
-        if (block_height < active_heights_.history)
+        if (block_height < history_height_)
             continue;
 
         // Try to extract an address.
@@ -256,16 +268,18 @@ void db_interface::push_outputs(const hash_digest& tx_hash,
     }
 }
 
-void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
+void database::push_stealth_outputs(const hash_digest& tx_hash,
     const chain::output::list& outputs)
 {
-    // Stealth cannot be in last output because there needs
-    // to be a matching following output.
-    const int last_possible = outputs.size() - 1;
-    for (int i = 0; i < last_possible; ++i)
+    // TODO: unreverse the loop so we can avoid this.
+    BITCOIN_ASSERT_MSG(outputs.size() <= max_int64, "overflow");
+    const auto outputs_size = static_cast<int64_t>(outputs.size());
+
+    // Stealth cannot be in last output because it is paired.
+    for (int64_t index = 0; index < (outputs_size - 1); ++index)
     {
-        const auto& ephemeral_script = outputs[i].script;
-        const auto& payment_script = outputs[i + 1].script;
+        const auto& ephemeral_script = outputs[index].script;
+        const auto& payment_script = outputs[index + 1].script;
 
         // Try to extract an unsigned ephemeral key from the odd output.
         hash_digest unsigned_ephemeral_key;
@@ -283,7 +297,7 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
         if (!address)
             continue;
 
-        const stealth_row row
+        const block_chain::stealth_row row
         {
             unsigned_ephemeral_key,
             address.hash(),
@@ -294,40 +308,48 @@ void db_interface::push_stealth_outputs(const hash_digest& tx_hash,
     }
 }
 
-void db_interface::pop_inputs(const size_t block_height,
+void database::pop_inputs(const size_t block_height,
     const chain::input::list& inputs)
 {
+    // TODO: unreverse the loop so we can avoid this.
+    BITCOIN_ASSERT_MSG(inputs.size() <= max_int64, "overflow");
+    const auto inputs_size = static_cast<int64_t>(inputs.size());
+
     // Loop in reverse.
-    for (int i = inputs.size() - 1; i >= 0; --i)
+    for (int64_t index = inputs_size - 1; index >= 0; --index)
     {
-        const auto& input = inputs[i];
+        const auto& input = inputs[index];
         spends.remove(input.previous_output);
 
         // Skip history if not at the right level yet.
-        if (block_height < active_heights_.history)
+        if (block_height < history_height_)
             continue;
 
         // Try to extract an address.
-        auto address = payment_address::extract(input.script);
+        const auto address = payment_address::extract(input.script);
         if (address)
             history.delete_last_row(address.hash());
     }
 }
 
-void db_interface::pop_outputs(const size_t block_height,
+void database::pop_outputs(const size_t block_height,
     const chain::output::list& outputs)
 {
+    // TODO: unreverse the loop so we can avoid this.
+    BITCOIN_ASSERT_MSG(outputs.size() <= max_int64, "overflow");
+    const auto outputs_size = static_cast<int64_t>(outputs.size());
+
     // Loop in reverse.
-    for (int i = outputs.size() - 1; i >= 0; --i)
+    for (int64_t index = outputs_size - 1; index >= 0; --index)
     {
-        const auto& output = outputs[i];
+        const auto& output = outputs[index];
 
         // Skip history if not at the right level yet.
-        if (block_height < active_heights_.history)
+        if (block_height < history_height_)
             continue;
 
         // Try to extract an address.
-        auto address = payment_address::extract(output.script);
+        const auto address = payment_address::extract(output.script);
         if (address)
             history.delete_last_row(address.hash());
     }

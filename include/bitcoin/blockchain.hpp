@@ -21,14 +21,14 @@
 #endif
 
 #include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/block_fetcher.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_locator_fetcher.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
-#include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/fetch_block.hpp>
-#include <bitcoin/blockchain/fetch_block_locator.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphans_pool.hpp>
 #include <bitcoin/blockchain/pointer_array_source.hpp>

@@ -95,7 +95,8 @@ void history_database::add_spend(
         data_chunk raw_spend = spend.to_data();
         serial.write_data(raw_spend);
         serial.write_4_bytes_little_endian(spend_height);
-        serial.write_8_bytes_little_endian(spend_checksum(previous));
+        serial.write_8_bytes_little_endian(
+            block_chain::spend_checksum(previous));
     };
     map_.add_row(key, write);
 }
@@ -107,13 +108,14 @@ void history_database::delete_last_row(const short_hash& key)
 
 // Each row contains a start byte which signifies whether
 // it is an output or a spend.
-inline point_ident marker_to_id(uint8_t marker)
+inline block_chain::point_kind marker_to_kind(uint8_t marker)
 {
     BITCOIN_ASSERT(marker == 0 || marker == 1);
-    return marker == 0 ? point_ident::output : point_ident::spend;
+    return marker == 0 ? block_chain::point_kind::output : 
+        block_chain::point_kind::spend;
 }
 
-history_list history_database::get(const short_hash& key,
+block_chain::history history_database::get(const short_hash& key,
     const size_t limit, const size_t from_height) const
 {
     // Read the height value from the row.
@@ -124,13 +126,14 @@ history_list history_database::get(const short_hash& key,
     };
 
     // Read a row from the data into the history list.
-    history_list history;
+    block_chain::history history;
     auto read_row = [&history](const uint8_t* data/*, std::streamsize length*/)
     {
 //        boost::iostreams::stream<byte_pointer_array_source> istream(data, length);
 //        istream.exceptions(std::ios_base::failbit);
 //
-//        history_row result{
+//        block_chain::history_row result
+//        {
 //            // output or spend?
 //            marker_to_id(read_byte(istream)),
 //            // point
@@ -147,15 +150,19 @@ history_list history_database::get(const short_hash& key,
 //        return result;
 
         auto deserial = make_deserializer_unsafe(data);
-        return history_row {
+        return block_chain::history_row
+        {
             // output or spend?
-            marker_to_id(deserial.read_byte()),
+            marker_to_kind(deserial.read_byte()),
+
             // point
             chain::point::factory_from_data(deserial),
+
             // height
             deserial.read_4_bytes_little_endian(),
+
             // value or checksum
-            deserial.read_8_bytes_little_endian()
+            { deserial.read_8_bytes_little_endian() }
         };
     };
 
@@ -165,10 +172,13 @@ history_list history_database::get(const short_hash& key,
         // Stop once we reach the limit (if specified).
         if (limit && history.size() >= limit)
             break;
+
         const record_type data = linked_rows_.get(index);
+
         // Skip rows below from_height (if specified).
         if (from_height && read_height(data) < from_height)
             continue;
+
         // Read this row into the list.
         history.emplace_back(read_row(data /*, value_size*/));
     }

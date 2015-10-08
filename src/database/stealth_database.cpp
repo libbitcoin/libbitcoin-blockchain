@@ -55,13 +55,13 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-stealth_list stealth_database::scan(const binary_type& filter,
+block_chain::stealth stealth_database::scan(const binary_type& filter,
     size_t from_height) const
 {
     if (from_height >= index_.count())
-        return stealth_list();
+        return block_chain::stealth();
 
-    stealth_list result;
+    block_chain::stealth result;
     const auto start = read_index(from_height);
     for (auto index = start; index < rows_.count(); ++index)
     {
@@ -84,7 +84,8 @@ stealth_list stealth_database::scan(const binary_type& filter,
     return result;
 }
 
-void stealth_database::store(uint32_t prefix, const stealth_row& row)
+void stealth_database::store(uint32_t prefix,
+    const block_chain::stealth_row& row)
 {
     // Allocate new row.
     const auto index = rows_.allocate();

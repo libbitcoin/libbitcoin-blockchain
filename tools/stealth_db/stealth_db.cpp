@@ -97,8 +97,8 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        touch_file(index_filename);
-        touch_file(rows_filename);
+        database::touch_file(index_filename);
+        database::touch_file(rows_filename);
     }
     stealth_database db(index_filename, rows_filename);
     if (command == "initialize_new")
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
         if (!parse_uint(from_height, args[1]))
             return -1;
         db.start();
-        stealth_list rows = db.scan(filter, from_height);
+        const auto rows = db.scan(filter, from_height);
         for (const auto row: rows)
         {
             std::cout << "Ephemkey: "

@@ -30,27 +30,22 @@
 namespace libbitcoin {
 namespace blockchain {
 
-// An unordered memory pool for orphan blocks
+/// An unordered memory pool for orphan blocks
 class BCB_API orphans_pool
 {
 public:
+    typedef std::shared_ptr<orphans_pool> ptr;
+
     orphans_pool(size_t size=20);
-    ~orphans_pool();
 
-    bool empty() const;
-    size_t size() const;
-
-    bool add(block_detail_ptr incoming_block);
-    void remove(block_detail_ptr remove_block);
-    block_detail_list trace(block_detail_ptr end_block);
-    block_detail_list unprocessed();
+    bool add(block_detail::ptr incoming_block);
+    void remove(block_detail::ptr remove_block);
+    block_detail::list trace(block_detail::ptr end_block);
+    block_detail::list unprocessed();
 
 private:
-    boost::circular_buffer<block_detail_ptr> buffer_;
+    boost::circular_buffer<block_detail::ptr> buffer_;
 };
-
-// TODO: define in orphans_pool (compat break).
-typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
 
 } // namespace blockchain
 } // namespace libbitcoin

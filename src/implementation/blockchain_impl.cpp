@@ -28,8 +28,10 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
+#include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
@@ -49,20 +51,17 @@ static file_lock init_lock(const std::string& prefix)
 }
 
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
-    const db_active_heights &active_heights, size_t orphan_capacity,
-    bool testnet, const config::checkpoint::list& checks)
+    size_t history_height, size_t orphan_capacity, bool testnet,
+    const config::checkpoint::list& checks)
   : dispatch_(pool),
     flock_(init_lock(prefix)),
     seqlock_(0),
     stopped_(true),
-    db_paths_(prefix),
-    interface_(db_paths_, active_heights),
+    store_(prefix),
+    database_(store_, history_height),
     orphans_(orphan_capacity),
-    chain_(interface_),
-    organizer_(pool, interface_, orphans_, chain_, testnet, checks)
-{
-}
-blockchain_impl::~blockchain_impl()
+    chain_(database_),
+    organizer_(pool, database_, orphans_, chain_, testnet, checks)
 {
 }
 
@@ -73,7 +72,7 @@ bool blockchain_impl::start()
 
     // TODO: can we actually restart?
     stopped_ = false;
-    interface_.start();
+    database_.start();
     return true;
 }
 
@@ -90,11 +89,10 @@ bool blockchain_impl::stopped()
     return stopped_;
 }
 
-void blockchain_impl::subscribe_reorganize(
-    reorganize_handler handle_reorganize)
+void blockchain_impl::subscribe_reorganize(reorganize_handler handler)
 {
     // Pass this through to the organizer, which issues the notifications.
-    organizer_.subscribe_reorganize(handle_reorganize);
+    organizer_.subscribe_reorganize(handler);
 }
 
 void blockchain_impl::start_write()
@@ -106,49 +104,48 @@ void blockchain_impl::start_write()
 }
 
 void blockchain_impl::store(const chain::block& block,
-    store_block_handler handle_store)
+    store_block_handler handler)
 {
     dispatch_.unordered(
         std::bind(&blockchain_impl::do_store,
-            this, block, handle_store));
+            this, block, handler));
 }
 void blockchain_impl::do_store(const chain::block& block,
-    store_block_handler handle_store)
+    store_block_handler handler)
 {
     if (stopped())
         return;
 
     start_write();
-
     const auto stored_detail = std::make_shared<block_detail>(block);
-    const auto height = chain_.find_height(block.header.hash());
 
-    if (height != simple_chain::null_height)
+    uint64_t height;
+    if (chain_.find_height(height, block.header.hash()))
     {
         const auto info = block_info{ block_status::confirmed, height };
-        stop_write(handle_store, error::duplicate, info);
+        stop_write(handler, error::duplicate, info);
         return;
     }
 
     if (!orphans_.add(stored_detail))
     {
-        constexpr size_t height = 0;
+        static constexpr uint64_t height = 0;
         const auto info = block_info{ block_status::orphan, height };
-        stop_write(handle_store, error::duplicate, info);
+        stop_write(handler, error::duplicate, info);
         return;
     }
 
     organizer_.start();
-    stop_write(handle_store, stored_detail->error(), stored_detail->info());
+    stop_write(handler, stored_detail->error(), stored_detail->info());
 }
 
 void blockchain_impl::import(const chain::block& block,
-    import_block_handler handle_import)
+    block_import_handler handle_import)
 {
     const auto do_import = [this, block, handle_import]()
     {
         start_write();
-        interface_.push(block);
+        database_.push(block);
         stop_write(handle_import, error::success);
     };
     dispatch_.unordered(do_import);
@@ -175,176 +172,146 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
 }
 
 void blockchain_impl::fetch_block_header(uint64_t height,
-    fetch_handler_block_header handle_fetch)
+    block_header_fetch_handler handler)
 {
-    const auto do_fetch = [this, height, handle_fetch](size_t slock)
+    const auto do_fetch = [this, height, handler](size_t slock)
     {
-        const auto result = interface_.blocks.get(height);
-        if (!result)
-        {
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, chain::header());
-        }
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.header());
+        const auto result = database_.blocks.get(height);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.header()) :
+            finish_fetch(slock, handler, error::not_found, chain::header());
     };
-
     fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_block_header(const hash_digest& hash,
-    fetch_handler_block_header handle_fetch)
+    block_header_fetch_handler handle_fetch)
 {
     const auto do_fetch = [this, hash, handle_fetch](size_t slock)
     {
-        const auto result = interface_.blocks.get(hash);
-        if (!result)
-        {
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, chain::header());
-        }
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.header());
+        const auto handler = handle_fetch;
+        const auto result = database_.blocks.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.header()) :
+            finish_fetch(slock, handler, error::not_found, chain::header());
     };
-
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_block_transaction_hashes(
-    const hash_digest& hash,
-    fetch_handler_block_transaction_hashes handle_fetch)
+static hash_list to_hashes(const block_result& result)
 {
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    hash_list hashes;
+    for (size_t index = 0; index < result.transactions_size(); ++index)
+        hashes.push_back(result.transaction_hash(index));
+
+    return hashes;
+}
+
+void blockchain_impl::fetch_block_transaction_hashes(
+    const hash_digest& hash, transaction_hashes_fetch_handler handler)
+{
+    const auto do_fetch = [this, hash, handler](size_t slock)
     {
-        const auto result = interface_.blocks.get(hash);
-        if (!result)
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, hash_list());
-
-        hash_list hashes;
-        for (size_t index = 0; index < result.transactions_size(); ++index)
-            hashes.push_back(result.transaction_hash(index));
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, hashes);
+        const auto result = database_.blocks.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, to_hashes(result)) :
+            finish_fetch(slock, handler, error::not_found, hash_list());
     };
 }
 
 void blockchain_impl::fetch_block_height(const hash_digest& hash,
-    fetch_handler_block_height handle_fetch)
+    block_height_fetch_handler handler)
 {
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    const auto do_fetch = [this, hash, handler](size_t slock)
     {
-        const auto result = interface_.blocks.get(hash);
-        if (!result)
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, 0);
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.height());
+        const auto result = database_.blocks.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.height()) :
+            finish_fetch(slock, handler, error::not_found, 0);
     };
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_last_height(
-    fetch_handler_last_height handle_fetch)
+void blockchain_impl::fetch_last_height(last_height_fetch_handler handler)
 {
-    const auto do_fetch = [this, handle_fetch](size_t slock)
+    const auto do_fetch = [this, handler](size_t slock)
     {
-        const auto last_height = interface_.blocks.last_height();
-        if (last_height == block_database::null_height)
-            return finish_fetch(slock, handle_fetch, error::not_found, 0);
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, last_height);
+        size_t last_height;
+        return database_.blocks.top(last_height) ?
+            finish_fetch(slock, handler, error::success, last_height) :
+            finish_fetch(slock, handler, error::not_found, 0);
     };
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_transaction(
-    const hash_digest& hash,
-    fetch_handler_transaction handle_fetch)
+void blockchain_impl::fetch_transaction(const hash_digest& hash,
+    transaction_fetch_handler handler)
 {
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    const auto do_fetch = [this, hash, handler](size_t slock)
     {
-        const auto result = interface_.transactions.get(hash);
-
-        if (!result)
-        {
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, chain::transaction());
-        }
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.transaction());
+        const auto result = database_.transactions.get(hash);
+        const auto tx = result ? result.transaction() : chain::transaction();
+        return result ?
+            finish_fetch(slock, handler, error::success, tx) :
+            finish_fetch(slock, handler, error::not_found, tx);
     };
     fetch(do_fetch);
 }
 
-void blockchain_impl::fetch_transaction_index(
-    const hash_digest& hash,
-    fetch_handler_transaction_index handle_fetch)
+void blockchain_impl::fetch_transaction_index(const hash_digest& hash,
+    transaction_index_fetch_handler handler)
 {
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    const auto do_fetch = [this, hash, handler](size_t slock)
     {
-        const auto result = interface_.transactions.get(hash);
-        if (!result)
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, 0, 0);
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.height(), result.index());
+        const auto result = database_.transactions.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.height(),
+                result.index()) :
+            finish_fetch(slock, handler, error::not_found, 0, 0);
     };
     fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_spend(const chain::output_point& outpoint,
-    fetch_handler_spend handle_fetch)
+    spend_fetch_handler handler)
 {
-    const auto do_fetch = [this, outpoint, handle_fetch](size_t slock)
+    const auto do_fetch = [this, outpoint, handler](size_t slock)
     {
-        const auto result = interface_.spends.get(outpoint);
-
-        if (!result)
-        {
-            return finish_fetch(slock, handle_fetch,
-                error::unspent_output, chain::input_point());
-        }
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, chain::input_point{result.hash(), result.index()});
+        const auto result = database_.spends.get(outpoint);
+        const auto point = result ?
+            chain::input_point{ result.hash(), result.index() } :
+            chain::input_point();
+        return result ?
+            finish_fetch(slock, handler, error::success, point) :
+            finish_fetch(slock, handler, error::unspent_output, point);
     };
 
     fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_history(const wallet::payment_address& address,
-    fetch_handler_history handle_fetch, const uint64_t limit,
+    history_fetch_handler handler, const uint64_t limit,
     const uint64_t from_height)
 {
-    const auto do_fetch = [this, address, handle_fetch, limit, from_height](
+    const auto do_fetch = [this, address, handler, limit, from_height](
         size_t slock)
     {
-        const auto history = interface_.history.get(address.hash(), limit, 
+        const auto history = database_.history.get(address.hash(), limit,
             from_height);
-        return finish_fetch(slock, handle_fetch, error::success, history);
+        return finish_fetch(slock, handler, error::success, history);
     };
-
     fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_stealth(const binary_type& filter,
-    fetch_handler_stealth handle_fetch, uint64_t from_height)
+    stealth_fetch_handler handler, uint64_t from_height)
 {
-    const auto do_fetch = [this, filter, handle_fetch, from_height](
+    const auto do_fetch = [this, filter, handler, from_height](
         size_t slock)
     {
-        const auto stealth = interface_.stealth.scan(filter, from_height);
-        return finish_fetch(slock, handle_fetch, error::success, stealth);
+        const auto stealth = database_.stealth.scan(filter, from_height);
+        return finish_fetch(slock, handler, error::success, stealth);
     };
-
     fetch(do_fetch);
 }
 

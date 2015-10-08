@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_INFO_HPP
 
+#include <cstdint>
 #include <string>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -40,11 +41,10 @@ enum class block_status
 struct BCB_API block_info
 {
     block_status status;
-    size_t height;
+    uint64_t height;
 };
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

@@ -19,61 +19,66 @@
  */
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/database/block_database.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-simple_chain_impl::simple_chain_impl(db_interface& database)
-  : interface_(database)
+simple_chain_impl::simple_chain_impl(database& database)
+  : database_(database)
 {
 }
 
-void simple_chain_impl::append(block_detail_ptr incoming_block)
+void simple_chain_impl::append(block_detail::ptr incoming_block)
 {
     BITCOIN_ASSERT(incoming_block);
-    DEBUG_ONLY(const size_t last_height = interface_.blocks.last_height());
-    BITCOIN_ASSERT(last_height != block_database::null_height);
-    const auto& actual_block = incoming_block->actual();
-    interface_.push(actual_block);
+    database_.push(incoming_block->actual());
 }
 
-size_t simple_chain_impl::find_height(const hash_digest& search_block_hash)
-{
-    auto result = interface_.blocks.get(search_block_hash);
-    if (!result)
-        return null_height;
-
-    return result.height();
-}
-
-hash_number simple_chain_impl::sum_difficulty(size_t begin_index)
+hash_number simple_chain_impl::sum_difficulty(uint64_t begin_index)
 {
     hash_number total_work = 0;
-    const auto last_height = interface_.blocks.last_height();
-    BITCOIN_ASSERT(last_height != block_database::null_height);
-    for (size_t index = begin_index; index <= last_height; ++index)
+
+    size_t last_height;
+    if (!database_.blocks.top(last_height))
+        return total_work;
+
+    for (uint64_t height = begin_index; height <= last_height; ++height)
     {
-        const auto bits = interface_.blocks.get(index).header().bits;
+        const auto bits = database_.blocks.get(height).header().bits;
         total_work += block_work(bits);
     }
 
     return total_work;
 }
 
-bool simple_chain_impl::release(size_t begin_index,
-    block_detail_list& released_blocks)
+bool simple_chain_impl::release(uint64_t begin_index,
+    block_detail::list& released_blocks)
 {
-    const auto last_height = interface_.blocks.last_height();
-    BITCOIN_ASSERT(last_height != block_database::null_height);
-    BITCOIN_ASSERT_MSG(begin_index > 0, "This loop will underflow.");
-    for (size_t height = last_height; height >= begin_index; --height)
+    size_t last_height;
+    if (!database_.blocks.top(last_height))
+        return false;
+
+    for (uint64_t height = last_height; height >= begin_index; --height)
     {
-        const auto block = std::make_shared<block_detail>(interface_.pop());
+        const auto block = std::make_shared<block_detail>(database_.pop());
         released_blocks.push_back(block);
     }
 
+    return true;
+}
+
+bool simple_chain_impl::find_height(uint64_t& out_height,
+    const hash_digest& search_block_hash)
+{
+    auto result = database_.blocks.get(search_block_hash);
+    if (!result)
+        return false;
+
+    out_height = result.height();
     return true;
 }
 

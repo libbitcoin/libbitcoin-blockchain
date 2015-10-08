@@ -20,13 +20,14 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
 
+#include <cstdint>
 #include <memory>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/orphans_pool.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
@@ -59,41 +60,37 @@ namespace blockchain {
 class BCB_API organizer
 {
 public:
-    typedef subscriber<const std::error_code&, uint64_t,
-        const blockchain::block_list&, const blockchain::block_list&>
-        reorganize_subscriber;
+    typedef std::shared_ptr<organizer> ptr;
+    typedef subscriber<const code&, uint64_t, const block_chain::list&,
+        const block_chain::list&> reorganize_subscriber;
 
     organizer(threadpool& pool, orphans_pool& orphans, simple_chain& chain);
 
     bool start();
     bool stop();
-    void subscribe_reorganize(blockchain::reorganize_handler handle_reorganize);
+    void subscribe_reorganize(block_chain::reorganize_handler handler);
 
 protected:
     bool stopped();
-    virtual std::error_code verify(size_t fork_index,
-        const block_detail_list& orphan_chain, size_t orphan_index) = 0;
+    virtual code verify(uint64_t fork_index,
+        const block_detail::list& orphan_chain, uint64_t orphan_index) = 0;
 
 private:
-
-    void process(block_detail_ptr process_block);
-    void replace_chain(size_t fork_index, block_detail_list& orphan_chain);
-    void clip_orphans(block_detail_list& orphan_chain, size_t orphan_index,
-        const std::error_code& invalid_reason);
-    void notify_reorganize(size_t fork_point,
-        const block_detail_list& orphan_chain,
-        const block_detail_list& replaced_chain);
+    void process(block_detail::ptr process_block);
+    void replace_chain(uint64_t fork_index, block_detail::list& orphan_chain);
+    void clip_orphans(block_detail::list& orphan_chain, uint64_t orphan_index,
+        const code& invalid_reason);
+    void notify_reorganize(uint64_t fork_point,
+        const block_detail::list& orphan_chain,
+        const block_detail::list& replaced_chain);
     void notify_stop();
 
     orphans_pool& orphans_;
     simple_chain& chain_;
     reorganize_subscriber::ptr subscriber_;
-    block_detail_list process_queue_;
+    block_detail::list process_queue_;
     bool stopped_;
 };
-
-// TODO: define in organizer (compat break).
-typedef std::shared_ptr<organizer> organizer_ptr;
 
 } // namespace blockchain
 } // namespace libbitcoin

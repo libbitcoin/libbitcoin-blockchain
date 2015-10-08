@@ -20,7 +20,7 @@
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 
 #include <algorithm>
-#include <cstddef>
+#include <cstdint>
 #include <sstream>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
@@ -30,39 +30,39 @@
 namespace libbitcoin {
 namespace blockchain {
 
-organizer_impl::organizer_impl(threadpool& pool, db_interface& database,
+organizer_impl::organizer_impl(threadpool& pool, database& database,
     orphans_pool& orphans, simple_chain& chain, bool testnet,
     const config::checkpoint::list& checks)
   : organizer(pool, orphans, chain),
-    testnet_(testnet), interface_(database), checkpoints_(checks)
+    testnet_(testnet), database_(database), checkpoints_(checks)
 {
     // Sort checkpoints by height so that top is sure to be properly obtained.
     checkpoint::sort(checkpoints_);
 }
 
-size_t organizer_impl::count_inputs(const chain::block& block)
+uint64_t organizer_impl::count_inputs(const chain::block& block)
 {
-    size_t total_inputs = 0;
+    uint64_t total_inputs = 0;
     for (const auto& tx: block.transactions)
         total_inputs += tx.inputs.size();
 
     return total_inputs;
 }
 
-bool organizer_impl::strict(size_t fork_point)
+bool organizer_impl::strict(uint64_t fork_point)
 {
     return checkpoints_.empty() || fork_point > checkpoints_.back().height();
 }
 
-std::error_code organizer_impl::verify(size_t fork_point,
-    const block_detail_list& orphan_chain, size_t orphan_index)
+code organizer_impl::verify(uint64_t fork_point,
+    const block_detail::list& orphan_chain, uint64_t orphan_index)
 {
     if (stopped())
         return error::service_stopped;
 
     BITCOIN_ASSERT(orphan_index < orphan_chain.size());
     const auto& current_block = orphan_chain[orphan_index]->actual();
-    const size_t height = fork_point + orphan_index + 1;
+    const uint64_t height = fork_point + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
 
     const auto callback = [this]()
@@ -70,7 +70,7 @@ std::error_code organizer_impl::verify(size_t fork_point,
         return stopped();
     };
 
-    const validate_block_impl validate(interface_, fork_point, orphan_chain,
+    const validate_block_impl validate(database_, fork_point, orphan_chain,
         orphan_index, height, current_block, testnet_, checkpoints_, callback);
 
     // Checks that are independent of the chain.

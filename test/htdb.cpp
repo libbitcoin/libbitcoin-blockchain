@@ -43,7 +43,7 @@ void write_data()
 {
     BC_CONSTEXPR size_t header_size = htdb_slab_header_fsize(buckets);
 
-    touch_file("htdb_slabs");
+    database::touch_file("htdb_slabs");
     mmfile file("htdb_slabs");
     BITCOIN_ASSERT(file.data());
     file.resize(header_size + min_slab_fsize);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_32)
     BC_CONSTEXPR size_t rec_buckets = 2;
     BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(rec_buckets);
 
-    touch_file("htdb_records");
+    database::touch_file("htdb_records");
     mmfile file("htdb_records");
     BITCOIN_ASSERT(file.data());
     file.resize(header_size + min_records_fsize);
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(htdb_record_test_64)
     BC_CONSTEXPR size_t rec_buckets = 2;
     BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(rec_buckets);
 
-    touch_file("htdb_records");
+    database::touch_file("htdb_records");
     mmfile file("htdb_records");
     BITCOIN_ASSERT(file.data());
     file.resize(header_size + min_records_fsize);

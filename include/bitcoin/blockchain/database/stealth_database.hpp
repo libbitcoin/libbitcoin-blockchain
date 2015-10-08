@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
 
 namespace libbitcoin {
@@ -50,12 +50,13 @@ public:
     /**
      * Linearly scans all entries starting at from_height.
      */
-    stealth_list scan(const binary_type& filter, size_t from_height) const;
+    block_chain::stealth scan(const binary_type& filter,
+        size_t from_height) const;
 
     /**
      * Add a stealth row to the database.
      */
-    void store(uint32_t prefix, const stealth_row& row);
+    void store(uint32_t prefix, const block_chain::stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.
