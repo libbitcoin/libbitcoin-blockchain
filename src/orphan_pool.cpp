@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/orphan_pool.hpp>
 
 #include <cstddef>
 #include <bitcoin/blockchain/block_detail.hpp>
@@ -25,12 +25,12 @@
 namespace libbitcoin {
 namespace blockchain {
 
-orphans_pool::orphans_pool(size_t size)
+orphan_pool::orphan_pool(size_t size)
   : buffer_(size)
 {
 }
 
-bool orphans_pool::add(block_detail::ptr incoming_block)
+bool orphan_pool::add(block_detail::ptr incoming_block)
 {
     BITCOIN_ASSERT(incoming_block);
     const auto& incomming_header = incoming_block->actual().header;
@@ -50,7 +50,7 @@ bool orphans_pool::add(block_detail::ptr incoming_block)
     return true;
 }
 
-void orphans_pool::remove(block_detail::ptr remove_block)
+void orphan_pool::remove(block_detail::ptr remove_block)
 {
     BITCOIN_ASSERT(remove_block);
     const auto it = std::find(buffer_.begin(), buffer_.end(), remove_block);
@@ -61,7 +61,7 @@ void orphans_pool::remove(block_detail::ptr remove_block)
         << "Orphan pool remove (" << buffer_.size() << ")";
 }
 
-block_detail::list orphans_pool::trace(block_detail::ptr end_block)
+block_detail::list orphan_pool::trace(block_detail::ptr end_block)
 {
     BITCOIN_ASSERT(end_block);
     block_detail::list traced_chain;
@@ -85,7 +85,7 @@ block_detail::list orphans_pool::trace(block_detail::ptr end_block)
     return traced_chain;
 }
 
-block_detail::list orphans_pool::unprocessed()
+block_detail::list orphan_pool::unprocessed()
 {
     block_detail::list unprocessed_blocks;
     for (const auto current_block: buffer_)

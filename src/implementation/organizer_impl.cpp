@@ -31,7 +31,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 organizer_impl::organizer_impl(threadpool& pool, database& database,
-    orphans_pool& orphans, simple_chain& chain, bool testnet,
+    orphan_pool& orphans, simple_chain& chain, bool testnet,
     const config::checkpoint::list& checks)
   : organizer(pool, orphans, chain),
     testnet_(testnet), database_(database), checkpoints_(checks)

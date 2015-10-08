@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
-#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
@@ -37,7 +37,7 @@ INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 namespace libbitcoin {
 namespace blockchain {
 
-organizer::organizer(threadpool& pool, orphans_pool& orphans,
+organizer::organizer(threadpool& pool, orphan_pool& orphans,
     simple_chain& chain)
   : orphans_(orphans),
     chain_(chain),

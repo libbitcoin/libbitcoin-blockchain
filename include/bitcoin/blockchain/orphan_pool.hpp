@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_ORPHANS_POOL_HPP
-#define LIBBITCOIN_BLOCKCHAIN_ORPHANS_POOL_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
+#define LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
 
 #include <cstddef>
 #include <memory>
@@ -31,12 +31,12 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// An unordered memory pool for orphan blocks
-class BCB_API orphans_pool
+class BCB_API orphan_pool
 {
 public:
-    typedef std::shared_ptr<orphans_pool> ptr;
+    typedef std::shared_ptr<orphan_pool> ptr;
 
-    orphans_pool(size_t size=20);
+    orphan_pool(size_t size=20);
 
     bool add(block_detail::ptr incoming_block);
     void remove(block_detail::ptr remove_block);

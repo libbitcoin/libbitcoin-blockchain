@@ -28,7 +28,7 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
-#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
@@ -43,7 +43,7 @@ namespace blockchain {
  *           /                        \
  *  ________/_____                 ____\_________
  * |              |               |              |
- * | orphans_pool |               | simple_chain |
+ * | orphan_pool |               | simple_chain |
  * |______________|               |______________|
  *
  * And both implementations of the organizer and simple_chain
@@ -64,7 +64,7 @@ public:
     typedef subscriber<const code&, uint64_t, const block_chain::list&,
         const block_chain::list&> reorganize_subscriber;
 
-    organizer(threadpool& pool, orphans_pool& orphans, simple_chain& chain);
+    organizer(threadpool& pool, orphan_pool& orphans, simple_chain& chain);
 
     bool start();
     bool stop();
@@ -85,7 +85,7 @@ private:
         const block_detail::list& replaced_chain);
     void notify_stop();
 
-    orphans_pool& orphans_;
+    orphan_pool& orphans_;
     simple_chain& chain_;
     reorganize_subscriber::ptr subscriber_;
     block_detail::list process_queue_;

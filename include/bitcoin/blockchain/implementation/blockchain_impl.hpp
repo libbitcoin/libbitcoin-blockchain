@@ -153,7 +153,7 @@ private:
     database database_;
 
     // Organize stuff
-    orphans_pool orphans_;
+    orphan_pool orphans_;
     simple_chain_impl chain_;
     organizer_impl organizer_;
 };
