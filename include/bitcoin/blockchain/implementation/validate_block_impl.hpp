@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
-#include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
 
@@ -34,8 +34,8 @@ class BCB_API validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(db_interface& database, size_t fork_index,
-        const block_detail_list& orphan_chain, size_t orphan_index,
+    validate_block_impl(database& database, size_t fork_index,
+        const block_detail::list& orphan_chain, size_t orphan_index,
         size_t height, const chain::block& block, bool testnet,
         const config::checkpoint::list& checkpoints,
         stopped_callback stopped);
@@ -58,11 +58,11 @@ private:
     bool orphan_is_spent(const chain::output_point& previous_output,
         size_t skip_tx, size_t skip_input) const;
 
-    db_interface& interface_;
+    database& database_;
     size_t height_;
     size_t fork_index_;
     size_t orphan_index_;
-    const block_detail_list& orphan_chain_;
+    const block_detail::list& orphan_chain_;
 };
 
 } // namespace blockchain

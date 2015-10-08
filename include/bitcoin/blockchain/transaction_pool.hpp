@@ -25,7 +25,7 @@
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -45,17 +45,15 @@ namespace blockchain {
 class BCB_API transaction_pool
 {
 public:
-    typedef std::function<void(const code&)> exists_handler;
-    typedef std::function<void(const code&)> confirm_handler;
-    typedef std::function<void(const code&, const chain::index_list&)>
-        validate_handler;
-    typedef std::function<void(const code&, const chain::transaction&)>
-        fetch_handler;
+    typedef handle0 exists_handler;
+    typedef handle0 confirm_handler;
+    typedef handle1<chain::transaction> fetch_handler;
+    typedef handle1<chain::index_list> validate_handler;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
-    transaction_pool(threadpool& pool, blockchain& chain,
+    transaction_pool(threadpool& pool, block_chain& chain,
         size_t capacity=2000);
     ~transaction_pool();
 
@@ -96,8 +94,8 @@ protected:
         const chain::index_list& unconfirmed, const hash_digest& hash,
         validate_handler handler);
     void reorganize(const code& ec, size_t fork_point,
-        const blockchain::block_list& new_blocks,
-        const blockchain::block_list& replaced_blocks);
+        const block_chain::list& new_blocks,
+        const block_chain::list& replaced_blocks);
     iterator find(const hash_digest& tx_hash) const;
 
     void add(const chain::transaction& tx, confirm_handler handler);
@@ -108,16 +106,16 @@ protected:
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
-    void delete_superseded(const blockchain::block_list& blocks);
+    void delete_superseded(const block_chain::list& blocks);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
     bool delete_single(const chain::transaction& tx, const code& ec);
-    void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
-    void delete_spent_in_blocks(const blockchain::block_list& blocks);
+    void delete_confirmed_in_blocks(const block_chain::list& blocks);
+    void delete_spent_in_blocks(const block_chain::list& blocks);
 
     bool stopped_;
     buffer buffer_;
     dispatcher dispatch_;
-    blockchain& blockchain_;
+    block_chain& blockchain_;
 };
 
 } // namespace blockchain

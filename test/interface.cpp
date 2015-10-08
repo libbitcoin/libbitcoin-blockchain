@@ -41,7 +41,7 @@ struct low_thread_priority_fixture
     }
 };
 
-void test_block_exists(const db_interface& interface,
+void test_block_exists(const database& interface,
     const size_t height, const chain::block block0)
 {
     const hash_digest blk_hash = block0.header.hash();
@@ -136,7 +136,7 @@ void test_block_exists(const db_interface& interface,
 }
 
 void test_block_not_exists(
-    const db_interface& interface, const chain::block block0)
+    const database& interface, const chain::block block0)
 {
     //const hash_digest blk_hash = hash_block_header(block0.header);
     //auto r0_byhash = interface.blocks.get(blk_hash);
@@ -231,23 +231,24 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
 
     // This test causes Travis run failures for performance reasons.
 
-    const std::string prefix = "chain";
+    const std::string prefix("chain");
     boost::filesystem::create_directory(prefix);
-    BOOST_REQUIRE(initialize_blockchain(prefix));
+    BOOST_REQUIRE(database::initialize(prefix));
 
-    db_paths paths(prefix);
-    db_interface interface(paths, {0});
-    interface.start();
+    database::store paths(prefix);
+    database instance(paths, {0});
+    instance.start();
 
-    BOOST_REQUIRE(interface.blocks.last_height() ==
-        block_database::null_height);
+    size_t height;
+    BOOST_REQUIRE(!instance.blocks.top(height));
 
     chain::block block0 = genesis_block();
-    test_block_not_exists(interface, block0);
-    interface.push(block0);
-    test_block_exists(interface, 0, block0);
+    test_block_not_exists(instance, block0);
+    instance.push(block0);
+    test_block_exists(instance, 0, block0);
 
-    BOOST_REQUIRE(interface.blocks.last_height() == 0);
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 0);
 
     std::cout << "pushpop: block 179" << std::endl;
 
@@ -269,11 +270,12 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
         "000043410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b1"
         "48a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643"
         "f656b412a3ac00000000");
-    test_block_not_exists(interface, block1);
-    interface.push(block1);
-    test_block_exists(interface, 1, block1);
+    test_block_not_exists(instance, block1);
+    instance.push(block1);
+    test_block_exists(instance, 1, block1);
 
-    BOOST_REQUIRE(interface.blocks.last_height() == 1);
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 1u);
 
     std::cout << "pushpop: block 181" << std::endl;
 
@@ -295,11 +297,12 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
         "000043410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b1"
         "48a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643"
         "f656b412a3ac00000000");
-    test_block_not_exists(interface, block2);
-    interface.push(block2);
-    test_block_exists(interface, 2, block2);
+    test_block_not_exists(instance, block2);
+    instance.push(block2);
+    test_block_exists(instance, 2, block2);
 
-    BOOST_REQUIRE(interface.blocks.last_height() == 2);
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 2u);
 
     std::cout << "pushpop: block 183" << std::endl;
 
@@ -318,31 +321,34 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
         "b95f689fc705c04b01ffffffff0100e1f50500000000434104fe1b9ccf732e1f"
         "6b760c5ed3152388eeeadd4a073e621f741eb157e6a62e3547c8e939abbd6a51"
         "3bf3a1fbe28f9ea85a4e64c526702435d726f7ff14da40bae4ac00000000");
-    test_block_not_exists(interface, block3);
-    interface.push(block3);
-    test_block_exists(interface, 3, block3);
+    test_block_not_exists(instance, block3);
+    instance.push(block3);
+    test_block_exists(instance, 3, block3);
 
     std::cout << "pushpop: cleanup tests" << std::endl;
 
-    BOOST_REQUIRE(interface.blocks.last_height() == 3);
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 3u);
 
-    chain::block block3_popped = interface.pop();
-    BOOST_REQUIRE(interface.blocks.last_height() == 2);
+    chain::block block3_popped = instance.pop();
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 2u);
     compare_blocks(block3_popped, block3);
 
-    test_block_not_exists(interface, block3);
-    test_block_exists(interface, 2, block2);
-    test_block_exists(interface, 1, block1);
-    test_block_exists(interface, 0, block0);
+    test_block_not_exists(instance, block3);
+    test_block_exists(instance, 2, block2);
+    test_block_exists(instance, 1, block1);
+    test_block_exists(instance, 0, block0);
 
-    chain::block block2_popped = interface.pop();
-    BOOST_REQUIRE(interface.blocks.last_height() == 1);
+    chain::block block2_popped = instance.pop();
+    BOOST_REQUIRE(instance.blocks.top(height));
+    BOOST_REQUIRE_EQUAL(height, 1u);
     compare_blocks(block2_popped, block2);
 
-    test_block_not_exists(interface, block3);
-    test_block_not_exists(interface, block2);
-    test_block_exists(interface, 1, block1);
-    test_block_exists(interface, 0, block0);
+    test_block_not_exists(instance, block3);
+    test_block_not_exists(instance, block2);
+    test_block_exists(instance, 1, block1);
+    test_block_exists(instance, 0, block0);
 
     std::cout << "end pushpop test" << std::endl;
 }

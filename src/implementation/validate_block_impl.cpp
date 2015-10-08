@@ -26,13 +26,13 @@
 namespace libbitcoin {
 namespace blockchain {
 
-validate_block_impl::validate_block_impl(db_interface& database,
-    size_t fork_index, const block_detail_list& orphan_chain,
+validate_block_impl::validate_block_impl(database& database,
+    size_t fork_index, const block_detail::list& orphan_chain,
     size_t orphan_index, size_t height, const chain::block& block,
     bool testnet, const config::checkpoint::list& checks,
     stopped_callback stopped)
   : validate_block(height, block, testnet, checks, stopped),
-    interface_(database),
+    database_(database),
     height_(height),
     fork_index_(fork_index),
     orphan_index_(orphan_index),
@@ -51,7 +51,7 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
     }
 
     // TODO: This is over-requesting, we only need the bits and timestamp.
-    auto result = interface_.blocks.get(fetch_height);
+    auto result = database_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);
     return result.header();
 }
@@ -91,7 +91,7 @@ bool tx_after_fork(size_t tx_height, size_t fork_index)
 
 bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 {
-    const auto result = interface_.transactions.get(tx_hash);
+    const auto result = database_.transactions.get(tx_hash);
     if (!result)
         return false;
 
@@ -101,7 +101,7 @@ bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 bool validate_block_impl::is_output_spent(
     const chain::output_point& outpoint) const
 {
-    const auto result = interface_.spends.get(outpoint);
+    const auto result = database_.spends.get(outpoint);
     if (!result)
         return false;
 
@@ -112,7 +112,7 @@ bool validate_block_impl::is_output_spent(
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    const auto result = interface_.transactions.get(tx_hash);
+    const auto result = database_.transactions.get(tx_hash);
     if (!result || tx_after_fork(result.height(), fork_index_))
         return fetch_orphan_transaction(tx, tx_height, tx_hash);
 

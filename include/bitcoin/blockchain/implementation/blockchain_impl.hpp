@@ -30,23 +30,21 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/db_interface.hpp>
-#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 class BCB_API blockchain_impl
-  : public blockchain
+  : public block_chain
 {
 public:
     blockchain_impl(threadpool& pool, const std::string& prefix,
-        const db_active_heights& active_heights = { 0 },
-        size_t orphan_capacity=20, bool testnet=false,
+        size_t history_height=0, size_t orphan_capacity=20, bool testnet=false,
         const config::checkpoint::list& checks=checkpoint::mainnet);
-    ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
@@ -55,50 +53,50 @@ public:
     bool start();
     bool stop();
 
-    void store(const chain::block& block, store_block_handler handle_store);
-    void import(const chain::block& block, import_block_handler handle_import);
+    void store(const chain::block& block, store_block_handler handler);
+    void import(const chain::block& block, block_import_handler handler);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,
-        fetch_handler_block_header handle_fetch);
+        block_header_fetch_handler handler);
 
     // fetch block header by hash
     void fetch_block_header(const hash_digest& hash,
-        fetch_handler_block_header handle_fetch);
+        block_header_fetch_handler handler);
 
     // fetch transaction hashes in block by hash
     void fetch_block_transaction_hashes(const hash_digest& hash,
-        fetch_handler_block_transaction_hashes handle_fetch);
+        transaction_hashes_fetch_handler handle_fetch);
 
     // fetch height of block by hash
     void fetch_block_height(const hash_digest& hash,
-        fetch_handler_block_height handle_fetch);
+        block_height_fetch_handler handler);
 
     // fetch height of latest block
-    void fetch_last_height(fetch_handler_last_height handle_fetch);
+    void fetch_last_height(last_height_fetch_handler handler);
 
     // fetch transaction by hash
     void fetch_transaction(const hash_digest& hash,
-        fetch_handler_transaction handle_fetch);
+        transaction_fetch_handler handler);
 
     // fetch height and offset within block of transaction by hash
     void fetch_transaction_index(const hash_digest& hash,
-        fetch_handler_transaction_index handle_fetch);
+        transaction_index_fetch_handler handler);
 
     // fetch spend of an output point
     void fetch_spend(const chain::output_point& outpoint,
-        fetch_handler_spend handle_fetch);
+        spend_fetch_handler handler);
 
     // fetch outputs, values and spends for an address.
     void fetch_history(const wallet::payment_address& address,
-        fetch_handler_history handle_fetch,
-        const uint64_t limit=0, const uint64_t from_height=0);
+        history_fetch_handler handler, const uint64_t limit=0,
+        const uint64_t from_height=0);
 
     // fetch stealth results.
     void fetch_stealth(const binary_type& filter,
-        fetch_handler_stealth handle_fetch, uint64_t from_height=0);
+        stealth_fetch_handler handler, uint64_t from_height = 0);
 
-    void subscribe_reorganize(reorganize_handler handle_reorganize);
+    void subscribe_reorganize(reorganize_handler handler);
 
 private:
     typedef std::atomic<size_t> sequential_lock;
@@ -135,7 +133,7 @@ private:
     }
 
     bool do_fetch_stealth(const binary_type& filter,
-        fetch_handler_stealth handle_fetch, uint64_t from_height,
+        stealth_fetch_handler handle_fetch, uint64_t from_height,
         uint64_t slock);
 
     bool stopped();
@@ -151,11 +149,11 @@ private:
     bool stopped_;
 
     // Main database core.
-    db_paths db_paths_;
-    db_interface interface_;
+    database::store store_;
+    database database_;
 
     // Organize stuff
-    orphans_pool orphans_;
+    orphan_pool orphans_;
     simple_chain_impl chain_;
     organizer_impl organizer_;
 };

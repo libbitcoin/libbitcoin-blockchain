@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 
+#include <cstdint>
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
@@ -32,20 +33,20 @@ class BCB_API organizer_impl
   : public organizer
 {
 public:
-    organizer_impl(threadpool& pool, db_interface& database,
-        orphans_pool& orphans, simple_chain& chain, bool testnet,
+    organizer_impl(threadpool& pool, database& database,
+        orphan_pool& orphans, simple_chain& chain, bool testnet,
         const config::checkpoint::list& checks=checkpoint::mainnet);
 
 protected:
-    std::error_code verify(size_t fork_point,
-        const block_detail_list& orphan_chain, size_t orphan_index);
+    code verify(uint64_t fork_point, const block_detail::list& orphan_chain,
+        uint64_t orphan_index);
 
 private:
-    static size_t count_inputs(const chain::block& block);
-    bool strict(size_t fork_point);
+    static uint64_t count_inputs(const chain::block& block);
+    bool strict(uint64_t fork_point);
 
     bool testnet_;
-    db_interface& interface_;
+    database& database_;
     config::checkpoint::list checkpoints_;
 };
 

@@ -59,18 +59,17 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if (!initialize_blockchain(prefix))
+    if (!database::initialize(prefix))
     {
         std::cerr << BS_INITCHAIN_FAIL;
         return -1;
     }
 
-
     // We use an optional checkpoint, not a hardwired genesis block.
     //const chain::block genesis = genesis_block();
     ////// Add genesis block.
-    ////db_paths paths(prefix);
-    ////db_interface interface(paths, {0});
+    ////database::store paths(prefix);
+    ////datbase interface(paths, {0});
     ////interface.start();
     ////interface.push(genesis);
 

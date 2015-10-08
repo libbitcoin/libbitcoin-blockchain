@@ -147,8 +147,8 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        touch_file(map_filename);
-        touch_file(rows_filename);
+        database::touch_file(map_filename);
+        database::touch_file(rows_filename);
     }
     block_database db(map_filename, rows_filename);
     if (command == "initialize_new")
@@ -260,13 +260,13 @@ int main(int argc, char** argv)
     else if (command == "last_height")
     {
         db.start();
-        const size_t height = db.last_height();
-        if (height == block_database::null_height)
+        size_t height;
+        if (!db.top(height))
         {
             std::cout << "No blocks exist." << std::endl;
             return -2;
         }
-        std::cout << db.last_height() << std::endl;
+        std::cout << height << std::endl;
     }
     else
     {

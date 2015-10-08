@@ -20,9 +20,10 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_IMPL_HPP
 
+#include <cstdint>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/db_interface.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
@@ -32,14 +33,16 @@ class BCB_API simple_chain_impl
   : public simple_chain
 {
 public:
-    simple_chain_impl(db_interface& database);
-    void append(block_detail_ptr incoming_block);
-    size_t find_height(const hash_digest& search_block_hash);
-    hash_number sum_difficulty(size_t begin_index);
-    bool release(size_t begin_index, block_detail_list& released_blocks);
+    simple_chain_impl(database& database);
+
+    void append(block_detail::ptr incoming_block);
+    hash_number sum_difficulty(uint64_t begin_index);
+    bool release(uint64_t begin_index, block_detail::list& released_blocks);
+    bool find_height(uint64_t& out_height,
+        const hash_digest& search_block_hash);
 
 private:
-    db_interface& interface_;
+    database& database_;
 };
 
 } // namespace blockchain

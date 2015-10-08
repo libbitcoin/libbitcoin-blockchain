@@ -34,9 +34,9 @@ namespace blockchain {
 class BCB_API validate_block
 {
 public:
-    std::error_code check_block() const;
-    std::error_code accept_block() const;
-    std::error_code connect_block() const;
+    code check_block() const;
+    code accept_block() const;
+    code connect_block() const;
 
 protected:
     typedef std::function<bool()> stopped_callback;

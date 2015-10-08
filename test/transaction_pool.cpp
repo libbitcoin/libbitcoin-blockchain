@@ -27,15 +27,13 @@ using namespace bc::blockchain;
 
 BOOST_AUTO_TEST_SUITE(transaction_pool_tests)
 
-typedef bc::blockchain::blockchain::block_list block_list;
-
 class threadpool_fixture
   : public threadpool
 {
 };
 
 class blockchain_fixture
-    : public bc::blockchain::blockchain
+  : public block_chain
 {
 public:
     virtual bool start()
@@ -54,61 +52,61 @@ public:
     }
 
     virtual void import(const block& import_block,
-        import_block_handler handle_import)
+        block_import_handler handle_import)
     {
     }
 
     virtual void fetch_block_header(uint64_t height,
-        fetch_handler_block_header handle_fetch)
+        block_header_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_block_header(const hash_digest& hash,
-        fetch_handler_block_header handle_fetch)
+        block_header_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        fetch_handler_block_transaction_hashes handle_fetch)
+        transaction_hashes_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_block_height(const hash_digest& hash,
-        fetch_handler_block_height handle_fetch)
+        block_height_fetch_handler handle_fetch)
     {
     }
 
-    virtual void fetch_last_height(fetch_handler_last_height handle_fetch)
+    virtual void fetch_last_height(last_height_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_transaction(const hash_digest& hash,
-        fetch_handler_transaction handle_fetch)
+        transaction_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_transaction_index(const hash_digest& hash,
-        fetch_handler_transaction_index handle_fetch)
+        transaction_index_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_spend(const output_point& outpoint,
-        fetch_handler_spend handle_fetch)
+        spend_fetch_handler handle_fetch)
     {
     }
 
     virtual void fetch_history(const wallet::payment_address& address,
-        fetch_handler_history handle_fetch, const uint64_t limit=0,
+        history_fetch_handler handle_fetch, const uint64_t limit=0,
         const uint64_t from_height=0)
     {
     }
 
     virtual void fetch_stealth(const binary_type& prefix,
-        fetch_handler_stealth handle_fetch, uint64_t from_height=0)
+        stealth_fetch_handler handle_fetch, uint64_t from_height=0)
     {
     }
 
-    virtual void subscribe_reorganize(reorganize_handler handle_reorganize)
+    virtual void subscribe_reorganize(reorganize_handler handler)
     {
     }
 };
@@ -120,14 +118,13 @@ public:
     typedef transaction_pool::entry entry;
     typedef transaction_pool::buffer buffer;
 
-    transaction_pool_fixture(threadpool& pool,
-        bc::blockchain::blockchain& chain, size_t capacity)
+    transaction_pool_fixture(threadpool& pool, block_chain& chain,
+        size_t capacity)
       : transaction_pool(pool, chain, capacity)
     {
     }
 
-    transaction_pool_fixture(threadpool& pool,
-        bc::blockchain::blockchain& chain, buffer& txs)
+    transaction_pool_fixture(threadpool& pool, block_chain& chain, buffer& txs)
       : transaction_pool(pool, chain, txs.capacity())
     {
         // Start by default, fill with our test buffer data.
@@ -143,12 +140,12 @@ public:
         transaction_pool::add(tx, handler);
     }
 
-    void delete_all(const std::error_code& ec)
+    void delete_all(const code& ec)
     {
         transaction_pool::delete_all(ec);
     }
 
-    void delete_package(const std::error_code& ec)
+    void delete_package(const code& ec)
     {
         transaction_pool::delete_package(ec);
     }
@@ -161,6 +158,16 @@ public:
     void delete_package(const transaction& tx, const code& ec)
     {
         transaction_pool::delete_package(tx, ec);
+    }
+
+    void delete_single(const hash_digest& tx_hash, const code& ec)
+    {
+        transaction_pool::delete_single(tx_hash, ec);
+    }
+
+    void delete_single(const chain::transaction& tx, const code& ec)
+    {
+        transaction_pool::delete_single(tx, ec);
     }
 
     void delete_dependencies(const hash_digest& tx_hash, const code& ec)
@@ -178,27 +185,17 @@ public:
         transaction_pool::delete_dependencies(is_dependency, ec);
     }
 
-    void delete_superseded(const block_list& blocks)
+    void delete_superseded(const block_chain::list& blocks)
     {
         transaction_pool::delete_superseded(blocks);
     }
 
-    void delete_single(const hash_digest& tx_hash, const code& ec)
-    {
-        transaction_pool::delete_single(tx_hash, ec);
-    }
-
-    void delete_single(const chain::transaction& tx, const code& ec)
-    {
-        transaction_pool::delete_single(tx, ec);
-    }
-
-    void delete_confirmed_in_blocks(const block_list& blocks)
+    void delete_confirmed_in_blocks(const block_chain::list& blocks)
     {
         transaction_pool::delete_confirmed_in_blocks(blocks);
     }
 
-    void delete_spent_in_blocks(const block_list& blocks)
+    void delete_spent_in_blocks(const block_chain::list& blocks)
     {
         transaction_pool::delete_spent_in_blocks(blocks);
     }
@@ -225,7 +222,7 @@ public:
     auto hash##number = tx##number.hash(); \
     const size_t tx##number##_id = number; \
     code result##number(error::unknown); \
-    const auto handle_confirm##number = [&result##number](const std::error_code& ec) \
+    const auto handle_confirm##number = [&result##number](const code& ec) \
     { \
         result##number = ec; \
         BOOST_CHECK_EQUAL(ec.value(), code_); \
@@ -954,7 +951,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_confirmed_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__expected)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     blocks.push_back(std::make_shared<block>(block1));
     transaction_pool_fixture::buffer buffer(1);
@@ -967,7 +964,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_dependencies__expected)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -993,7 +990,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_dependencies__expected)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     block block2;
     DECLARE_TRANSACTION(0, error::service_stopped);
@@ -1038,7 +1035,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_spent_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expected)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     blocks.push_back(std::make_shared<block>(block1));
     transaction_pool_fixture::buffer buffer(1);
@@ -1051,7 +1048,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expe
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_duplicates_or_dependencies__expected)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);
@@ -1099,7 +1096,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_superseded)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__one_block_duplicates_no_spends__removed_as_succeeded)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -1131,7 +1128,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__one_block_duplicates_n
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__two_blocks_spends_no_duplicates__removed_as_spent)
 {
-    block_list blocks;
+    block_chain::list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);

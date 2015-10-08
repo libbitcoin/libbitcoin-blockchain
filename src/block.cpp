@@ -19,12 +19,13 @@
  */
 #include <bitcoin/blockchain/block.hpp>
 
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-chain::index_list block_locator_indexes(int top_height)
+chain::index_list block_locator_indexes(uint64_t top_height)
 {
     // Start at max_height
     chain::index_list indexes;
@@ -32,7 +33,10 @@ chain::index_list block_locator_indexes(int top_height)
     // Push last 10 indexes first
     int step = 1, start = 0;
 
-    for (int i = top_height; i > 0; i -= step, ++start)
+    BITCOIN_ASSERT(top_height <= max_int64);
+    const auto signed_height = static_cast<int64_t>(top_height);
+
+    for (auto i = signed_height; i > 0; i -= step, ++start)
     {
         if (start >= 10)
             step *= 2;
@@ -45,7 +49,7 @@ chain::index_list block_locator_indexes(int top_height)
     return indexes;
 }
 
-uint64_t block_value(size_t height)
+uint64_t block_value(uint64_t height)
 {
     uint64_t subsidy = coin_price(initial_block_reward);
     subsidy >>= (height / reward_interval);

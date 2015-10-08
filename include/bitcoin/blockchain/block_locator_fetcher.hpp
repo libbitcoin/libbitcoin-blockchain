@@ -17,40 +17,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_ORPHANS_POOL_HPP
-#define LIBBITCOIN_BLOCKCHAIN_ORPHANS_POOL_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_FETCHER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_FETCHER_HPP
 
 #include <cstddef>
-#include <memory>
-#include <boost/circular_buffer.hpp>
-#include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// An unordered memory pool for orphan blocks
-class BCB_API orphans_pool
+class BCB_API block_locator_fetcher
+  : public std::enable_shared_from_this<block_locator_fetcher>
 {
 public:
-    orphans_pool(size_t size=20);
-    ~orphans_pool();
+    typedef block_chain::block_locator_fetch_handler handler;
 
-    bool empty() const;
-    size_t size() const;
+    static void fetch(block_chain& chain, handler handle_fetch);
 
-    bool add(block_detail_ptr incoming_block);
-    void remove(block_detail_ptr remove_block);
-    block_detail_list trace(block_detail_ptr end_block);
-    block_detail_list unprocessed();
+    block_locator_fetcher(block_chain& chain);
+
+    void start(handler handle_fetch);
 
 private:
-    boost::circular_buffer<block_detail_ptr> buffer_;
-};
+    void loop();
+    bool stop_on_error(const code& ec);
+    void populate(const code& ec, size_t last_height);
+    void append(const code& ec, const chain::header& header,
+        size_t /* height */);
 
-// TODO: define in orphans_pool (compat break).
-typedef std::shared_ptr<orphans_pool> orphans_pool_ptr;
+    block_chain& blockchain_;
+    chain::index_list indexes_;
+    message::block_locator locator_;
+    handler handler_;
+    bool stopped_;
+};
 
 } // namespace blockchain
 } // namespace libbitcoin

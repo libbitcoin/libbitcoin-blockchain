@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_POINTER_ARRAY_SOURCE_HPP
 
 #include <algorithm>
-//#include <iosfwd>
+#include <cstdint>
 #include <boost/iostreams/categories.hpp>
 #include <boost/static_assert.hpp>
 #include <bitcoin/bitcoin/define.hpp>
@@ -30,30 +30,29 @@ namespace libbitcoin {
 namespace blockchain {
 
 template<typename SourceType, typename CharType>
-class BC_API pointer_array_source
+class pointer_array_source
 {
 public:
-
     typedef CharType char_type;
     typedef boost::iostreams::source_tag category;
 
     pointer_array_source(const SourceType* begin, uint64_t size)
-        : begin_(begin), pos_(0), size_(size)
+      : size_(size), position_(0), begin_(begin)
     {
-        BOOST_STATIC_ASSERT((sizeof(SourceType) == sizeof(CharType)));
+        static_assert(sizeof(SourceType) == sizeof(CharType), "oops!");
     }
 
     std::streamsize read(char_type* s, std::streamsize n)
     {
         std::streamsize read_length = -1;
 
-        if ((pos_ < size_) && (n > 0))
+        if (position_ < size_ && n > 0)
         {
-            uint64_t positive_n = n;
-            const SourceType* curr_pos = &(begin_[pos_]);
-            uint64_t length = std::min(positive_n, (size_ - pos_));
-            std::memcpy(s, curr_pos, length);
-            pos_ += length;
+            const uint64_t positive_n = n;
+            const SourceType* current_position = &begin_[position_];
+            const uint64_t length = std::min(positive_n, (size_ - position_));
+            std::memcpy(s, current_position, length);
+            position_ += length;
             read_length = length;
         }
 
@@ -61,10 +60,9 @@ public:
     }
 
 private:
-
-    const SourceType* begin_;
-    uint64_t pos_;
     uint64_t size_;
+    uint64_t position_;
+    const SourceType* begin_;
 };
 
 typedef pointer_array_source<uint8_t, char> byte_pointer_array_source;
@@ -73,4 +71,3 @@ typedef pointer_array_source<uint8_t, char> byte_pointer_array_source;
 } // namespace libbitcoin
 
 #endif
-

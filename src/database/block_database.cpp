@@ -190,12 +190,13 @@ void block_database::sync()
     index_.sync();
 }
 
-size_t block_database::last_height() const
+bool block_database::top(size_t& out_height) const
 {
     if (index_.count() == 0)
-        return null_height;
+        return false;
 
-    return index_.count() - 1;
+    out_height = index_.count() - 1;
+    return true;
 }
 
 void block_database::write_position(const position_type position)

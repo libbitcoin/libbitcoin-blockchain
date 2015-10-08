@@ -31,7 +31,8 @@ namespace blockchain {
 
 struct BCB_API transaction_metainfo
 {
-    size_t height, index;
+    size_t height;
+    size_t index;
 };
 
 class BCB_API transaction_result

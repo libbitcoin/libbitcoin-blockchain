@@ -21,13 +21,14 @@
 #include <bitcoin/blockchain/block.hpp>
 
 #include <algorithm>
-#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
-#include <bitcoin/blockchain/orphans_pool.hpp>
+#include <bitcoin/blockchain/database/block_database.hpp>
+#include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
@@ -36,7 +37,7 @@ INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 namespace libbitcoin {
 namespace blockchain {
 
-organizer::organizer(threadpool& pool, orphans_pool& orphans,
+organizer::organizer(threadpool& pool, orphan_pool& orphans,
     simple_chain& chain)
   : orphans_(orphans),
     chain_(chain),
@@ -79,7 +80,7 @@ bool organizer::stopped()
     return stopped_;
 }
 
-void organizer::process(block_detail_ptr process_block)
+void organizer::process(block_detail::ptr process_block)
 {
     BITCOIN_ASSERT(process_block);
 
@@ -88,9 +89,9 @@ void organizer::process(block_detail_ptr process_block)
     BITCOIN_ASSERT(orphan_chain.size() >= 1);
 
     const auto& hash = orphan_chain[0]->actual().header.previous_block_hash;
-    const auto fork_index = chain_.find_height(hash);
 
-    if (fork_index != simple_chain::null_height)
+    uint64_t fork_index;
+    if (chain_.find_height(fork_index, hash))
         replace_chain(fork_index, orphan_chain);
 
     // Don't mark all orphan_chain as processed here because there might be
@@ -98,11 +99,11 @@ void organizer::process(block_detail_ptr process_block)
     process_block->mark_processed();
 }
 
-void organizer::replace_chain(size_t fork_index,
-    block_detail_list& orphan_chain)
+void organizer::replace_chain(uint64_t fork_index,
+    block_detail::list& orphan_chain)
 {
     hash_number orphan_work = 0;
-    for (size_t orphan = 0; orphan < orphan_chain.size(); ++orphan)
+    for (uint64_t orphan = 0; orphan < orphan_chain.size(); ++orphan)
     {
         const auto ec = verify(fork_index, orphan_chain, orphan);
         if (ec)
@@ -136,7 +137,7 @@ void organizer::replace_chain(size_t fork_index,
         return;
 
     // Replace! Switch!
-    block_detail_list released_blocks;
+    block_detail::list released_blocks;
     DEBUG_ONLY(bool success =) chain_.release(begin_index, released_blocks);
     BITCOIN_ASSERT(success);
 
@@ -157,23 +158,24 @@ void organizer::replace_chain(size_t fork_index,
     {
         orphans_.remove(arrival_block);
         ++arrival_index;
-        arrival_block->set_info({block_status::confirmed, arrival_index});
+        arrival_block->set_info({ block_status::confirmed, arrival_index });
         chain_.append(arrival_block);
     }
 
     // Now add the old blocks back to the pool
     for (const auto replaced_block: released_blocks)
     {
+        static constexpr uint64_t no_height = 0;
         replaced_block->mark_processed();
-        replaced_block->set_info({block_status::orphan, 0});
+        replaced_block->set_info({ block_status::orphan, no_height });
         orphans_.add(replaced_block);
     }
 
     notify_reorganize(fork_index, orphan_chain, released_blocks);
 }
 
-static void lazy_remove(block_detail_list& process_queue,
-    block_detail_ptr remove_block)
+static void lazy_remove(block_detail::list& process_queue,
+    block_detail::ptr remove_block)
 {
     BITCOIN_ASSERT(remove_block);
     const auto it = std::find(process_queue.begin(), process_queue.end(),
@@ -184,8 +186,8 @@ static void lazy_remove(block_detail_list& process_queue,
     remove_block->mark_processed();
 }
 
-void organizer::clip_orphans(block_detail_list& orphan_chain,
-    size_t orphan_index, const std::error_code& invalid_reason)
+void organizer::clip_orphans(block_detail::list& orphan_chain,
+    uint64_t orphan_index, const code& invalid_reason)
 {
     // Remove from orphans pool.
     auto orphan_start = orphan_chain.begin() + orphan_index;
@@ -196,8 +198,8 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
         else
             (*it)->set_error(error::previous_block_invalid);
 
-        static const size_t height = 0;
-        const block_info info{ block_status::rejected, height };
+        static const uint64_t no_height = 0;
+        const block_info info{ block_status::rejected, no_height };
         (*it)->set_info(info);
         orphans_.remove(*it);
 
@@ -209,37 +211,36 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
     orphan_chain.erase(orphan_start, orphan_chain.end());
 }
 
-void organizer::notify_reorganize(size_t fork_point,
-    const block_detail_list& orphan_chain,
-    const block_detail_list& replaced_chain)
+void organizer::notify_reorganize(uint64_t fork_point,
+    const block_detail::list& orphan_chain,
+    const block_detail::list& replaced_chain)
 {
-    const auto to_raw_pointer = [](const block_detail_ptr& detail)
+    const auto to_raw_pointer = [](const block_detail::ptr& detail)
     {
         return detail->actual_ptr();
     };
 
-    blockchain::block_list arrivals(orphan_chain.size());
+    block_chain::list arrivals(orphan_chain.size());
     std::transform(orphan_chain.begin(), orphan_chain.end(),
         arrivals.begin(), to_raw_pointer);
 
-    blockchain::block_list replacements(replaced_chain.size());
+    block_chain::list replacements(replaced_chain.size());
     std::transform(replaced_chain.begin(), replaced_chain.end(),
         replacements.begin(), to_raw_pointer);
 
     subscriber_->relay(error::success, fork_point, arrivals, replacements);
 }
 
-void organizer::subscribe_reorganize(
-    blockchain::reorganize_handler handle_reorganize)
+void organizer::subscribe_reorganize(block_chain::reorganize_handler handler)
 {
-    subscriber_->subscribe(handle_reorganize);
+    subscriber_->subscribe(handler);
 }
 
 void organizer::notify_stop()
 {
     static const uint64_t fork_point = 0;
     subscriber_->relay(error::service_stopped, fork_point,
-        blockchain::block_list(), blockchain::block_list());
+        block_chain::list(), block_chain::list());
 }
 
 } // namespace blockchain

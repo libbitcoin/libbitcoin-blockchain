@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
@@ -34,7 +34,7 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
-transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
+transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
     size_t capacity)
   : stopped_(true), buffer_(capacity), dispatch_(pool), blockchain_(chain) 
 {
@@ -195,8 +195,8 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 }
 
 void transaction_pool::reorganize(const code& ec, size_t fork_point,
-    const blockchain::block_list& new_blocks,
-    const blockchain::block_list& replaced_blocks)
+    const block_chain::list& new_blocks,
+    const block_chain::list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -262,7 +262,7 @@ void transaction_pool::delete_all(const code& ec)
 }
 
 // Delete mempool txs that are obsoleted by new blocks acceptance.
-void transaction_pool::delete_superseded(const blockchain::block_list& blocks)
+void transaction_pool::delete_superseded(const block_chain::list& blocks)
 {
     // Deletion by hash returns success code, the other a double-spend error.
     delete_confirmed_in_blocks(blocks);
@@ -271,7 +271,7 @@ void transaction_pool::delete_superseded(const blockchain::block_list& blocks)
 
 // Delete mempool txs that are duplicated in the new blocks.
 void transaction_pool::delete_confirmed_in_blocks(
-    const blockchain::block_list& blocks)
+    const block_chain::list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -283,7 +283,7 @@ void transaction_pool::delete_confirmed_in_blocks(
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
 void transaction_pool::delete_spent_in_blocks(
-    const blockchain::block_list& blocks)
+    const block_chain::list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;

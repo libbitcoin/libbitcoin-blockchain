@@ -17,37 +17,37 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_LOCATOR_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
+#define LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
 
-#include <system_error>
+#include <cstddef>
+#include <memory>
+#include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/blockchain.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// TODO: rename to block_locator_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&,
-    const message::block_locator&)> blockchain_fetch_handler_block_locator;
+/// An unordered memory pool for orphan blocks
+class BCB_API orphan_pool
+{
+public:
+    typedef std::shared_ptr<orphan_pool> ptr;
 
-/**
- * Creates a block_locator object used to download the blockchain.
- *
- * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,      // Status of operation
- *      const block_locator_type& loc   // Block locator object
- *  );
- * @endcode
- */
-BCB_API void fetch_block_locator(blockchain& chain,
-    blockchain_fetch_handler_block_locator handle_fetch);
+    orphan_pool(size_t size=20);
+
+    bool add(block_detail::ptr incoming_block);
+    void remove(block_detail::ptr remove_block);
+    block_detail::list trace(block_detail::ptr end_block);
+    block_detail::list unprocessed();
+
+private:
+    boost::circular_buffer<block_detail::ptr> buffer_;
+};
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-
