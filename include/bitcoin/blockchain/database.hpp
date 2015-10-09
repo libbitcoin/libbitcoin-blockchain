@@ -66,8 +66,6 @@ public:
     block_database blocks;
     spend_database spends;
     transaction_database transactions;
-
-    // Optional databases.
     history_database history;
     stealth_database stealth;
 
