@@ -65,11 +65,11 @@ protected:
         size_t& total_sigops) const;
 
     // These are protected virtual for testability.
-    virtual boost::posix_time::ptime current_time() const;
-    virtual bool stopped() const;
-    virtual bool is_spent_duplicate(const chain::transaction& tx) const;
-    virtual bool is_valid_time_stamp(uint32_t timestamp) const;
-    virtual uint32_t work_required(bool is_testnet) const;
+    boost::posix_time::ptime current_time() const;
+    bool stopped() const;
+    bool is_spent_duplicate(const chain::transaction& tx) const;
+    bool is_valid_time_stamp(uint32_t timestamp) const;
+    uint32_t work_required(bool is_testnet) const;
 
     static bool is_distinct_tx_set(const chain::transaction::list& txs);
     static bool is_valid_proof_of_work(hash_digest hash, uint32_t bits);

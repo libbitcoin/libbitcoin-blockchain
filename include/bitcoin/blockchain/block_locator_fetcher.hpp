@@ -43,8 +43,7 @@ private:
     void loop();
     bool stop_on_error(const code& ec);
     void populate(const code& ec, size_t last_height);
-    void append(const code& ec, const chain::header& header,
-        size_t /* height */);
+    void append(const code& ec, const chain::header& header);
 
     block_chain& blockchain_;
     chain::index_list indexes_;

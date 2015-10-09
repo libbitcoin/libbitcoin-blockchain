@@ -84,6 +84,7 @@ protected:
         chain::transaction tx;
         confirm_handler handle_confirm;
     };
+
     typedef boost::circular_buffer<entry> buffer;
     typedef buffer::const_iterator iterator;
     typedef std::function<bool(const chain::input&)> input_compare;

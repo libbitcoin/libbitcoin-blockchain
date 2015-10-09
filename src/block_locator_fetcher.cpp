@@ -78,7 +78,7 @@ void block_locator_fetcher::loop()
     indexes_.pop_back();
     blockchain_.fetch_block_header(height,
         std::bind(&block_locator_fetcher::append,
-        self, _1, _2, height));
+            self, _1, _2));
 }
 
 void block_locator_fetcher::populate(const code& ec, size_t last_height)
@@ -96,8 +96,7 @@ void block_locator_fetcher::populate(const code& ec, size_t last_height)
     loop();
 }
 
-void block_locator_fetcher::append(const code& ec, const chain::header& header,
-    size_t /* height */)
+void block_locator_fetcher::append(const code& ec, const chain::header& header)
 {
     if (stop_on_error(ec))
         return;
