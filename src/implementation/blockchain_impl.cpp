@@ -198,26 +198,28 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch(do_fetch);
 }
 
-static hash_list to_hashes(const block_result& result)
-{
-    hash_list hashes;
-    for (size_t index = 0; index < result.transactions_size(); ++index)
-        hashes.push_back(result.transaction_hash(index));
+////static hash_list to_hashes(const block_result& result)
+////{
+////    hash_list hashes;
+////    for (size_t index = 0; index < result.transactions_size(); ++index)
+////        hashes.push_back(result.transaction_hash(index));
+////
+////    return hashes;
+////}
 
-    return hashes;
-}
-
-void blockchain_impl::fetch_block_transaction_hashes(
-    const hash_digest& hash, transaction_hashes_fetch_handler handler)
-{
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(hash);
-        return result ?
-            finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list());
-    };
-}
+////void blockchain_impl::fetch_block_transaction_hashes(
+////    const hash_digest& hash, transaction_hashes_fetch_handler handler)
+////{
+////    const auto do_fetch = [this, hash, handler](size_t slock)
+////    {
+////        const auto result = database_.blocks.get(hash);
+////        return result ?
+////            finish_fetch(slock, handler, error::success, to_hashes(result)) :
+////            finish_fetch(slock, handler, error::not_found, hash_list());
+////    };
+////    // This was not implemented...
+////    //fetch(do_fetch);
+////}
 
 void blockchain_impl::fetch_block_height(const hash_digest& hash,
     block_height_fetch_handler handler)

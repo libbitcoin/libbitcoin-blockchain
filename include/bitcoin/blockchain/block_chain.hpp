@@ -113,8 +113,8 @@ public:
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handle_fetch) = 0;
 
-    virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handle_fetch) = 0;
+    ////virtual void fetch_block_transaction_hashes(const hash_digest& hash,
+    ////    transaction_hashes_fetch_handler handle_fetch) = 0;
 
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handle_fetch) = 0;

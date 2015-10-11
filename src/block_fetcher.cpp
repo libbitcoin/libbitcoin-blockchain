@@ -100,13 +100,13 @@ void block_fetcher::fetch_transactions(const code& ec,
         fetch_tx(tx_hashes[tx_index], tx_index);
 }
 
-//void block_fetcher::fetch_hashes()
-//{
-//    blockchain_.fetch_block_transaction_hashes(
-//        hash_block_header(block_.header),
-//            std::bind(&fetch_block_t::fetch_transactions,
-//                shared_from_this(), _1, _2));
-//}
+////void block_fetcher::fetch_hashes()
+////{
+////    blockchain_.fetch_block_transaction_hashes(
+////        hash_block_header(block_.header),
+////            std::bind(&fetch_block_t::fetch_transactions,
+////                shared_from_this(), _1, _2));
+////}
 
 } // namespace blockchain
 } // namespace libbitcoin
