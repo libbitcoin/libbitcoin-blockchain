@@ -357,6 +357,7 @@ uint32_t validate_block::work_required(bool is_testnet) const
         chain::header previous_block;
         auto previous_height = height_;
 
+        // TODO: this is very suboptimal, cache the set of change points.
         // Loop backwards until we find a difficulty change point,
         // or we find a block which does not have max_bits (is not special).
         while (!is_retarget_height(previous_height))
@@ -545,6 +546,8 @@ bool validate_block::connect_input(size_t index_in_parent,
     const auto& input = current_tx.inputs[input_index];
     const auto& previous_output = input.previous_output;
 
+    // This searches the blockchain and then the orphan pool up to and
+    // including the current (orphan) block and excluding blocks above fork.
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
         log_warning(LOG_VALIDATE) << "Failure fetching input transaction.";

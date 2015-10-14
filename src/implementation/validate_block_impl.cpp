@@ -50,7 +50,6 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
         return orphan_chain_[fetch_index]->actual().header;
     }
 
-    // TODO: This is over-requesting, we only need the bits and timestamp.
     auto result = database_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);
     return result.header();
@@ -58,7 +57,7 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
 
 uint32_t validate_block_impl::previous_block_bits() const
 {
-    // Read block d - 1 and return bits
+    // Read block header d - 1 and return bits
     return fetch_block(height_ - 1).bits;
 }
 
