@@ -79,7 +79,7 @@ public:
     typedef std::shared_ptr<chain::block> ptr;
     typedef std::vector<ptr> list;
     
-    typedef handle0 block_import_handler;
+    ////typedef handle0 block_import_handler;
     typedef handle1<chain::block> block_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
@@ -104,8 +104,8 @@ public:
     virtual void store(const chain::block& block,
         store_block_handler handle_store) = 0;
 
-    virtual void import(const chain::block& import_block,
-        block_import_handler handle_import) = 0;
+    ////virtual void import(const chain::block& import_block,
+    ////    block_import_handler handle_import) = 0;
 
     virtual void fetch_block_header(uint64_t height,
         block_header_fetch_handler handle_fetch) = 0;

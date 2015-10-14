@@ -54,7 +54,7 @@ public:
     bool stop();
 
     void store(const chain::block& block, store_block_handler handler);
-    void import(const chain::block& block, block_import_handler handler);
+    ////void import(const chain::block& block, block_import_handler handler);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,
@@ -108,10 +108,10 @@ private:
     template <typename Handler, typename... Args>
     void stop_write(Handler handler, Args&&... args)
     {
-        ++seqlock_;
+        ++slock_;
 
-        // seqlock is now even again.
-        BITCOIN_ASSERT(seqlock_ % 2 == 0);
+        // slock_ is now even again.
+        BITCOIN_ASSERT(slock_ % 2 == 0);
         handler(std::forward<Args>(args)...);
     }
 
@@ -125,7 +125,7 @@ private:
     template <typename Handler, typename... Args>
     bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
     {
-        if (slock != seqlock_)
+        if (slock != slock_)
             return false;
 
         handler(std::forward<Args>(args)...);
@@ -145,7 +145,7 @@ private:
     boost::interprocess::file_lock flock_;
 
     // sequential lock used for writes.
-    sequential_lock seqlock_;
+    sequential_lock slock_;
     bool stopped_;
 
     // Main database core.

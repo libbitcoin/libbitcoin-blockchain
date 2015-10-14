@@ -47,9 +47,9 @@ organizer::organizer(threadpool& pool, orphan_pool& orphans,
 {
 }
 
+// This is called on *every* blockchain_impl::start_write() call.
 bool organizer::start()
 {
-    // TODO: can we actually restart?
     stopped_ = false;
 
     // Load unprocessed blocks

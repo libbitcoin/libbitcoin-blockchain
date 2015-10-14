@@ -77,7 +77,8 @@ void block_fetcher::fetch_tx(const hash_digest& tx_hash, size_t tx_index)
         BITCOIN_ASSERT(tx_index < block_.transactions.size());
         block_.transactions[tx_index] = tx;
 
-        // Atomicity: must increment and read value in one instruction.
+        // Atomicity: must increment and read value in one instruction if
+        // transactions are retrieved concurrently (which is not yet the case).
         const auto handled_count = ++handled_count_;
 
         if (handled_count == block_.transactions.size())
