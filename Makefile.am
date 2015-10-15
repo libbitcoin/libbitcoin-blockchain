@@ -77,7 +77,6 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/databases.cpp \
     test/disk_objs.cpp \
     test/genesis_block.cpp \
-    test/genesis_block.hpp \
     test/htdb.cpp \
     test/interface.cpp \
     test/main.cpp \

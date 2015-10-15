@@ -42,15 +42,17 @@ bool database::touch_file(const path& filepath)
     return true;
 }
 
-bool database::initialize(const path& prefix)
+bool database::initialize(const path& prefix, const chain::block& genesis)
 {
     // Create paths.
-    store paths(prefix);
-    bool result = paths.touch_all();
+    const store paths(prefix);
+    const auto result = paths.touch_all();
 
     // Initialize databases.
     database instance(paths, 0);
     instance.create();
+    instance.start();
+    instance.push(genesis);
 
     return result;
 }
