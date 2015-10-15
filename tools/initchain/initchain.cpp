@@ -35,7 +35,7 @@ using namespace boost::filesystem;
 using namespace boost::system;
 using boost::format;
 
-// Create a new blockchain database.
+// Create a new mainnet blockchain database.
 int main(int argc, char** argv)
 {
     std::string prefix("blockchain");
@@ -59,20 +59,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if (!database::initialize(prefix))
+    if (!database::initialize(prefix, mainnet_genesis_block()))
     {
         std::cerr << BS_INITCHAIN_FAIL;
         return -1;
     }
 
-    // We use an optional checkpoint, not a hardwired genesis block.
-    //const chain::block genesis = genesis_block();
-    ////// Add genesis block.
-    ////database::store paths(prefix);
-    ////datbase interface(paths, {0});
-    ////interface.start();
-    ////interface.push(genesis);
-
     return 0;
 }
-

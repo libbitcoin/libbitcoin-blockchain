@@ -52,7 +52,8 @@ public:
     };
 
     /// Create a new blockchain with a given path prefix and default paths.
-    static bool initialize(const boost::filesystem::path& prefix);
+    static bool initialize(const boost::filesystem::path& prefix,
+        const chain::block& genesis);
     static bool touch_file(const boost::filesystem::path& file);
 
     database(const store& paths, size_t history_height=0);

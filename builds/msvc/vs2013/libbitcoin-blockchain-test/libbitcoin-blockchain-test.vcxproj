@@ -106,22 +106,9 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
   </Target>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseSEXE|Win32'">
-    <PostBuildEvent>
-      <Command>"$(TargetPath)" --run_test=transaction_pool_tests --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseSEXE|x64'">
-    <PostBuildEvent>
-      <Command>"$(TargetPath)" --run_test=transaction_pool_tests --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-blockchain\libbitcoin-blockchain.vcxproj">
       <Project>{868DAB9E-FD33-497F-9468-C9000B3D7801}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\genesis_block.hpp" />
   </ItemGroup>
 </Project>

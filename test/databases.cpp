@@ -19,7 +19,6 @@
  */
 #include <boost/test/unit_test.hpp>
 #include <bitcoin/blockchain.hpp>
-#include "genesis_block.hpp"
 
 using namespace bc;
 using namespace bc::blockchain;
@@ -84,7 +83,7 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
 
 chain::transaction random_tx(size_t fudge)
 {
-    chain::block genesis = genesis_block();
+    chain::block genesis = mainnet_genesis_block();
     chain::transaction result = genesis.transactions[0];
     result.inputs[0].previous_output.index = fudge;
     return result;
@@ -92,7 +91,7 @@ chain::transaction random_tx(size_t fudge)
 
 BOOST_AUTO_TEST_CASE(block_db_test)
 {
-    chain::block block0 = genesis_block();
+    chain::block block0 = mainnet_genesis_block();
     block0.transactions.push_back(random_tx(0));
     block0.transactions.push_back(random_tx(1));
     //const hash_digest h0 = hash_block_header(block0.header);
