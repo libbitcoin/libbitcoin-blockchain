@@ -55,7 +55,7 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const config::checkpoint::list& checks)
   : dispatch_(pool),
     flock_(init_lock(prefix)),
-    seqlock_(0),
+    slock_(0),
     stopped_(true),
     store_(prefix),
     database_(store_, history_height),
@@ -97,10 +97,11 @@ void blockchain_impl::subscribe_reorganize(reorganize_handler handler)
 
 void blockchain_impl::start_write()
 {
-    ++seqlock_;
+    ++slock_;
 
-    // seqlock is now odd.
-    BITCOIN_ASSERT(seqlock_ % 2 == 1);
+    // slock_ must now be odd.
+    if (slock_ % 2 == 0)
+        throw std::runtime_error("Overlapped write operation.");
 }
 
 void blockchain_impl::store(const chain::block& block,
@@ -110,6 +111,7 @@ void blockchain_impl::store(const chain::block& block,
         std::bind(&blockchain_impl::do_store,
             this, block, handler));
 }
+
 void blockchain_impl::do_store(const chain::block& block,
     store_block_handler handler)
 {
@@ -139,25 +141,25 @@ void blockchain_impl::do_store(const chain::block& block,
     stop_write(handler, stored_detail->error(), stored_detail->info());
 }
 
-void blockchain_impl::import(const chain::block& block,
-    block_import_handler handle_import)
-{
-    const auto do_import = [this, block, handle_import]()
-    {
-        start_write();
-        database_.push(block);
-        stop_write(handle_import, error::success);
-    };
-    dispatch_.unordered(do_import);
-}
+////void blockchain_impl::import(const chain::block& block,
+////    block_import_handler handle_import)
+////{
+////    const auto do_import = [this, block, handle_import]()
+////    {
+////        start_write();
+////        database_.push(block);
+////        stop_write(handle_import, error::success);
+////    };
+////    dispatch_.unordered(do_import);
+////}
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
 {
     const auto try_read = [this, perform_read]() -> bool
     {
-        // Implements the seqlock counter logic.
-        const size_t slock = seqlock_;
-        return ((slock % 2 != 1) && perform_read(slock));
+        // Implements the sequential counter logic.
+        const size_t slock = slock_;
+        return ((slock % 2 == 0) && perform_read(slock));
     };
 
     const auto do_read = [this, try_read]()
@@ -198,26 +200,28 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch(do_fetch);
 }
 
-static hash_list to_hashes(const block_result& result)
-{
-    hash_list hashes;
-    for (size_t index = 0; index < result.transactions_size(); ++index)
-        hashes.push_back(result.transaction_hash(index));
+////static hash_list to_hashes(const block_result& result)
+////{
+////    hash_list hashes;
+////    for (size_t index = 0; index < result.transactions_size(); ++index)
+////        hashes.push_back(result.transaction_hash(index));
+////
+////    return hashes;
+////}
 
-    return hashes;
-}
-
-void blockchain_impl::fetch_block_transaction_hashes(
-    const hash_digest& hash, transaction_hashes_fetch_handler handler)
-{
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(hash);
-        return result ?
-            finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list());
-    };
-}
+////void blockchain_impl::fetch_block_transaction_hashes(
+////    const hash_digest& hash, transaction_hashes_fetch_handler handler)
+////{
+////    const auto do_fetch = [this, hash, handler](size_t slock)
+////    {
+////        const auto result = database_.blocks.get(hash);
+////        return result ?
+////            finish_fetch(slock, handler, error::success, to_hashes(result)) :
+////            finish_fetch(slock, handler, error::not_found, hash_list());
+////    };
+////    // This was not implemented...
+////    //fetch(do_fetch);
+////}
 
 void blockchain_impl::fetch_block_height(const hash_digest& hash,
     block_height_fetch_handler handler)

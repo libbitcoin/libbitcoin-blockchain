@@ -77,7 +77,8 @@ void block_fetcher::fetch_tx(const hash_digest& tx_hash, size_t tx_index)
         BITCOIN_ASSERT(tx_index < block_.transactions.size());
         block_.transactions[tx_index] = tx;
 
-        // Atomicity: must increment and read value in one instruction.
+        // Atomicity: must increment and read value in one instruction if
+        // transactions are retrieved concurrently (which is not yet the case).
         const auto handled_count = ++handled_count_;
 
         if (handled_count == block_.transactions.size())
@@ -100,13 +101,13 @@ void block_fetcher::fetch_transactions(const code& ec,
         fetch_tx(tx_hashes[tx_index], tx_index);
 }
 
-//void block_fetcher::fetch_hashes()
-//{
-//    blockchain_.fetch_block_transaction_hashes(
-//        hash_block_header(block_.header),
-//            std::bind(&fetch_block_t::fetch_transactions,
-//                shared_from_this(), _1, _2));
-//}
+////void block_fetcher::fetch_hashes()
+////{
+////    blockchain_.fetch_block_transaction_hashes(
+////        hash_block_header(block_.header),
+////            std::bind(&fetch_block_t::fetch_transactions,
+////                shared_from_this(), _1, _2));
+////}
 
 } // namespace blockchain
 } // namespace libbitcoin
