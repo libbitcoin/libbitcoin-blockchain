@@ -73,14 +73,12 @@ slab_type htdb_slab<HashType>::get(const HashType& key) const
 
         const auto previous = current;
         current = item.next_position();
-        if (previous == current)
-        {
-            log_fatal(LOG_DATABASE)
-                << "Slab database is corrupt ("
-                << bucket << ")[" << index << "] via get";
 
-            throw std::runtime_error("The database is corrupt.");
-        }
+        // This may otherwise produce an infinite loop here.
+        // It indicates that a write operation has interceded.
+        // So we must return gracefully vs. looping forever.
+        if (previous == current)
+            return nullptr;
 
         ++index;
     }
@@ -125,14 +123,12 @@ bool htdb_slab<HashType>::unlink(const HashType& key)
 
         previous = current;
         current = item.next_position();
-        if (previous == current)
-        {
-            log_fatal(LOG_DATABASE)
-                << "Slab database is corrupt ("
-                << bucket << ")[" << index << "] via unlink";
 
-            throw std::runtime_error("The database is corrupt.");
-        }
+        // This may otherwise produce an infinite loop here.
+        // It indicates that a write operation has interceded.
+        // So we must return gracefully vs. looping forever.
+        if (previous == current)
+            return nullptr;
 
         ++index;
     }

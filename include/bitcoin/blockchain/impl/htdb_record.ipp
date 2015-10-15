@@ -70,14 +70,12 @@ record_type htdb_record<HashType>::get(const HashType& key) const
 
         const auto previous = current;
         current = item.next_index();
-        if (previous == current)
-        {
-            log_fatal(LOG_DATABASE)
-                << "Record database " << this->name_ << " is corrupt ("
-                << bucket << ")[" << index << "] via get";
 
-            throw std::runtime_error("The database is corrupt.");
-        }
+        // This may otherwise produce an infinite loop here.
+        // It indicates that a write operation has interceded.
+        // So we must return gracefully vs. looping forever.
+        if (previous == current)
+            return nullptr;
 
         ++index;
     }
@@ -122,14 +120,12 @@ bool htdb_record<HashType>::unlink(const HashType& key)
 
         previous = current;
         current = item.next_index();
-        if (previous == current)
-        {
-            log_fatal(LOG_DATABASE)
-                << "Record database " << this->name_ << " is corrupt ("
-                << bucket << ")[" << index << "] via unlink";
 
-            throw std::runtime_error("The database is corrupt.");
-        }
+        // This may otherwise produce an infinite loop here.
+        // It indicates that a write operation has interceded.
+        // So we must return gracefully vs. looping forever.
+        if (previous == current)
+            return nullptr;
 
         ++index;
     }
