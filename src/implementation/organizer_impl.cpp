@@ -51,7 +51,7 @@ uint64_t organizer_impl::count_inputs(const chain::block& block)
 
 bool organizer_impl::strict(uint64_t fork_point)
 {
-    return checkpoints_.empty() || fork_point > checkpoints_.back().height();
+    return checkpoints_.empty() || fork_point >= checkpoints_.back().height();
 }
 
 code organizer_impl::verify(uint64_t fork_point,
