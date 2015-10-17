@@ -238,8 +238,6 @@ BOOST_AUTO_TEST_CASE(block_db_test)
 
 BOOST_AUTO_TEST_CASE(transaction_db_test)
 {
-    transaction_metainfo info1{110, 88};
-
     data_chunk raw_tx1;
     BOOST_REQUIRE(decode_base16(raw_tx1,
         "0100000001537c9d05b5f7d67b09e5108e3bd5e466909cc9403ddd98bc42973f"
@@ -250,8 +248,6 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
     BOOST_REQUIRE(tx1.from_data(raw_tx1));
 
     const hash_digest h1 = tx1.hash();
-
-    transaction_metainfo info2{4, 6};
 
     data_chunk raw_tx2;
     BOOST_REQUIRE(decode_base16(raw_tx2,
@@ -268,8 +264,8 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
     transaction_database db("tx_db_map");
     db.create();
     db.start();
-    db.store(info1, tx1);
-    db.store(info2, tx2);
+    db.store(110, 88, tx1);
+    db.store(4, 6, tx2);
     auto res1 = db.get(h1);
     BOOST_REQUIRE(res1.transaction().hash() == h1);
     auto res2 = db.get(h2);

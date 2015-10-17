@@ -34,6 +34,8 @@ namespace blockchain {
 class BCB_API validate_block
 {
 public:
+    static bool is_special_duplicate(const chain::block& block, size_t height);
+
     code check_block() const;
     code accept_block() const;
     code connect_block() const;

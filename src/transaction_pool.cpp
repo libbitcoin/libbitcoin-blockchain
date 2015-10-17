@@ -201,7 +201,7 @@ void transaction_pool::reorganize(const code& ec, size_t fork_point,
     if (ec == error::service_stopped)
     {
         log_debug(LOG_BLOCKCHAIN)
-            << "Stopping transaction pool: " << ec.message();
+            << "Stopping transaction pool.";
         stop();
         return;
     }

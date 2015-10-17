@@ -113,17 +113,17 @@ transaction_result transaction_database::get(const hash_digest& hash) const
     return transaction_result(slab, allocator_.to_eof(slab));
 }
 
-void transaction_database::store(const transaction_metainfo& info,
+void transaction_database::store(size_t height, size_t index,
     const chain::transaction& tx)
 {
     // Write block data.
     const hash_digest key = tx.hash();
     const size_t value_size = 4 + 4 + tx.serialized_size();
-    auto write = [&info, &tx](uint8_t* data)
+    auto write = [&height, &index, &tx](uint8_t* data)
     {
         auto serial = make_serializer(data);
-        serial.write_4_bytes_little_endian(info.height);
-        serial.write_4_bytes_little_endian(info.index);
+        serial.write_4_bytes_little_endian(height);
+        serial.write_4_bytes_little_endian(index);
         data_chunk tx_data = tx.to_data();
         serial.write_data(tx_data);
     };

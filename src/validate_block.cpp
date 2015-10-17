@@ -33,6 +33,11 @@
 namespace libbitcoin {
 namespace blockchain {
 
+// To improve readability.
+#define RETURN_IF_STOPPED() \
+if (stopped()) \
+    return error::service_stopped
+
 using boost::posix_time::ptime;
 using boost::posix_time::from_time_t;
 using boost::posix_time::second_clock;
@@ -42,17 +47,20 @@ using boost::posix_time::hours;
 static constexpr uint32_t max_block_size = 1000000;
 
 // Maximum signature operations per block is 20,000.
-static constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
+static constexpr uint32_t max_block_script_sig_operations = 
+    max_block_size / 50;
+
+// BIP30 exception blocks.
+// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+static const config::checkpoint mainnet_block_91842 =
+{ "00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec", 91842 };
+static const config::checkpoint mainnet_block_91880 =
+{ "00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721", 91880 };
 
 // The maximum height of version 1 blocks.
 // Is this correct, looks like it should be 227835?
 // see: github.com/bitcoin/bips/blob/master/bip-0034.mediawiki#result
 static constexpr uint64_t max_version1_height = 237370;
-
-// BIP30 exception blocks.
-// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
-static constexpr uint64_t bip30_exception_block1 = 91842;
-static constexpr uint64_t bip30_exception_block2 = 91880;
 
 // Target readjustment every 2 weeks (in seconds).
 static constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
@@ -64,12 +72,23 @@ static constexpr uint64_t target_spacing = 10 * 60;
 static constexpr uint64_t retargeting_factor = 4;
 
 // Two weeks worth of blocks (count of blocks).
-static constexpr uint64_t retargeting_interval = target_timespan / target_spacing;
+static constexpr uint64_t retargeting_interval = 
+    target_timespan / target_spacing;
 
-// To improve readability.
-#define RETURN_IF_STOPPED() \
-if (stopped()) \
-    return error::service_stopped
+// BIP30 exception blocks (with duplicate transactions).
+// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+bool validate_block::is_special_duplicate(const chain::block& block,
+    size_t height)
+{
+    if (height != mainnet_block_91842.height() &&
+        height != mainnet_block_91880.height())
+        return false;
+
+    const auto hash = block.header.hash();
+    return 
+        hash == mainnet_block_91842.hash() || 
+        hash == mainnet_block_91880.hash();
+}
 
 // The nullptr option is for backward compatibility only.
 validate_block::validate_block(size_t height, const chain::block& block,
@@ -412,9 +431,10 @@ bool validate_block::is_valid_coinbase_height(size_t height,
 
 code validate_block::connect_block() const
 {
-    // BIP 30 security fix
     const auto& transactions = current_block_.transactions;
-    if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
+
+    // BIP30 security fix, and exclusion for two txs/blocks.
+    if (!is_special_duplicate(current_block_, height_))
     {
         ////////////// TODO: parallelize. //////////////
         for (const auto& tx: transactions)

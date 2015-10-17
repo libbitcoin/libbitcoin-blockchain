@@ -29,12 +29,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-struct BCB_API transaction_metainfo
-{
-    size_t height;
-    size_t index;
-};
-
 class BCB_API transaction_result
 {
 public:
@@ -97,7 +91,7 @@ public:
      * Store a transaction in the database. Returns a unique index
      * which can be used to reference the transaction.
      */
-    void store(const transaction_metainfo& info, const chain::transaction& tx);
+    void store(size_t height, size_t index, const chain::transaction& tx);
 
     /**
      * Delete a transaction from database.
