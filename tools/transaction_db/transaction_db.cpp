@@ -136,10 +136,11 @@ int main(int argc, char** argv)
             show_command_help(command);
             return -1;
         }
-        transaction_metainfo info;
-        if (!parse_uint(info.height, args[0]))
+        size_t height;
+        size_t index;
+        if (!parse_uint(height, args[0]))
             return -1;
-        if (!parse_uint(info.index, args[1]))
+        if (!parse_uint(index, args[1]))
             return -1;
 
         data_chunk data;
@@ -155,7 +156,7 @@ int main(int argc, char** argv)
             throw end_of_stream();
 
         db.start();
-        db.store(info, tx);
+        db.store(height, index, tx);
         db.sync();
     }
     else if (command == "remove")

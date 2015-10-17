@@ -24,6 +24,7 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
+#include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -117,31 +118,18 @@ static size_t get_next_height(const block_database& blocks)
     return empty_chain ? 0 : current_height + 1;
 }
 
-// There are 2 duplicated transactions in the blockchain.
-// Since then this part of Bitcoin was changed to disallow duplicates.
-static bool is_special_duplicate(const transaction_metainfo& metadata)
-{
-    return (metadata.height == 91842 || metadata.height == 91880) &&
-        metadata.index == 0;
-}
-
 void database::push(const chain::block& block)
 {
     const auto block_height = get_next_height(blocks);
 
     for (size_t index = 0; index < block.transactions.size(); ++index)
     {
-        const auto& tx = block.transactions[index];
-        const transaction_metainfo metadata
-        {
-            block_height,
-            index
-        };
-
-        // Skip special duplicate transactions.
-        if (is_special_duplicate(metadata))
+        // Skip BIP30 special duplicates (coinbase txs of special blocks).
+        if (index == 0 && validate_block::is_special_duplicate(block,
+            block_height))
             continue;
 
+        const auto& tx = block.transactions[index];
         const auto tx_hash = tx.hash();
 
         // Add inputs
@@ -155,7 +143,7 @@ void database::push(const chain::block& block)
         push_stealth_outputs(tx_hash, tx.outputs);
 
         // Add transaction
-        transactions.store(metadata, tx);
+        transactions.store(block_height, index, tx);
     }
 
     // Add block itself.
