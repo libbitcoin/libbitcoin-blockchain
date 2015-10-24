@@ -125,7 +125,7 @@ bool htdb_record<HashType>::unlink(const HashType& key)
         // It indicates that a write operation has interceded.
         // So we must return gracefully vs. looping forever.
         if (previous == current)
-            return nullptr;
+            return false;
 
         ++index;
     }
