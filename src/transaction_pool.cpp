@@ -146,7 +146,7 @@ void transaction_pool::store(const chain::transaction& tx,
         {
             add(tx, handle_confirm);
 
-            log_debug(LOG_BLOCKCHAIN)
+            log::debug(LOG_BLOCKCHAIN)
                 << "Transaction saved to mempool (" << buffer_.size() << ")";
         }
 
@@ -200,7 +200,7 @@ void transaction_pool::reorganize(const code& ec, size_t fork_point,
 {
     if (ec == error::service_stopped)
     {
-        log_debug(LOG_BLOCKCHAIN)
+        log::debug(LOG_BLOCKCHAIN)
             << "Stopping transaction pool.";
         stop();
         return;
@@ -208,13 +208,13 @@ void transaction_pool::reorganize(const code& ec, size_t fork_point,
 
     if (ec)
     {
-        log_debug(LOG_BLOCKCHAIN)
+        log::debug(LOG_BLOCKCHAIN)
             << "Failure in tx pool reorganize handler: " << ec.message();
         stop();
         return;
     }
 
-    log_debug(LOG_BLOCKCHAIN)
+    log::debug(LOG_BLOCKCHAIN)
         << "Reorganize: tx pool size (" << buffer_.size()
         << ") forked at (" << fork_point
         << ") new blocks (" << new_blocks.size()
