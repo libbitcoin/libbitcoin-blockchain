@@ -26,7 +26,7 @@
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
-namespace chain {
+namespace blockchain {
 
 struct BCB_API settings
 {
