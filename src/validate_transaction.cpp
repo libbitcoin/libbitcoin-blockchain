@@ -34,6 +34,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -70,7 +71,7 @@ void validate_transaction::start(validate_handler handler)
     const auto ec = basic_checks();
     if (ec)
     {
-        handle_validate_(ec, chain::index_list());
+        handle_validate_(ec, tx_, tx_hash_, index_list());
         return;
     }
 
@@ -114,14 +115,14 @@ void validate_transaction::handle_duplicate_check(
 {
     if (ec != error::not_found)
     {
-        handle_validate_(error::duplicate, chain::index_list());
+        handle_validate_(error::duplicate, tx_, tx_hash_, index_list());
         return;
     }
 
     // TODO: we may want to allow spent-in-pool (RBF).
     if (pool_.is_spent_in_pool(tx_))
     {
-        handle_validate_(error::double_spend, chain::index_list());
+        handle_validate_(error::double_spend, tx_, tx_hash_, index_list());
         return;
     }
 
@@ -136,7 +137,7 @@ void validate_transaction::set_last_height(const code& ec,
 {
     if (ec)
     {
-        handle_validate_(ec, chain::index_list());
+        handle_validate_(ec, tx_, tx_hash_, index_list());
         return;
     }
 
@@ -183,12 +184,12 @@ void validate_transaction::previous_tx_index(const code& ec,
 
 void validate_transaction::search_pool_previous_tx()
 {
-    chain::transaction previous_tx;
+    transaction previous_tx;
     const auto& current_input = tx_.inputs[current_input_];
     if (!pool_.find(previous_tx, current_input.previous_output.hash))
     {
-        const auto input_list = chain::index_list{ current_input_ };
-        handle_validate_(error::input_not_found, input_list);
+        const auto list = index_list{ current_input_ };
+        handle_validate_(error::input_not_found, tx_, tx_hash_, list);
         return;
     }
 
@@ -200,12 +201,12 @@ void validate_transaction::search_pool_previous_tx()
 }
 
 void validate_transaction::handle_previous_tx(const code& ec,
-    const chain::transaction& previous_tx, size_t parent_height)
+    const transaction& previous_tx, size_t parent_height)
 {
     if (ec)
     {
-        const auto input_list = chain::index_list{ current_input_ };
-        handle_validate_(error::input_not_found, input_list);
+        const auto list = index_list{ current_input_ };
+        handle_validate_(error::input_not_found, tx_, tx_hash_, list);
         return;
     }
 
@@ -213,7 +214,8 @@ void validate_transaction::handle_previous_tx(const code& ec,
     if (!connect_input(tx_, current_input_, previous_tx, parent_height,
         last_block_height_, value_in_))
     {
-        handle_validate_(error::validate_inputs_failed, {current_input_});
+        const auto list = index_list{ current_input_ };
+        handle_validate_(error::validate_inputs_failed, tx_, tx_hash_, list);
         return;
     }
 
@@ -227,7 +229,7 @@ void validate_transaction::check_double_spend(const code& ec)
 {
     if (ec != error::unspent_output)
     {
-        handle_validate_(error::double_spend, chain::index_list());
+        handle_validate_(error::double_spend, tx_, tx_hash_, index_list());
         return;
     }
 
@@ -248,18 +250,18 @@ void validate_transaction::check_fees()
     uint64_t fee = 0;
     if (!tally_fees(tx_, value_in_, fee))
     {
-        handle_validate_(error::fees_out_of_range, chain::index_list());
+        handle_validate_(error::fees_out_of_range, tx_, tx_hash_,
+            index_list());
         return;
     }
 
     // Who cares?
     // Fuck the police
     // Every tx equal!
-    handle_validate_(error::success, unconfirmed_);
+    handle_validate_(error::success, tx_, tx_hash_, unconfirmed_);
 }
 
-code validate_transaction::check_transaction(
-    const chain::transaction& tx)
+code validate_transaction::check_transaction(const transaction& tx)
 {
     if (tx.inputs.empty() || tx.outputs.empty())
         return error::empty_transaction;
@@ -297,8 +299,8 @@ code validate_transaction::check_transaction(
 }
 
 // Validate script consensus conformance based on flags provided.
-static bool check_consensus(const chain::script& prevout_script,
-    const chain::transaction& current_tx, size_t input_index,
+static bool check_consensus(const script& prevout_script,
+    const transaction& current_tx, size_t input_index,
     uint32_t options)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
@@ -322,7 +324,7 @@ static bool check_consensus(const chain::script& prevout_script,
     auto previous_output_script = prevout_script;
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
-    const auto valid = chain::script::verify(current_input_script,
+    const auto valid = script::verify(current_input_script,
         previous_output_script, current_tx, input_index32, bip16_enabled);
 #endif
 
@@ -334,27 +336,25 @@ static bool check_consensus(const chain::script& prevout_script,
 }
 
 // Validate script consensus conformance, defaulting to p2sh.
-static bool check_consensus(const chain::script& prevout_script,
-    const chain::transaction& current_tx, size_t input_index)
+static bool check_consensus(const script& prevout_script,
+    const transaction& current_tx, size_t input_index)
 {
     return check_consensus(prevout_script, current_tx, input_index,
         validation_options::p2sh);
 }
 
 // Determine if BIP16 compliance is required for this block.
-static bool is_bip_16_enabled(const chain::header& header, size_t height)
+static bool is_bip_16_enabled(const header& header, size_t height)
 {
-    // Block 170060 contains an invalid BIP 16 transaction before switchover date.
-    const auto bip16_enabled = header.timestamp >= bip16_switchover_timestamp;
-    ////BITCOIN_ASSERT(!bip16_enabled || height >= bip16_switchover_height_mainnet);
-    ////BITCOIN_ASSERT(!bip16_enabled || height >= bip16_switchover_height_testnet);
-    return bip16_enabled;
+    // TODO: fix for testnet.
+    // Block 170060 contains invalid BIP 16 transaction before switchover date.
+    return header.timestamp >= bip16_switchover_timestamp;
 }
 
-// Validate script consensus conformance, calculating p2sh based on block/height.
-bool validate_transaction::validate_consensus(const chain::script& prevout_script,
-    const chain::transaction& current_tx, size_t input_index,
-    const chain::header& header, const size_t height)
+// Validate script consensus conformance, calculating p2sh from block/height.
+bool validate_transaction::validate_consensus(const script& prevout_script,
+    const transaction& current_tx, size_t input_index, const header& header,
+    size_t height)
 {
     uint32_t options = validation_options::none;
     if (is_bip_16_enabled(header, height))
@@ -363,8 +363,8 @@ bool validate_transaction::validate_consensus(const chain::script& prevout_scrip
     return check_consensus(prevout_script, current_tx, input_index, options);
 }
 
-bool validate_transaction::connect_input(const chain::transaction& tx,
-    size_t current_input, const chain::transaction& previous_tx,
+bool validate_transaction::connect_input(const transaction& tx,
+    size_t current_input, const transaction& previous_tx,
     size_t parent_height, size_t last_block_height, uint64_t& value_in)
 {
     const auto& input = tx.inputs[current_input];
@@ -391,8 +391,8 @@ bool validate_transaction::connect_input(const chain::transaction& tx,
     return value_in <= max_money();
 }
 
-bool validate_transaction::tally_fees(const chain::transaction& tx,
-    uint64_t value_in, uint64_t& total_fees)
+bool validate_transaction::tally_fees(const transaction& tx, uint64_t value_in,
+    uint64_t& total_fees)
 {
     const auto value_out = tx.total_output_value();
 

@@ -46,27 +46,27 @@ class BCB_API transaction_pool
 {
 public:
     typedef handle0 exists_handler;
-    typedef handle0 confirm_handler;
     typedef handle1<chain::transaction> fetch_handler;
-    typedef handle1<chain::index_list> validate_handler;
+    typedef handle2<chain::transaction, hash_digest> confirm_handler;
+    typedef handle3<chain::transaction, hash_digest, chain::index_list>
+        validate_handler;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
-    transaction_pool(threadpool& pool, block_chain& chain,
-        size_t capacity=2000);
+    transaction_pool(threadpool& pool, block_chain& chain, size_t capacity);
     ~transaction_pool();
 
     /// This class is not copyable.
     transaction_pool(const transaction_pool&) = delete;
     void operator=(const transaction_pool&) = delete;
 
-    bool start();
-    bool stop();
+    void start();
+    void stop();
 
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    void exists(const hash_digest& tx_hash, exists_handler handler);
     void validate(const chain::transaction& tx, validate_handler handler);
-    void exists(const hash_digest& transaction_hash, exists_handler handler);
     void store(const chain::transaction& tx, confirm_handler confirm_handler,
         validate_handler validate_handler);
 
@@ -90,28 +90,34 @@ protected:
     typedef std::function<bool(const chain::input&)> input_compare;
 
     bool stopped();
+    iterator find(const hash_digest& tx_hash) const;
     void do_validate(const chain::transaction& tx, validate_handler handler);
-    void validation_complete(const code& ec,
-        const chain::index_list& unconfirmed, const hash_digest& hash,
+    void handle_validated(const code& ec, const chain::transaction& tx,
+        const hash_digest& hash, const chain::index_list& unconfirmed,
         validate_handler handler);
-    void reorganize(const code& ec, size_t fork_point,
+    void handle_reorganized(const code& ec, size_t fork_point,
         const block_chain::list& new_blocks,
         const block_chain::list& replaced_blocks);
-    iterator find(const hash_digest& tx_hash) const;
+    void wrap_validate(const code& ec, const chain::transaction& tx,
+        const hash_digest& hash, const chain::index_list& unconfirmed,
+        confirm_handler handle_confirm, validate_handler handle_validate);
 
     void add(const chain::transaction& tx, confirm_handler handler);
     void delete_all(const code& ec);
-    void delete_package(const code& ec);
-    void delete_package(const hash_digest& tx_hash, const code& ec);
-    void delete_package(const chain::transaction& tx, const code& ec);
+    void delete_superseded(const block_chain::list& blocks);
+    void delete_spent_in_blocks(const block_chain::list& blocks);
+    void delete_confirmed_in_blocks(const block_chain::list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
-    void delete_superseded(const block_chain::list& blocks);
-    bool delete_single(const hash_digest& tx_hash, const code& ec);
+
+    void delete_package(const code& ec);
+    void delete_package(const chain::transaction& tx, const hash_digest& tx_hash,
+        const code& ec);
+
     bool delete_single(const chain::transaction& tx, const code& ec);
-    void delete_confirmed_in_blocks(const block_chain::list& blocks);
-    void delete_spent_in_blocks(const block_chain::list& blocks);
+    bool delete_single(const chain::transaction& tx, const hash_digest& tx_hash,
+        const code& ec);
 
     bool stopped_;
     buffer buffer_;
