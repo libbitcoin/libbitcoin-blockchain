@@ -24,9 +24,24 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+/// default settings
+#define BLOCKCHAIN_THREADS                  6
+#define BLOCKCHAIN_BLOCK_POOL_CAPACITY      50
+#define BLOCKCHAIN_HISTORY_START_HEIGHT     0
+#define BLOCKCHAIN_DATABASE_PATH            boost::filesystem::path("blockchain")
+
+/// mainnet settings
+#define BLOCKCHAIN_TESTNET_RULES_MAINNET    false
+#define BLOCKCHAIN_CHECKPOINTS_MAINNET      bc::blockchain::checkpoint::mainnet
+
+/// testnet settings
+#define BLOCKCHAIN_TESTNET_RULES_TESTNET    true
+#define BLOCKCHAIN_CHECKPOINTS_TESTNET      bc::blockchain::checkpoint::testnet
 
 struct BCB_API settings
 {
