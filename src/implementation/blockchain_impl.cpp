@@ -32,6 +32,7 @@
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
@@ -41,27 +42,26 @@ namespace blockchain {
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
 
-static file_lock init_lock(const std::string& prefix)
+static file_lock init_lock(const path& prefix)
 {
     // Touch the lock file (open/close).
-    const auto lockfile = path(prefix) / BC_CHAIN_DATABASE_LOCK_FILE;
+    const auto lockfile = prefix / BC_CHAIN_DATABASE_LOCK_FILE;
     bc::ofstream file(lockfile.string(), std::ios::app);
     file.close();
     return file_lock(lockfile.string().c_str());
 }
 
-blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
-    size_t history_height, size_t orphan_capacity, bool testnet,
-    const config::checkpoint::list& checks)
+blockchain_impl::blockchain_impl(threadpool& pool, const settings& settings)
   : dispatch_(pool),
-    flock_(init_lock(prefix)),
+    flock_(init_lock(settings.database_path)),
     slock_(0),
     stopped_(true),
-    store_(prefix),
-    database_(store_, history_height),
-    orphans_(orphan_capacity),
+    store_(settings.database_path),
+    database_(store_, settings.history_start_height),
+    orphans_(settings.block_pool_capacity),
     chain_(database_),
-    organizer_(pool, database_, orphans_, chain_, testnet, checks)
+    organizer_(pool, database_, orphans_, chain_, settings.use_testnet_rules,
+        settings.checkpoints)
 {
 }
 

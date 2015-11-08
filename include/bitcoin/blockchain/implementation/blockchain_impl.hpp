@@ -34,6 +34,7 @@
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -42,9 +43,7 @@ class BCB_API blockchain_impl
   : public block_chain
 {
 public:
-    blockchain_impl(threadpool& pool, const std::string& prefix,
-        size_t history_height=0, size_t orphan_capacity=20, bool testnet=false,
-        const config::checkpoint::list& checks=checkpoint::mainnet);
+    blockchain_impl(threadpool& pool, const settings& settings);
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
