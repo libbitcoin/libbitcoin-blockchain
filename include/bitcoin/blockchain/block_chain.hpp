@@ -100,6 +100,7 @@ public:
     static uint64_t spend_checksum(chain::output_point outpoint);
 
     virtual void start(result_handler handler) = 0;
+    virtual void stop(result_handler handler) = 0;
     virtual void stop() = 0;
 
     virtual void store(const chain::block& block,

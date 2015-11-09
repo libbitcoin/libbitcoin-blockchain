@@ -50,6 +50,7 @@ public:
     void operator=(const blockchain_impl&) = delete;
 
     void start(result_handler handler);
+    void stop(result_handler handler);
     void stop();
 
     void store(const chain::block& block, store_block_handler handler);

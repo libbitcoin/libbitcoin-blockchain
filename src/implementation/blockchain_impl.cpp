@@ -82,9 +82,17 @@ void blockchain_impl::start(result_handler handler)
 
 void blockchain_impl::stop()
 {
-    // TODO: close all file descriptors, called once threadpool has stopped.
+    const auto unhandled = [](const code&){};
+    stop(unhandled);
+}
+
+// TODO: close all file descriptors once threadpool has stopped and return
+// result of file close in handler.
+void blockchain_impl::stop(result_handler handler)
+{
     stopped_ = true;
     organizer_.stop();
+    handler(error::success);
 }
 
 bool blockchain_impl::stopped()
