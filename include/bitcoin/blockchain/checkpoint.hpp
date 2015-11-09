@@ -30,9 +30,6 @@ namespace blockchain {
 class BCB_API checkpoint
 {
 public:
-    static const config::checkpoint::list mainnet;
-    static const config::checkpoint::list testnet;
-
     static config::checkpoint::list& sort(config::checkpoint::list& checks);
     static bool validate(const hash_digest& hash, const size_t height,
         const config::checkpoint::list& checks);
