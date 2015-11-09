@@ -65,23 +65,26 @@ blockchain_impl::blockchain_impl(threadpool& pool, const settings& settings)
 {
 }
 
-bool blockchain_impl::start()
+void blockchain_impl::start(result_handler handler)
 {
     if (!flock_.try_lock())
-        return false;
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
     // TODO: can we actually restart?
     stopped_ = false;
+
     database_.start();
-    return true;
+    handler(error::success);
 }
 
-bool blockchain_impl::stop()
+void blockchain_impl::stop()
 {
     // TODO: close all file descriptors, called once threadpool has stopped.
     stopped_ = true;
     organizer_.stop();
-    return true;
 }
 
 bool blockchain_impl::stopped()

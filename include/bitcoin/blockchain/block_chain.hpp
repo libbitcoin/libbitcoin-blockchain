@@ -80,6 +80,7 @@ public:
     typedef std::vector<ptr> list;
     
     ////typedef handle0 block_import_handler;
+    typedef handle0 result_handler;
     typedef handle1<chain::block> block_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
@@ -98,8 +99,8 @@ public:
     /// output point without needing the whole previous outpoint.
     static uint64_t spend_checksum(chain::output_point outpoint);
 
-    virtual bool start() = 0;
-    virtual bool stop() = 0;
+    virtual void start(result_handler handler) = 0;
+    virtual void stop() = 0;
 
     virtual void store(const chain::block& block,
         store_block_handler handle_store) = 0;

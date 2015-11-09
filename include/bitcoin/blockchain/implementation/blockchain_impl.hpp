@@ -49,8 +49,8 @@ public:
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
-    bool start();
-    bool stop();
+    void start(result_handler handler);
+    void stop();
 
     void store(const chain::block& block, store_block_handler handler);
     ////void import(const chain::block& block, block_import_handler handler);
@@ -63,7 +63,7 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
-    ////// fetch transaction hashes in block by hash
+    //// This should really be fetch_merkle_tree.
     ////void fetch_block_transaction_hashes(const hash_digest& hash,
     ////    transaction_hashes_fetch_handler handle_fetch);
 
