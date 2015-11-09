@@ -54,9 +54,6 @@ void transaction_pool::start()
     blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::handle_reorganized,
             this, _1, _2, _3, _4));
-
-    log::debug(LOG_BLOCKCHAIN)
-        << "Started transaction pool.";
 }
 
 void transaction_pool::stop()
@@ -66,9 +63,6 @@ void transaction_pool::stop()
     // is automatically registered for shutdown in the following sequence.
     // blockchain->organizer(orphan/block pool)->transaction_pool
     stopped_ = true;
-
-    log::debug(LOG_BLOCKCHAIN)
-        << "Stopping transaction pool.";
 }
 
 bool transaction_pool::stopped()
@@ -92,14 +86,11 @@ void transaction_pool::do_validate(const transaction& tx,
         return;
     }
 
-    // TODO: make this transaction pool instance a shared_ptr.
-    // This must be allocated as a shared pointer reference in order for
-    // validate_transaction::start to create a second reference.
     const auto validate = std::make_shared<validate_transaction>(
         blockchain_, tx, *this, dispatch_);
 
     validate->start(
-        dispatch_.unordered_delegate(&transaction_pool::handle_validated,
+        dispatch_.ordered_delegate(&transaction_pool::handle_validated,
             this, _1, _2, _3, _4, handler));
 }
 
@@ -146,23 +137,22 @@ void transaction_pool::store(const transaction& tx,
     }
 
     validate(tx, 
-        std::bind(&transaction_pool::wrap_validate,
+        std::bind(&transaction_pool::do_store,
             this, _1, _2, _3, _4, handle_confirm, handle_validate));
 }
 
-void transaction_pool::wrap_validate(const code& ec, const transaction& tx,
+void transaction_pool::do_store(const code& ec, const transaction& tx,
     const hash_digest& hash, const index_list& unconfirmed,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     if (!ec)
     {
         add(tx, handle_confirm);
-
         log::debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
     }
 
-    handle_validate(error::success, tx, hash, unconfirmed);
+    handle_validate(ec, tx, hash, unconfirmed);
 }
 
 void transaction_pool::fetch(const hash_digest& transaction_hash,

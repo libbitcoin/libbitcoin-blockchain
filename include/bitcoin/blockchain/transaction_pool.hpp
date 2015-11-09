@@ -91,16 +91,18 @@ protected:
 
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
-    void do_validate(const chain::transaction& tx, validate_handler handler);
-    void handle_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const chain::index_list& unconfirmed,
-        validate_handler handler);
+
     void handle_reorganized(const code& ec, size_t fork_point,
         const block_chain::list& new_blocks,
         const block_chain::list& replaced_blocks);
-    void wrap_validate(const code& ec, const chain::transaction& tx,
+    void handle_validated(const code& ec, const chain::transaction& tx,
+        const hash_digest& hash, const chain::index_list& unconfirmed,
+        validate_handler handler);
+
+    void do_store(const code& ec, const chain::transaction& tx,
         const hash_digest& hash, const chain::index_list& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
+    void do_validate(const chain::transaction& tx, validate_handler handler);
 
     void add(const chain::transaction& tx, confirm_handler handler);
     void delete_all(const code& ec);
