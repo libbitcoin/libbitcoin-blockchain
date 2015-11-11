@@ -82,7 +82,7 @@ void blockchain_impl::start(result_handler handler)
 
 void blockchain_impl::stop()
 {
-    const auto unhandled = [](const code&){};
+    const auto unhandled = [](const code){};
     stop(unhandled);
 }
 
@@ -118,7 +118,7 @@ void blockchain_impl::start_write()
 void blockchain_impl::store(const chain::block& block,
     store_block_handler handler)
 {
-    dispatch_.unordered(
+    dispatch_.ordered(
         std::bind(&blockchain_impl::do_store,
             this, block, handler));
 }
@@ -161,7 +161,7 @@ void blockchain_impl::do_store(const chain::block& block,
 ////        database_.push(block);
 ////        stop_write(handle_import, error::success);
 ////    };
-////    dispatch_.unordered(do_import);
+////    dispatch_.ordered(do_import);
 ////}
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
