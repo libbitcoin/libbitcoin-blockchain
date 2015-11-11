@@ -36,14 +36,16 @@ class blockchain_fixture
   : public block_chain
 {
 public:
-    virtual bool start()
+    virtual void start(result_handler handler)
     {
-        return false;
     }
 
-    virtual bool stop()
+    virtual void stop(result_handler handler)
     {
-        return false;
+    }
+
+    virtual void stop()
+    {
     }
 
     virtual void store(const block& block,
