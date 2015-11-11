@@ -32,6 +32,7 @@
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
@@ -41,47 +42,57 @@ namespace blockchain {
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
 
-static file_lock init_lock(const std::string& prefix)
+static file_lock init_lock(const path& prefix)
 {
     // Touch the lock file (open/close).
-    const auto lockfile = path(prefix) / BC_CHAIN_DATABASE_LOCK_FILE;
+    const auto lockfile = prefix / BC_CHAIN_DATABASE_LOCK_FILE;
     bc::ofstream file(lockfile.string(), std::ios::app);
     file.close();
     return file_lock(lockfile.string().c_str());
 }
 
-blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
-    size_t history_height, size_t orphan_capacity, bool testnet,
-    const config::checkpoint::list& checks)
+blockchain_impl::blockchain_impl(threadpool& pool, const settings& settings)
   : dispatch_(pool),
-    flock_(init_lock(prefix)),
+    flock_(init_lock(settings.database_path)),
     slock_(0),
     stopped_(true),
-    store_(prefix),
-    database_(store_, history_height),
-    orphans_(orphan_capacity),
+    store_(settings.database_path),
+    database_(store_, settings.history_start_height),
+    orphans_(settings.block_pool_capacity),
     chain_(database_),
-    organizer_(pool, database_, orphans_, chain_, testnet, checks)
+    organizer_(pool, database_, orphans_, chain_, settings.use_testnet_rules,
+        settings.checkpoints)
 {
 }
 
-bool blockchain_impl::start()
+void blockchain_impl::start(result_handler handler)
 {
     if (!flock_.try_lock())
-        return false;
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
     // TODO: can we actually restart?
     stopped_ = false;
+
     database_.start();
-    return true;
+    handler(error::success);
 }
 
-bool blockchain_impl::stop()
+void blockchain_impl::stop()
 {
-    // TODO: close all file descriptors, called once threadpool has stopped.
+    const auto unhandled = [](const code){};
+    stop(unhandled);
+}
+
+// TODO: close all file descriptors once threadpool has stopped and return
+// result of file close in handler.
+void blockchain_impl::stop(result_handler handler)
+{
     stopped_ = true;
     organizer_.stop();
-    return true;
+    handler(error::success);
 }
 
 bool blockchain_impl::stopped()
@@ -107,7 +118,7 @@ void blockchain_impl::start_write()
 void blockchain_impl::store(const chain::block& block,
     store_block_handler handler)
 {
-    dispatch_.unordered(
+    dispatch_.ordered(
         std::bind(&blockchain_impl::do_store,
             this, block, handler));
 }
@@ -150,7 +161,7 @@ void blockchain_impl::do_store(const chain::block& block,
 ////        database_.push(block);
 ////        stop_write(handle_import, error::success);
 ////    };
-////    dispatch_.unordered(do_import);
+////    dispatch_.ordered(do_import);
 ////}
 
 void blockchain_impl::fetch(perform_read_functor perform_read)

@@ -34,6 +34,7 @@
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -42,16 +43,15 @@ class BCB_API blockchain_impl
   : public block_chain
 {
 public:
-    blockchain_impl(threadpool& pool, const std::string& prefix,
-        size_t history_height=0, size_t orphan_capacity=20, bool testnet=false,
-        const config::checkpoint::list& checks=checkpoint::mainnet);
+    blockchain_impl(threadpool& pool, const settings& settings);
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
-    bool start();
-    bool stop();
+    void start(result_handler handler);
+    void stop(result_handler handler);
+    void stop();
 
     void store(const chain::block& block, store_block_handler handler);
     ////void import(const chain::block& block, block_import_handler handler);
@@ -64,7 +64,7 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
-    ////// fetch transaction hashes in block by hash
+    //// This should really be fetch_merkle_tree.
     ////void fetch_block_transaction_hashes(const hash_digest& hash,
     ////    transaction_hashes_fetch_handler handle_fetch);
 

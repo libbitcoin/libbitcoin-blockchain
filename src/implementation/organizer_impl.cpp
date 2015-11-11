@@ -89,7 +89,7 @@ code organizer_impl::verify(uint64_t fork_point,
         const auto total_inputs = count_inputs(current_block);
         const auto total_transactions = current_block.transactions.size();
 
-        log_info(LOG_BLOCKCHAIN)
+        log::info(LOG_BLOCKCHAIN)
             << "Block [" << height << "] verify ("
             << total_transactions << ") txs and ("
             << total_inputs << ") inputs";
@@ -108,7 +108,7 @@ code organizer_impl::verify(uint64_t fork_point,
         const auto secs_per_block = ms_per_block / 1000;
         const auto verified = ec ? "unverified" : "verified";
 
-        log_info(LOG_BLOCKCHAIN)
+        log::info(LOG_BLOCKCHAIN)
             << "Block [" << height << "] " << verified << " in ("
             << secs_per_block << ") secs or ("
             << ms_per_input << ") ms/input";

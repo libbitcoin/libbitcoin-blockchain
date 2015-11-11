@@ -114,7 +114,7 @@ void organizer::replace_chain(uint64_t fork_index,
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
                 const auto block_hash = encode_hash(header.hash());
-                log_warning(LOG_VALIDATE)
+                log::warning(LOG_VALIDATE)
                     << "Invalid block [" << block_hash << "] " << ec.message();
             }
 
@@ -142,7 +142,7 @@ void organizer::replace_chain(uint64_t fork_index,
     BITCOIN_ASSERT(success);
 
     if (!released_blocks.empty())
-        log_warning(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
+        log::warning(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
             << begin_index << ", " << released_blocks.size() << "]";
 
     // We add the arriving blocks first to the main chain because if

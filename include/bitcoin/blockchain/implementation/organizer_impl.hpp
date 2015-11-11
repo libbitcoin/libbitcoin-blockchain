@@ -35,7 +35,7 @@ class BCB_API organizer_impl
 public:
     organizer_impl(threadpool& pool, database& database,
         orphan_pool& orphans, simple_chain& chain, bool testnet,
-        const config::checkpoint::list& checks=checkpoint::mainnet);
+        const config::checkpoint::list& checks);
 
 protected:
     code verify(uint64_t fork_point, const block_detail::list& orphan_chain,

@@ -47,8 +47,8 @@ public:
     {
         // Keep the class in scope until this handler completes.
         const auto self = shared_from_this();
-        const auto handle_fetch_header = [self](const code& ec,
-            const chain::header& block_header)
+        const auto handle_fetch_header = [self](const code ec,
+            const chain::header block_header)
         {
             if (self->stop_on_error(ec))
                 return;

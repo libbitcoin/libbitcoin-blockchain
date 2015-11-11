@@ -40,7 +40,8 @@ class BCB_API validate_transaction
 {
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
-    typedef handle1<chain::index_list> validate_handler;
+    typedef handle3<chain::transaction, hash_digest, chain::index_list>
+        validate_handler;
 
     validate_transaction(block_chain& chain, const chain::transaction& tx,
         const transaction_pool& pool, dispatcher& dispatch);
@@ -55,7 +56,7 @@ public:
 
     static bool validate_consensus(const chain::script& prevout_script,
         const chain::transaction& current_tx, size_t input_index,
-        const chain::header& header, const size_t height);
+        const chain::header& header, size_t height);
 
 private:
     code basic_checks() const;
