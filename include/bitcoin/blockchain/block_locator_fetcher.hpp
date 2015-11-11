@@ -33,6 +33,7 @@ class BCB_API block_locator_fetcher
 public:
     typedef block_chain::block_locator_fetch_handler handler;
 
+    // TODO: make a threadsafe cache against the last fetched hash.
     static void fetch(block_chain& chain, handler handle_fetch);
 
     block_locator_fetcher(block_chain& chain);
