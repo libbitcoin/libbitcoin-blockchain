@@ -21,7 +21,6 @@
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

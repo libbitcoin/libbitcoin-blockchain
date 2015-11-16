@@ -165,9 +165,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pointer_array_source.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -253,9 +250,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp">
       <Filter>src\implementation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\checkpoint.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\block.cpp">
       <Filter>src</Filter>

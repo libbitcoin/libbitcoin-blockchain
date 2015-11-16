@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
 #ifdef WITH_CONSENSUS

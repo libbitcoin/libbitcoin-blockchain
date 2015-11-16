@@ -25,7 +25,6 @@
 #include <system_error>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {

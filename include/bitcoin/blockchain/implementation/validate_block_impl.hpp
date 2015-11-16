@@ -22,7 +22,6 @@
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>

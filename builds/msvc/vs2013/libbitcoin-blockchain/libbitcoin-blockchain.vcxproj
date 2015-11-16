@@ -85,7 +85,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_locator_fetcher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
@@ -124,7 +123,6 @@
     <ClCompile Include="..\..\..\..\src\block_detail.cpp" />
     <ClCompile Include="..\..\..\..\src\block_fetcher.cpp" />
     <ClCompile Include="..\..\..\..\src\block_locator_fetcher.cpp" />
-    <ClCompile Include="..\..\..\..\src\checkpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp" />

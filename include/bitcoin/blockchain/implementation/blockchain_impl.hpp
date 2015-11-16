@@ -28,7 +28,6 @@
 #include <vector>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>

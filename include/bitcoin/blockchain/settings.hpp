@@ -24,7 +24,6 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

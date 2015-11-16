@@ -27,7 +27,6 @@
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
@@ -310,7 +309,7 @@ code validate_block::accept_block() const
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
     const auto block_hash = header.hash();
-    if (!checkpoint::validate(block_hash, height_, checkpoints_))
+    if (!config::checkpoint::validate(block_hash, height_, checkpoints_))
         return error::checkpoints_failed;
 
     RETURN_IF_STOPPED();
