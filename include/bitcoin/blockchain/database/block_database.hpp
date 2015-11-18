@@ -114,8 +114,17 @@ public:
 
     /**
      * Latest block height in our chain. Returns false if no blocks exist.
+     * This is actually the count of blocks minus one and does not represent
+     * the logical top if there are gaps in the chain. Use gap to validate
+     * the top at startup.
      */
     bool top(size_t& out_height) const;
+
+    /**
+     * First missing block by height after the specified start height.
+     * All previous block pointers from start to gap are validated.
+     */
+    size_t gap(size_t start) const;
 
 private:
     typedef htdb_slab<hash_digest> map_type;

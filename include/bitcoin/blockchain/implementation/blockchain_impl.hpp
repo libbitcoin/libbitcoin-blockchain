@@ -53,7 +53,7 @@ public:
     void stop();
 
     void store(const chain::block& block, store_block_handler handler);
-    ////void import(const chain::block& block, block_import_handler handler);
+    void import(const chain::block& block, block_import_handler handler);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,

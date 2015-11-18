@@ -50,6 +50,7 @@ static file_lock init_lock(const path& prefix)
     return file_lock(lockfile.string().c_str());
 }
 
+// TODO: move threadpool management into the implementation (see network::p2p).
 blockchain_impl::blockchain_impl(threadpool& pool, const settings& settings)
   : dispatch_(pool),
     flock_(init_lock(settings.database_path)),
@@ -151,27 +152,41 @@ void blockchain_impl::do_store(const chain::block& block,
     stop_write(handler, stored_detail->error(), stored_detail->info());
 }
 
-////void blockchain_impl::import(const chain::block& block,
-////    block_import_handler handle_import)
-////{
-////    const auto do_import = [this, block, handle_import]()
-////    {
-////        start_write();
-////        database_.push(block);
-////        stop_write(handle_import, error::success);
-////    };
-////    dispatch_.ordered(do_import);
-////}
+void blockchain_impl::import(const chain::block& block,
+    block_import_handler handle_import)
+{
+    const auto do_import = [this, block, handle_import]()
+    {
+        start_write();
+        database_.push(block);
+        stop_write(handle_import, error::success);
+    };
+    dispatch_.ordered(do_import);
+}
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
 {
+    // Implements the sequential counter logic.
+    // Writes are ordered on the strand, so never concurrent.
+    // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
     {
-        // Implements the sequential counter logic.
         const size_t slock = slock_;
+
+        // These two calls must use the same const variable for slock.
+        // This returns false if write in progress at start of or during read.
         return ((slock % 2 == 0) && perform_read(slock));
     };
 
+    // The read is invalidated only if a write overlapped the read.
+    // This is less efficient than waiting on a write lock, since it requires
+    // a large arbitrary quanta and produces disacarded reads. It also
+    // complicates implementation in that read during write must be safe. This
+    // lack of safety produced the longstanding appearance-of-corruption during
+    // sync bug (which was resolved by making the read safe during write).
+    // If reads could be made *valid* during write this sleep could be removed
+    // and the design would be dramtically *more* efficient than even a read
+    // lock during write.
     const auto do_read = [this, try_read]()
     {
         // Sleeping while waiting for write to complete.
