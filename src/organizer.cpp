@@ -37,12 +37,13 @@ INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 namespace libbitcoin {
 namespace blockchain {
 
+#define NAME "organizer"
+
 organizer::organizer(threadpool& pool, orphan_pool& orphans,
     simple_chain& chain)
   : orphans_(orphans),
     chain_(chain),
-    subscriber_(std::make_shared<reorganize_subscriber>(pool, "organizer",
-        LOG_VALIDATE)),
+    subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME)),
     stopped_(true)
 {
 }

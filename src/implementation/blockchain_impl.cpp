@@ -33,10 +33,11 @@
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
-#define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
-
 namespace libbitcoin {
 namespace blockchain {
+
+#define NAME "blockchain"
+#define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
 
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
@@ -52,7 +53,7 @@ static file_lock init_lock(const path& prefix)
 
 // TODO: move threadpool management into the implementation (see network::p2p).
 blockchain_impl::blockchain_impl(threadpool& pool, const settings& settings)
-  : dispatch_(pool),
+  : dispatch_(pool, NAME),
     flock_(init_lock(settings.database_path)),
     slock_(0),
     stopped_(true),

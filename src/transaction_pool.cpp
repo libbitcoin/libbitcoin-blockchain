@@ -28,7 +28,9 @@
 
 namespace libbitcoin {
 namespace blockchain {
-    
+
+#define NAME "mempool"
+
 using namespace chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -37,7 +39,10 @@ using std::placeholders::_4;
 
 transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
     size_t capacity)
-  : stopped_(true), buffer_(capacity), dispatch_(pool), blockchain_(chain) 
+  : stopped_(true),
+    buffer_(capacity),
+    dispatch_(pool, NAME),
+    blockchain_(chain) 
 {
 }
 
