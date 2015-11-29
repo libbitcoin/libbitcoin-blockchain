@@ -53,10 +53,10 @@ public:
     {
     }
 
-    ////virtual void import(const block& import_block,
-    ////    block_import_handler handle_import)
-    ////{
-    ////}
+    virtual void import(const block& import_block,
+        block_import_handler handle_import)
+    {
+    }
 
     virtual void fetch_block_header(uint64_t height,
         block_header_fetch_handler handle_fetch)
