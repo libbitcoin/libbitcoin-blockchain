@@ -7,9 +7,7 @@
 
 # Standard declarations.
 #==============================================================================
-# Requires Automake 1.14 or newer.
-
-# Declare the required version of Autoconf.
+# Declare the required version of autoconf.
 AC_PREREQ([2.65])
 
 # Process command-line arguments and perform initialization and verification.
@@ -162,11 +160,11 @@ AC_SUBST([bitcoin_CPPFLAGS], [${bitcoin_CFLAGS}])
 AC_MSG_NOTICE([bitcoin_CPPFLAGS : ${bitcoin_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_LIBS : ${bitcoin_LIBS}])
 
-# Require bitcoin-consensus of at least version 1.0.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
+# Require bitcoin-consensus of at least version 1.3.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 AS_CASE([${with_consensus}], [yes],
-    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 1.0.0])
-     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 1.0.0'])
+    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 1.3.0])
+     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 1.3.0'])
      AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
      AC_MSG_NOTICE([bitcoin_consensus_CPPFLAGS : ${bitcoin_consensus_CPPFLAGS}])
      AC_MSG_NOTICE([bitcoin_consensus_LIBS : ${bitcoin_consensus_LIBS}])],
