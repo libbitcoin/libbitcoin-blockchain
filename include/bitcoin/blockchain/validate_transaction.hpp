@@ -49,7 +49,7 @@ public:
     static std::error_code check_transaction(const transaction_type& tx);
     static bool connect_input(const transaction_type& tx, size_t current_input,
         const transaction_type& previous_tx, size_t parent_height,
-        size_t last_block_height, uint64_t& value_in);
+        size_t last_block_height, uint64_t& value_in, uint32_t flags);
     static bool tally_fees(const transaction_type& tx, uint64_t value_in,
         uint64_t& fees);
     static bool validate_consensus(const script_type& prevout_script,
