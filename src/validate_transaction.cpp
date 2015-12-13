@@ -36,13 +36,6 @@ namespace chain {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-enum validation_options : uint32_t
-{
-    none,
-    p2sh
-    // dersig
-};
-
 validate_transaction::validate_transaction(blockchain& chain,
     const transaction_type& tx, const pool_buffer& pool,
     sequencer& strand)
