@@ -38,7 +38,11 @@ public:
     std::error_code accept_block() const;
     std::error_code connect_block() const;
 
+    /// Required to call before calling accept_block or connect_block.
+    void initialize_context();
+
 protected:
+    typedef std::vector<uint8_t> versions;
     typedef std::function<bool()> stopped_callback;
 
     validate_block(size_t height, const block_type& block,
@@ -54,6 +58,7 @@ protected:
         size_t index_in_parent, size_t input_index) const = 0;
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;
+    virtual versions preceding_block_versions(size_t count) const = 0;
     virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
 
     // These have default implementations that can be overriden.
@@ -67,6 +72,8 @@ protected:
     // These are protected virtual for testability.
     virtual boost::posix_time::ptime current_time() const;
     virtual bool stopped() const;
+    virtual bool is_valid_version() const;
+    virtual bool is_active(script_context flag) const;
     virtual bool is_spent_duplicate(const transaction_type& tx) const;
     virtual bool is_valid_time_stamp(uint32_t timestamp) const;
     virtual uint32_t work_required() const;
@@ -80,6 +87,8 @@ protected:
 
 private:
     const size_t height_;
+    uint32_t activations_;
+    uint32_t minimum_version_;
     const block_type& current_block_;
     const config::checkpoint::list& checkpoints_;
     const stopped_callback stop_callback_;

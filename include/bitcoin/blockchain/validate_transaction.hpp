@@ -46,15 +46,14 @@ public:
         const pool_buffer& pool, sequencer& strand);
     void start(validate_handler handle_validate);
 
+    static bool check_consensus(const script_type& prevout_script,
+        const transaction_type& current_tx, size_t input_index, uint32_t flags);
     static std::error_code check_transaction(const transaction_type& tx);
     static bool connect_input(const transaction_type& tx, size_t current_input,
         const transaction_type& previous_tx, size_t parent_height,
         size_t last_block_height, uint64_t& value_in, uint32_t flags);
     static bool tally_fees(const transaction_type& tx, uint64_t value_in,
         uint64_t& fees);
-    static bool validate_consensus(const script_type& prevout_script,
-        const transaction_type& current_tx, size_t input_index,
-        const block_header_type& header, const size_t height);
 
 private:
     std::error_code basic_checks() const;
