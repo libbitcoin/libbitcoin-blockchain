@@ -21,6 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
 
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/db_interface.hpp>
@@ -47,6 +49,7 @@ protected:
         size_t& previous_height, const hash_digest& tx_hash) const;
     uint64_t median_time_past() const;
     uint32_t previous_block_bits() const;
+    versions preceding_block_versions(size_t maximum) const;
     bool is_output_spent(const output_point& outpoint) const;
     bool is_output_spent(const output_point& previous_output,
         size_t index_in_parent, size_t input_index) const;
@@ -62,6 +65,8 @@ private:
     size_t height_;
     size_t fork_index_;
     size_t orphan_index_;
+    uint32_t activations_;
+    uint32_t minimum_version_;
     const block_detail_list& orphan_chain_;
 };
 

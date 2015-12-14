@@ -42,21 +42,36 @@ using boost::posix_time::from_time_t;
 using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
+// Consensus rule change activation and enforcement parameters.
+constexpr size_t sample = 1000u;
+constexpr size_t enforced = 950u;
+constexpr size_t activated = 750u;
+constexpr uint8_t version_4 = 4;
+constexpr uint8_t version_3 = 3;
+constexpr uint8_t version_2 = 2;
+constexpr uint8_t version_1 = 1;
+
+#ifdef ENABLE_TESTNET
+    // Block 514 is the first block after activation, which was date-based.
+    constexpr size_t bip16_activation_height = 514;
+
+    // No bip30 testnet exceptions (we don't validate genesis block anyway).
+    constexpr size_t bip30_exception_height1 = 0;
+    constexpr size_t bip30_exception_height2 = 0;
+#else
+    // Block 173805 is the first block after activation, which was date-based.
+    constexpr size_t bip16_activation_height = 173805;
+
+    // github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+    constexpr size_t bip30_exception_height1 = 91842;
+    constexpr size_t bip30_exception_height2 = 91880;
+#endif
+
 // Max block size is 1,000,000.
 constexpr uint32_t max_block_size = 1000000;
 
 // Maximum signature operations per block is 20,000.
 constexpr uint32_t max_block_script_sig_operations = max_block_size / 50;
-
-// The maximum height of version 1 blocks.
-// Is this correct, looks like it should be 227835?
-// see: github.com/bitcoin/bips/blob/master/bip-0034.mediawiki#result
-constexpr uint64_t max_version1_height = 237370;
-
-// BIP30 exception blocks.
-// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
-constexpr uint64_t bip30_exception_block1 = 91842;
-constexpr uint64_t bip30_exception_block2 = 91880;
 
 // Target readjustment every 2 weeks (in seconds).
 constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
@@ -76,10 +91,79 @@ if (stopped()) \
 validate_block::validate_block(size_t height, const block_type& block,
     const config::checkpoint::list& checks, stopped_callback callback)
   : height_(height),
+    activations_(script_context::none_enabled),
+    minimum_version_(0),
     current_block_(block),
     checkpoints_(checks),
     stop_callback_(callback == nullptr ? [](){ return false; } : callback)
 {
+}
+
+void validate_block::initialize_context()
+{
+    // Continue even if this is too small or empty (fast and simpler).
+    const auto versions = preceding_block_versions(sample);
+
+    const auto ge_4 = [](uint8_t version) { return version >= version_4; };
+    const auto ge_3 = [](uint8_t version) { return version >= version_3; };
+    const auto ge_2 = [](uint8_t version) { return version >= version_2; };
+
+    const auto count_4 = std::count_if(versions.begin(), versions.end(), ge_4);
+    const auto count_3 = std::count_if(versions.begin(), versions.end(), ge_3);
+    const auto count_2 = std::count_if(versions.begin(), versions.end(), ge_2);
+
+    const auto enforce = [](size_t count) { return count >= enforced; };
+    const auto activate = [](size_t count) { return count >= activated; };
+
+    // version 4/3/2 are required based on 95% of preceding 1000 blocks.
+    if (enforce(count_4))
+        minimum_version_ = version_4;
+    else if (enforce(count_3))
+        minimum_version_ = version_3;
+    else if (enforce(count_2))
+        minimum_version_ = version_2;
+    else
+        minimum_version_ = version_1;
+
+    // bip65 is activated based on 75% of preceding 1000 blocks.
+    if (activate(count_4))
+        activations_ |= script_context::bip65_enabled;
+
+    // bip66 is activated based on 75% of preceding 1000 blocks.
+    if (activate(count_3))
+        activations_ |= script_context::bip66_enabled;
+
+    // bip34 is activated based on 75% of preceding 1000 blocks.
+    if (activate(count_2))
+        activations_ |= script_context::bip34_enabled;
+
+    // bip30 applies to all but two historical blocks that violate the rule.
+    if (height_ != bip30_exception_height1 &&
+        height_ != bip30_exception_height2)
+        activations_ |= script_context::bip30_enabled;
+
+    // bip16 was activated with a one-time test (~55% rule).
+    if (height_ >= bip16_activation_height)
+        activations_ |= script_context::bip16_enabled;
+}
+
+// validate_version must be called first (to set activations_).
+bool validate_block::is_active(script_context flag) const
+{
+    if (!bc::is_active(activations_, flag))
+        return false;
+
+    const auto version = current_block_.header.version;
+    return
+        (flag == script_context::bip65_enabled && version >= version_4) ||
+        (flag == script_context::bip66_enabled && version >= version_3) ||
+        (flag == script_context::bip34_enabled && version >= version_2);
+}
+
+// validate_version must be called first (to set minimum_version_).
+bool validate_block::is_valid_version() const
+{
+    return current_block_.header.version >= minimum_version_;
 }
 
 bool validate_block::stopped() const
@@ -292,14 +376,14 @@ std::error_code validate_block::accept_block() const
 
     RETURN_IF_STOPPED();
 
-    // Reject version=1 blocks after switchover point.
-    if (header.version < 2 && height_ > max_version1_height)
+    // Reject blocks that are below the minimum version for the current height.
+    if (!is_valid_version())
         return error::old_version_block;
 
     RETURN_IF_STOPPED();
 
-    // Enforce version=2 rule that coinbase starts with serialized height.
-    if (header.version >= 2 &&
+    // Enforce rule that the coinbase starts with serialized height.
+    if (is_active(script_context::bip34_enabled) &&
         !is_valid_coinbase_height(height_, current_block_))
         return error::coinbase_height_mismatch;
 
@@ -369,17 +453,12 @@ uint32_t validate_block::work_required() const
 bool validate_block::is_valid_coinbase_height(size_t height, 
     const block_type& block)
 {
-    // There are old blocks with version incorrectly set to 2. Ignore them.
-    if (height < max_version1_height)
-        return true;
-
-    // Checks whether the block height is in the coinbase tx input script.
-    // Version 2 blocks and onwards.
-    if (block.header.version < 2 || block.transactions.empty() || 
+    // There must be a transaction with an input.
+    if (block.transactions.empty() || 
         block.transactions.front().inputs.empty())
         return false;
 
-    // First get the serialized coinbase input script as a series of bytes.
+    // Get the serialized coinbase input script as a series of bytes.
     const auto& coinbase_tx = block.transactions.front();
     const auto& coinbase_script = coinbase_tx.inputs.front().script;
     const auto raw_coinbase = save_script(coinbase_script);
@@ -401,9 +480,10 @@ bool validate_block::is_valid_coinbase_height(size_t height,
 
 std::error_code validate_block::connect_block() const
 {
-    // BIP 30 security fix
     const auto& transactions = current_block_.transactions;
-    if (height_ != bip30_exception_block1 && height_ != bip30_exception_block2)
+
+    // These coinbase transactions are spent and are not indexed.
+    if (is_active(script_context::bip34_enabled))
     {
         ////////////// TODO: parallelize. //////////////
         for (const auto& tx: transactions)
@@ -569,8 +649,8 @@ bool validate_block::connect_input(size_t index_in_parent,
         }
     }
 
-    if (!validate_transaction::validate_consensus(previous_tx_out.script,
-        current_tx, input_index, current_block_.header, height_))
+    if (!validate_transaction::check_consensus(previous_tx_out.script,
+        current_tx, input_index, activations_))
     {
         log_warning(LOG_VALIDATE) << "Input script invalid consensus.";
         return false;

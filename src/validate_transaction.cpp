@@ -238,11 +238,13 @@ void validate_transaction::handle_previous_tx(const std::error_code& ec,
         return;
     }
 
-    // TODO: change to script_context::mempool once implemented.
-    // HACK: we assume here that the height is past activation for all flags.
+    ///////////////////////////////////////////////////////////////////////////
+    // HACK: this assumes that the mempool is operating at min block version 4.
+    ///////////////////////////////////////////////////////////////////////////
+
     // Should check for are inputs standard here...
     if (!connect_input(tx_, current_input_, previous_tx, parent_height,
-        last_block_height_, value_in_, script_context::bip16_enabled))
+        last_block_height_, value_in_, script_context::all_enabled))
     {
         handle_validate_(error::validate_inputs_failed, {current_input_});
         return;
@@ -329,7 +331,7 @@ std::error_code validate_transaction::check_transaction(
 }
 
 // Validate script consensus conformance based on flags provided.
-static bool check_consensus(const script_type& prevout_script,
+bool validate_transaction::check_consensus(const script_type& prevout_script,
     const transaction_type& current_tx, size_t input_index, uint32_t flags)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
@@ -351,6 +353,9 @@ static bool check_consensus(const script_type& prevout_script,
     if ((flags & script_context::bip65_enabled) != 0)
         consensus_flags |= verify_flags_checklocktimeverify;
 
+    if ((flags & script_context::bip66_enabled) != 0)
+        consensus_flags |= verify_flags_dersig;
+
     const auto result = verify_script(current_transaction.data(),
         current_transaction.size(), previous_output_script.data(),
         previous_output_script.size(), input_index32, consensus_flags);
@@ -369,39 +374,6 @@ static bool check_consensus(const script_type& prevout_script,
         << encode_hash(hash_transaction(current_tx)) << "]";
 
     return valid;
-}
-
-// HACK: we hardwire mainnet/testnet acivation and assume no deep reorgs.
-// Determine if BIP16 compliance is required for this block.
-static bool is_bip_16_enabled(const block_header_type& header, size_t height)
-{
-    // Block 170060 contains an invalid BIP 16 transaction before switchover date.
-    const auto bip16_enabled = header.timestamp >= bip16_switchover_timestamp;
-    BITCOIN_ASSERT(!bip16_enabled || height >= bip16_switchover_height);
-    return bip16_enabled;
-}
-
-// HACK: we hardwire mainnet/testnet acivation and assume no deep reorgs.
-// Determine if BIP65 compliance is required for this block.
-static bool is_bip_65_enabled(const block_header_type& header, size_t height)
-{
-    return height >= bip65_switchover_height;
-}
-
-// Validate script consensus conformance, calculating p2sh based on block/height.
-bool validate_transaction::validate_consensus(const script_type& prevout_script,
-    const transaction_type& current_tx, size_t input_index,
-    const block_header_type& header, const size_t height)
-{
-    auto flags = 0;
-
-    if (is_bip_16_enabled(header, height))
-        flags |= script_context::bip16_enabled;
-
-    if (is_bip_65_enabled(header, height))
-        flags |= script_context::bip65_enabled;
-
-    return check_consensus(prevout_script, current_tx, input_index, flags);
 }
 
 bool validate_transaction::connect_input(const transaction_type& tx,
