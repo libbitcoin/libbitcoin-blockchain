@@ -62,7 +62,7 @@ constexpr uint8_t version_1 = 1;
     // Block 173805 is the first block after activation, which was date-based.
     constexpr size_t bip16_activation_height = 173805;
 
-    // github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+    // bip30 is retro-active starting at block zero, excluding these two bocks.
     constexpr size_t bip30_exception_height1 = 91842;
     constexpr size_t bip30_exception_height2 = 91880;
 #endif
