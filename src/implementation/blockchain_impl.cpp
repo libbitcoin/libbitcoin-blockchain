@@ -62,9 +62,6 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     organizer_(pool, interface_, orphans_, chain_, checks)
 {
 }
-blockchain_impl::~blockchain_impl()
-{
-}
 
 bool blockchain_impl::start()
 {
@@ -200,6 +197,49 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
 
         return finish_fetch(slock, handle_fetch,
             error::success, result.header());
+    };
+    fetch(do_fetch);
+}
+
+void blockchain_impl::fetch_locator_block_hashes(
+    const get_blocks_type& locator,
+    fetch_handler_locator_block_hashes handle_fetch)
+{
+    const auto do_fetch = [this, locator, handle_fetch](size_t slock)
+    {
+        // Find the first block height.
+        size_t first = 0;
+        for (const auto& hash: locator.start_hashes)
+        {
+            const auto result = interface_.blocks.get(hash);
+            if (result)
+            {
+                first = result.height();
+                break;
+            }
+        }
+
+        // Exclude the matched start block (or the genesis block).
+        ++first;
+
+        // Find the stop block height (the stop block is included).
+        const auto result = interface_.blocks.get(locator.hash_stop);
+        size_t last = result ? result.height() : first + 500;
+
+        // Build the hash list until we hit last or the blockchain top.
+        hash_list hashes;
+        for (size_t index = first; index <= last; ++index)
+        {
+            const auto result = interface_.blocks.get(index);
+            if (!result)
+            {
+                hashes.push_back(hash_block_header(result.header()));
+                break;
+            }
+        }
+
+        return finish_fetch(slock, handle_fetch,
+            error::success, hashes);
     };
     fetch(do_fetch);
 }
