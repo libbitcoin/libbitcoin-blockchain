@@ -104,20 +104,20 @@ public:
 
     typedef fetch_handler<transaction_type> fetch_handler_transaction;
 
-    typedef std::function<void (const std::error_code&, uint64_t, uint64_t)>
+    typedef std::function<void(const std::error_code&, uint64_t, uint64_t)>
         fetch_handler_transaction_index;
 
     typedef fetch_handler<input_point> fetch_handler_spend;
 
-    typedef std::function<void (const std::error_code&, const history_list&)>
+    typedef std::function<void(const std::error_code&, const history_list&)>
         fetch_handler_history;
 
-    typedef std::function<void (const std::error_code&, const stealth_list&)>
+    typedef std::function<void(const std::error_code&, const stealth_list&)>
         fetch_handler_stealth;
 
     typedef std::vector<std::shared_ptr<block_type>> block_list;
 
-    typedef std::function<void (const std::error_code&, uint64_t,
+    typedef std::function<bool(const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
     
     virtual ~blockchain()
