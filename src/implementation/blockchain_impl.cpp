@@ -208,27 +208,26 @@ void blockchain_impl::fetch_locator_block_hashes(
     const auto do_fetch = [this, locator, handle_fetch](size_t slock)
     {
         // Find the first block height.
-        size_t first = 0;
+        size_t start = 0;
         for (const auto& hash: locator.start_hashes)
         {
             const auto result = interface_.blocks.get(hash);
             if (result)
             {
-                first = result.height();
+                start = result.height();
                 break;
             }
         }
 
-        // Exclude the matched start block (or the genesis block).
-        ++first;
-
         // Find the stop block height (the stop block is included).
+        size_t stop = start + 500;
         const auto result = interface_.blocks.get(locator.hash_stop);
-        size_t last = result ? result.height() : first + 500;
+        if (result)
+            stop = std::min(result.height(), stop);
 
         // Build the hash list until we hit last or the blockchain top.
         hash_list hashes;
-        for (size_t index = first; index <= last; ++index)
+        for (size_t index = start + 1; index <= stop; ++index)
         {
             const auto result = interface_.blocks.get(index);
             if (!result)
