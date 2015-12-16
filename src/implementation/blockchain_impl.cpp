@@ -108,7 +108,7 @@ void blockchain_impl::start_write()
 void blockchain_impl::store(const block_type& block,
     store_block_handler handle_store)
 {
-    strand_.randomly_queue(
+    strand_.queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
@@ -149,7 +149,7 @@ void blockchain_impl::import(const block_type& block,
         interface_.push(block);
         stop_write(handle_import, error::success);
     };
-    strand_.randomly_queue(do_import);
+    strand_.queue(do_import);
 }
 
 void blockchain_impl::fetch(perform_read_functor perform_read)
