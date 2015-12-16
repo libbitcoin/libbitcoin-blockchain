@@ -127,14 +127,14 @@ class transaction_pool_fixture
 public:
     transaction_pool_fixture(threadpool& pool, blockchain& chain,
         size_t capacity)
-      : transaction_pool(pool, chain, capacity)
+      : transaction_pool(pool, chain, capacity, true)
     {
     }
 
     // Set capcity based on test buffer size.
     transaction_pool_fixture(threadpool& pool, blockchain& chain,
         const pool_buffer& txs)
-      : transaction_pool(pool, chain, txs.capacity())
+      : transaction_pool(pool, chain, txs.capacity(), true)
     {
         // Start by default, fill with our test buffer data.
         stopped_ = false;
@@ -149,9 +149,9 @@ public:
         transaction_pool::add(tx, handler);
     }
 
-    void delete_all(const std::error_code& ec)
+    void clear(const std::error_code& ec)
     {
-        transaction_pool::delete_all(ec);
+        transaction_pool::clear(ec);
     }
 
     void delete_package(const std::error_code& ec)
@@ -194,9 +194,9 @@ public:
         transaction_pool::delete_dependencies(is_dependency, ec);
     }
 
-    void delete_superseded(const blockchain::block_list& blocks)
+    void remove(const blockchain::block_list& blocks)
     {
-        transaction_pool::delete_superseded(blocks);
+        transaction_pool::remove(blocks);
     }
 
     void delete_confirmed_in_blocks(const blockchain::block_list& blocks)
@@ -338,17 +338,17 @@ BOOST_AUTO_TEST_CASE(transaction_pool__add__overflow_with_dependencies__removes_
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE(transaction_pool__delete_all)
+BOOST_AUTO_TEST_SUITE(transaction_pool__clear)
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__empty__empty)
+BOOST_AUTO_TEST_CASE(transaction_pool__clear__empty__empty)
 {
     pool_buffer transactions(2);
     DECLARE_TRANSACTION_POOL(mempool, transactions);
-    mempool.delete_all(error::unknown);
+    mempool.clear(error::unknown);
     BOOST_REQUIRE(mempool.transactions().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__two__empty_expected_callbacks)
+BOOST_AUTO_TEST_CASE(transaction_pool__clear__two__empty_expected_callbacks)
 {
     DECLARE_TRANSACTION(0, error::network_unreachable);
     DECLARE_TRANSACTION(1, error::network_unreachable);
@@ -357,13 +357,13 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__two__empty_expected_callbacks
     buffer.push_back(entry1);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
-    mempool.delete_all(error::network_unreachable);
+    mempool.clear(error::network_unreachable);
     BOOST_REQUIRE(mempool.transactions().empty());
     REQUIRE_CALLBACK(0, error::network_unreachable);
     REQUIRE_CALLBACK(1, error::network_unreachable);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__stopped_two__empty_expected_callbacks)
+BOOST_AUTO_TEST_CASE(transaction_pool__clear__stopped_two__empty_expected_callbacks)
 {
     DECLARE_TRANSACTION(0, error::address_blocked);
     DECLARE_TRANSACTION(1, error::address_blocked);
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_all__stopped_two__empty_expected_c
     buffer.push_back(entry1);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
     mempool.stopped(true);
-    mempool.delete_all(error::address_blocked);
+    mempool.clear(error::address_blocked);
     BOOST_REQUIRE(mempool.transactions().empty());
     REQUIRE_CALLBACK(0, error::address_blocked);
     REQUIRE_CALLBACK(1, error::address_blocked);
@@ -1108,9 +1108,9 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_dup
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE(transaction_pool__delete_superseded)
+BOOST_AUTO_TEST_SUITE(transaction_pool__remove)
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__one_block_duplicates_no_spends__removed_as_succeeded)
+BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__removed_as_succeeded)
 {
     blockchain::block_list blocks;
     block_type block1;
@@ -1133,7 +1133,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__one_block_duplicates_n
     buffer.push_back(entry4);
     buffer.push_back(entry5);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
-    mempool.delete_superseded(blocks);
+    mempool.remove(blocks);
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx4_id);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx5_id);
@@ -1142,7 +1142,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__one_block_duplicates_n
     REQUIRE_CALLBACK(3, error::success);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__two_blocks_spends_no_duplicates__removed_as_spent)
+BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__removed_as_spent)
 {
     blockchain::block_list blocks;
     block_type block1;
@@ -1179,7 +1179,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_superseded__two_blocks_spends_no_d
     buffer.push_back(entry6);
     buffer.push_back(entry7);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
-    mempool.delete_superseded(blocks);
+    mempool.remove(blocks);
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 1u);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx6_id);
     REQUIRE_CALLBACK(4, error::double_spend);

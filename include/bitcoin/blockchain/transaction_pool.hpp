@@ -74,8 +74,8 @@ public:
     typedef std::function<void(const std::error_code&, bool)> exists_handler;
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
-    transaction_pool(threadpool& pool, blockchain& chain,
-        size_t capacity=2000);
+    transaction_pool(threadpool& pool, blockchain& chain, size_t capacity,
+        bool consistency);
     ~transaction_pool();
 
     /// This class is not copyable.
@@ -229,14 +229,16 @@ protected:
         const blockchain::block_list& replaced_blocks);
 
     void add(const transaction_type& tx, confirm_handler handler);
-    void delete_all(const code& ec);
+    void remove(const blockchain::block_list& blocks);
+    void clear(const code& ec);
+
+    // testable private
     void delete_package(const code& ec);
     void delete_package(const hash_digest& tx_hash, const code& ec);
     void delete_package(const transaction_type& tx, const code& ec);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const output_point& point, const code& ec);
     void delete_dependencies(input_comparison is_dependency, const code& ec);
-    void delete_superseded(const blockchain::block_list& blocks);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
     bool delete_single(const transaction_type& tx, const code& ec);
     void delete_confirmed_in_blocks(const blockchain::block_list& blocks);
@@ -246,6 +248,7 @@ protected:
     blockchain& blockchain_;
     pool_buffer buffer_;
     bool stopped_;
+    const bool maintain_consistency_;
 };
 
 } // namespace chain
