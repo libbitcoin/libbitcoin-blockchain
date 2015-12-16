@@ -206,7 +206,7 @@ protected:
         validate_handler handle_validate);
     bool tx_exists(const hash_digest& tx_hash);
     pool_buffer::const_iterator tx_find(const hash_digest& hash);
-    void reorganize(const std::error_code& ec, size_t fork_point,
+    bool reorganize(const std::error_code& ec, size_t fork_point,
         const blockchain::block_list& new_blocks,
         const blockchain::block_list& replaced_blocks);
 

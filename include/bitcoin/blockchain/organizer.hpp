@@ -70,7 +70,7 @@ protected:
         const block_detail_list& orphan_chain, size_t orphan_index) = 0;
 
 private:
-    typedef subscriber<const std::error_code&, uint64_t, 
+    typedef resubscriber<const std::error_code&, uint64_t, 
         const blockchain::block_list&, const blockchain::block_list&> 
         reorganize_subscriber;
 
