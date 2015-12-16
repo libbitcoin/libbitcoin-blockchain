@@ -84,42 +84,31 @@ typedef std::vector<stealth_row> stealth_list;
 class blockchain
 {
 public:
-    typedef std::function<void (const std::error_code&, block_info)>
+    typedef std::function<void(const std::error_code&)> import_block_handler;
+    typedef std::function<void(const std::error_code&, block_info)>
         store_block_handler;
-
-    typedef std::function<void (const std::error_code&)> import_block_handler;
 
     template <typename Message>
     using fetch_handler = std::function<
         void (const std::error_code&, const Message&)>;
 
     typedef fetch_handler<block_header_type> fetch_handler_block_header;
-
+    typedef fetch_handler<hash_list> fetch_handler_locator_block_hashes;
     typedef fetch_handler<hash_list> fetch_handler_missing_block_hashes;
-
     typedef fetch_handler<hash_list> fetch_handler_block_transaction_hashes;
-
     typedef fetch_handler<uint64_t> fetch_handler_block_height;
-
     typedef fetch_handler<uint64_t> fetch_handler_last_height;
-
     typedef fetch_handler<block_locator_type> fetch_handler_block_locator;
-
     typedef fetch_handler<transaction_type> fetch_handler_transaction;
 
     typedef std::function<void(const std::error_code&, uint64_t, uint64_t)>
         fetch_handler_transaction_index;
-
     typedef fetch_handler<input_point> fetch_handler_spend;
-
     typedef std::function<void(const std::error_code&, const history_list&)>
         fetch_handler_history;
-
     typedef std::function<void(const std::error_code&, const stealth_list&)>
         fetch_handler_stealth;
-
     typedef std::vector<std::shared_ptr<block_type>> block_list;
-
     typedef std::function<bool(const std::error_code&, uint64_t,
         const block_list&, const block_list&)> reorganize_handler;
     
@@ -202,6 +191,21 @@ public:
      */
     virtual void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch) = 0;
+
+    /**
+     * Fetches the set of block hashes indicated by the block locator.
+     *
+     * @param[in]   locator         Get blocks (block locator) message
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void handle_fetch(
+     *      const std::error_code& ec,      // Status of operation
+     *      const hash_list& hashes         // Set of indicated block hashes
+     *  );
+     * @endcode
+     */
+    virtual void fetch_locator_block_hashes(const get_blocks_type& locator,
+        fetch_handler_locator_block_hashes handle_fetch) = 0;
     
     /**
      * Fetches the subset of specified block hashes that are not stored.

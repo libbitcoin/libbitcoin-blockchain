@@ -66,6 +66,11 @@ public:
     {
     }
 
+    virtual void fetch_locator_block_hashes(const get_blocks_type& locator,
+        fetch_handler_locator_block_hashes handle_fetch)
+    {
+    }
+
     virtual void fetch_missing_block_hashes(const hash_list& hashes,
         fetch_handler_missing_block_hashes handle_fetch)
     {

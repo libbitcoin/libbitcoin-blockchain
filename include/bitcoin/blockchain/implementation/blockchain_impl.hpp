@@ -46,7 +46,6 @@ public:
     blockchain_impl(threadpool& pool, const std::string& prefix,
         const db_active_heights& active_heights={0}, size_t orphan_capacity=20,
         const config::checkpoint::list& checks=checkpoint::defaults);
-    ~blockchain_impl();
 
     // Non-copyable
     blockchain_impl(const blockchain_impl&) = delete;
@@ -64,6 +63,10 @@ public:
     // fetch block header by hash
     void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
+
+    // fetch the set of block hashes indicated by the block locator
+    void fetch_locator_block_hashes(const get_blocks_type& locator,
+        fetch_handler_locator_block_hashes handle_fetch);
 
     // fetch subset of specified block hashes that are not stored
     void fetch_missing_block_hashes(const hash_list& hashes,

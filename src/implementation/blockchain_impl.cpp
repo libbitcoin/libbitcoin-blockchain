@@ -39,6 +39,9 @@ namespace chain {
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
 
+// This is a protocol limit that we incorporate into the query.
+static constexpr size_t maximum_get_blocks = 500;
+
 static file_lock init_lock(const std::string& prefix)
 {
     // Touch the lock file (open/close).
@@ -60,9 +63,6 @@ blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     orphans_(orphan_capacity),
     chain_(interface_),
     organizer_(pool, interface_, orphans_, chain_, checks)
-{
-}
-blockchain_impl::~blockchain_impl()
 {
 }
 
@@ -200,6 +200,48 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
 
         return finish_fetch(slock, handle_fetch,
             error::success, result.header());
+    };
+    fetch(do_fetch);
+}
+
+void blockchain_impl::fetch_locator_block_hashes(
+    const get_blocks_type& locator,
+    fetch_handler_locator_block_hashes handle_fetch)
+{
+    const auto do_fetch = [this, locator, handle_fetch](size_t slock)
+    {
+        // Find the first block height.
+        size_t start = 0;
+        for (const auto& hash: locator.start_hashes)
+        {
+            const auto result = interface_.blocks.get(hash);
+            if (result)
+            {
+                start = result.height();
+                break;
+            }
+        }
+
+        // Find the stop block height (the stop block is included).
+        size_t stop = start + maximum_get_blocks;
+        const auto result = interface_.blocks.get(locator.hash_stop);
+        if (result)
+            stop = std::min(result.height(), stop);
+
+        // Build the hash list until we hit last or the blockchain top.
+        hash_list hashes;
+        for (size_t index = start + 1; index <= stop; ++index)
+        {
+            const auto result = interface_.blocks.get(index);
+            if (!result)
+            {
+                hashes.push_back(hash_block_header(result.header()));
+                break;
+            }
+        }
+
+        return finish_fetch(slock, handle_fetch,
+            error::success, hashes);
     };
     fetch(do_fetch);
 }
