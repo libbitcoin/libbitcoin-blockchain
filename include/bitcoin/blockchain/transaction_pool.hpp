@@ -65,10 +65,12 @@ typedef boost::circular_buffer<transaction_entry_info> pool_buffer;
 class BCB_API transaction_pool
 {
 public:
-    typedef std::function<void (const std::error_code&, const index_list&)>
+    typedef std::function<void(const std::error_code&, const index_list&)>
         validate_handler;
-    typedef std::function<void (const std::error_code&,
-        const transaction_type&)> fetch_handler;
+    typedef std::function<void(const std::error_code&, const transaction_type&)>
+        fetch_handler;
+    typedef std::function<void(const std::error_code&, const hash_list&)>
+        fetch_handler_missing_hashes;
     typedef std::function<void(const std::error_code&, bool)> exists_handler;
     typedef transaction_entry_info::confirm_handler confirm_handler;
 
@@ -177,6 +179,22 @@ public:
      */
     void fetch(const hash_digest& transaction_hash,
         fetch_handler handle_fetch);
+
+    /**
+     * Fetches the subset of specified transaction hashes that are not in the
+     * mempool. The list is copied and order is preserved.
+     *
+     * @param[in]   hashes          Transaction hashes of interest
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void fetch_missing_hashes(
+     *      const std::error_code& ec,  // Status of operation
+     *      const hash_list& hashes     // Set of missing transaction hashes
+     *  );
+     * @endcode
+     */
+    virtual void fetch_missing_hashes(const hash_list& hashes,
+        fetch_handler_missing_hashes handle_fetch);
 
     /**
      * Is this transaction in the pool?

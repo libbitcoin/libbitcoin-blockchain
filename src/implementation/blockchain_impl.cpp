@@ -204,6 +204,25 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch(do_fetch);
 }
 
+void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,
+    fetch_handler_missing_block_hashes handle_fetch)
+{
+    const auto do_fetch = [this, hashes, handle_fetch](size_t slock)
+    {
+        hash_list missing;
+        for (const auto& hash: hashes)
+        {
+            const auto result = interface_.blocks.get(hash);
+            if (!result)
+                missing.push_back(hash);
+        }
+
+        return finish_fetch(slock, handle_fetch,
+            error::success, missing);
+    };
+    fetch(do_fetch);
+}
+
 void blockchain_impl::fetch_block_transaction_hashes(
     const hash_digest& hash,
     fetch_handler_block_transaction_hashes handle_fetch)
