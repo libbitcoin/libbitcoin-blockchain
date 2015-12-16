@@ -65,6 +65,10 @@ public:
     void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
 
+    // fetch subset of specified block hashes that are not stored
+    void fetch_missing_block_hashes(const hash_list& hashes,
+        fetch_handler_missing_block_hashes handle_fetch);
+
     // fetch transaction hashes in block by hash
     void fetch_block_transaction_hashes(const hash_digest& hash,
         fetch_handler_block_transaction_hashes handle_fetch);

@@ -209,6 +209,31 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
     strand_.queue(tx_fetcher);
 }
 
+void transaction_pool::fetch_missing_hashes(const hash_list& hashes,
+    fetch_handler_missing_hashes handle_fetch)
+{
+    if (stopped())
+    {
+        handle_fetch(error::service_stopped, hash_list());
+        return;
+    }
+
+    const auto tx_fetcher = [this, hashes, handle_fetch]()
+    {
+        hash_list missing;
+        for (const auto& hash: hashes)
+        {
+            const auto it = tx_find(hash);
+            if (it != buffer_.end())
+                missing.push_back(it->hash);
+        }
+
+        handle_fetch(error::success, missing);
+    };
+
+    strand_.queue(tx_fetcher);
+}
+
 void transaction_pool::exists(const hash_digest& transaction_hash,
     exists_handler handle_exists)
 {

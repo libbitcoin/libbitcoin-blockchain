@@ -52,6 +52,7 @@ struct BCB_API history_row
     {
         /// If output, then satoshis value of output.
         uint64_t value;
+
         /**
          * If spend, then checksum hash of previous output point
          * To match up this row with the output, recompute the
@@ -93,6 +94,8 @@ public:
         void (const std::error_code&, const Message&)>;
 
     typedef fetch_handler<block_header_type> fetch_handler_block_header;
+
+    typedef fetch_handler<hash_list> fetch_handler_missing_block_hashes;
 
     typedef fetch_handler<hash_list> fetch_handler_block_transaction_hashes;
 
@@ -199,6 +202,22 @@ public:
      */
     virtual void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch) = 0;
+    
+    /**
+     * Fetches the subset of specified block hashes that are not stored.
+     * The list is copied and order is preserved.
+     *
+     * @param[in]   hashes          Block hashes of interest
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void handle_fetch(
+     *      const std::error_code& ec,      // Status of operation
+     *      const hash_list& hashes         // Set of missing block hashes
+     *  );
+     * @endcode
+     */
+    virtual void fetch_missing_block_hashes(const hash_list& hashes,
+        fetch_handler_missing_block_hashes handle_fetch) = 0;
 
     /**
      * Fetches list of transaction hashes in a block by block hash.
@@ -207,8 +226,8 @@ public:
      * @param[in]   handle_fetch    Completion handler for fetch operation.
      * @code
      *  void handle_fetch(
-     *      const std::error_code& ec,      // Status of operation
-     *      const hash_list& hashes  // List of hashes
+     *      const std::error_code& ec,   // Status of operation
+     *      const hash_list& hashes      // List of hashes
      *  );
      * @endcode
      */
@@ -335,8 +354,8 @@ public:
      * @param[in]   handle_fetch    Completion handler for fetch operation.
      * @code
      *  void handle_fetch(
-     *      const std::error_code& ec,              // Status of operation
-     *      const history_list& history // History
+     *      const std::error_code& ec,      // Status of operation
+     *      const history_list& history     // History
      *  );
      * @endcode
      * @param[in]   limit           Limit number of returned entries.
