@@ -39,6 +39,9 @@ namespace chain {
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
 
+// This is a protocol limit that we incorporate into the query.
+static constexpr size_t maximum_get_blocks = 500;
+
 static file_lock init_lock(const std::string& prefix)
 {
     // Touch the lock file (open/close).
@@ -220,7 +223,7 @@ void blockchain_impl::fetch_locator_block_hashes(
         }
 
         // Find the stop block height (the stop block is included).
-        size_t stop = start + 500;
+        size_t stop = start + maximum_get_blocks;
         const auto result = interface_.blocks.get(locator.hash_stop);
         if (result)
             stop = std::min(result.height(), stop);
