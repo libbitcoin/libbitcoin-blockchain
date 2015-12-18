@@ -45,17 +45,15 @@ size_t orphans_pool::size() const
     return buffer_.size();
 }
 
+// TODO: there is no guard for entry here apart from nonexistence of the block.
 bool orphans_pool::add(block_detail_ptr incoming_block)
 {
-    BITCOIN_ASSERT(incoming_block);
     const auto& incomming_header = incoming_block->actual().header;
+
+    // No duplicates allowed.
     for (auto current_block: buffer_)
-    {
-        // No duplicates allowed.
-        const auto& actual = current_block->actual().header;
         if (current_block->actual().header == incomming_header)
             return false;
-    }
 
     buffer_.push_back(incoming_block);
 
@@ -67,7 +65,6 @@ bool orphans_pool::add(block_detail_ptr incoming_block)
 
 void orphans_pool::remove(block_detail_ptr remove_block)
 {
-    BITCOIN_ASSERT(remove_block);
     const auto it = std::find(buffer_.begin(), buffer_.end(), remove_block);
     BITCOIN_ASSERT(it != buffer_.end());
     buffer_.erase(it);
@@ -78,7 +75,6 @@ void orphans_pool::remove(block_detail_ptr remove_block)
 
 block_detail_list orphans_pool::trace(block_detail_ptr end_block)
 {
-    BITCOIN_ASSERT(end_block);
     block_detail_list traced_chain;
     traced_chain.push_back(end_block);
     for (auto found = true; found;)

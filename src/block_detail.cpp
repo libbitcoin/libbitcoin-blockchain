@@ -19,15 +19,22 @@
  */
 #include <bitcoin/blockchain/block_detail.hpp>
 
+#include <memory>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace chain {
 
+block_detail::block_detail(std::shared_ptr<block_type> actual_block)
+  : processed_(false),
+    info_({ block_status::orphan, 0 }),
+    block_hash_(hash_block_header(actual_block->header)),
+    actual_block_(actual_block)
+
+{
+}
 block_detail::block_detail(const block_type& actual_block)
-  : block_hash_(hash_block_header(actual_block.header)),
-    processed_(false), info_({ block_status::orphan, 0 }),
-    actual_block_(std::make_shared<block_type>(actual_block))
+  : block_detail(std::make_shared<block_type>(actual_block))
 {
 }
 block_detail::block_detail(const block_header_type& actual_block_header)
