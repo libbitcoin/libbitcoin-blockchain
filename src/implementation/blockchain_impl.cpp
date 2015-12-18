@@ -204,13 +204,18 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch(do_fetch);
 }
 
+// Fetch start-base-stop|top+1(max 500)
 void blockchain_impl::fetch_locator_block_hashes(
-    const get_blocks_type& locator,
+    const get_blocks_type& locator, const hash_digest& threshold,
     fetch_handler_locator_block_hashes handle_fetch)
 {
-    const auto do_fetch = [this, locator, handle_fetch](size_t slock)
+    // This is based on the idea that looking up by block hash to get heights
+    // will be much faster than hashing each retrieved block to test for stop.
+    const auto do_fetch = [this, locator, threshold, handle_fetch](
+        size_t slock)
     {
         // Find the first block height.
+        // If no start block is on our chain we start with block 0.
         size_t start = 0;
         for (const auto& hash: locator.start_hashes)
         {
@@ -222,15 +227,24 @@ void blockchain_impl::fetch_locator_block_hashes(
             }
         }
 
-        // Find the stop block height (the stop block is included).
-        size_t stop = start + maximum_get_blocks;
-        const auto result = interface_.blocks.get(locator.hash_stop);
-        if (result)
-            stop = std::min(result.height(), stop);
+        // Find the stop block height.
+        // The maximum stop block is 501 blocks after start (to return 500).
+        // If the stop block is not on our chain we treat it as a null stop.
+        size_t stop = start + maximum_get_blocks + 1;
+        const auto stop_result = interface_.blocks.get(locator.hash_stop);
+        if (stop_result)
+            stop = std::min(stop_result.height(), stop);
+
+        // Find the threshold block height.
+        // If the threshold is above the start it becomes the new start.
+        const auto start_result = interface_.blocks.get(threshold);
+        if (start_result)
+            start = std::max(start_result.height(), start);
+
 
         // Build the hash list until we hit last or the blockchain top.
         hash_list hashes;
-        for (size_t index = start + 1; index <= stop; ++index)
+        for (size_t index = start + 1; index < stop; ++index)
         {
             const auto result = interface_.blocks.get(index);
             if (!result)

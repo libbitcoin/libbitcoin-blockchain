@@ -196,6 +196,7 @@ public:
      * Fetches the set of block hashes indicated by the block locator.
      *
      * @param[in]   locator         Get blocks (block locator) message
+     * @param[in]   threshold       The minimum start block hash (if found).
      * @param[in]   handle_fetch    Completion handler for fetch operation.
      * @code
      *  void handle_fetch(
@@ -205,6 +206,7 @@ public:
      * @endcode
      */
     virtual void fetch_locator_block_hashes(const get_blocks_type& locator,
+        const hash_digest& threshold,
         fetch_handler_locator_block_hashes handle_fetch) = 0;
     
     /**
