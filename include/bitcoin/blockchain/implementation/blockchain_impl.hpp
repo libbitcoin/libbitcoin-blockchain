@@ -65,7 +65,9 @@ public:
         fetch_handler_block_header handle_fetch);
 
     // fetch the set of block hashes indicated by the block locator
+    // excluding all blocks at or below the theshold.
     void fetch_locator_block_hashes(const get_blocks_type& locator,
+        const hash_digest& threshold,
         fetch_handler_locator_block_hashes handle_fetch);
 
     // fetch subset of specified block hashes that are not stored
