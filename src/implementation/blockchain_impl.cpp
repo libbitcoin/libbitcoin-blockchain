@@ -105,22 +105,22 @@ void blockchain_impl::start_write()
     BITCOIN_ASSERT(seqlock_ % 2 == 1);
 }
 
-void blockchain_impl::store(const block_type& block,
+void blockchain_impl::store(std::shared_ptr<block_type> block,
     store_block_handler handle_store)
 {
     strand_.queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
-void blockchain_impl::do_store(const block_type& block,
+void blockchain_impl::do_store(std::shared_ptr<block_type> block,
     store_block_handler handle_store)
 {
     if (stopped())
         return;
 
     start_write();
-    const auto stored_detail = std::make_shared<block_detail>(block);
-    const auto height = chain_.find_height(hash_block_header(block.header));
+    const auto& hash = hash_block_header(block->header);
+    const auto height = chain_.find_height(hash);
     if (height != simple_chain::null_height)
     {
         const auto info = block_info{ block_status::confirmed, height };
@@ -128,25 +128,26 @@ void blockchain_impl::do_store(const block_type& block,
         return;
     }
 
-    if (!orphans_.add(stored_detail))
+    const auto detail = std::make_shared<block_detail>(block);
+    if (!orphans_.add(detail))
     {
-        constexpr size_t height = 0;
+        static constexpr size_t height = 0;
         const auto info = block_info{ block_status::orphan, height };
         stop_write(handle_store, error::duplicate, info);
         return;
     }
 
     organizer_.start();
-    stop_write(handle_store, stored_detail->error(), stored_detail->info());
+    stop_write(handle_store, detail->error(), detail->info());
 }
 
-void blockchain_impl::import(const block_type& block,
+void blockchain_impl::import(std::shared_ptr<block_type> block,
     import_block_handler handle_import)
 {
     const auto do_import = [this, block, handle_import]()
     {
         start_write();
-        interface_.push(block);
+        interface_.push(*block);
         stop_write(handle_import, error::success);
     };
     strand_.queue(do_import);

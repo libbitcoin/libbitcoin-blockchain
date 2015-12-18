@@ -46,12 +46,12 @@ public:
         return false;
     }
 
-    virtual void store(const block_type& block,
+    virtual void store(std::shared_ptr<block_type> block,
         store_block_handler handle_store)
     {
     }
 
-    virtual void import(const block_type& import_block,
+    virtual void import(std::shared_ptr<block_type> block,
         import_block_handler handle_import)
     {
     }

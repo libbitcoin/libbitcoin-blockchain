@@ -225,14 +225,16 @@ void organizer::notify_reorganize(size_t fork_point,
 void organizer::subscribe_reorganize(
     blockchain::reorganize_handler handle_reorganize)
 {
-    subscriber_->subscribe(handle_reorganize);
+    if (stopped())
+        handle_reorganize(error::service_stopped, 0, {}, {});
+    else
+        subscriber_->subscribe(handle_reorganize);
 }
 
 void organizer::notify_stop()
 {
-    static const uint64_t fork_point = 0;
-    subscriber_->relay(error::service_stopped, fork_point,
-        blockchain::block_list(), blockchain::block_list());
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, 0, {}, {});
 }
 
 } // namespace chain

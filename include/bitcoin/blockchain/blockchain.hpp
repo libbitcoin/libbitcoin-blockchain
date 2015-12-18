@@ -143,15 +143,14 @@ public:
      *  );
      * @endcode
      */
-    virtual void store(const block_type& block,
+    virtual void store(std::shared_ptr<block_type> block,
         store_block_handler handle_store) = 0;
-
     /**
      * Store a new block directly without validating it.
      * No checks are done. Importing an already stored block
      * is undefined.
      *
-     * @param[in]   import_block    Block to store
+     * @param[in]   block           Block to import
      * @param[in]   handle_import   Completion handler for import operation.
      * @code
      *  void handle_import(
@@ -159,7 +158,7 @@ public:
      *  );
      * @encode
      */
-    virtual void import(const block_type& import_block,
+    virtual void import(std::shared_ptr<block_type> block,
         import_block_handler handle_import) = 0;
 
     /**

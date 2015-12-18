@@ -34,6 +34,7 @@ class BCB_API block_detail
 {
 public:
     block_detail(const block_type& actual_block);
+    block_detail(std::shared_ptr<block_type> actual_block);
     block_detail(const block_header_type& actual_block_header);
     block_type& actual();
     const block_type& actual() const;
@@ -47,11 +48,11 @@ public:
     const std::error_code& error() const;
 
 private:
-    std::shared_ptr<block_type> actual_block_;
-    const hash_digest block_hash_;
     bool processed_;
     block_info info_;
     std::error_code code_;
+    const hash_digest block_hash_;
+    std::shared_ptr<block_type> actual_block_;
 };
 
 // TODO: define in block_detail (compat break).

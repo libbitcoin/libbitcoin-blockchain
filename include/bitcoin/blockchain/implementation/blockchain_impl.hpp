@@ -23,6 +23,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -53,8 +54,10 @@ public:
 
     bool start();
     bool stop();
-    void store(const block_type& block, store_block_handler handle_store);
-    void import(const block_type& block, import_block_handler handle_import);
+    void store(std::shared_ptr<block_type> block,
+        store_block_handler handle_store);
+    void import(std::shared_ptr<block_type> block,
+        import_block_handler handle_import);
 
     // fetch block header by height
     void fetch_block_header(uint64_t height,
@@ -125,7 +128,8 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(const block_type& block, store_block_handler handle_store);
+    void do_store(std::shared_ptr<block_type> block,
+        store_block_handler handle_store);
 
     // Uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
