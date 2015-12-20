@@ -59,6 +59,20 @@ public:
     void import(std::shared_ptr<block_type> block,
         import_block_handler handle_import);
 
+    // fetch a block locator relative to the current top and threshold.
+    void fetch_block_locator(
+        fetch_handler_block_locator handle_fetch);
+
+    // fetch the set of block hashes indicated by the block locator
+    // excluding all blocks at or below the theshold.
+    void fetch_locator_blocks(const get_blocks_type& locator,
+        const hash_digest& threshold,
+        fetch_handler_locator_blocks handle_fetch);
+
+    // fetch subset of specified block hashes that are not stored
+    void fetch_missing_block_hashes(const hash_list& hashes,
+        fetch_handler_missing_block_hashes handle_fetch);
+
     // fetch block header by height
     void fetch_block_header(uint64_t height,
         fetch_handler_block_header handle_fetch);
@@ -66,16 +80,6 @@ public:
     // fetch block header by hash
     void fetch_block_header(const hash_digest& hash,
         fetch_handler_block_header handle_fetch);
-
-    // fetch the set of block hashes indicated by the block locator
-    // excluding all blocks at or below the theshold.
-    void fetch_locator_block_hashes(const get_blocks_type& locator,
-        const hash_digest& threshold,
-        fetch_handler_locator_block_hashes handle_fetch);
-
-    // fetch subset of specified block hashes that are not stored
-    void fetch_missing_block_hashes(const hash_list& hashes,
-        fetch_handler_missing_block_hashes handle_fetch);
 
     // fetch transaction hashes in block by hash
     void fetch_block_transaction_hashes(const hash_digest& hash,
@@ -131,10 +135,15 @@ private:
     void do_store(std::shared_ptr<block_type> block,
         store_block_handler handle_store);
 
-    // Uses sequential lock to try to read shared data.
+    // Fetch uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
     // sleep for a small amount of time and then retry read operation.
-    void fetch(perform_read_functor perform_read);
+
+    // Asynchronous fetch.
+    void fetch_parallel(perform_read_functor perform_read);
+
+    // Ordered fetch (order only amoung other calls to fetch_ordered).
+    void fetch_ordered(perform_read_functor perform_read);
 
     template <typename Handler, typename... Args>
     bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
@@ -152,8 +161,11 @@ private:
 
     bool stopped();
 
+    // Queue for reads from the blockchain.
+    sequencer read_strand_;
+
     // Queue for writes to the blockchain.
-    sequencer strand_;
+    sequencer write_strand_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;

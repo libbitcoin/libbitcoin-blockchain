@@ -57,8 +57,8 @@ bool orphans_pool::add(block_detail_ptr incoming_block)
 
     buffer_.push_back(incoming_block);
 
-    log_debug(LOG_BLOCKCHAIN)
-        << "Orphan pool add (" << buffer_.size() << ")";
+    ////log_debug(LOG_BLOCKCHAIN)
+    ////    << "Orphan pool add (" << buffer_.size() << ")";
 
     return true;
 }
@@ -69,8 +69,8 @@ void orphans_pool::remove(block_detail_ptr remove_block)
     BITCOIN_ASSERT(it != buffer_.end());
     buffer_.erase(it);
 
-    log_debug(LOG_BLOCKCHAIN)
-        << "Orphan pool remove (" << buffer_.size() << ")";
+    ////log_debug(LOG_BLOCKCHAIN)
+    ////    << "Orphan pool remove (" << buffer_.size() << ")";
 }
 
 block_detail_list orphans_pool::trace(block_detail_ptr end_block)

@@ -26,7 +26,6 @@
 #include <bitcoin/blockchain/db_interface.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/fetch_block.hpp>
-#include <bitcoin/blockchain/fetch_block_locator.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphans_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>

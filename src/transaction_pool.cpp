@@ -277,10 +277,10 @@ bool transaction_pool::reorganize(const std::error_code& ec,
         return false;
     }
 
-    log_debug(LOG_BLOCKCHAIN)
-        << "Reorganize: tx pool size (" << buffer_.size()
-        << ") new blocks (" << new_blocks.size()
-        << ") replace blocks (" << replaced_blocks.size() << ")";
+    ////log_debug(LOG_BLOCKCHAIN)
+    ////    << "Reorganize: tx pool size (" << buffer_.size()
+    ////    << ") new blocks (" << new_blocks.size()
+    ////    << ") replace blocks (" << replaced_blocks.size() << ")";
 
     if (replaced_blocks.empty())
     {
