@@ -37,15 +37,12 @@ organizer::organizer(threadpool& pool, orphans_pool& orphans,
   : orphans_(orphans),
     chain_(chain),
     subscriber_(std::make_shared<reorganize_subscriber>(pool)),
-    stopped_(true)
+    stopped_(false)
 {
 }
 
 bool organizer::start()
 {
-    // TODO: can we actually restart?
-    stopped_ = false;
-
     // Load unprocessed blocks
     process_queue_ = orphans_.unprocessed();
 
