@@ -230,17 +230,23 @@ void blockchain_impl::fetch_locator_block_hashes(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        // If the stop block is not on our chain we treat it as a null stop.
         size_t stop = start + maximum_get_blocks + 1;
-        const auto stop_result = interface_.blocks.get(locator.hash_stop);
-        if (stop_result)
-            stop = std::min(stop_result.height(), stop);
+        if (locator.hash_stop != null_hash)
+        {
+            // If the stop block is not on chain we treat it as a null stop.
+            const auto stop_result = interface_.blocks.get(locator.hash_stop);
+            if (stop_result)
+                stop = std::min(stop_result.height(), stop);
+        }
 
         // Find the threshold block height.
         // If the threshold is above the start it becomes the new start.
-        const auto start_result = interface_.blocks.get(threshold);
-        if (start_result)
-            start = std::max(start_result.height(), start);
+        if (threshold != null_hash)
+        {
+            const auto start_result = interface_.blocks.get(threshold);
+            if (start_result)
+                start = std::max(start_result.height(), start);
+        }
 
 
         // Build the hash list until we hit last or the blockchain top.
