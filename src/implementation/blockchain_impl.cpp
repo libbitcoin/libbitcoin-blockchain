@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
@@ -54,7 +55,8 @@ static file_lock init_lock(const std::string& prefix)
 blockchain_impl::blockchain_impl(threadpool& pool, const std::string& prefix,
     const db_active_heights &active_heights, size_t orphan_capacity,
     const config::checkpoint::list& checks)
-  : strand_(pool),
+  : read_strand_(pool),
+    write_strand_(pool),
     flock_(init_lock(prefix)),
     seqlock_(0),
     stopped_(true),
@@ -99,16 +101,16 @@ void blockchain_impl::subscribe_reorganize(
 
 void blockchain_impl::start_write()
 {
-    ++seqlock_;
+    DEBUG_ONLY(const auto lock =) ++seqlock_;
 
-    // seqlock is now odd.
-    BITCOIN_ASSERT(seqlock_ % 2 == 1);
+    // seqlock was now odd.
+    BITCOIN_ASSERT(lock % 2 == 1);
 }
 
 void blockchain_impl::store(std::shared_ptr<block_type> block,
     store_block_handler handle_store)
 {
-    strand_.queue(
+    write_strand_.queue(
         std::bind(&blockchain_impl::do_store,
             this, block, handle_store));
 }
@@ -150,15 +152,15 @@ void blockchain_impl::import(std::shared_ptr<block_type> block,
         interface_.push(*block);
         stop_write(handle_import, error::success);
     };
-    strand_.queue(do_import);
+    write_strand_.queue(do_import);
 }
 
-void blockchain_impl::fetch(perform_read_functor perform_read)
+void blockchain_impl::fetch_parallel(perform_read_functor perform_read)
 {
     const auto try_read = [this, perform_read]() -> bool
     {
         // Implements the seqlock counter logic.
-        const size_t slock = seqlock_;
+        const size_t slock = seqlock_.load();
         return ((slock % 2 != 1) && perform_read(slock));
     };
 
@@ -166,49 +168,65 @@ void blockchain_impl::fetch(perform_read_functor perform_read)
     {
         // Sleeping while waiting for write to complete.
         while (!try_read())
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
     };
 
     // Initiate async read operation.
-    strand_.async(do_read);
+    read_strand_.async(do_read);
 }
 
-void blockchain_impl::fetch_block_header(uint64_t height,
-    fetch_handler_block_header handle_fetch)
+void blockchain_impl::fetch_ordered(perform_read_functor perform_read)
 {
-    const auto do_fetch = [this, height, handle_fetch](size_t slock)
+    const auto try_read = [this, perform_read]() -> bool
     {
-        const auto result = interface_.blocks.get(height);
-        if (!result)
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, block_header_type());
+        // Implements the seqlock counter logic.
+        const size_t slock = seqlock_.load();
+        return ((slock % 2 != 1) && perform_read(slock));
+    };
+
+    const auto do_read = [this, try_read]()
+    {
+        // Sleeping while waiting for write to complete.
+        while (!try_read())
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    };
+
+    // Initiate async read operation.
+    read_strand_.queue(do_read);
+}
+
+// This may generally execute 29+ queries.
+// TODO: Collect asynchronous calls in a function invoked directly by caller.
+void blockchain_impl::fetch_block_locator(
+    fetch_handler_block_locator handle_fetch)
+{
+    const auto do_fetch = [this, handle_fetch](size_t slock)
+    {
+        block_locator_type locator;
+        const auto last_height = interface_.blocks.last_height();
+        const auto indexes = block_locator_indexes(last_height);
+
+        for (auto index = indexes.begin(); index != indexes.end(); ++index)
+        {
+            const auto result = interface_.blocks.get(*index);
+            if (!result)
+                return finish_fetch(slock, handle_fetch,
+                    error::not_found, locator);
+
+            locator.push_back(hash_block_header(result.header()));
+        }
 
         return finish_fetch(slock, handle_fetch,
-            error::success, result.header());
+            error::success, locator);
     };
-    fetch(do_fetch);
+
+    fetch_ordered(do_fetch);
 }
 
-void blockchain_impl::fetch_block_header(const hash_digest& hash,
-    fetch_handler_block_header handle_fetch)
-{
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
-    {
-        const auto result = interface_.blocks.get(hash);
-        if (!result)
-            return finish_fetch(slock, handle_fetch,
-                error::not_found, block_header_type());
-
-        return finish_fetch(slock, handle_fetch,
-            error::success, result.header());
-    };
-    fetch(do_fetch);
-}
-
-// Fetch start-base-stop|top+1(max 500)
-void blockchain_impl::fetch_locator_block_hashes(
-    const get_blocks_type& locator, const hash_digest& threshold,
-    fetch_handler_locator_block_hashes handle_fetch)
+// This may generally execute 502 but as many as 531+ queries.
+// TODO: Collect asynchronous calls in a function invoked directly by caller.
+void blockchain_impl::fetch_locator_blocks(const get_blocks_type& locator,
+    const hash_digest& threshold, fetch_handler_locator_blocks handle_fetch)
 {
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
@@ -248,7 +266,7 @@ void blockchain_impl::fetch_locator_block_hashes(
                 start = std::max(start_result.height(), start);
         }
 
-
+        // This largest portion can be parallelized.
         // Build the hash list until we hit last or the blockchain top.
         hash_list hashes;
         for (size_t index = start + 1; index < stop; ++index)
@@ -264,16 +282,19 @@ void blockchain_impl::fetch_locator_block_hashes(
         return finish_fetch(slock, handle_fetch,
             error::success, hashes);
     };
-    fetch(do_fetch);
+
+    fetch_ordered(do_fetch);
 }
 
+// This may generally execute up to 500 queries.
+// TODO: Collect asynchronous calls in a function invoked directly by caller.
 void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,
     fetch_handler_missing_block_hashes handle_fetch)
 {
     const auto do_fetch = [this, hashes, handle_fetch](size_t slock)
     {
         hash_list missing;
-        for (const auto& hash: hashes)
+        for (const auto& hash : hashes)
         {
             const auto result = interface_.blocks.get(hash);
             if (!result)
@@ -283,7 +304,39 @@ void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,
         return finish_fetch(slock, handle_fetch,
             error::success, missing);
     };
-    fetch(do_fetch);
+    fetch_ordered(do_fetch);
+}
+
+void blockchain_impl::fetch_block_header(uint64_t height,
+    fetch_handler_block_header handle_fetch)
+{
+    const auto do_fetch = [this, height, handle_fetch](size_t slock)
+    {
+        const auto result = interface_.blocks.get(height);
+        if (!result)
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, block_header_type());
+
+        return finish_fetch(slock, handle_fetch,
+            error::success, result.header());
+    };
+    fetch_parallel(do_fetch);
+}
+
+void blockchain_impl::fetch_block_header(const hash_digest& hash,
+    fetch_handler_block_header handle_fetch)
+{
+    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    {
+        const auto result = interface_.blocks.get(hash);
+        if (!result)
+            return finish_fetch(slock, handle_fetch,
+                error::not_found, block_header_type());
+
+        return finish_fetch(slock, handle_fetch,
+            error::success, result.header());
+    };
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_block_transaction_hashes(
@@ -319,7 +372,7 @@ void blockchain_impl::fetch_block_height(const hash_digest& hash,
         return finish_fetch(slock, handle_fetch,
             error::success, result.height());
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_last_height(
@@ -334,7 +387,7 @@ void blockchain_impl::fetch_last_height(
         return finish_fetch(slock, handle_fetch,
             error::success, last_height);
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_transaction(
@@ -351,7 +404,7 @@ void blockchain_impl::fetch_transaction(
         return finish_fetch(slock, handle_fetch,
             error::success, result.transaction());
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_transaction_index(
@@ -368,7 +421,7 @@ void blockchain_impl::fetch_transaction_index(
         return finish_fetch(slock, handle_fetch,
             error::success, result.height(), result.index());
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_spend(const output_point& outpoint,
@@ -384,7 +437,7 @@ void blockchain_impl::fetch_spend(const output_point& outpoint,
         return finish_fetch(slock, handle_fetch,
             error::success, input_point{result.hash(), result.index()});
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_history(const payment_address& address,
@@ -398,7 +451,7 @@ void blockchain_impl::fetch_history(const payment_address& address,
             from_height);
         return finish_fetch(slock, handle_fetch, error::success, history);
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_stealth(const binary_type& prefix,
@@ -410,7 +463,7 @@ void blockchain_impl::fetch_stealth(const binary_type& prefix,
         const auto stealth = interface_.stealth.scan(prefix, from_height);
         return finish_fetch(slock, handle_fetch, error::success, stealth);
     };
-    fetch(do_fetch);
+    fetch_parallel(do_fetch);
 }
 
 } // namespace chain

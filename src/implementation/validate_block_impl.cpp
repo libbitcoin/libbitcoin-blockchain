@@ -49,7 +49,6 @@ block_header_type validate_block_impl::fetch_block(size_t fetch_height) const
         return orphan_chain_[fetch_index]->actual().header;
     }
 
-    // TODO: This is over-requesting, we only need the bits and timestamp.
     auto result = interface_.blocks.get(fetch_height);
     BITCOIN_ASSERT(result);
     return result.header();

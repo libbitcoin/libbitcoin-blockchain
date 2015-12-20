@@ -92,13 +92,13 @@ public:
     using fetch_handler = std::function<
         void (const std::error_code&, const Message&)>;
 
+    typedef fetch_handler<hash_list> fetch_handler_locator_blocks;
+    typedef fetch_handler<block_locator_type> fetch_handler_block_locator;
     typedef fetch_handler<block_header_type> fetch_handler_block_header;
-    typedef fetch_handler<hash_list> fetch_handler_locator_block_hashes;
     typedef fetch_handler<hash_list> fetch_handler_missing_block_hashes;
     typedef fetch_handler<hash_list> fetch_handler_block_transaction_hashes;
     typedef fetch_handler<uint64_t> fetch_handler_block_height;
     typedef fetch_handler<uint64_t> fetch_handler_last_height;
-    typedef fetch_handler<block_locator_type> fetch_handler_block_locator;
     typedef fetch_handler<transaction_type> fetch_handler_transaction;
 
     typedef std::function<void(const std::error_code&, uint64_t, uint64_t)>
@@ -194,6 +194,20 @@ public:
     /**
      * Fetches the set of block hashes indicated by the block locator.
      *
+     * @param[in]   handle_fetch    Completion handler for fetch operation.
+     * @code
+     *  void handle_fetch(
+     *      const std::error_code& ec,         // Status of operation
+     *      const block_locator_type& locator  // The current block locator.
+     *  );
+     * @endcode
+     */
+    virtual void fetch_block_locator(
+        fetch_handler_block_locator handle_fetch) = 0;
+
+    /**
+     * Fetches the set of block hashes indicated by the block locator.
+     *
      * @param[in]   locator         Get blocks (block locator) message
      * @param[in]   threshold       The minimum start block hash (if found).
      * @param[in]   handle_fetch    Completion handler for fetch operation.
@@ -204,9 +218,9 @@ public:
      *  );
      * @endcode
      */
-    virtual void fetch_locator_block_hashes(const get_blocks_type& locator,
+    virtual void fetch_locator_blocks(const get_blocks_type& locator,
         const hash_digest& threshold,
-        fetch_handler_locator_block_hashes handle_fetch) = 0;
+        fetch_handler_locator_blocks handle_fetch) = 0;
     
     /**
      * Fetches the subset of specified block hashes that are not stored.

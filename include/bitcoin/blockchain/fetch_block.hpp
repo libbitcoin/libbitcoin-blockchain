@@ -44,7 +44,7 @@ typedef std::function<void (const std::error_code&, const block_type&)>
  * @code
  *  void handle_fetch(
  *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block header
+ *      const block_type& blk       // Block
  *  );
  * @endcode
  */
@@ -62,7 +62,7 @@ BCB_API void fetch_block(blockchain& chain, uint64_t height,
  * @code
  *  void handle_fetch(
  *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block header
+ *      const block_type& blk       // Block
  *  );
  * @endcode
  */
