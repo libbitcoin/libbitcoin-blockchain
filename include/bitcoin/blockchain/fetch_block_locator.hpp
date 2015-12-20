@@ -35,6 +35,7 @@ typedef std::function<void (const std::error_code&, const block_locator_type&)>
 /**
  * Creates a block_locator object used to download the blockchain.
  *
+ * @param[in]   chain           The blockchain instance.
  * @param[in]   handle_fetch    Completion handler for fetch operation.
  * @code
  *  void handle_fetch(

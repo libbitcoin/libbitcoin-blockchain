@@ -34,7 +34,7 @@ using std::placeholders::_2;
 // This is just an alias until we rename blockchain_fetch_handler_block_locator
 typedef blockchain_fetch_handler_block_locator block_locator_fetch_handler;
 
-// This class that is used only locally.
+// This class is used only locally.
 class block_locator_fetcher
   : public std::enable_shared_from_this<block_locator_fetcher>
 {
