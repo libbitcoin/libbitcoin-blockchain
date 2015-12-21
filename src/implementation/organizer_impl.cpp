@@ -51,7 +51,7 @@ static size_t count_inputs(const block_type& block)
 
 bool organizer_impl::strict(size_t fork_point)
 {
-    return checkpoints_.empty() || fork_point > checkpoints_.back().height();
+    return checkpoints_.empty() || fork_point >= checkpoints_.back().height();
 }
 
 std::error_code organizer_impl::verify(size_t fork_point,
