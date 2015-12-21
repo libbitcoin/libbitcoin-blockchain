@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_FETCH_BLOCK_HPP
 
 #include <cstdint>
+#include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -28,46 +29,33 @@
 
 namespace libbitcoin {
 namespace chain {
-    
-// TODO: rename to block_fetch_handler (interface break).
-typedef std::function<void (const std::error_code&, const block_type&)>
-    blockchain_fetch_handler_block;
+
+typedef std::function<void(const std::error_code&,
+    std::shared_ptr<block_type>)> block_fetch_handler;
 
 /**
  * Fetch a block by height.
  *
- * If the blockchain reorganises, operation may fail halfway.
+ * If the blockchain reorganises this call may fail.
  *
  * @param[in]   chain           Blockchain service
  * @param[in]   height          Height of block to fetch.
  * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block
- *  );
- * @endcode
  */
 BCB_API void fetch_block(blockchain& chain, uint64_t height,
-    blockchain_fetch_handler_block handle_fetch);
+    block_fetch_handler handle_fetch);
 
 /**
  * Fetch a block by hash.
  *
- * If the blockchain reorganises, operation may fail halfway.
+ * If the blockchain reorganises this call may fail.
  *
  * @param[in]   chain           Blockchain service
  * @param[in]   hash            Block hash
  * @param[in]   handle_fetch    Completion handler for fetch operation.
- * @code
- *  void handle_fetch(
- *      const std::error_code& ec,  // Status of operation
- *      const block_type& blk       // Block
- *  );
- * @endcode
  */
 BCB_API void fetch_block(blockchain& chain, const hash_digest& hash,
-    blockchain_fetch_handler_block handle_fetch);
+    block_fetch_handler handle_fetch);
 
 } // namespace chain
 } // namespace libbitcoin

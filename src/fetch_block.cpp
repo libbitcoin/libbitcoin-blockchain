@@ -22,6 +22,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <system_error>
 #include <bitcoin/blockchain/blockchain.hpp>
 
@@ -31,115 +32,131 @@ namespace chain {
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-// This is just an alias until we rename blockchain_fetch_handler_block.
-typedef blockchain_fetch_handler_block block_fetch_handler;
-
+// TODO: split into header.
 // This class is used only locally.
 class block_fetcher
   : public std::enable_shared_from_this<block_fetcher>
 {
 public:
     block_fetcher(blockchain& chain)
-      : blockchain_(chain), stopped_(false)
+      : blockchain_(chain)
     {
     }
 
     template <typename BlockIndex>
     void start(const BlockIndex& index, block_fetch_handler handler)
     {
-        // Keep the class in scope until this handler completes.
-        const auto self = shared_from_this();
-        const auto handle_fetch_header = [self](const std::error_code& ec,
-            const block_header_type& block_header)
-        {
-            if (self->stop_on_error(ec))
-                return;
+        // Create the block.
+        const auto block = std::make_shared<block_type>();
 
-            self->block_.header = block_header;
-            //self->fetch_hashes();
-        };
-
-        handler_ = handler;
-        blockchain_.fetch_block_header(index, handle_fetch_header);
+        blockchain_.fetch_block_header(index,
+            std::bind(&block_fetcher::handle_fetch_header,
+                shared_from_this(), _1, _2, block, handler));
     }
 
 private:
-    bool stop_on_error(const std::error_code& ec)
-    {
-        if (stopped_)
-            return true;
+    typedef std::shared_ptr<block_type> block_ptr;
 
+    void handle_fetch_header(const std::error_code& ec,
+        const block_header_type& header, block_ptr block,
+        block_fetch_handler handler)
+    {
         if (ec)
         {
-            stopped_ = true;
-            handler_(ec, block_type());
-            return true;
+            handler(ec, nullptr);
+            return;
         }
 
-        return false;
-    }
+        // Set the block header.
+        block->header = header;
+        const auto hash = hash_block_header(header);
 
-    //void fetch_hashes()
-    //{
-    //    blockchain_.fetch_block_transaction_hashes(
-    //        hash_block_header(block_.header),
-    //            std::bind(&fetch_block_t::fetch_transactions,
-    //                shared_from_this(), _1, _2));
-    //}
+        blockchain_.fetch_block_transaction_hashes(hash,
+            std::bind(&block_fetcher::fetch_transactions,
+                shared_from_this(), _1, _2, block, handler));
+    }
 
     void fetch_transactions(const std::error_code& ec,
-        const hash_list& tx_hashes)
+        const hash_list& hashes, block_ptr block, block_fetch_handler handler)
     {
-        if (stop_on_error(ec))
-            return;
-
-        ////////////////// TODO: use synchronizer //////////////////
-        block_.transactions.resize(tx_hashes.size());
-        handled_count_ = 0;
-        for (size_t tx_index = 0; tx_index < tx_hashes.size(); ++tx_index)
-            fetch_tx(tx_hashes[tx_index], tx_index);
-    }
-
-    void fetch_tx(const hash_digest& tx_hash, size_t tx_index)
-    {
-        const auto handle_fetch = [this, tx_index](const std::error_code& ec,
-            const transaction_type& tx)
+        if (ec)
         {
-            if (stop_on_error(ec))
-                return;
+            handler(ec, nullptr);
+            return;
+        }
 
-            BITCOIN_ASSERT(tx_index < block_.transactions.size());
-            block_.transactions[tx_index] = tx;
+        // Set the block transaction size.
+        const auto count = hashes.size();
+        block->transactions.resize(count);
 
-            // Atomicity: must increment and read value in one instruction.
-            const auto handled_count = ++handled_count_;
+        // This will be called exactly once by the synchronizer.
+        const auto completion_handler =
+            std::bind(&block_fetcher::handle_complete,
+                shared_from_this(), _1, _2, handler);
 
-            if (handled_count == block_.transactions.size())
-                handler_(error::success, block_);
-        };
+        // Synchronize transaction fetch calls to one completion call.
+        const auto complete = synchronizer<block_fetch_handler>(
+            completion_handler, count, "block_fetcher");
 
-        blockchain_.fetch_transaction(tx_hash, handle_fetch);
+        // blockchain::fetch_transaction is thread safe.
+        size_t index = 0;
+        for (const auto& hash: hashes)
+            blockchain_.fetch_transaction(hash,
+                std::bind(&block_fetcher::handle_fetch_transaction,
+                    shared_from_this(), _1, _2, index++, block, complete));
     }
 
+    void handle_fetch_transaction(const std::error_code& ec,
+        const transaction_type& transaction, size_t index, block_ptr block,
+        block_fetch_handler handler)
+    {
+        if (ec)
+        {
+            handler(ec, nullptr);
+            return;
+        }
+
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        // A vector write cannot be executed concurrently with read|write.
+        if (true)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+
+            // Set a transaction into the block.
+            block->transactions[index] = transaction;
+        }
+        ///////////////////////////////////////////////////////////////////////
+
+        handler(error::success, block);
+    }
+
+    // If ec success then there is no possibility that block is being written.
+    void handle_complete(const std::error_code& ec, block_ptr block,
+        block_fetch_handler handler)
+    {
+        if (ec)
+            handler(ec, nullptr);
+        else
+            handler(error::success, block);
+    }
+
+    std::mutex mutex_;
     blockchain& blockchain_;
-    block_type block_;
-    block_fetch_handler handler_;
-    std::atomic<size_t> handled_count_;
-    bool stopped_;
 };
 
 void fetch_block(blockchain& chain, size_t height,
-    blockchain_fetch_handler_block handle_fetch)
+    block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(height, handle_fetch);
 }
 
-void fetch_block(blockchain& chain, const hash_digest& block_hash,
-    blockchain_fetch_handler_block handle_fetch)
+void fetch_block(blockchain& chain, const hash_digest& hash,
+    block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
-    fetcher->start(block_hash, handle_fetch);
+    fetcher->start(hash, handle_fetch);
 }
 
 } // namespace chain
