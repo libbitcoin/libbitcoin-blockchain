@@ -63,9 +63,8 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
-    //// This should really be fetch_merkle_tree.
-    ////void fetch_block_transaction_hashes(const hash_digest& hash,
-    ////    transaction_hashes_fetch_handler handle_fetch);
+    void fetch_block_transaction_hashes(const hash_digest& hash,
+        transaction_hashes_fetch_handler handle_fetch);
 
     // fetch height of block by hash
     void fetch_block_height(const hash_digest& hash,

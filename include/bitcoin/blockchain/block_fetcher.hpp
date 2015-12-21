@@ -20,14 +20,19 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_FETCHER_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_FETCHER_HPP
 
-#include <atomic>
-#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 class BCB_API block_fetcher
   : public std::enable_shared_from_this<block_fetcher>
@@ -45,33 +50,33 @@ public:
     template <typename BlockIndex>
     void start(const BlockIndex& index, handler handle_fetch)
     {
-        // Keep the class in scope until this handler completes.
-        const auto self = shared_from_this();
-        const auto handle_fetch_header = [self](const code ec,
-            const chain::header block_header)
-        {
-            if (self->stop_on_error(ec))
-                return;
+        // Create the block.
+        const auto block = std::make_shared<chain::block>();
 
-            self->block_.header = block_header;
-            //self->fetch_hashes();
-        };
-
-        handler_ = handle_fetch;
-        blockchain_.fetch_block_header(index, handle_fetch_header);
+        blockchain_.fetch_block_header(index,
+            std::bind(&block_fetcher::handle_fetch_header,
+                shared_from_this(), _1, _2, block, handle_fetch));
     }
 
 private:
-    bool stop_on_error(const code& ec);
-    void fetch_tx(const hash_digest& tx_hash, size_t tx_index);
-    void fetch_transactions(const code& ec, const hash_list& tx_hashes);
-    //void fetch_hashes();
+    typedef std::shared_ptr<chain::block> block_ptr;
 
-    handler handler_;
-    chain::block block_;
+    void handle_fetch_header(const std::error_code& ec,
+        const chain::header& header, block_ptr block,
+        handler handle_fetch);
+
+    void fetch_transactions(const std::error_code& ec,
+        const hash_list& hashes, block_ptr block, handler handle_fetch);
+
+    void handle_fetch_transaction(const std::error_code& ec,
+        const chain::transaction& transaction, size_t index, block_ptr block,
+        handler handle_fetch);
+
+    void handle_complete(const std::error_code& ec, block_ptr block,
+        handler completion_handler);
+
+    std::mutex mutex_;
     block_chain& blockchain_;
-    std::atomic<size_t> handled_count_;
-    bool stopped_;
 };
 
 } // namespace blockchain
