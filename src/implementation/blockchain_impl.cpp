@@ -357,6 +357,7 @@ void blockchain_impl::fetch_block_transaction_hashes(
         return finish_fetch(slock, handle_fetch,
             error::success, hashes);
     };
+    fetch_parallel(do_fetch);
 }
 
 void blockchain_impl::fetch_block_height(const hash_digest& hash,
