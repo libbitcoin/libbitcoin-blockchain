@@ -43,15 +43,17 @@ using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
 // Consensus rule change activation and enforcement parameters.
-constexpr size_t sample = 1000u;
-constexpr size_t enforced = 950u;
-constexpr size_t activated = 750u;
 constexpr uint8_t version_4 = 4;
 constexpr uint8_t version_3 = 3;
 constexpr uint8_t version_2 = 2;
 constexpr uint8_t version_1 = 1;
 
 #ifdef ENABLE_TESTNET
+    // See bip34 specification section.
+    constexpr size_t sample = 100;
+    constexpr size_t enforced = 75;
+    constexpr size_t activated = 51;
+
     // Block 514 is the first block after activation, which was date-based.
     constexpr size_t bip16_activation_height = 514;
 
@@ -59,6 +61,11 @@ constexpr uint8_t version_1 = 1;
     constexpr size_t bip30_exception_height1 = 0;
     constexpr size_t bip30_exception_height2 = 0;
 #else
+    // See bip34 specification section.
+    constexpr size_t sample = 1000;
+    constexpr size_t enforced = 950;
+    constexpr size_t activated = 750;
+
     // Block 173805 is the first block after activation, which was date-based.
     constexpr size_t bip16_activation_height = 173805;
 
@@ -101,7 +108,7 @@ validate_block::validate_block(size_t height, const block_type& block,
 
 void validate_block::initialize_context()
 {
-    // Continue even if this is too small or empty (fast and simpler).
+    // Continue even if height < sample (simpler and faster overall).
     const auto versions = preceding_block_versions(sample);
 
     const auto ge_4 = [](uint8_t version) { return version >= version_4; };
@@ -115,7 +122,7 @@ void validate_block::initialize_context()
     const auto enforce = [](size_t count) { return count >= enforced; };
     const auto activate = [](size_t count) { return count >= activated; };
 
-    // version 4/3/2 are required based on 95% of preceding 1000 blocks.
+    // version 4/3/2 required based on 95% of preceding 1000 mainnet blocks.
     if (enforce(count_4))
         minimum_version_ = version_4;
     else if (enforce(count_3))
@@ -125,15 +132,15 @@ void validate_block::initialize_context()
     else
         minimum_version_ = version_1;
 
-    // bip65 is activated based on 75% of preceding 1000 blocks.
+    // bip65 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_4))
         activations_ |= script_context::bip65_enabled;
 
-    // bip66 is activated based on 75% of preceding 1000 blocks.
+    // bip66 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_3))
         activations_ |= script_context::bip66_enabled;
 
-    // bip34 is activated based on 75% of preceding 1000 blocks.
+    // bip34 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_2))
         activations_ |= script_context::bip34_enabled;
 
@@ -147,7 +154,7 @@ void validate_block::initialize_context()
         activations_ |= script_context::bip16_enabled;
 }
 
-// validate_version must be called first (to set activations_).
+// initialize_context must be called first (to set activations_).
 bool validate_block::is_active(script_context flag) const
 {
     if (!bc::is_active(activations_, flag))
