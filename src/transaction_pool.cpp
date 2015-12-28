@@ -226,11 +226,8 @@ void transaction_pool::fetch_missing_hashes(const hash_list& hashes,
     {
         hash_list missing;
         for (const auto& hash: hashes)
-        {
-            const auto it = tx_find(hash);
-            if (it != buffer_.end())
-                missing.push_back(it->hash);
-        }
+            if (tx_find(hash) == buffer_.end())
+                missing.push_back(hash);
 
         handle_fetch(error::success, missing);
     };
