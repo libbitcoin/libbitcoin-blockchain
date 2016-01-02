@@ -73,8 +73,11 @@ validate_block::versions validate_block_impl::preceding_block_versions(
     for (size_t index = 0; index < size; ++index)
     {
         const auto version = fetch_block(height_ - index - 1).version;
-        BITCOIN_ASSERT_MSG(version <= max_uint8, "insufficient version domain");
-        result.push_back(static_cast<uint8_t>(version));
+
+        // Some blocks have high versions, see block #390777.
+        static const auto maximum = static_cast<uint32_t>(max_uint8);
+        const auto normal = std::min(version, maximum);
+        result.push_back(static_cast<uint8_t>(normal));
     }
 
     return result;
