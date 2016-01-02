@@ -612,7 +612,9 @@ bool validate_block::connect_input(size_t index_in_parent,
     const auto& previous_output = input.previous_output;
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
-        log_warning(LOG_VALIDATE) << "Failure fetching input transaction.";
+        log_warning(LOG_VALIDATE)
+            << "Failure fetching input transaction ["
+            << encode_hash(previous_output.hash) << "]";
         return false;
     }
 
