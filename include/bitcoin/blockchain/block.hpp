@@ -31,7 +31,7 @@ BCB_API chain::block mainnet_genesis_block();
 
 BCB_API chain::block testnet_genesis_block();
 
-BCB_API chain::index_list block_locator_indexes(uint64_t top_height);
+BCB_API index_list block_locator_indexes(uint64_t top_height);
 
 BCB_API uint64_t block_value(uint64_t height);
 

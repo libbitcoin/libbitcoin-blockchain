@@ -40,7 +40,7 @@ class BCB_API validate_transaction
 {
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
-    typedef handle3<chain::transaction, hash_digest, chain::index_list>
+    typedef handle3<chain::transaction, hash_digest, index_list>
         validate_handler;
 
     validate_transaction(block_chain& chain, const chain::transaction& tx,
@@ -90,7 +90,7 @@ private:
     size_t last_block_height_;
     uint64_t value_in_;
     size_t current_input_;
-    chain::index_list unconfirmed_;
+    index_list unconfirmed_;
     validate_handler handle_validate_;
 };
 

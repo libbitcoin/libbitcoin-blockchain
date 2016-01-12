@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 
 #include <cstdint>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 
 // Now we use the generic helper definitions in libbitcoin to
@@ -42,6 +43,6 @@
 
 typedef uint32_t index_type;
 typedef uint64_t position_type;
+typedef std::vector<size_t> index_list;
 
 #endif
-

@@ -27,10 +27,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-// A list of indices. Used for creating block_locator objects or
-// Storing list of unconfirmed input indexes in tx pool.
-//typedef std::vector<size_t> index_list;
-
 enum class block_status
 {
     orphan,

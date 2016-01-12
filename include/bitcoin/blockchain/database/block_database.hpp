@@ -64,8 +64,6 @@ private:
     uint64_t size_limit_;
 };
 
-typedef std::vector<index_type> transaction_index_list;
-
 /**
  * Stores block_headers each with a list of transaction indexes.
  * Lookup possible by hash or height.

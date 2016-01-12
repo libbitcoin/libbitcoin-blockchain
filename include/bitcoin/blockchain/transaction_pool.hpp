@@ -48,7 +48,7 @@ public:
     typedef handle0 exists_handler;
     typedef handle1<chain::transaction> fetch_handler;
     typedef handle2<chain::transaction, hash_digest> confirm_handler;
-    typedef handle3<chain::transaction, hash_digest, chain::index_list>
+    typedef handle3<chain::transaction, hash_digest, index_list>
         validate_handler;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
@@ -96,11 +96,11 @@ protected:
         const block_chain::list& new_blocks,
         const block_chain::list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const chain::index_list& unconfirmed,
+        const hash_digest& hash, const index_list& unconfirmed,
         validate_handler handler);
 
     void do_store(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const chain::index_list& unconfirmed,
+        const hash_digest& hash, const index_list& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
     void do_validate(const chain::transaction& tx, validate_handler handler);
 

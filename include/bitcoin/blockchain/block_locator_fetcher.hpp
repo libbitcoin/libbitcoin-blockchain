@@ -47,7 +47,7 @@ private:
     void append(const code& ec, const chain::header& header);
 
     block_chain& blockchain_;
-    chain::index_list indexes_;
+    index_list indexes_;
     message::block_locator locator_;
     handler handler_;
     bool stopped_;
