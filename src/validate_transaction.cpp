@@ -40,19 +40,6 @@ using std::placeholders::_2;
 // Max transaction size is set to max block size (1,000,000).
 static constexpr uint32_t max_transaction_size = 1000000;
 
-/// Block 173805 is the first block after [April 1 2012]
-////static constexpr uint32_t bip16_switchover_height_mainnet = 173805;
-//// Block 514 is the first block after [Feb 15 2014].
-////static constexpr uint32_t bip16_switchover_height_testnet = 514;
-static constexpr uint32_t bip16_switchover_timestamp = 1333238400;
-
-enum validation_options : uint32_t
-{
-    none,
-    p2sh
-    // dersig
-};
-
 validate_transaction::validate_transaction(block_chain& chain,
     const chain::transaction& tx, const transaction_pool& pool,
     dispatcher& dispatch)
@@ -209,9 +196,13 @@ void validate_transaction::handle_previous_tx(const code& ec,
         return;
     }
 
-    // Should check for are inputs standard here...
+    ///////////////////////////////////////////////////////////////////////////
+    // HACK: this assumes that the mempool is operating at min block version 4.
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Should check if inputs are standard here...
     if (!connect_input(tx_, current_input_, previous_tx, parent_height,
-        last_block_height_, value_in_))
+        last_block_height_, value_in_, script_context::all_enabled))
     {
         const auto list = index_list{ current_input_ };
         handle_validate_(error::validate_inputs_failed, tx_, tx_hash_, list);
@@ -298,24 +289,33 @@ code validate_transaction::check_transaction(const transaction& tx)
 }
 
 // Validate script consensus conformance based on flags provided.
-static bool check_consensus(const script& prevout_script,
-    const transaction& current_tx, size_t input_index,
-    uint32_t options)
+bool validate_transaction::check_consensus(const script& prevout_script,
+    const transaction& current_tx, size_t input_index, uint32_t flags)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
     const auto input_index32 = static_cast<uint32_t>(input_index);
-    const auto bip16_enabled = ((options & validation_options::p2sh) != 0);
 
 #ifdef WITH_CONSENSUS
     using namespace bc::consensus;
     const auto previous_output_script = prevout_script.to_data(false);
     data_chunk current_transaction = current_tx.to_data();
 
-    const auto flags = (bip16_enabled ? verify_flags_p2sh : verify_flags_none);
+    // Convert native flags to libbitcoin-consensus flags.
+    uint32_t consensus_flags = verify_flags_none;
+
+    if ((flags & script_context::bip16_enabled) != 0)
+        consensus_flags |= verify_flags_p2sh;
+
+    if ((flags & script_context::bip65_enabled) != 0)
+        consensus_flags |= verify_flags_checklocktimeverify;
+
+    if ((flags & script_context::bip66_enabled) != 0)
+        consensus_flags |= verify_flags_dersig;
+
     const auto result = verify_script(current_transaction.data(),
         current_transaction.size(), previous_output_script.data(),
-        previous_output_script.size(), input_index32, flags);
+        previous_output_script.size(), input_index32, consensus_flags);
 
     const auto valid = (result == verify_result::verify_result_eval_true);
 #else
@@ -324,7 +324,7 @@ static bool check_consensus(const script& prevout_script,
     const auto& current_input_script = current_tx.inputs[input_index].script;
 
     const auto valid = script::verify(current_input_script,
-        previous_output_script, current_tx, input_index32, bip16_enabled);
+        previous_output_script, current_tx, input_index32, flags);
 #endif
 
     if (!valid)
@@ -334,37 +334,10 @@ static bool check_consensus(const script& prevout_script,
     return valid;
 }
 
-// Validate script consensus conformance, defaulting to p2sh.
-static bool check_consensus(const script& prevout_script,
-    const transaction& current_tx, size_t input_index)
-{
-    return check_consensus(prevout_script, current_tx, input_index,
-        validation_options::p2sh);
-}
-
-// Determine if BIP16 compliance is required for this block.
-static bool is_bip_16_enabled(const header& header, size_t height)
-{
-    // TODO: fix for testnet.
-    // Block 170060 contains invalid BIP 16 transaction before switchover date.
-    return header.timestamp >= bip16_switchover_timestamp;
-}
-
-// Validate script consensus conformance, calculating p2sh from block/height.
-bool validate_transaction::validate_consensus(const script& prevout_script,
-    const transaction& current_tx, size_t input_index, const header& header,
-    size_t height)
-{
-    uint32_t options = validation_options::none;
-    if (is_bip_16_enabled(header, height))
-        options = validation_options::p2sh;
-
-    return check_consensus(prevout_script, current_tx, input_index, options);
-}
-
 bool validate_transaction::connect_input(const transaction& tx,
     size_t current_input, const transaction& previous_tx,
-    size_t parent_height, size_t last_block_height, uint64_t& value_in)
+    size_t parent_height, size_t last_block_height, uint64_t& value_in,
+    uint32_t flags)
 {
     const auto& input = tx.inputs[current_input];
     const auto& previous_outpoint = tx.inputs[current_input].previous_output;
@@ -383,7 +356,7 @@ bool validate_transaction::connect_input(const transaction& tx,
             return false;
     }
 
-    if (!check_consensus(previous_output.script, tx, current_input))
+    if (!check_consensus(previous_output.script, tx, current_input, flags))
         return false;
 
     value_in += output_value;

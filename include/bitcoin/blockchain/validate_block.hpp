@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <system_error>
+#include <vector>
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -33,13 +34,15 @@ namespace blockchain {
 class BCB_API validate_block
 {
 public:
-    static bool is_special_duplicate(const chain::block& block, size_t height);
-
     code check_block() const;
     code accept_block() const;
     code connect_block() const;
 
+    /// Required to call before calling accept_block or connect_block.
+    void initialize_context();
+
 protected:
+    typedef std::vector<uint8_t> versions;
     typedef std::function<bool()> stopped_callback;
 
     validate_block(size_t height, const chain::block& block,
@@ -55,6 +58,7 @@ protected:
         size_t index_in_parent, size_t input_index) const = 0;
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;
+    virtual versions preceding_block_versions(size_t count) const = 0;
     virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
 
     // These have default implementations that can be overriden.
@@ -68,6 +72,8 @@ protected:
     // These are protected virtual for testability.
     boost::posix_time::ptime current_time() const;
     bool stopped() const;
+    virtual bool is_valid_version() const;
+    virtual bool is_active(chain::script_context flag) const;
     bool is_spent_duplicate(const chain::transaction& tx) const;
     bool is_valid_time_stamp(uint32_t timestamp) const;
     uint32_t work_required(bool is_testnet) const;
@@ -82,6 +88,8 @@ protected:
 private:
     bool testnet_;
     const size_t height_;
+    uint32_t activations_;
+    uint32_t minimum_version_;
     const chain::block& current_block_;
     const config::checkpoint::list& checkpoints_;
     const stopped_callback stop_callback_;

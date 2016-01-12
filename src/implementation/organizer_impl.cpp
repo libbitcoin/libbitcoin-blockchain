@@ -69,13 +69,15 @@ code organizer_impl::verify(uint64_t fork_point,
         return stopped();
     };
 
-    const validate_block_impl validate(database_, fork_point, orphan_chain,
+    validate_block_impl validate(database_, fork_point, orphan_chain,
         orphan_index, height, current_block, testnet_, checkpoints_, callback);
 
     // Checks that are independent of the chain.
     auto ec = validate.check_block();
     if (ec)
         return ec;
+
+    validate.initialize_context();
 
     // Checks that are dependent on height and preceding blocks.
     ec = validate.accept_block();

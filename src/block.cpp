@@ -118,7 +118,7 @@ index_list block_locator_indexes(size_t top_height)
     return indexes;
 }
 
-uint64_t block_value(uint64_t height)
+uint64_t block_mint(uint64_t height)
 {
     uint64_t subsidy = coin_price(initial_block_reward);
     subsidy >>= (height / reward_interval);

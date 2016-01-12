@@ -47,16 +47,16 @@ public:
         const transaction_pool& pool, dispatcher& dispatch);
     void start(validate_handler handler);
 
+    static bool check_consensus(const chain::script& prevout_script,
+        const chain::transaction& current_tx, size_t input_index,
+        uint32_t flags);
     static code check_transaction(const chain::transaction& tx);
     static bool connect_input(const chain::transaction& tx,
         size_t current_input, const chain::transaction& previous_tx,
-        size_t parent_height, size_t last_block_height, uint64_t& value_in);
+        size_t parent_height, size_t last_block_height, uint64_t& value_in,
+        uint32_t flags);
     static bool tally_fees(const chain::transaction& tx, uint64_t value_in,
         uint64_t& fees);
-
-    static bool validate_consensus(const chain::script& prevout_script,
-        const chain::transaction& current_tx, size_t input_index,
-        const chain::header& header, size_t height);
 
 private:
     code basic_checks() const;

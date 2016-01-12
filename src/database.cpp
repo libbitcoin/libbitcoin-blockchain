@@ -29,6 +29,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace chain;
 using namespace wallet;
 using boost::filesystem::path;
 
@@ -118,15 +119,29 @@ static size_t get_next_height(const block_database& blocks)
     return empty_chain ? 0 : current_height + 1;
 }
 
-void database::push(const chain::block& block)
+// BIP30 exception blocks.
+// github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+static const config::checkpoint exception1 =
+{ "00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec", 91842 };
+static const config::checkpoint exception2 =
+{ "00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721", 91880 };
+
+static bool is_allowed_duplicate(const header& head, size_t height)
+{
+    return
+        (height == exception1.height() && head.hash() == exception1.hash()) ||
+        (height == exception2.height() && head.hash() == exception2.hash());
+}
+
+void database::push(const block& block)
 {
     const auto block_height = get_next_height(blocks);
 
     for (size_t index = 0; index < block.transactions.size(); ++index)
     {
-        // Skip BIP30 special duplicates (coinbase txs of special blocks).
-        if (index == 0 && validate_block::is_special_duplicate(block,
-            block_height))
+        // Skip BIP30 allowed duplicates (coinbase txs of excepted blocks).
+        // We handle here because this is the lowest public level exposed.
+        if (index == 0 && is_allowed_duplicate(block.header, block_height))
             continue;
 
         const auto& tx = block.transactions[index];

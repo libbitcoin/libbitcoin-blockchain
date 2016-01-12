@@ -56,8 +56,28 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
 
 uint32_t validate_block_impl::previous_block_bits() const
 {
-    // Read block header d - 1 and return bits
+    // Read block header (top - 1) and return bits
     return fetch_block(height_ - 1).bits;
+}
+
+validate_block::versions validate_block_impl::preceding_block_versions(
+    size_t maximum) const
+{
+    // 1000 previous versions maximum  sample.
+    // 950 previous versions minimum required for enforcement.
+    // 750 previous versions minimum required for activation.
+    const auto size = std::min(maximum, height_);
+
+    // Read block (top - 1) through (top - 1000) and return version vector.
+    versions result;
+    for (size_t index = 0; index < size; ++index)
+    {
+        const auto version = fetch_block(height_ - index - 1).version;
+        BITCOIN_ASSERT_MSG(version <= max_uint8, "insufficient version domain");
+        result.push_back(static_cast<uint8_t>(version));
+    }
+
+    return result;
 }
 
 uint64_t validate_block_impl::actual_timespan(size_t interval) const
