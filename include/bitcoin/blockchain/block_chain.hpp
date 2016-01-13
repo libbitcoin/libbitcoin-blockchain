@@ -94,7 +94,8 @@ public:
     typedef handle1<stealth> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
     typedef handle1<block_info> store_block_handler;
-    typedef handle3<uint64_t, list, list> reorganize_handler;
+    typedef std::function<bool(const std::error_code&, uint64_t, const list&,
+        const list&)> reorganize_handler;
 
     /// Create checksum so spend can be matched with corresponding
     /// output point without needing the whole previous outpoint.

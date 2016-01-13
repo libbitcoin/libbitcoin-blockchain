@@ -92,7 +92,7 @@ protected:
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
 
-    void handle_reorganized(const code& ec, size_t fork_point,
+    bool handle_reorganized(const code& ec, size_t fork_point,
         const block_chain::list& new_blocks,
         const block_chain::list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,

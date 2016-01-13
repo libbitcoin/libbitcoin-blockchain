@@ -198,22 +198,26 @@ void transaction_pool::exists(const hash_digest& tx_hash,
     dispatch_.ordered(get_existence);
 }
 
-void transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
+// new blocks come in - remove txs in new
+// old blocks taken out - resubmit txs in old
+bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
     const block_chain::list& new_blocks,
     const block_chain::list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
+        log::debug(LOG_BLOCKCHAIN)
+            << "Stopping transaction pool: " << ec.message();
         stop();
-        return;
+        return false;
     }
 
     if (ec)
     {
         log::debug(LOG_BLOCKCHAIN)
-            << "Failure in tx pool reorganize: " << ec.message();
+            << "Failure in tx pool reorganize handler: " << ec.message();
         stop();
-        return;
+        return false;
     }
 
     log::debug(LOG_BLOCKCHAIN)
@@ -231,11 +235,7 @@ void transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
             std::bind(&transaction_pool::delete_all,
                 this, error::blockchain_reorganized));
 
-    // new blocks come in - remove txs in new
-    // old blocks taken out - resubmit txs in old
-    blockchain_.subscribe_reorganize(
-        std::bind(&transaction_pool::handle_reorganized,
-            this, _1, _2, _3, _4));
+    return true;
 }
 
 void transaction_pool::add(const transaction& tx, confirm_handler handler)

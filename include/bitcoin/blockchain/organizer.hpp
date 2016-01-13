@@ -61,7 +61,7 @@ class BCB_API organizer
 {
 public:
     typedef std::shared_ptr<organizer> ptr;
-    typedef subscriber<const code&, uint64_t, const block_chain::list&,
+    typedef resubscriber<const code&, uint64_t, const block_chain::list&,
         const block_chain::list&> reorganize_subscriber;
 
     organizer(threadpool& pool, orphan_pool& orphans, simple_chain& chain);
