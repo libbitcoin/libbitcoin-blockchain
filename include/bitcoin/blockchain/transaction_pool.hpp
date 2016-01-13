@@ -46,6 +46,7 @@ class BCB_API transaction_pool
 {
 public:
     typedef handle0 exists_handler;
+    typedef handle1<hash_list> missing_hashes_fetch_handler;
     typedef handle1<chain::transaction> fetch_handler;
     typedef handle2<chain::transaction, hash_digest> confirm_handler;
     typedef handle3<chain::transaction, hash_digest, index_list>
@@ -65,6 +66,8 @@ public:
     void stop();
 
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    void fetch_missing_hashes(const hash_list& hashes,
+        missing_hashes_fetch_handler handler);
     void exists(const hash_digest& tx_hash, exists_handler handler);
     void validate(const chain::transaction& tx, validate_handler handler);
     void store(const chain::transaction& tx, confirm_handler confirm_handler,

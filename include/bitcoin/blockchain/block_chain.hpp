@@ -83,6 +83,7 @@ public:
     typedef handle0 block_import_handler;
     typedef handle0 result_handler;
     typedef handle1<std::shared_ptr<chain::block>> block_fetch_handler;
+    typedef handle1<hash_list> missing_block_hashes_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
     typedef handle1<chain::transaction> transaction_fetch_handler;
@@ -116,6 +117,9 @@ public:
 
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handle_fetch) = 0;
+
+    virtual void fetch_missing_block_hashes(const hash_list& hashes,
+        missing_block_hashes_fetch_handler handle_fetch) = 0;
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handle_fetch) = 0;

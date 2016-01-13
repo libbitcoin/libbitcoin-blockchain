@@ -68,6 +68,11 @@ public:
     {
     }
 
+    virtual void fetch_missing_block_hashes(const hash_list& hashes,
+        missing_block_hashes_fetch_handler handle_fetch)
+    {
+    }
+
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handle_fetch)
     {

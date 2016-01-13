@@ -213,11 +213,10 @@ void blockchain_impl::fetch_block_header(uint64_t height,
 }
 
 void blockchain_impl::fetch_block_header(const hash_digest& hash,
-    block_header_fetch_handler handle_fetch)
+    block_header_fetch_handler handler)
 {
-    const auto do_fetch = [this, hash, handle_fetch](size_t slock)
+    const auto do_fetch = [this, hash, handler](size_t slock)
     {
-        const auto handler = handle_fetch;
         const auto result = database_.blocks.get(hash);
         return result ?
             finish_fetch(slock, handler, error::success, result.header()) :
@@ -233,6 +232,21 @@ static hash_list to_hashes(const block_result& result)
         hashes.push_back(result.transaction_hash(index));
 
     return hashes;
+}
+
+void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,
+    missing_block_hashes_fetch_handler handler)
+{
+    const auto do_fetch = [this, hashes, handler](size_t slock)
+    {
+        hash_list missing;
+        for (const auto& hash: hashes)
+            if (!database_.blocks.get(hash))
+                missing.push_back(hash);
+
+        return finish_fetch(slock, handler, error::success, missing);
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_block_transaction_hashes(
