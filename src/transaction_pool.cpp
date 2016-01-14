@@ -38,17 +38,18 @@ using std::placeholders::_3;
 using std::placeholders::_4;
 
 transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
-    size_t capacity)
+    size_t capacity, bool consistency)
   : stopped_(true),
     buffer_(capacity),
     dispatch_(pool, NAME),
-    blockchain_(chain) 
+    blockchain_(chain),
+    maintain_consistency_(consistency)
 {
 }
 
 transaction_pool::~transaction_pool()
 {
-    delete_all(error::service_stopped);
+    clear(error::service_stopped);
 }
 
 void transaction_pool::start()
@@ -249,21 +250,33 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
         << ") replace blocks (" << replaced_blocks.size() << ")";
 
     if (replaced_blocks.empty())
+    {
+        // Remove memory pool transactions that also exist in new blocks.
         dispatch_.ordered(
-            std::bind(&transaction_pool::delete_superseded,
+            std::bind(&transaction_pool::remove,
                 this, new_blocks));
+    }
     else
+    {
+        // See http://www.jwz.org/doc/worse-is-better.html
+        // for why we take this approach. We return with an error_code.
+        // An alternative would be resubmit all tx from the cleared blocks.
         dispatch_.ordered(
-            std::bind(&transaction_pool::delete_all,
+            std::bind(&transaction_pool::clear,
                 this, error::blockchain_reorganized));
+    }
 
     return true;
 }
 
+// Entry methods.
+// ----------------------------------------------------------------------------
+
+// A new transaction has been received, add it to the memory pool.
 void transaction_pool::add(const transaction& tx, confirm_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
-    if (buffer_.size() == buffer_.capacity())
+    if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
         delete_package(error::pool_filled);
 
     // Store a precomputed tx hash to make lookups faster.
@@ -271,26 +284,27 @@ void transaction_pool::add(const transaction& tx, confirm_handler handler)
 }
 
 // There has been a reorg, clear the memory pool.
-// The alternative would be resubmit all tx from the cleared blocks.
-// Ordering would be reverse of chain age and then mempool by age.
-void transaction_pool::delete_all(const code& ec)
+void transaction_pool::clear(const code& ec)
 {
-    // See http://www.jwz.org/doc/worse-is-better.html
-    // for why we take this approach.
-    // We return with an error_code and don't handle this case.
     for (const auto& entry: buffer_)
         entry.handle_confirm(ec, entry.tx, entry.hash);
 
     buffer_.clear();
 }
 
-// Delete mempool txs that are obsoleted by new blocks acceptance.
-void transaction_pool::delete_superseded(const block_chain::list& blocks)
+// Delete memory pool txs that are obsoleted by a new block acceptance.
+void transaction_pool::remove(const block_chain::list& blocks)
 {
-    // Deletion by hash returns success code, the other a double-spend error.
+    // Delete by hash sets a success code.
     delete_confirmed_in_blocks(blocks);
-    delete_spent_in_blocks(blocks);
+
+    // Delete by spent sets a double-spend error.
+    if (maintain_consistency_)
+        delete_spent_in_blocks(blocks);
 }
+
+// Consistency methods.
+// ----------------------------------------------------------------------------
 
 // Delete mempool txs that are duplicated in the new blocks.
 void transaction_pool::delete_confirmed_in_blocks(

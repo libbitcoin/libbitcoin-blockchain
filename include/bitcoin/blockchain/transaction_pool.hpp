@@ -55,7 +55,8 @@ public:
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
-    transaction_pool(threadpool& pool, block_chain& chain, size_t capacity);
+    transaction_pool(threadpool& pool, block_chain& chain, size_t capacity,
+        bool consistency);
     ~transaction_pool();
 
     /// This class is not copyable.
@@ -108,8 +109,10 @@ protected:
     void do_validate(const chain::transaction& tx, validate_handler handler);
 
     void add(const chain::transaction& tx, confirm_handler handler);
-    void delete_all(const code& ec);
-    void delete_superseded(const block_chain::list& blocks);
+    void remove(const block_chain::list& blocks);
+    void clear(const code& ec);
+
+    // testable private
     void delete_spent_in_blocks(const block_chain::list& blocks);
     void delete_confirmed_in_blocks(const block_chain::list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
@@ -128,6 +131,7 @@ protected:
     buffer buffer_;
     dispatcher dispatch_;
     block_chain& blockchain_;
+    const bool maintain_consistency_;
 };
 
 } // namespace blockchain
