@@ -38,6 +38,7 @@ public:
     typedef std::vector<block_detail::ptr> list;
 
     block_detail(const chain::block& actual_block);
+    block_detail(std::shared_ptr<chain::block> actual_block);
     block_detail(const chain::header& actual_block_header);
     chain::block& actual();
     const chain::block& actual() const;
@@ -51,11 +52,11 @@ public:
     const code& error() const;
 
 private:
-    std::shared_ptr<chain::block> actual_block_;
-    const hash_digest block_hash_;
+    code code_;
     bool processed_;
     block_info info_;
-    code code_;
+    const hash_digest block_hash_;
+    std::shared_ptr<chain::block> actual_block_;
 };
 
 } // namespace chain

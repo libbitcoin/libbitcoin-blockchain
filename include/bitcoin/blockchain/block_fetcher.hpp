@@ -38,7 +38,7 @@ class BCB_API block_fetcher
   : public std::enable_shared_from_this<block_fetcher>
 {
 public:
-    typedef block_chain::block_fetch_handler handler;
+    typedef handle1<std::shared_ptr<chain::block>> handler;
 
     static void fetch(block_chain& chain, uint64_t height,
         handler handle_fetch);

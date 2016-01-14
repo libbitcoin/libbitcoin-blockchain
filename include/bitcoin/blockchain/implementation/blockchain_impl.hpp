@@ -23,6 +23,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -52,54 +53,61 @@ public:
     void stop(result_handler handler);
     void stop();
 
-    void store(const chain::block& block, block_store_handler handler);
-    void import(const chain::block& block, block_import_handler handler);
+    void store(std::shared_ptr<chain::block> block,
+        block_store_handler handler);
 
-    // fetch block header by height
-    void fetch_block_header(uint64_t height,
-        block_header_fetch_handler handler);
+    void import(std::shared_ptr<chain::block> block,
+        block_import_handler handler);
 
-    // fetch block header by hash
-    void fetch_block_header(const hash_digest& hash,
-        block_header_fetch_handler handler);
+    /// fetch a block locator relative to the current top and threshold
+    void fetch_block_locator(block_locator_fetch_handler handler);
 
-    // fetch the set of block hashes indicated by the block locator
+    /// fetch the set of block hashes indicated by the block locator
     void fetch_locator_block_hashes(const message::get_blocks& locator,
         const hash_digest& threshold,
         locator_block_hashes_fetch_handler handler);
 
-    // fetch subset of specified block hashes that are not stored
+    /// fetch subset of specified block hashes that are not stored
     void fetch_missing_block_hashes(const hash_list& hashes,
         missing_block_hashes_fetch_handler handler);
 
+    /// fetch block header by height
+    void fetch_block_header(uint64_t height,
+        block_header_fetch_handler handler);
+
+    /// fetch block header by hash
+    void fetch_block_header(const hash_digest& hash,
+        block_header_fetch_handler handler);
+
+    /// fetch hashes of transactions for a block
     void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler);
 
-    // fetch height of block by hash
+    /// fetch height of block by hash
     void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler);
 
-    // fetch height of latest block
+    /// fetch height of latest block
     void fetch_last_height(last_height_fetch_handler handler);
 
-    // fetch transaction by hash
+    /// fetch transaction by hash
     void fetch_transaction(const hash_digest& hash,
         transaction_fetch_handler handler);
 
-    // fetch height and offset within block of transaction by hash
+    /// fetch height and offset within block of transaction by hash
     void fetch_transaction_index(const hash_digest& hash,
         transaction_index_fetch_handler handler);
 
-    // fetch spend of an output point
+    /// fetch spend of an output point
     void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler);
 
-    // fetch outputs, values and spends for an address.
+    /// fetch outputs, values and spends for an address.
     void fetch_history(const wallet::payment_address& address,
         history_fetch_handler handler, const uint64_t limit=0,
         const uint64_t from_height=0);
 
-    // fetch stealth results.
+    /// fetch stealth results.
     void fetch_stealth(const binary_type& filter,
         stealth_fetch_handler handler, uint64_t from_height = 0);
 
@@ -122,12 +130,18 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(const chain::block& block, block_store_handler handler);
+    void do_store(std::shared_ptr<chain::block> block,
+        block_store_handler handler);
 
-    // Uses sequential lock to try to read shared data.
+    // Fetch uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
     // sleep for a small amount of time and then retry read operation.
-    void fetch(perform_read_functor perform_read);
+
+    // Asynchronous fetch.
+    void fetch_parallel(perform_read_functor perform_read);
+
+    // Ordered fetch (order only amoung other calls to fetch_ordered).
+    void fetch_ordered(perform_read_functor perform_read);
 
     template <typename Handler, typename... Args>
     bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
@@ -145,8 +159,11 @@ private:
 
     bool stopped();
 
+    // Queue for reads of the blockchain.
+    dispatcher read_dispatch_;
+
     // Queue for writes to the blockchain.
-    dispatcher dispatch_;
+    dispatcher write_dispatch_;
 
     // Lock the database directory with a file lock.
     boost::interprocess::file_lock flock_;

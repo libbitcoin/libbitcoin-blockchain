@@ -44,7 +44,7 @@ organizer::organizer(threadpool& pool, orphan_pool& orphans,
   : orphans_(orphans),
     chain_(chain),
     subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME)),
-    stopped_(true)
+    stopped_(false)
 {
 }
 
@@ -234,14 +234,16 @@ void organizer::notify_reorganize(uint64_t fork_point,
 
 void organizer::subscribe_reorganize(block_chain::reorganize_handler handler)
 {
-    subscriber_->subscribe(handler);
+    if (stopped())
+        handler(error::service_stopped, 0, {}, {});
+    else
+        subscriber_->subscribe(handler);
 }
 
 void organizer::notify_stop()
 {
-    static const uint64_t fork_point = 0;
-    subscriber_->relay(error::service_stopped, fork_point,
-        block_chain::list(), block_chain::list());
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, 0, {}, {});
 }
 
 } // namespace blockchain

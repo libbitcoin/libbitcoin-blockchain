@@ -80,22 +80,21 @@ public:
     typedef std::shared_ptr<chain::block> ptr;
     typedef std::vector<ptr> list;
     
-    typedef handle0 block_import_handler;
     typedef handle0 result_handler;
-    typedef handle1<std::shared_ptr<chain::block>> block_fetch_handler;
+    typedef handle0 block_import_handler;
+    typedef handle1<block_info> block_store_handler;
+    typedef handle1<chain::header> block_header_fetch_handler;
+    typedef handle1<message::get_blocks> block_locator_fetch_handler;
     typedef handle1<hash_list> locator_block_hashes_fetch_handler;
     typedef handle1<hash_list> missing_block_hashes_fetch_handler;
-    typedef handle1<chain::input_point> spend_fetch_handler;
-    typedef handle1<chain::header> block_header_fetch_handler;
-    typedef handle1<chain::transaction> transaction_fetch_handler;
-    typedef handle1<message::block_locator> block_locator_fetch_handler;
-    typedef handle1<uint64_t> last_height_fetch_handler;
-    typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
+    typedef handle1<uint64_t> block_height_fetch_handler;
+    typedef handle1<uint64_t> last_height_fetch_handler;
+    typedef handle1<chain::transaction> transaction_fetch_handler;
+    typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<history> history_fetch_handler;
     typedef handle1<stealth> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
-    typedef handle1<block_info> block_store_handler;
     typedef std::function<bool(const std::error_code&, uint64_t, const list&,
         const list&)> reorganize_handler;
 
@@ -107,24 +106,26 @@ public:
     virtual void stop(result_handler handler) = 0;
     virtual void stop() = 0;
 
-    virtual void store(const chain::block& block,
-        block_store_handler handler) = 0;
+    virtual void store(std::shared_ptr<chain::block> block,
+        block_store_handler handle_store) = 0;
 
-    virtual void import(const chain::block& import_block,
-        block_import_handler handler) = 0;
+    virtual void import(std::shared_ptr<chain::block> block,
+        block_import_handler handle_import) = 0;
+
+    virtual void fetch_block_locator(block_locator_fetch_handler handler) = 0;
+
+    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold,
+        locator_block_hashes_fetch_handler handler) = 0;
+
+    virtual void fetch_missing_block_hashes(const hash_list& hashes,
+        missing_block_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_header(uint64_t height,
         block_header_fetch_handler handler) = 0;
 
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) = 0;
-
-    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold,
-        missing_block_hashes_fetch_handler handler) = 0;
-
-    virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) = 0;

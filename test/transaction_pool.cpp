@@ -48,12 +48,12 @@ public:
     {
     }
 
-    virtual void store(const block& block,
+    virtual void store(std::shared_ptr<chain::block> block,
         block_store_handler handler)
     {
     }
 
-    virtual void import(const block& import_block,
+    virtual void import(std::shared_ptr<chain::block> block,
         block_import_handler handler)
     {
     }
@@ -65,6 +65,10 @@ public:
 
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_block_locator(block_locator_fetch_handler handle_fetch)
     {
     }
 
