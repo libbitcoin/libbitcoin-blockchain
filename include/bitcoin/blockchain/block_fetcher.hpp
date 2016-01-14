@@ -21,9 +21,8 @@
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_FETCHER_HPP
 
 #include <cstdint>
-#include <functional>
 #include <memory>
-#include <mutex>
+#include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -31,54 +30,35 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using std::placeholders::_1;
-using std::placeholders::_2;
+typedef std::function<void(const std::error_code&, chain::block::ptr)>
+    block_fetch_handler;
 
-class BCB_API block_fetcher
-  : public std::enable_shared_from_this<block_fetcher>
-{
-public:
-    typedef handle1<std::shared_ptr<chain::block>> handler;
+/**
+ * Fetch a block by height.
+ *
+ * If the blockchain reorganises this call may fail.
+ *
+ * @param[in]   chain           Blockchain service
+ * @param[in]   height          Height of block to fetch.
+ * @param[in]   handle_fetch    Completion handler for fetch operation.
+ */
+BCB_API void fetch_block(block_chain& chain, uint64_t height,
+    block_fetch_handler handle_fetch);
 
-    static void fetch(block_chain& chain, uint64_t height, handler handler);
-    static void fetch(block_chain& chain, const hash_digest& hash,
-        handler handler);
+/**
+ * Fetch a block by hash.
+ *
+ * If the blockchain reorganises this call may fail.
+ *
+ * @param[in]   chain           Blockchain service
+ * @param[in]   hash            Block hash
+ * @param[in]   handle_fetch    Completion handler for fetch operation.
+ */
+BCB_API void fetch_block(block_chain& chain, const hash_digest& hash,
+    block_fetch_handler handle_fetch);
 
-    block_fetcher(block_chain& chain);
-
-    template <typename BlockIndex>
-    void start(const BlockIndex& index, handler handle_fetch)
-    {
-        // Create the block.
-        const auto block = std::make_shared<chain::block>();
-
-        blockchain_.fetch_block_header(index,
-            std::bind(&block_fetcher::handle_fetch_header,
-                shared_from_this(), _1, _2, block, handle_fetch));
-    }
-
-private:
-    typedef std::shared_ptr<chain::block> block_ptr;
-
-    void handle_fetch_header(const std::error_code& ec,
-        const chain::header& header, block_ptr block,
-        handler handle_fetch);
-
-    void fetch_transactions(const std::error_code& ec,
-        const hash_list& hashes, block_ptr block, handler handle_fetch);
-
-    void handle_fetch_transaction(const std::error_code& ec,
-        const chain::transaction& transaction, size_t index, block_ptr block,
-        handler handle_fetch);
-
-    void handle_complete(const std::error_code& ec, block_ptr block,
-        handler completion_handler);
-
-    std::mutex mutex_;
-    block_chain& blockchain_;
-};
-
-} // namespace blockchain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif
+

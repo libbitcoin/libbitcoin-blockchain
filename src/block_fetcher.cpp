@@ -19,119 +19,144 @@
  */
 #include <bitcoin/blockchain/block_fetcher.hpp>
 
+#include <atomic>
 #include <cstdint>
-#include <cstddef>
-#include <functional>
 #include <memory>
+#include <mutex>
 #include <system_error>
 #include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace chain;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-block_fetcher::block_fetcher(block_chain& chain)
-  : blockchain_(chain)
+// TODO: split into header.
+// This class is used only locally.
+class block_fetcher
+  : public std::enable_shared_from_this<block_fetcher>
 {
-}
+public:
+    block_fetcher(block_chain& chain)
+      : blockchain_(chain)
+    {
+    }
 
-void block_fetcher::fetch(block_chain& chain, uint64_t height,
-    handler handle_fetch)
+    template <typename BlockIndex>
+    void start(const BlockIndex& index, block_fetch_handler handler)
+    {
+        // Create the block.
+        const auto block = std::make_shared<chain::block>();
+
+        blockchain_.fetch_block_header(index,
+            std::bind(&block_fetcher::handle_fetch_header,
+                shared_from_this(), _1, _2, block, handler));
+    }
+
+private:
+    void handle_fetch_header(const std::error_code& ec,
+        const header& header, block::ptr block,
+        block_fetch_handler handler)
+    {
+        if (ec)
+        {
+            handler(ec, nullptr);
+            return;
+        }
+
+        // Set the block header.
+        block->header = header;
+        const auto hash = header.hash();
+
+        blockchain_.fetch_block_transaction_hashes(hash,
+            std::bind(&block_fetcher::fetch_transactions,
+                shared_from_this(), _1, _2, block, handler));
+    }
+
+    void fetch_transactions(const std::error_code& ec,
+        const hash_list& hashes, block::ptr block, block_fetch_handler handler)
+    {
+        if (ec)
+        {
+            handler(ec, nullptr);
+            return;
+        }
+
+        // Set the block transaction size.
+        const auto count = hashes.size();
+        block->transactions.resize(count);
+
+        // This will be called exactly once by the synchronizer.
+        const auto completion_handler =
+            std::bind(&block_fetcher::handle_complete,
+                shared_from_this(), _1, _2, handler);
+
+        // Synchronize transaction fetch calls to one completion call.
+        const auto complete = synchronizer<block_fetch_handler>(
+            completion_handler, count, "block_fetcher");
+
+        // blockchain::fetch_transaction is thread safe.
+        size_t index = 0;
+        for (const auto& hash: hashes)
+            blockchain_.fetch_transaction(hash,
+                std::bind(&block_fetcher::handle_fetch_transaction,
+                    shared_from_this(), _1, _2, index++, block, complete));
+    }
+
+    void handle_fetch_transaction(const std::error_code& ec,
+        const transaction& transaction, size_t index, block::ptr block,
+        block_fetch_handler handler)
+    {
+        if (ec)
+        {
+            handler(ec, nullptr);
+            return;
+        }
+
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        // A vector write cannot be executed concurrently with read|write.
+        if (true)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+
+            // Set a transaction into the block.
+            block->transactions[index] = transaction;
+        }
+        ///////////////////////////////////////////////////////////////////////
+
+        handler(error::success, block);
+    }
+
+    // If ec success then there is no possibility that block is being written.
+    void handle_complete(const std::error_code& ec, block::ptr block,
+        block_fetch_handler handler)
+    {
+        if (ec)
+            handler(ec, nullptr);
+        else
+            handler(error::success, block);
+    }
+
+    std::mutex mutex_;
+    block_chain& blockchain_;
+};
+
+void fetch_block(block_chain& chain, size_t height,
+    block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(height, handle_fetch);
 }
 
-void block_fetcher::fetch(block_chain& chain, const hash_digest& hash,
-    handler handle_fetch)
+void fetch_block(block_chain& chain, const hash_digest& hash,
+    block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(hash, handle_fetch);
 }
 
-void block_fetcher::handle_fetch_header(const std::error_code& ec,
-    const chain::header& header, block_ptr block, handler handle_fetch)
-{
-    if (ec)
-    {
-        handle_fetch(ec, nullptr);
-        return;
-    }
-
-    // Set the block header.
-    block->header = header;
-
-    blockchain_.fetch_block_transaction_hashes(header.hash(),
-        std::bind(&block_fetcher::fetch_transactions,
-            shared_from_this(), _1, _2, block, handle_fetch));
-}
-
-void block_fetcher::fetch_transactions(const std::error_code& ec,
-    const hash_list& hashes, block_ptr block, handler handle_fetch)
-{
-    if (ec)
-    {
-        handle_fetch(ec, nullptr);
-        return;
-    }
-
-    // Set the block transaction size.
-    const auto count = hashes.size();
-    block->transactions.resize(count);
-
-    // This will be called exactly once by the synchronizer.
-    const auto completion_handler =
-        std::bind(&block_fetcher::handle_complete,
-            shared_from_this(), _1, _2, handle_fetch);
-
-    // Synchronize transaction fetch calls to one completion call.
-    const auto complete = synchronizer<handler>(completion_handler, count,
-        "block_fetcher");
-
-    // blockchain::fetch_transaction is thread safe.
-    size_t index = 0;
-    for (const auto& hash: hashes)
-        blockchain_.fetch_transaction(hash,
-            std::bind(&block_fetcher::handle_fetch_transaction,
-                shared_from_this(), _1, _2, index++, block, complete));
-}
-
-void block_fetcher::handle_fetch_transaction(const std::error_code& ec,
-    const chain::transaction& transaction, size_t index, block_ptr block,
-    handler handle_fetch)
-{
-    if (ec)
-    {
-        handle_fetch(ec, nullptr);
-        return;
-    }
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////
-    // A vector write cannot be executed concurrently with read|write.
-    if (true)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        // Set a transaction into the block.
-        block->transactions[index] = transaction;
-    }
-    ///////////////////////////////////////////////////////////////////////
-
-    handle_fetch(error::success, block);
-}
-
-// If ec success then there is no possibility that block is being written.
-void block_fetcher::handle_complete(const std::error_code& ec,
-    block_ptr block, handler completion_handler)
-{
-    if (ec)
-        completion_handler(ec, nullptr);
-    else
-        completion_handler(error::success, block);
-}
-
-} // namespace blockchain
+} // namespace chain
 } // namespace libbitcoin
