@@ -44,23 +44,31 @@ using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
 // Consensus rule change activation and enforcement parameters.
-static constexpr size_t sample = 1000u;
-static constexpr size_t enforced = 950u;
-static constexpr size_t activated = 750u;
 static constexpr uint8_t version_4 = 4;
 static constexpr uint8_t version_3 = 3;
 static constexpr uint8_t version_2 = 2;
 static constexpr uint8_t version_1 = 1;
 
-// Block 514 is the first block after activation, which was date-based.
-static constexpr size_t testnet_bip16_activation_height = 514;
+// Mainnet activation parameters.
+static constexpr size_t mainnet_active = 51;
+static constexpr size_t mainnet_enforce = 75;
+static constexpr size_t mainnet_sample = 100;
 
-// Block 173805 is the first block after activation, which was date-based.
+// Testnet activation parameters.
+static constexpr size_t testnet_active = 750u;
+static constexpr size_t testnet_enforce = 950u;
+static constexpr size_t testnet_sample = 1000u;
+
+// Block 173805 is the first mainnet block after date-based activation.
+// Block 514 is the first testnet block after date-based activation.
 static constexpr size_t mainnet_bip16_activation_height = 173805;
+static constexpr size_t testnet_bip16_activation_height = 514;
 
 // github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
 static constexpr size_t mainnet_bip30_exception_height1 = 91842;
 static constexpr size_t mainnet_bip30_exception_height2 = 91880;
+static constexpr size_t testnet_bip30_exception_height1 = 0;
+static constexpr size_t testnet_bip30_exception_height2 = 0;
 
 // Max block size (1000000 bytes).
 static constexpr uint32_t max_block_size = 1000000;
@@ -102,6 +110,22 @@ validate_block::validate_block(size_t height, const block& block, bool testnet,
 
 void validate_block::initialize_context()
 {
+    const auto bip30_exception_height1 = testnet_ ?
+        testnet_bip30_exception_height1 :
+        mainnet_bip30_exception_height1;
+
+    const auto bip30_exception_height2 = testnet_ ?
+        testnet_bip30_exception_height2 :
+        mainnet_bip30_exception_height2;
+
+    const auto bip16_activation_height = testnet_ ?
+        testnet_bip16_activation_height :
+        mainnet_bip16_activation_height;
+
+    const auto active = testnet_ ? testnet_active : mainnet_active;
+    const auto enforce = testnet_ ? testnet_enforce : mainnet_enforce;
+    const auto sample = testnet_ ? testnet_sample : mainnet_sample;
+
     // Continue even if this is too small or empty (fast and simpler).
     const auto versions = preceding_block_versions(sample);
 
@@ -113,44 +137,42 @@ void validate_block::initialize_context()
     const auto count_3 = std::count_if(versions.begin(), versions.end(), ge_3);
     const auto count_2 = std::count_if(versions.begin(), versions.end(), ge_2);
 
-    const auto enforce = [](size_t count) { return count >= enforced; };
-    const auto activate = [](size_t count) { return count >= activated; };
+    const auto activate = [active](size_t count) { return count >= active; };
+    const auto enforced = [enforce](size_t count) { return count >= enforce; };
 
-    // version 4/3/2 are required based on 95% of preceding 1000 blocks.
-    if (enforce(count_4))
+    // version 4/3/2 enforced based on 95% of preceding 1000 mainnet blocks.
+    if (enforced(count_4))
         minimum_version_ = version_4;
-    else if (enforce(count_3))
+    else if (enforced(count_3))
         minimum_version_ = version_3;
-    else if (enforce(count_2))
+    else if (enforced(count_2))
         minimum_version_ = version_2;
     else
         minimum_version_ = version_1;
 
-    // bip65 is activated based on 75% of preceding 1000 blocks.
+    // bip65 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_4))
         activations_ |= script_context::bip65_enabled;
 
-    // bip66 is activated based on 75% of preceding 1000 blocks.
+    // bip66 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_3))
         activations_ |= script_context::bip66_enabled;
 
-    // bip34 is activated based on 75% of preceding 1000 blocks.
+    // bip34 is activated based on 75% of preceding 1000 mainnet blocks.
     if (activate(count_2))
         activations_ |= script_context::bip34_enabled;
 
     // bip30 applies to all but two mainnet blocks that violate the rule.
-    if (testnet_ ||
-        (height_ != mainnet_bip30_exception_height1 &&
-         height_ != mainnet_bip30_exception_height2))
+    if (height_ != bip30_exception_height1 &&
+        height_ != bip30_exception_height2)
         activations_ |= script_context::bip30_enabled;
 
     // bip16 was activated with a one-time test on mainnet/testnet (~55% rule).
-    if (( testnet_ && height_ >= testnet_bip16_activation_height) ||
-        (!testnet_ && height_ >= mainnet_bip16_activation_height))
+    if (height_ >= bip16_activation_height)
         activations_ |= script_context::bip16_enabled;
 }
 
-// validate_version must be called first (to set activations_).
+// initialize_context must be called first (to set activations_).
 bool validate_block::is_active(script_context flag) const
 {
     if (!script::is_active(activations_, flag))
@@ -616,7 +638,9 @@ bool validate_block::connect_input(size_t index_in_parent,
     // including the current (orphan) block and excluding blocks above fork.
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
-        log::warning(LOG_VALIDATE) << "Failure fetching input transaction.";
+        log::warning(LOG_VALIDATE)
+            << "Failure fetching input transaction ["
+            << encode_hash(previous_output.hash) << "]";
         return false;
     }
 
