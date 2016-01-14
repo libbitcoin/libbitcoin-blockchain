@@ -490,7 +490,7 @@ std::error_code validate_block::connect_block() const
     const auto& transactions = current_block_.transactions;
 
     // These coinbase transactions are spent and are not indexed.
-    if (is_active(script_context::bip34_enabled))
+    if (is_active(script_context::bip30_enabled))
     {
         ////////////// TODO: parallelize. //////////////
         for (const auto& tx: transactions)
