@@ -25,7 +25,9 @@
 namespace libbitcoin {
 namespace blockchain {
 
-block_detail::block_detail(std::shared_ptr<chain::block> actual_block)
+using namespace chain;
+
+block_detail::block_detail(block::ptr actual_block)
   : processed_(false),
     info_({ block_status::orphan, 0 }),
     block_hash_(actual_block->header.hash()),
@@ -33,12 +35,12 @@ block_detail::block_detail(std::shared_ptr<chain::block> actual_block)
 {
 }
 
-block_detail::block_detail(const chain::block& actual_block)
-  : block_detail(std::make_shared<chain::block>(actual_block))
+block_detail::block_detail(const block& actual_block)
+  : block_detail(std::make_shared<block>(actual_block))
 {
 }
 
-block_detail::block_detail(const chain::header& actual_block_header)
+block_detail::block_detail(const header& actual_block_header)
   : block_detail(chain::block{ actual_block_header, {} })
 {
 }
@@ -53,7 +55,7 @@ const chain::block& block_detail::actual() const
     return *actual_block_;
 }
 
-std::shared_ptr<chain::block> block_detail::actual_ptr() const
+block::ptr block_detail::actual_ptr() const
 {
     return actual_block_;
 }

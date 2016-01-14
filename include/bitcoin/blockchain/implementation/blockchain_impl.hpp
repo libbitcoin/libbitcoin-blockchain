@@ -53,11 +53,8 @@ public:
     void stop(result_handler handler);
     void stop();
 
-    void store(std::shared_ptr<chain::block> block,
-        block_store_handler handler);
-
-    void import(std::shared_ptr<chain::block> block,
-        block_import_handler handler);
+    void store(chain::block::ptr block, block_store_handler handler);
+    void import(chain::block::ptr block, block_import_handler handler);
 
     /// fetch a block locator relative to the current top and threshold
     void fetch_block_locator(block_locator_fetch_handler handler);
@@ -130,10 +127,8 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(std::shared_ptr<chain::block> block,
-        block_store_handler handler);
-    void do_import(std::shared_ptr<chain::block> block,
-        block_import_handler handler);
+    void do_store(chain::block::ptr block, block_store_handler handler);
+    void do_import(chain::block::ptr block, block_import_handler handler);
 
     // Fetch uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then

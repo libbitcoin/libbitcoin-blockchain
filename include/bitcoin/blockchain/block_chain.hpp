@@ -76,9 +76,7 @@ public:
 
     typedef std::vector<history_row> history;
     typedef std::vector<stealth_row> stealth;
-
-    typedef std::shared_ptr<chain::block> ptr;
-    typedef std::vector<ptr> list;
+    typedef std::vector<chain::block::ptr> list;
     
     typedef handle0 result_handler;
     typedef handle0 block_import_handler;
@@ -106,10 +104,10 @@ public:
     virtual void stop(result_handler handler) = 0;
     virtual void stop() = 0;
 
-    virtual void store(std::shared_ptr<chain::block> block,
+    virtual void store(chain::block::ptr block,
         block_store_handler handle_store) = 0;
 
-    virtual void import(std::shared_ptr<chain::block> block,
+    virtual void import(chain::block::ptr block,
         block_import_handler handle_import) = 0;
 
     virtual void fetch_block_locator(block_locator_fetch_handler handler) = 0;

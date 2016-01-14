@@ -122,16 +122,14 @@ void blockchain_impl::start_write()
     BITCOIN_ASSERT(lock % 2 == 1);
 }
 
-void blockchain_impl::store(std::shared_ptr<chain::block> block,
-    block_store_handler handler)
+void blockchain_impl::store(block::ptr block, block_store_handler handler)
 {
     write_dispatch_.ordered(
         std::bind(&blockchain_impl::do_store,
             this, block, handler));
 }
 
-void blockchain_impl::do_store(std::shared_ptr<chain::block> block,
-    block_store_handler handler)
+void blockchain_impl::do_store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
         return;
@@ -159,16 +157,14 @@ void blockchain_impl::do_store(std::shared_ptr<chain::block> block,
     stop_write(handler, detail->error(), detail->info());
 }
 
-void blockchain_impl::import(std::shared_ptr<chain::block> block,
-    block_import_handler handler)
+void blockchain_impl::import(block::ptr block, block_import_handler handler)
 {
     write_dispatch_.ordered(
         std::bind(&blockchain_impl::do_import,
             this, block, handler));
 }
 
-void blockchain_impl::do_import(std::shared_ptr<chain::block> block,
-    block_import_handler handler)
+void blockchain_impl::do_import(block::ptr block, block_import_handler handler)
 {
     start_write();
     database_.push(*block);

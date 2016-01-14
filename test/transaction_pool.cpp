@@ -48,13 +48,11 @@ public:
     {
     }
 
-    virtual void store(std::shared_ptr<chain::block> block,
-        block_store_handler handler)
+    virtual void store(block::ptr block, block_store_handler handler)
     {
     }
 
-    virtual void import(std::shared_ptr<chain::block> block,
-        block_import_handler handler)
+    virtual void import(chain::block::ptr block, block_import_handler handler)
     {
     }
 
