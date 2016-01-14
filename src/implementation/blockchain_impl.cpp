@@ -231,7 +231,7 @@ void blockchain_impl::fetch_block_locator(block_locator_fetch_handler handler)
 {
     const auto do_fetch = [this, handler](size_t slock)
     {
-        get_blocks locator;
+        block_locator locator;
         size_t top_height;
         if (!database_.blocks.top(top_height))
             return finish_fetch(slock, handler,
@@ -245,7 +245,7 @@ void blockchain_impl::fetch_block_locator(block_locator_fetch_handler handler)
                 return finish_fetch(slock, handler,
                     error::not_found, locator);
 
-            locator.start_hashes.push_back(result.header().hash());
+            locator.push_back(result.header().hash());
         }
 
         return finish_fetch(slock, handler,

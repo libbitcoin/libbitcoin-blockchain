@@ -82,7 +82,7 @@ public:
     typedef handle0 block_import_handler;
     typedef handle1<block_info> block_store_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
-    typedef handle1<message::get_blocks> block_locator_fetch_handler;
+    typedef handle1<message::block_locator> block_locator_fetch_handler;
     typedef handle1<hash_list> locator_block_hashes_fetch_handler;
     typedef handle1<hash_list> missing_block_hashes_fetch_handler;
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
