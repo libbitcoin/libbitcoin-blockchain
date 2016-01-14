@@ -25,7 +25,7 @@ Version: @PACKAGE_VERSION@
 #==============================================================================
 # Dependencies that publish package configuration.
 #------------------------------------------------------------------------------
-Requires: libbitcoin >= 2.10.0 @bitcoin_consensus_PKG@
+Requires: libbitcoin >= 2.10.1 @bitcoin_consensus_PKG@
 
 # Include directory and any other required compiler flags.
 #------------------------------------------------------------------------------
