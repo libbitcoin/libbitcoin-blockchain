@@ -132,6 +132,8 @@ private:
 
     void do_store(std::shared_ptr<chain::block> block,
         block_store_handler handler);
+    void do_import(std::shared_ptr<chain::block> block,
+        block_import_handler handler);
 
     // Fetch uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then

@@ -40,10 +40,9 @@ class BCB_API block_fetcher
 public:
     typedef handle1<std::shared_ptr<chain::block>> handler;
 
-    static void fetch(block_chain& chain, uint64_t height,
-        handler handle_fetch);
+    static void fetch(block_chain& chain, uint64_t height, handler handler);
     static void fetch(block_chain& chain, const hash_digest& hash,
-        handler handle_fetch);
+        handler handler);
 
     block_fetcher(block_chain& chain);
 

@@ -162,13 +162,17 @@ void blockchain_impl::do_store(std::shared_ptr<chain::block> block,
 void blockchain_impl::import(std::shared_ptr<chain::block> block,
     block_import_handler handler)
 {
-    const auto do_import = [this, block, handler]()
-    {
-        start_write();
-        database_.push(*block);
-        stop_write(handler, error::success);
-    };
-    write_dispatch_.ordered(do_import);
+    write_dispatch_.ordered(
+        std::bind(&blockchain_impl::do_import,
+            this, block, handler));
+}
+
+void blockchain_impl::do_import(std::shared_ptr<chain::block> block,
+    block_import_handler handler)
+{
+    start_write();
+    database_.push(*block);
+    stop_write(handler, error::success);
 }
 
 void blockchain_impl::fetch_parallel(perform_read_functor perform_read)
@@ -202,6 +206,9 @@ void blockchain_impl::fetch_parallel(perform_read_functor perform_read)
     read_dispatch_.concurrent(do_read);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: This should be ordered on the channel's strand, not across channels.
+///////////////////////////////////////////////////////////////////////////////
 void blockchain_impl::fetch_ordered(perform_read_functor perform_read)
 {
     const auto try_read = [this, perform_read]() -> bool
