@@ -83,6 +83,7 @@ public:
     typedef handle0 block_import_handler;
     typedef handle0 result_handler;
     typedef handle1<std::shared_ptr<chain::block>> block_fetch_handler;
+    typedef handle1<hash_list> locator_block_hashes_fetch_handler;
     typedef handle1<hash_list> missing_block_hashes_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
@@ -94,7 +95,7 @@ public:
     typedef handle1<history> history_fetch_handler;
     typedef handle1<stealth> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
-    typedef handle1<block_info> store_block_handler;
+    typedef handle1<block_info> block_store_handler;
     typedef std::function<bool(const std::error_code&, uint64_t, const list&,
         const list&)> reorganize_handler;
 
@@ -107,43 +108,47 @@ public:
     virtual void stop() = 0;
 
     virtual void store(const chain::block& block,
-        store_block_handler handle_store) = 0;
+        block_store_handler handler) = 0;
 
     virtual void import(const chain::block& import_block,
-        block_import_handler handle_import) = 0;
+        block_import_handler handler) = 0;
 
     virtual void fetch_block_header(uint64_t height,
-        block_header_fetch_handler handle_fetch) = 0;
+        block_header_fetch_handler handler) = 0;
 
     virtual void fetch_block_header(const hash_digest& hash,
-        block_header_fetch_handler handle_fetch) = 0;
+        block_header_fetch_handler handler) = 0;
+
+    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold,
+        missing_block_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handle_fetch) = 0;
+        missing_block_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handle_fetch) = 0;
+        transaction_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_height(const hash_digest& hash,
-        block_height_fetch_handler handle_fetch) = 0;
+        block_height_fetch_handler handler) = 0;
 
-    virtual void fetch_last_height(last_height_fetch_handler handle_fetch) = 0;
+    virtual void fetch_last_height(last_height_fetch_handler handler) = 0;
 
     virtual void fetch_transaction(const hash_digest& hash,
-        transaction_fetch_handler handle_fetch) = 0;
+        transaction_fetch_handler handler) = 0;
 
     virtual void fetch_transaction_index(const hash_digest& hash,
-        transaction_index_fetch_handler handle_fetch) = 0;
+        transaction_index_fetch_handler handler) = 0;
 
     virtual void fetch_spend(const chain::output_point& outpoint,
-        spend_fetch_handler handle_fetch) = 0;
+        spend_fetch_handler handler) = 0;
 
     virtual void fetch_history(const wallet::payment_address& address,
-        history_fetch_handler handle_fetch, const uint64_t limit=0,
+        history_fetch_handler handler, const uint64_t limit = 0,
         const uint64_t from_height=0) = 0;
 
     virtual void fetch_stealth(const binary_type& filter,
-        stealth_fetch_handler handle_fetch, uint64_t from_height=0) = 0;
+        stealth_fetch_handler handler, uint64_t from_height = 0) = 0;
 
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
 

@@ -177,9 +177,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_locator_fetcher.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -255,9 +252,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\block_chain.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\block_locator_fetcher.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\block_fetcher.cpp">

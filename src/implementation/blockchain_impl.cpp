@@ -38,9 +38,13 @@ namespace blockchain {
 
 #define NAME "blockchain"
 #define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
-
+    
+using namespace bc::message;
 using namespace boost::interprocess;
 using path = boost::filesystem::path;
+
+// This is a protocol limit that we incorporate into the query.
+static constexpr size_t maximum_get_blocks = 500;
 
 static file_lock init_lock(const path& prefix)
 {
@@ -117,7 +121,7 @@ void blockchain_impl::start_write()
 }
 
 void blockchain_impl::store(const chain::block& block,
-    store_block_handler handler)
+    block_store_handler handler)
 {
     dispatch_.ordered(
         std::bind(&blockchain_impl::do_store,
@@ -125,7 +129,7 @@ void blockchain_impl::store(const chain::block& block,
 }
 
 void blockchain_impl::do_store(const chain::block& block,
-    store_block_handler handler)
+    block_store_handler handler)
 {
     if (stopped())
         return;
@@ -154,13 +158,13 @@ void blockchain_impl::do_store(const chain::block& block,
 }
 
 void blockchain_impl::import(const chain::block& block,
-    block_import_handler handle_import)
+    block_import_handler handler)
 {
-    const auto do_import = [this, block, handle_import]()
+    const auto do_import = [this, block, handler]()
     {
         start_write();
         database_.push(block);
-        stop_write(handle_import, error::success);
+        stop_write(handler, error::success);
     };
     dispatch_.ordered(do_import);
 }
@@ -232,6 +236,69 @@ static hash_list to_hashes(const block_result& result)
         hashes.push_back(result.transaction_hash(index));
 
     return hashes;
+}
+
+// Fetch start-base-stop|top+1(max 500)
+// This may generally execute 502 but as many as 531+ queries.
+void blockchain_impl::fetch_locator_block_hashes(const get_blocks& locator,
+    const hash_digest& threshold,
+    locator_block_hashes_fetch_handler handler)
+{
+    // This is based on the idea that looking up by block hash to get heights
+    // will be much faster than hashing each retrieved block to test for stop.
+    const auto do_fetch = [this, locator, threshold, handler](
+        size_t slock)
+    {
+        // Find the first block height.
+        // If no start block is on our chain we start with block 0.
+        size_t start = 0;
+        for (const auto& hash: locator.start_hashes)
+        {
+            const auto result = database_.blocks.get(hash);
+            if (result)
+            {
+                start = result.height();
+                break;
+            }
+        }
+
+        // Find the stop block height.
+        // The maximum stop block is 501 blocks after start (to return 500).
+        size_t stop = start + maximum_get_blocks + 1;
+        if (locator.stop_hash != null_hash)
+        {
+            // If the stop block is not on chain we treat it as a null stop.
+            const auto stop_result = database_.blocks.get(locator.stop_hash);
+            if (stop_result)
+                stop = std::min(stop_result.height(), stop);
+        }
+
+        // Find the threshold block height.
+        // If the threshold is above the start it becomes the new start.
+        if (threshold != null_hash)
+        {
+            const auto start_result = database_.blocks.get(threshold);
+            if (start_result)
+                start = std::max(start_result.height(), start);
+        }
+
+        // This largest portion can be parallelized.
+        // Build the hash list until we hit last or the blockchain top.
+        hash_list hashes;
+        for (size_t index = start + 1; index < stop; ++index)
+        {
+            const auto result = database_.blocks.get(index);
+            if (!result)
+            {
+                hashes.push_back(result.header().hash());
+                break;
+            }
+        }
+
+        return finish_fetch(slock, handler,
+            error::success, hashes);
+    };
+    fetch(do_fetch);
 }
 
 void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,

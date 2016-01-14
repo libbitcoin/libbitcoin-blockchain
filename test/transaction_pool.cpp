@@ -49,67 +49,73 @@ public:
     }
 
     virtual void store(const block& block,
-        store_block_handler handle_store)
+        block_store_handler handler)
     {
     }
 
     virtual void import(const block& import_block,
-        block_import_handler handle_import)
+        block_import_handler handler)
     {
     }
 
     virtual void fetch_block_header(uint64_t height,
-        block_header_fetch_handler handle_fetch)
+        block_header_fetch_handler handler)
     {
     }
 
     virtual void fetch_block_header(const hash_digest& hash,
-        block_header_fetch_handler handle_fetch)
+        block_header_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold,
+        locator_block_hashes_fetch_handler handler)
     {
     }
 
     virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handle_fetch)
+        missing_block_hashes_fetch_handler handler)
     {
     }
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handle_fetch)
+        transaction_hashes_fetch_handler handler)
     {
     }
 
     virtual void fetch_block_height(const hash_digest& hash,
-        block_height_fetch_handler handle_fetch)
+        block_height_fetch_handler handler)
     {
     }
 
-    virtual void fetch_last_height(last_height_fetch_handler handle_fetch)
+    virtual void fetch_last_height(last_height_fetch_handler handler)
     {
     }
 
     virtual void fetch_transaction(const hash_digest& hash,
-        transaction_fetch_handler handle_fetch)
+        transaction_fetch_handler handler)
     {
     }
 
     virtual void fetch_transaction_index(const hash_digest& hash,
-        transaction_index_fetch_handler handle_fetch)
+        transaction_index_fetch_handler handler)
     {
     }
 
     virtual void fetch_spend(const output_point& outpoint,
-        spend_fetch_handler handle_fetch)
+        spend_fetch_handler handler)
     {
     }
 
     virtual void fetch_history(const wallet::payment_address& address,
-        history_fetch_handler handle_fetch, const uint64_t limit=0,
+        history_fetch_handler handler, const uint64_t limit = 0,
         const uint64_t from_height=0)
     {
     }
 
     virtual void fetch_stealth(const binary_type& prefix,
-        stealth_fetch_handler handle_fetch, uint64_t from_height=0)
+        stealth_fetch_handler handler, uint64_t from_height = 0)
     {
     }
 

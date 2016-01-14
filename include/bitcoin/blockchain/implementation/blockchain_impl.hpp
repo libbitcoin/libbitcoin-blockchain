@@ -52,7 +52,7 @@ public:
     void stop(result_handler handler);
     void stop();
 
-    void store(const chain::block& block, store_block_handler handler);
+    void store(const chain::block& block, block_store_handler handler);
     void import(const chain::block& block, block_import_handler handler);
 
     // fetch block header by height
@@ -63,12 +63,17 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
+    // fetch the set of block hashes indicated by the block locator
+    void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold,
+        locator_block_hashes_fetch_handler handler);
+
     // fetch subset of specified block hashes that are not stored
     void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handle_fetch);
+        missing_block_hashes_fetch_handler handler);
 
     void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handle_fetch);
+        transaction_hashes_fetch_handler handler);
 
     // fetch height of block by hash
     void fetch_block_height(const hash_digest& hash,
@@ -117,7 +122,7 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
-    void do_store(const chain::block& block, store_block_handler handle_store);
+    void do_store(const chain::block& block, block_store_handler handler);
 
     // Uses sequential lock to try to read shared data.
     // Try to initiate asynchronous read operation. If it fails then
@@ -135,7 +140,7 @@ private:
     }
 
     bool do_fetch_stealth(const binary_type& filter,
-        stealth_fetch_handler handle_fetch, uint64_t from_height,
+        stealth_fetch_handler handler, uint64_t from_height,
         uint64_t slock);
 
     bool stopped();
