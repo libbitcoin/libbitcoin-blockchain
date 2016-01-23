@@ -32,7 +32,9 @@ namespace chain {
 
 struct BCB_API transaction_entry_info
 {
-    typedef std::function<void (const std::error_code&)> confirm_handler;
+    typedef std::function<void(const std::error_code&, const transaction_type& tx)>
+        confirm_handler;
+
     hash_digest hash;
     transaction_type tx;
     confirm_handler handle_confirm;
@@ -73,6 +75,9 @@ public:
         fetch_handler_missing_hashes;
     typedef std::function<void(const std::error_code&, bool)> exists_handler;
     typedef transaction_entry_info::confirm_handler confirm_handler;
+
+    typedef std::function<bool(const std::error_code&, const index_list&,
+        const transaction_type&)> transaction_handler;
 
     transaction_pool(threadpool& pool, blockchain& chain, size_t capacity,
         bool consistency);
@@ -150,7 +155,8 @@ public:
      *                                  becomes confirmed.
      * @code
      *  void handle_confirm(
-     *      const std::error_code& ec    // Status of operation
+     *      const std::error_code& ec       // Status of operation
+     *      const transaction_type& tx      // The confirmed transaction
      *  );
      * @endcode
      * @param[in]   handle_validate     Completion handler for
@@ -211,6 +217,9 @@ public:
     /// Deprecated, unsafe after startup, use constructor.
     void set_capacity(size_t capacity);
 
+    /// Subscribe to transaction acceptance into the mempool.
+    void subscribe_transaction(transaction_handler handle_transaction);
+
 protected:
     typedef std::error_code code;
     typedef std::function<bool (const transaction_input_type&)>
@@ -249,6 +258,16 @@ protected:
     pool_buffer buffer_;
     bool stopped_;
     const bool maintain_consistency_;
+
+private:
+    typedef resubscriber<const std::error_code&, const index_list&,
+        const transaction_type&> transaction_subscriber;
+
+    transaction_subscriber::ptr subscriber_;
+
+    void notify_stop();
+    void notify_transaction(const index_list& unconfirmed,
+        const transaction_type& tx);
 };
 
 } // namespace chain
