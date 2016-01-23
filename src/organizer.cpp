@@ -199,6 +199,12 @@ void organizer::clip_orphans(block_detail_list& orphan_chain,
     orphan_chain.erase(orphan_start, orphan_chain.end());
 }
 
+void organizer::notify_stop()
+{
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, 0, {}, {});
+}
+
 void organizer::notify_reorganize(size_t fork_point,
     const block_detail_list& orphan_chain,
     const block_detail_list& replaced_chain)
@@ -226,12 +232,6 @@ void organizer::subscribe_reorganize(
         handle_reorganize(error::service_stopped, 0, {}, {});
     else
         subscriber_->subscribe(handle_reorganize);
-}
-
-void organizer::notify_stop()
-{
-    subscriber_->stop();
-    subscriber_->relay(error::service_stopped, 0, {}, {});
 }
 
 } // namespace chain

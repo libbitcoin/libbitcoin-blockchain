@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/blockchain.hpp>
@@ -41,7 +42,8 @@ transaction_pool::transaction_pool(threadpool& pool, blockchain& chain,
     blockchain_(chain),
     buffer_(capacity),
     stopped_(true),
-    maintain_consistency_(consistency)
+    maintain_consistency_(consistency),
+    subscriber_(std::make_shared<transaction_subscriber>(pool))
 {
 }
 
@@ -75,10 +77,7 @@ bool transaction_pool::start()
 
 bool transaction_pool::stop()
 {
-    // Stop doesn't need to be called externally and could be made private.
-    // This will arise from a reorg shutdown message, so transaction_pool
-    // is automatically registered for shutdown in the following sequence.
-    // blockchain->organizer(orphan/block pool)->transaction_pool
+    notify_stop();
     stopped_ = true;
     return true;
 }
@@ -179,6 +178,9 @@ void transaction_pool::store(const transaction_type& tx,
         {
             add(tx, handle_confirm);
 
+            // Notify subscribers that a tx has been accepted into the memory pool.
+            notify_transaction(unconfirmed, tx);
+
             log_debug(LOG_BLOCKCHAIN)
                 << "Transaction saved to mempool (" << buffer_.size() << ")";
         }
@@ -262,7 +264,6 @@ bool transaction_pool::reorganize(const std::error_code& ec,
     {
         log_debug(LOG_BLOCKCHAIN)
             << "Stopping transaction pool: " << ec.message();
-        stop();
         return false;
     }
 
@@ -270,7 +271,6 @@ bool transaction_pool::reorganize(const std::error_code& ec,
     {
         log_debug(LOG_BLOCKCHAIN)
             << "Failure in tx pool reorganize handler: " << ec.message();
-        stop();
         return false;
     }
 
@@ -317,7 +317,7 @@ void transaction_pool::add(const transaction_type& tx, confirm_handler handler)
 void transaction_pool::clear(const std::error_code& ec)
 {
     for (const auto& entry: buffer_)
-        entry.handle_confirm(ec);
+        entry.handle_confirm(ec, entry.tx);
 
     buffer_.clear();
 }
@@ -414,8 +414,8 @@ void transaction_pool::delete_package(const std::error_code& ec)
         return;
 
     const auto& oldest = buffer_.front();
-    oldest.handle_confirm(ec);
     const auto hash = oldest.hash;
+    oldest.handle_confirm(ec, oldest.tx);
     delete_package(hash, ec);
 }
 
@@ -447,7 +447,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash,
     if (it == buffer_.end())
         return false;
 
-    it->handle_confirm(ec);
+    it->handle_confirm(ec, it->tx);
     buffer_.erase(it);
     return true;
 }
@@ -466,6 +466,26 @@ void transaction_pool::set_capacity(size_t capacity)
     buffer_.set_capacity(capacity);
 }
 
+void transaction_pool::notify_stop()
+{
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, {}, {});
+}
+
+void transaction_pool::notify_transaction(const index_list& unconfirmed,
+    const transaction_type& tx)
+{
+    subscriber_->relay(error::success, unconfirmed, tx);
+}
+
+void transaction_pool::subscribe_transaction(
+    transaction_handler handle_transaction)
+{
+    if (stopped())
+        handle_transaction(error::service_stopped, {}, {});
+    else
+        subscriber_->subscribe(handle_transaction);
+}
+
 } // namespace chain
 } // namespace libbitcoin
-

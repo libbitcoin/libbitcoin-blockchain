@@ -237,7 +237,7 @@ public:
     const size_t tx##number##_id = number; \
     auto hash##number = hash_transaction(tx##number); \
     std::error_code result##number(error::unknown); \
-    const auto handle_confirm##number = [&result##number](const std::error_code& ec) \
+    const auto handle_confirm##number = [&result##number](const std::error_code& ec, const transaction_type&) \
     { \
         result##number = ec; \
         BOOST_CHECK_EQUAL(ec.value(), code); \
