@@ -77,10 +77,6 @@ bool transaction_pool::start()
 
 bool transaction_pool::stop()
 {
-    // Stop doesn't need to be called externally and could be made private.
-    // This will arise from a reorg shutdown message, so transaction_pool
-    // is automatically registered for shutdown in the following sequence.
-    // blockchain->organizer(orphan/block pool)->transaction_pool
     notify_stop();
     stopped_ = true;
     return true;
@@ -268,7 +264,6 @@ bool transaction_pool::reorganize(const std::error_code& ec,
     {
         log_debug(LOG_BLOCKCHAIN)
             << "Stopping transaction pool: " << ec.message();
-        stop();
         return false;
     }
 
@@ -276,7 +271,6 @@ bool transaction_pool::reorganize(const std::error_code& ec,
     {
         log_debug(LOG_BLOCKCHAIN)
             << "Failure in tx pool reorganize handler: " << ec.message();
-        stop();
         return false;
     }
 
