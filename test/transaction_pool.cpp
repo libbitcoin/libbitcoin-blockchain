@@ -116,7 +116,7 @@ public:
     {
     }
 
-    virtual void fetch_stealth(const binary_type& prefix,
+    virtual void fetch_stealth(const binary& prefix,
         stealth_fetch_handler handler, uint64_t from_height = 0)
     {
     }

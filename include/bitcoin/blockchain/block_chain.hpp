@@ -146,7 +146,7 @@ public:
         history_fetch_handler handler, const uint64_t limit = 0,
         const uint64_t from_height=0) = 0;
 
-    virtual void fetch_stealth(const binary_type& filter,
+    virtual void fetch_stealth(const binary& filter,
         stealth_fetch_handler handler, uint64_t from_height = 0) = 0;
 
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;

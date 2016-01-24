@@ -465,7 +465,7 @@ void blockchain_impl::fetch_history(const wallet::payment_address& address,
     fetch_parallel(do_fetch);
 }
 
-void blockchain_impl::fetch_stealth(const binary_type& filter,
+void blockchain_impl::fetch_stealth(const binary& filter,
     stealth_fetch_handler handler, uint64_t from_height)
 {
     const auto do_fetch = [this, filter, handler, from_height](

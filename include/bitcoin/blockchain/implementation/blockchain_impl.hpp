@@ -105,8 +105,8 @@ public:
         const uint64_t from_height=0);
 
     /// fetch stealth results.
-    void fetch_stealth(const binary_type& filter,
-        stealth_fetch_handler handler, uint64_t from_height = 0);
+    void fetch_stealth(const binary& filter, stealth_fetch_handler handler,
+        uint64_t from_height = 0);
 
     void subscribe_reorganize(reorganize_handler handler);
 
@@ -150,9 +150,8 @@ private:
         return true;
     }
 
-    bool do_fetch_stealth(const binary_type& filter,
-        stealth_fetch_handler handler, uint64_t from_height,
-        uint64_t slock);
+    bool do_fetch_stealth(const binary& filter, stealth_fetch_handler handler,
+        uint64_t from_height, uint64_t slock);
 
     bool stopped();
 
