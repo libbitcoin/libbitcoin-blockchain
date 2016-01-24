@@ -51,6 +51,8 @@ public:
     typedef handle2<chain::transaction, hash_digest> confirm_handler;
     typedef handle3<chain::transaction, hash_digest, index_list>
         validate_handler;
+    typedef std::function<bool(const code&, const index_list&,
+        const chain::transaction&)> transaction_handler;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
@@ -74,6 +76,9 @@ public:
     void store(const chain::transaction& tx, confirm_handler confirm_handler,
         validate_handler validate_handler);
 
+    /// Subscribe to transaction acceptance into the mempool.
+    void subscribe_transaction(transaction_handler handler);
+
     // TODO: these should be access-limited to validate_transaction.
     // These are not stranded and therefore represent a thread safety issue.
     bool is_in_pool(const hash_digest& tx_hash) const;
@@ -92,6 +97,8 @@ protected:
     typedef boost::circular_buffer<entry> buffer;
     typedef buffer::const_iterator iterator;
     typedef std::function<bool(const chain::input&)> input_compare;
+    typedef resubscriber<const code&, const index_list&,
+        const chain::transaction&> transaction_subscriber;
 
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
@@ -107,6 +114,10 @@ protected:
         const hash_digest& hash, const index_list& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
     void do_validate(const chain::transaction& tx, validate_handler handler);
+
+    void notify_stop();
+    void notify_transaction(const index_list& unconfirmed,
+        const chain::transaction& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
     void remove(const block_chain::list& blocks);
@@ -132,6 +143,7 @@ protected:
     dispatcher dispatch_;
     block_chain& blockchain_;
     const bool maintain_consistency_;
+    transaction_subscriber::ptr subscriber_;
 };
 
 } // namespace blockchain

@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -43,7 +44,8 @@ transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
     buffer_(capacity),
     dispatch_(pool, NAME),
     blockchain_(chain),
-    maintain_consistency_(consistency)
+    maintain_consistency_(consistency),
+    subscriber_(std::make_shared<transaction_subscriber>(pool, NAME))
 {
 }
 
@@ -64,6 +66,7 @@ void transaction_pool::start()
 
 void transaction_pool::stop()
 {
+    notify_stop();
     stopped_ = true;
 }
 
@@ -150,6 +153,10 @@ void transaction_pool::do_store(const code& ec, const transaction& tx,
     if (!ec)
     {
         add(tx, handle_confirm);
+
+        // Notify subscribers that a tx has been accepted into the memory pool.
+        notify_transaction(unconfirmed, tx);
+
         log::debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
     }
@@ -261,6 +268,27 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
     }
 
     return true;
+}
+
+void transaction_pool::notify_stop()
+{
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, {}, {});
+}
+
+void transaction_pool::notify_transaction(const index_list& unconfirmed,
+    const transaction& tx)
+{
+    subscriber_->relay(error::success, unconfirmed, tx);
+}
+
+void transaction_pool::subscribe_transaction(
+    transaction_handler handle_transaction)
+{
+    if (stopped())
+        handle_transaction(error::service_stopped, {}, {});
+    else
+        subscriber_->subscribe(handle_transaction);
 }
 
 // Entry methods.
