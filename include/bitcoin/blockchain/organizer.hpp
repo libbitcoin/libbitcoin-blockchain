@@ -22,7 +22,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
@@ -43,7 +42,7 @@ namespace blockchain {
  *           /                        \
  *  ________/_____                 ____\_________
  * |              |               |              |
- * | orphan_pool |               | simple_chain |
+ * | orphan_pool  |               | simple_chain |
  * |______________|               |______________|
  *
  * And both implementations of the organizer and simple_chain
