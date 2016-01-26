@@ -255,6 +255,7 @@ void blockchain_impl::fetch_block_locator(block_locator_fetch_handler handler)
     fetch_ordered(do_fetch);
 }
 
+// TODO: parallelize these calls.
 static hash_list to_hashes(const block_result& result)
 {
     hash_list hashes;
@@ -327,7 +328,7 @@ void blockchain_impl::fetch_locator_block_hashes(const get_blocks& locator,
     fetch_ordered(do_fetch);
 }
 
-// This may generally execute up to 500 queries.
+// This may execute up to 500 queries.
 void blockchain_impl::fetch_missing_block_hashes(const hash_list& hashes,
     missing_block_hashes_fetch_handler handler)
 {
@@ -369,8 +370,9 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
     fetch_parallel(do_fetch);
 }
 
-void blockchain_impl::fetch_block_transaction_hashes(
-    const hash_digest& hash, transaction_hashes_fetch_handler handler)
+// This may execute thousands of queries (a block's worth).
+void blockchain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
+    transaction_hashes_fetch_handler handler)
 {
     const auto do_fetch = [this, hash, handler](size_t slock)
     {

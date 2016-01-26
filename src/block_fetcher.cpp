@@ -56,9 +56,8 @@ public:
     }
 
 private:
-    void handle_fetch_header(const std::error_code& ec,
-        const header& header, block::ptr block,
-        block_fetch_handler handler)
+    void handle_fetch_header(const std::error_code& ec, const header& header,
+        block::ptr block, block_fetch_handler handler)
     {
         if (ec)
         {
@@ -75,8 +74,8 @@ private:
                 shared_from_this(), _1, _2, block, handler));
     }
 
-    void fetch_transactions(const std::error_code& ec,
-        const hash_list& hashes, block::ptr block, block_fetch_handler handler)
+    void fetch_transactions(const std::error_code& ec, const hash_list& hashes,
+        block::ptr block, block_fetch_handler handler)
     {
         if (ec)
         {
