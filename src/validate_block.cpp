@@ -203,7 +203,7 @@ code validate_block::check_block() const
 
     const auto& transactions = current_block_.transactions;
 
-    if (transactions.empty() || transactions.size() > max_block_size ||
+    if (transactions.empty() ||
         current_block_.serialized_size() > max_block_size)
         return error::size_limits;
 
