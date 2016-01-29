@@ -125,6 +125,9 @@ public:
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) = 0;
 
+    virtual void fetch_block_transaction_hashes(uint64_t height,
+        transaction_hashes_fetch_handler handler) = 0;
+
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) = 0;
 

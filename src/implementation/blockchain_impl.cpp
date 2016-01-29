@@ -371,6 +371,20 @@ void blockchain_impl::fetch_block_header(const hash_digest& hash,
 }
 
 // This may execute thousands of queries (a block's worth).
+void blockchain_impl::fetch_block_transaction_hashes(uint64_t height,
+    transaction_hashes_fetch_handler handler)
+{
+    const auto do_fetch = [this, height, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(height);
+        return result ?
+            finish_fetch(slock, handler, error::success, to_hashes(result)) :
+            finish_fetch(slock, handler, error::not_found, hash_list());
+    };
+    fetch_parallel(do_fetch);
+}
+
+// This may execute thousands of queries (a block's worth).
 void blockchain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
     transaction_hashes_fetch_handler handler)
 {

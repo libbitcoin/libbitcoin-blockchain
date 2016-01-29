@@ -76,7 +76,11 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
-    /// fetch hashes of transactions for a block
+    /// fetch hashes of transactions for a block, by block height
+    void fetch_block_transaction_hashes(uint64_t height,
+        transaction_hashes_fetch_handler handler);
+
+    /// fetch hashes of transactions for a block, by block hash
     void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler);
 
