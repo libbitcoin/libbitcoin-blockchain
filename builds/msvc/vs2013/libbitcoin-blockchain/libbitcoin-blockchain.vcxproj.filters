@@ -186,6 +186,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\organizer.cpp">
@@ -261,6 +264,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

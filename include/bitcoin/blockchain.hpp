@@ -33,6 +33,7 @@
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
+#include <bitcoin/blockchain/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>

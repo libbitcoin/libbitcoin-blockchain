@@ -135,6 +135,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_transaction.cpp" />
   </ItemGroup>

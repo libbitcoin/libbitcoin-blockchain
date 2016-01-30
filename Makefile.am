@@ -43,6 +43,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizer.cpp \
     src/orphan_pool.cpp \
     src/transaction_pool.cpp \
+    src/transaction_pool_index.cpp \
     src/validate_block.cpp \
     src/validate_transaction.cpp \
     src/database/block_database.cpp \
@@ -296,6 +297,7 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/settings.hpp \
     include/bitcoin/blockchain/simple_chain.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
+    include/bitcoin/blockchain/transaction_pool_index.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
     include/bitcoin/blockchain/validate_transaction.hpp \
     include/bitcoin/blockchain/version.hpp
