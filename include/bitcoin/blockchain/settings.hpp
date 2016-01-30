@@ -29,14 +29,16 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// default settings
-#define BLOCKCHAIN_THREADS                  6
-#define BLOCKCHAIN_BLOCK_POOL_CAPACITY      50
-#define BLOCKCHAIN_HISTORY_START_HEIGHT     0
-#define BLOCKCHAIN_DATABASE_PATH            boost::filesystem::path("blockchain")
+#define BLOCKCHAIN_THREADS                          6
+#define BLOCKCHAIN_HISTORY_START_HEIGHT             0
+#define BLOCKCHAIN_BLOCK_POOL_CAPACITY              50
+#define BLOCKCHAIN_TRANSACTION_POOL_CAPACITY        1000
+#define BLOCKCHAIN_TRANSACTION_POOL_CONSISTENCY     false
+#define BLOCKCHAIN_DATABASE_PATH    boost::filesystem::path("blockchain")
 
 /// mainnet settings
-#define BLOCKCHAIN_TESTNET_RULES_MAINNET    false
-#define BLOCKCHAIN_CHECKPOINTS_MAINNET      config::checkpoint::list \
+#define BLOCKCHAIN_TESTNET_RULES_MAINNET            false
+#define BLOCKCHAIN_CHECKPOINTS_MAINNET              config::checkpoint::list \
 { \
     { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 }, \
     { "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d", 11111 }, \
@@ -62,8 +64,8 @@ namespace blockchain {
 }
 
 /// testnet settings
-#define BLOCKCHAIN_TESTNET_RULES_TESTNET    true
-#define BLOCKCHAIN_CHECKPOINTS_TESTNET      config::checkpoint::list \
+#define BLOCKCHAIN_TESTNET_RULES_TESTNET            true
+#define BLOCKCHAIN_CHECKPOINTS_TESTNET              config::checkpoint::list \
 { \
     { "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 }, \
     { "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 }, \
@@ -76,8 +78,10 @@ namespace blockchain {
 struct BCB_API settings
 {
     uint32_t threads;
-    uint32_t block_pool_capacity;
     uint32_t history_start_height;
+    uint32_t block_pool_capacity;
+    uint32_t transaction_pool_capacity;
+    bool transaction_pool_consistency;
     bool use_testnet_rules;
     boost::filesystem::path database_path;
     config::checkpoint::list checkpoints;

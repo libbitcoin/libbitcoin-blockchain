@@ -46,6 +46,8 @@ transaction_pool_index::transaction_pool_index(threadpool& pool,
 {
 }
 
+// TODO: add stop property, method and handling - to speed shutdown.
+
 // ----------------------------------------------------------------------------
 // Add sequence.
 

@@ -25,6 +25,7 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
@@ -33,18 +34,20 @@ namespace blockchain {
 #define NAME "mempool"
 
 using namespace chain;
+using namespace wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 using std::placeholders::_4;
 
 transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
-    size_t capacity, bool consistency)
+    const settings& settings)
   : stopped_(true),
-    buffer_(capacity),
+    buffer_(settings.transaction_pool_capacity),
     dispatch_(pool, NAME),
     blockchain_(chain),
-    maintain_consistency_(consistency),
+    index_(pool, chain),
+    maintain_consistency_(settings.transaction_pool_consistency),
     subscriber_(std::make_shared<transaction_subscriber>(pool, NAME))
 {
 }
@@ -119,13 +122,13 @@ void transaction_pool::handle_validated(const code& ec,
     if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handler(ec, tx, hash, index_list());
+        handler(ec, tx, hash, {});
         return;
     }
 
     // Recheck the memory pool, as a duplicate may have been added.
     if (is_in_pool(hash))
-        handler(error::duplicate, tx, hash, index_list());
+        handler(error::duplicate, tx, hash, {});
     else
         handler(error::success, tx, hash, unconfirmed);
 }
@@ -136,8 +139,7 @@ void transaction_pool::store(const transaction& tx,
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, tx, hash_digest(),
-            index_list());
+        handle_validate(error::service_stopped, tx, {}, {});
         return;
     }
 
@@ -146,22 +148,46 @@ void transaction_pool::store(const transaction& tx,
             this, _1, _2, _3, _4, handle_confirm, handle_validate));
 }
 
+// TODO: this is overly complex due to the transaction pool and index split.
 void transaction_pool::do_store(const code& ec, const transaction& tx,
     const hash_digest& hash, const index_list& unconfirmed,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
-    if (!ec)
+    if (ec)
     {
-        add(tx, handle_confirm);
+        handle_validate(ec, tx, hash, {});
+        return;
+    }
 
-        // Notify subscribers that a tx has been accepted into the memory pool.
+    // Set up deindexing to run after transaction pool removal.
+    const auto do_deindex = [this, handle_confirm](const code ec,
+        const chain::transaction tx, const hash_digest hash)
+    {
+        const auto do_confirm = [handle_confirm, tx, hash](const code ec)
+        {
+            handle_confirm(ec, tx, hash);
+        };
+
+        index_.remove(tx, do_confirm);
+    };
+
+    // Add to pool.
+    add(tx, do_deindex);
+
+    // Notify after indexing.
+    const auto handle_indexed = [this, handle_validate, tx, hash, unconfirmed](
+        const code ec)
+    {
         notify_transaction(unconfirmed, tx);
 
         log::debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
-    }
 
-    handle_validate(ec, tx, hash, unconfirmed);
+        handle_validate(ec, tx, hash, unconfirmed);
+    };
+
+    // Add to index.
+    index_.add(tx, handle_indexed);
 }
 
 void transaction_pool::fetch(const hash_digest& transaction_hash,
@@ -169,7 +195,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 {
     if (stopped())
     {
-        handler(error::service_stopped, transaction());
+        handler(error::service_stopped, {});
         return;
     }
 
@@ -177,7 +203,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
     {
         const auto it = find(transaction_hash);
         if (it == buffer_.end())
-            handler(error::not_found, transaction());
+            handler(error::not_found, {});
         else
             handler(error::success, it->tx);
     };
@@ -185,12 +211,20 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
     dispatch_.ordered(tx_fetcher);
 }
 
+void transaction_pool::fetch_history(const payment_address& address,
+    size_t limit, size_t from_height,
+    block_chain::history_fetch_handler handler)
+{
+    // This passes through to blockchain to build combined history.
+    index_.fetch_all_history(address, limit, from_height, handler);
+}
+
 void transaction_pool::fetch_missing_hashes(const hash_list& hashes,
     missing_hashes_fetch_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, hash_list());
+        handler(error::service_stopped, {});
         return;
     }
 

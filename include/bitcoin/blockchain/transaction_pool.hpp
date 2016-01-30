@@ -26,6 +26,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/transaction_pool_index.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -57,8 +59,8 @@ public:
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
-    transaction_pool(threadpool& pool, block_chain& chain, size_t capacity,
-        bool consistency);
+    transaction_pool(threadpool& pool, block_chain& chain,
+        const settings& settings);
     ~transaction_pool();
 
     /// This class is not copyable.
@@ -69,6 +71,8 @@ public:
     void stop();
 
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    void fetch_history(const wallet::payment_address& address, size_t limit,
+        size_t from_height, block_chain::history_fetch_handler handler);
     void fetch_missing_hashes(const hash_list& hashes,
         missing_hashes_fetch_handler handler);
     void exists(const hash_digest& tx_hash, exists_handler handler);
@@ -110,10 +114,10 @@ protected:
         const hash_digest& hash, const index_list& unconfirmed,
         validate_handler handler);
 
+    void do_validate(const chain::transaction& tx, validate_handler handler);
     void do_store(const code& ec, const chain::transaction& tx,
         const hash_digest& hash, const index_list& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
-    void do_validate(const chain::transaction& tx, validate_handler handler);
 
     void notify_stop();
     void notify_transaction(const index_list& unconfirmed,
@@ -142,6 +146,7 @@ protected:
     buffer buffer_;
     dispatcher dispatch_;
     block_chain& blockchain_;
+    transaction_pool_index index_;
     const bool maintain_consistency_;
     transaction_subscriber::ptr subscriber_;
 };
