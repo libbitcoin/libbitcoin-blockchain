@@ -199,8 +199,8 @@ void transaction_pool_index::index_history_fetched(const code& ec,
     // the last do_doindex() and there's a transaction in our query in 
     // that block then we will have a conflict.
 
-    add_spend(history, spends);
-    add_output(history, outputs);
+    add(history, spends);
+    add(history, outputs);
 
     // This is the end of the fetch_all_history sequence.
     handler(error::success, history);
@@ -265,7 +265,7 @@ bool transaction_pool_index::is_conflict(block_chain::history& history,
     return false;
 }
 
-void transaction_pool_index::add_spend(block_chain::history& history,
+void transaction_pool_index::add(block_chain::history& history,
     const spend_info& spend)
 {
     const auto row = block_chain::history_row
@@ -279,7 +279,7 @@ void transaction_pool_index::add_spend(block_chain::history& history,
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add_output(block_chain::history& history,
+void transaction_pool_index::add(block_chain::history& history,
     const output_info& output)
 {
     const auto row = block_chain::history_row
@@ -293,26 +293,26 @@ void transaction_pool_index::add_output(block_chain::history& history,
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add_spend(block_chain::history& history,
+void transaction_pool_index::add(block_chain::history& history,
     const spend_info::list& spends)
 {
     // If everything okay insert the spend.
     for (const auto& spend: spends)
         if (!is_conflict(history, spend))
-            add_spend(history, spend);
+            add(history, spend);
 
     // This assert can be triggered if the pool fills and starts dropping txs.
     // In practice this should not happen often and isn't a problem.
     //BITCOIN_ASSERT_MSG(!conflict, "Couldn't find output for adding spend");
 }
 
-void transaction_pool_index::add_output(block_chain::history& history,
+void transaction_pool_index::add(block_chain::history& history,
     const output_info::list& outputs)
 {
     // If everything okay insert the outpoint.
     for (const auto& output: outputs)
         if (!is_conflict(history, output))
-            add_output(history, output);
+            add(history, output);
 }
 
 } // namespace blockchain

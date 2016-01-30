@@ -63,10 +63,10 @@ private:
 
     static bool is_conflict(history& history, const spend_info& spend);
     static bool is_conflict(history& history, const output_info& output);
-    static void add_spend(history& history, const spend_info& spend);
-    static void add_output(history& history, const output_info& output);
-    static void add_spend(history& history, const spend_info::list& spends);
-    static void add_output(history& history, const output_info::list& outputs);
+    static void add(history& history, const spend_info& spend);
+    static void add(history& history, const output_info& output);
+    static void add(history& history, const spend_info::list& spends);
+    static void add(history& history, const output_info::list& outputs);
     static void index_history_fetched(const code& ec,
         const spend_info::list& spends, const output_info::list& outputs,
         history history, fetch_handler handler);
