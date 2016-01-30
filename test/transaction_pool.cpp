@@ -116,13 +116,12 @@ public:
     }
 
     virtual void fetch_history(const wallet::payment_address& address,
-        history_fetch_handler handler, const uint64_t limit = 0,
-        const uint64_t from_height=0)
+        uint64_t limit, uint64_t from_height, history_fetch_handler handler)
     {
     }
 
-    virtual void fetch_stealth(const binary& prefix,
-        stealth_fetch_handler handler, uint64_t from_height = 0)
+    virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
+        stealth_fetch_handler handler)
     {
     }
 

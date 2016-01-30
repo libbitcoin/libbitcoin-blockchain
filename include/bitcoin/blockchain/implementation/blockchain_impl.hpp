@@ -105,12 +105,11 @@ public:
 
     /// fetch outputs, values and spends for an address.
     void fetch_history(const wallet::payment_address& address,
-        history_fetch_handler handler, const uint64_t limit=0,
-        const uint64_t from_height=0);
+        uint64_t limit, uint64_t from_height, history_fetch_handler handler);
 
     /// fetch stealth results.
-    void fetch_stealth(const binary& filter, stealth_fetch_handler handler,
-        uint64_t from_height = 0);
+    void fetch_stealth(const binary& filter, uint64_t from_height,
+        stealth_fetch_handler handler);
 
     void subscribe_reorganize(reorganize_handler handler);
 
@@ -153,9 +152,6 @@ private:
         handler(std::forward<Args>(args)...);
         return true;
     }
-
-    bool do_fetch_stealth(const binary& filter, stealth_fetch_handler handler,
-        uint64_t from_height, uint64_t slock);
 
     bool stopped();
 

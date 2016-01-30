@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[0].height == spend_h13);
         BOOST_REQUIRE(history[0].previous_checksum == block_chain::spend_checksum(out13));
     };
-    auto res_s1 = db.get(key1);
+    auto res_s1 = db.get(key1, 0, 0);
     fetch_s1(res_s1);
     auto no_spend = [=](const block_chain::history& history)
     {
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[0].kind == block_chain::point_kind::output);
         BOOST_REQUIRE(history[1].kind == block_chain::point_kind::output);
     };
-    auto res_ns = db.get(key2);
+    auto res_ns = db.get(key2, 0, 0);
     no_spend(res_ns);
     db.add_spend(key2, out22, spend22, spend_h22);
     auto has_spend = [=](const block_chain::history& history)
@@ -406,10 +406,10 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[2].height == out_h21);
         BOOST_REQUIRE(history[2].value == val21);
     };
-    auto res_has_sp = db.get(key2);
+    auto res_has_sp = db.get(key2, 0, 0);
     has_spend(res_has_sp);
     db.delete_last_row(key2);
-    auto res_no_sp = db.get(key2);
+    auto res_no_sp = db.get(key2, 0, 0);
     no_spend(res_no_sp);
 
     db.add_output(key3, out31, out_h31, val31);
@@ -418,18 +418,18 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     {
         BOOST_REQUIRE(history.size() == 1);
     };
-    auto res_1r1 = db.get(key3);
+    auto res_1r1 = db.get(key3, 0, 0);
     has_one_row(res_1r1);
-    auto res_1r2 = db.get(key4);
+    auto res_1r2 = db.get(key4, 0, 0);
     has_one_row(res_1r2);
     auto has_no_rows = [=](const block_chain::history& history)
     {
         BOOST_REQUIRE(history.empty());
     };
     db.delete_last_row(key3);
-    auto res_1nr1 = db.get(key3);
+    auto res_1nr1 = db.get(key3, 0, 0);
     has_no_rows(res_1nr1);
-    auto res_1nr2 = db.get(key4);
+    auto res_1nr2 = db.get(key4, 0, 0);
     has_one_row(res_1nr2);
 
     db.sync();

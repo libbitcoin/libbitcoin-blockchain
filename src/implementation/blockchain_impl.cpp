@@ -468,8 +468,7 @@ void blockchain_impl::fetch_spend(const chain::output_point& outpoint,
 }
 
 void blockchain_impl::fetch_history(const wallet::payment_address& address,
-    history_fetch_handler handler, const uint64_t limit,
-    const uint64_t from_height)
+    uint64_t limit, uint64_t from_height, history_fetch_handler handler)
 {
     const auto do_fetch = [this, address, handler, limit, from_height](
         size_t slock)
@@ -481,8 +480,8 @@ void blockchain_impl::fetch_history(const wallet::payment_address& address,
     fetch_parallel(do_fetch);
 }
 
-void blockchain_impl::fetch_stealth(const binary& filter,
-    stealth_fetch_handler handler, uint64_t from_height)
+void blockchain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
+    stealth_fetch_handler handler)
 {
     const auto do_fetch = [this, filter, handler, from_height](
         size_t slock)

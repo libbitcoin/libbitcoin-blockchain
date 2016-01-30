@@ -84,7 +84,7 @@ void test_block_exists(const database& interface,
                 if (!address)
                     continue;
 
-                auto history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash(), 0, 0);
                 auto found = false;
 
                 for (const auto row: history)
@@ -110,7 +110,7 @@ void test_block_exists(const database& interface,
             if (!address)
                 continue;
 
-            auto history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash(), 0, 0);
             auto found = false;
 
             for (const auto& row: history)
@@ -158,7 +158,7 @@ void test_block_not_exists(
                 if (!address)
                     continue;
 
-                auto history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash(), 0, 0);
                 auto found = false;
 
                 for (const auto& row: history)
@@ -183,7 +183,7 @@ void test_block_not_exists(
             if (!address)
                 continue;
 
-            auto history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash(), 0, 0);
             auto found = false;
 
             for (const auto& row: history)

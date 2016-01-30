@@ -146,11 +146,11 @@ public:
         spend_fetch_handler handler) = 0;
 
     virtual void fetch_history(const wallet::payment_address& address,
-        history_fetch_handler handler, const uint64_t limit = 0,
-        const uint64_t from_height=0) = 0;
+        uint64_t limit, uint64_t from_height,
+        history_fetch_handler handler) = 0;
 
-    virtual void fetch_stealth(const binary& filter,
-        stealth_fetch_handler handler, uint64_t from_height = 0) = 0;
+    virtual void fetch_stealth(const binary& filter, uint64_t from_height,
+        stealth_fetch_handler handler) = 0;
 
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
 
