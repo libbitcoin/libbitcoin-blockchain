@@ -192,13 +192,8 @@ void transaction_pool_index::index_history_fetched(const code& ec,
         return;
     }
 
-    // There is always a chance of inconsistency, so we resolve these 
-    // conflicts and move on. This can happen when new blocks arrive in,
-    // and indexer.query() is called midway through a bunch of 
-    // txpool.try_delete() operations. If do_query() is queued before
-    // the last do_doindex() and there's a transaction in our query in 
-    // that block then we will have a conflict.
-
+    // Race conditions raise the possiblity of seeing a spend or output more
+    // than once. We collapse any duplicates here and continue.
     add(history, spends);
     add(history, outputs);
 
@@ -241,9 +236,11 @@ void transaction_pool_index::do_fetch(const payment_address& address,
 // ----------------------------------------------------------------------------
 // Static helpers
 
-bool transaction_pool_index::is_conflict(block_chain::history& history,
+bool transaction_pool_index::exists(block_chain::history& history,
     const spend_info& spend)
 {
+    // Transactions may exist in the memory pool and in the blockchain,
+    // although this circumstance should not persist.
     for (const auto& row: history)
         if (row.kind == block_chain::point_kind::spend &&
             row.point == spend.point)
@@ -252,11 +249,11 @@ bool transaction_pool_index::is_conflict(block_chain::history& history,
     return false;
 }
 
-bool transaction_pool_index::is_conflict(block_chain::history& history,
+bool transaction_pool_index::exists(block_chain::history& history,
     const output_info& output)
 {
-    // Usually the indexer and memory doesn't have any transactions indexed and
-    // already confirmed and in the blockchain. This is a rare corner case.
+    // Transactions may exist in the memory pool and in the blockchain,
+    // although this circumstance should not persist.
     for (const auto& row: history)
         if (row.kind == block_chain::point_kind::output &&
             row.point == output.point)
@@ -296,22 +293,16 @@ void transaction_pool_index::add(block_chain::history& history,
 void transaction_pool_index::add(block_chain::history& history,
     const spend_info::list& spends)
 {
-    // If everything okay insert the spend.
     for (const auto& spend: spends)
-        if (!is_conflict(history, spend))
+        if (!exists(history, spend))
             add(history, spend);
-
-    // This assert can be triggered if the pool fills and starts dropping txs.
-    // In practice this should not happen often and isn't a problem.
-    //BITCOIN_ASSERT_MSG(!conflict, "Couldn't find output for adding spend");
 }
 
 void transaction_pool_index::add(block_chain::history& history,
     const output_info::list& outputs)
 {
-    // If everything okay insert the outpoint.
     for (const auto& output: outputs)
-        if (!is_conflict(history, output))
+        if (!exists(history, output))
             add(history, output);
 }
 

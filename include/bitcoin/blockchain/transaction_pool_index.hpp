@@ -61,8 +61,8 @@ private:
     typedef std::unordered_multimap<payment_address, spend_info> spends_map;
     typedef std::unordered_multimap<payment_address, output_info> outputs_map;
 
-    static bool is_conflict(history& history, const spend_info& spend);
-    static bool is_conflict(history& history, const output_info& output);
+    static bool exists(history& history, const spend_info& spend);
+    static bool exists(history& history, const output_info& output);
     static void add(history& history, const spend_info& spend);
     static void add(history& history, const output_info& output);
     static void add(history& history, const spend_info::list& spends);
