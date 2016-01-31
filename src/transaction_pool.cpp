@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -59,7 +60,16 @@ transaction_pool::~transaction_pool()
 
 void transaction_pool::start()
 {
-    stopped_ = false;
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    if (true)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        // stopped_/subscriber_ is the guarded relation.
+        stopped_ = false;
+    }
+    ///////////////////////////////////////////////////////////////////////////
 
     // Subscribe to blockchain (organizer) reorg notifications.
     blockchain_.subscribe_reorganize(
@@ -67,10 +77,17 @@ void transaction_pool::start()
             this, _1, _2, _3, _4));
 }
 
+// The subscriber is not restartable.
 void transaction_pool::stop()
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // stopped_/subscriber_ is the guarded relation.
     notify_stop();
     stopped_ = true;
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool transaction_pool::stopped()
@@ -304,10 +321,24 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
     return true;
 }
 
-void transaction_pool::notify_stop()
+void transaction_pool::subscribe_transaction(
+    transaction_handler handle_transaction)
 {
-    subscriber_->stop();
-    subscriber_->relay(error::service_stopped, {}, {});
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    if (true)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        if (!stopped())
+        {
+            subscriber_->subscribe(handle_transaction);
+            return;
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    handle_transaction(error::service_stopped, {}, {});
 }
 
 void transaction_pool::notify_transaction(const index_list& unconfirmed,
@@ -316,13 +347,10 @@ void transaction_pool::notify_transaction(const index_list& unconfirmed,
     subscriber_->relay(error::success, unconfirmed, tx);
 }
 
-void transaction_pool::subscribe_transaction(
-    transaction_handler handle_transaction)
+void transaction_pool::notify_stop()
 {
-    if (stopped())
-        handle_transaction(error::service_stopped, {}, {});
-    else
-        subscriber_->subscribe(handle_transaction);
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, {}, {});
 }
 
 // Entry methods.

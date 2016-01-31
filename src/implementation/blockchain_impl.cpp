@@ -153,7 +153,7 @@ void blockchain_impl::do_store(block::ptr block, block_store_handler handler)
         return;
     }
 
-    organizer_.start();
+    organizer_.organize();
     stop_write(handler, detail->error(), detail->info());
 }
 

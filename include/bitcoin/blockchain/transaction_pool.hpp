@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <mutex>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -149,6 +150,7 @@ protected:
     transaction_pool_index index_;
     const bool maintain_consistency_;
     transaction_subscriber::ptr subscriber_;
+    std::mutex mutex_;
 };
 
 } // namespace blockchain

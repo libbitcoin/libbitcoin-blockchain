@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -41,18 +42,16 @@ namespace blockchain {
 
 organizer::organizer(threadpool& pool, orphan_pool& orphans,
     simple_chain& chain)
-  : orphans_(orphans),
+  : stopped_(false),
+    orphans_(orphans),
     chain_(chain),
-    subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME)),
-    stopped_(false)
+    subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME))
 {
 }
 
-// This is called on *every* blockchain_impl::start_write() call.
-bool organizer::start()
+// This is called on *every* blockchain_impl::do_store() call.
+void organizer::organize()
 {
-    stopped_ = false;
-
     // Load unprocessed blocks
     process_queue_ = orphans_.unprocessed();
 
@@ -65,15 +64,19 @@ bool organizer::start()
         // process() can remove blocks from the queue too
         process(process_block);
     }
-
-    return true;
 }
 
-bool organizer::stop()
+// The subscriber is not restartable.
+void organizer::stop()
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // stopped_/subscriber_ is the guarded relation.
     notify_stop();
     stopped_ = true;
-    return true;
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool organizer::stopped()
@@ -212,6 +215,25 @@ void organizer::clip_orphans(block_detail::list& orphan_chain,
     orphan_chain.erase(orphan_start, orphan_chain.end());
 }
 
+void organizer::subscribe_reorganize(block_chain::reorganize_handler handler)
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    if (true)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        if (!stopped())
+        {
+            subscriber_->subscribe(handler);
+            return;
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    handler(error::service_stopped, 0, {}, {});
+}
+
 void organizer::notify_reorganize(uint64_t fork_point,
     const block_detail::list& orphan_chain,
     const block_detail::list& replaced_chain)
@@ -230,14 +252,6 @@ void organizer::notify_reorganize(uint64_t fork_point,
         replacements.begin(), to_raw_pointer);
 
     subscriber_->relay(error::success, fork_point, arrivals, replacements);
-}
-
-void organizer::subscribe_reorganize(block_chain::reorganize_handler handler)
-{
-    if (stopped())
-        handler(error::service_stopped, 0, {}, {});
-    else
-        subscriber_->subscribe(handler);
 }
 
 void organizer::notify_stop()

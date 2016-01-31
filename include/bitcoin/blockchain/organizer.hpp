@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
@@ -65,9 +66,9 @@ public:
 
     organizer(threadpool& pool, orphan_pool& orphans, simple_chain& chain);
 
-    bool start();
-    bool stop();
+    void organize();
     void subscribe_reorganize(block_chain::reorganize_handler handler);
+    void stop();
 
 protected:
     bool stopped();
@@ -84,11 +85,12 @@ private:
         const block_detail::list& replaced_chain);
     void notify_stop();
 
+    bool stopped_;
     orphan_pool& orphans_;
     simple_chain& chain_;
-    reorganize_subscriber::ptr subscriber_;
     block_detail::list process_queue_;
-    bool stopped_;
+    reorganize_subscriber::ptr subscriber_;
+    std::mutex mutex_;
 };
 
 } // namespace blockchain
