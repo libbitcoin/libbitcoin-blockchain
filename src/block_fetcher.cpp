@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    void handle_fetch_header(const std::error_code& ec, const header& header,
+    void handle_fetch_header(const code& ec, const header& header,
         block::ptr block, block_fetch_handler handler)
     {
         if (ec)
@@ -74,7 +74,7 @@ private:
                 shared_from_this(), _1, _2, block, handler));
     }
 
-    void fetch_transactions(const std::error_code& ec, const hash_list& hashes,
+    void fetch_transactions(const code& ec, const hash_list& hashes,
         block::ptr block, block_fetch_handler handler)
     {
         if (ec)
@@ -104,7 +104,7 @@ private:
                     shared_from_this(), _1, _2, index++, block, complete));
     }
 
-    void handle_fetch_transaction(const std::error_code& ec,
+    void handle_fetch_transaction(const code& ec,
         const transaction& transaction, size_t index, block::ptr block,
         block_fetch_handler handler)
     {
@@ -130,7 +130,7 @@ private:
     }
 
     // If ec success then there is no possibility that block is being written.
-    void handle_complete(const std::error_code& ec, block::ptr block,
+    void handle_complete(const code& ec, block::ptr block,
         block_fetch_handler handler)
     {
         if (ec)
