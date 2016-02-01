@@ -172,17 +172,17 @@ public:
         transaction_pool::clear(ec);
     }
 
-    void remove(const organizer::block_ptr_list& blocks)
+    void remove(const block::ptr_list& blocks)
     {
         transaction_pool::remove(blocks);
     }
 
-    void delete_confirmed_in_blocks(const organizer::block_ptr_list& blocks)
+    void delete_confirmed_in_blocks(const block::ptr_list& blocks)
     {
         transaction_pool::delete_confirmed_in_blocks(blocks);
     }
 
-    void delete_spent_in_blocks(const organizer::block_ptr_list& blocks)
+    void delete_spent_in_blocks(const block::ptr_list& blocks)
     {
         transaction_pool::delete_spent_in_blocks(blocks);
     }
@@ -978,7 +978,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_confirmed_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__expected)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     blocks.push_back(std::make_shared<block>(block1));
     transaction_pool_fixture::buffer buffer(1);
@@ -991,7 +991,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_dependencies__expected)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -1017,7 +1017,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_dependencies__expected)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     block block2;
     DECLARE_TRANSACTION(0, error::service_stopped);
@@ -1062,7 +1062,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_spent_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expected)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     blocks.push_back(std::make_shared<block>(block1));
     transaction_pool_fixture::buffer buffer(1);
@@ -1075,7 +1075,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expe
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_duplicates_or_dependencies__expected)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);
@@ -1123,7 +1123,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__remove)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__removed_as_succeeded)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -1155,7 +1155,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
 
 BOOST_AUTO_TEST_CASE(transaction_pool__dremove__two_blocks_spends_no_duplicates__removed_as_spent)
 {
-    organizer::block_ptr_list blocks;
+    block::ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);

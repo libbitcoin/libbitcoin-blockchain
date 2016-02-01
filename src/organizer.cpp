@@ -37,6 +37,8 @@ INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace chain;
+
 #define NAME "organizer"
 
 organizer::organizer(threadpool& pool, orphan_pool& orphans,
@@ -242,11 +244,11 @@ void organizer::notify_reorganize(uint64_t fork_point,
         return detail->actual_ptr();
     };
 
-    block_ptr_list arrivals(orphan_chain.size());
+    block::ptr_list arrivals(orphan_chain.size());
     std::transform(orphan_chain.begin(), orphan_chain.end(),
         arrivals.begin(), to_raw_pointer);
 
-    block_ptr_list replacements(replaced_chain.size());
+    block::ptr_list replacements(replaced_chain.size());
     std::transform(replaced_chain.begin(), replaced_chain.end(),
         replacements.begin(), to_raw_pointer);
 

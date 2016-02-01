@@ -110,8 +110,8 @@ protected:
     iterator find(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
-        const organizer::block_ptr_list& new_blocks,
-        const organizer::block_ptr_list& replaced_blocks);
+        const chain::block::ptr_list& new_blocks,
+        const chain::block::ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
         const hash_digest& hash, const index_list& unconfirmed,
         validate_handler handler);
@@ -126,12 +126,12 @@ protected:
         const chain::transaction& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
-    void remove(const organizer::block_ptr_list& blocks);
+    void remove(const chain::block::ptr_list& blocks);
     void clear(const code& ec);
 
     // testable private
-    void delete_spent_in_blocks(const organizer::block_ptr_list& blocks);
-    void delete_confirmed_in_blocks(const organizer::block_ptr_list& blocks);
+    void delete_spent_in_blocks(const chain::block::ptr_list& blocks);
+    void delete_confirmed_in_blocks(const chain::block::ptr_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
