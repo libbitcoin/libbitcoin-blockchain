@@ -30,7 +30,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-typedef std::function<void(const std::error_code&, chain::block::ptr)>
+typedef std::function<void(const code&, chain::block::ptr)>
     block_fetch_handler;
 
 /**

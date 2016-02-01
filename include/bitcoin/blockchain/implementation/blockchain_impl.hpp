@@ -29,6 +29,7 @@
 #include <vector>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
@@ -111,7 +112,7 @@ public:
     void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler);
 
-    void subscribe_reorganize(reorganize_handler handler);
+    void subscribe_reorganize(organizer::reorganize_handler handler);
 
 private:
     typedef std::atomic<size_t> sequential_lock;

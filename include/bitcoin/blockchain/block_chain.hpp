@@ -27,6 +27,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -76,7 +77,6 @@ public:
 
     typedef std::vector<history_row> history;
     typedef std::vector<stealth_row> stealth;
-    typedef std::vector<chain::block::ptr> list;
     
     typedef handle0 result_handler;
     typedef handle0 block_import_handler;
@@ -93,8 +93,6 @@ public:
     typedef handle1<history> history_fetch_handler;
     typedef handle1<stealth> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
-    typedef std::function<bool(const std::error_code&, uint64_t, const list&,
-        const list&)> reorganize_handler;
 
     /// Create checksum so spend can be matched with corresponding
     /// output point without needing the whole previous outpoint.
@@ -152,7 +150,8 @@ public:
     virtual void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler) = 0;
 
-    virtual void subscribe_reorganize(reorganize_handler handler) = 0;
+    virtual void subscribe_reorganize(
+        organizer::reorganize_handler handler) = 0;
 
 private:
     static uint64_t remainder_fast(const hash_digest& value,

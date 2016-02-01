@@ -26,7 +26,6 @@
 #include <mutex>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
@@ -43,8 +42,8 @@ namespace blockchain {
 organizer::organizer(threadpool& pool, orphan_pool& orphans,
     simple_chain& chain)
   : stopped_(false),
-    orphans_(orphans),
     chain_(chain),
+    orphans_(orphans),
     subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME))
 {
 }
@@ -215,7 +214,7 @@ void organizer::clip_orphans(block_detail::list& orphan_chain,
     orphan_chain.erase(orphan_start, orphan_chain.end());
 }
 
-void organizer::subscribe_reorganize(block_chain::reorganize_handler handler)
+void organizer::subscribe_reorganize(reorganize_handler handler)
 {
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
@@ -243,11 +242,11 @@ void organizer::notify_reorganize(uint64_t fork_point,
         return detail->actual_ptr();
     };
 
-    block_chain::list arrivals(orphan_chain.size());
+    block_ptr_list arrivals(orphan_chain.size());
     std::transform(orphan_chain.begin(), orphan_chain.end(),
         arrivals.begin(), to_raw_pointer);
 
-    block_chain::list replacements(replaced_chain.size());
+    block_ptr_list replacements(replaced_chain.size());
     std::transform(replaced_chain.begin(), replaced_chain.end(),
         replacements.begin(), to_raw_pointer);
 

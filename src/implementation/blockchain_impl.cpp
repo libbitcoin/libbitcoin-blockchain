@@ -108,7 +108,8 @@ bool blockchain_impl::stopped()
     return stopped_;
 }
 
-void blockchain_impl::subscribe_reorganize(reorganize_handler handler)
+void blockchain_impl::subscribe_reorganize(
+    organizer::reorganize_handler handler)
 {
     // Pass this through to the organizer, which issues the notifications.
     organizer_.subscribe_reorganize(handler);
