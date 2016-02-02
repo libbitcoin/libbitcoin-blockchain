@@ -164,6 +164,7 @@
     <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_block.cpp" />

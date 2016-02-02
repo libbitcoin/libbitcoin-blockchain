@@ -42,6 +42,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/database.cpp \
     src/organizer.cpp \
     src/orphan_pool.cpp \
+    src/settings.cpp \
     src/transaction_pool.cpp \
     src/transaction_pool_index.cpp \
     src/validate_block.cpp \

@@ -44,9 +44,11 @@ class BCB_API blockchain_impl
   : public block_chain
 {
 public:
-    blockchain_impl(threadpool& pool, const settings& settings);
+    // TODO: create threadpool internally from config.
+    blockchain_impl(threadpool& pool,
+        const settings& settings=settings::mainnet);
 
-    // Non-copyable
+    /// This class is not copyable.
     blockchain_impl(const blockchain_impl&) = delete;
     void operator=(const blockchain_impl&) = delete;
 
@@ -54,7 +56,10 @@ public:
     void stop(result_handler handler);
     void stop();
 
+    /// Store a block to the blockchain, with FULL validation and indexing.
     void store(chain::block::ptr block, block_store_handler handler);
+
+    /// Import a block to the blockchain, with NO validation or indexing.
     void import(chain::block::ptr block, block_import_handler handler);
 
     /// fetch a block locator relative to the current top and threshold
@@ -112,6 +117,7 @@ public:
     void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler);
 
+    /// Subscribe to blockchain reorganizations.
     void subscribe_reorganize(organizer::reorganize_handler handler);
 
 private:

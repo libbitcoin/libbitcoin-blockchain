@@ -269,5 +269,8 @@
     <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\settings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
