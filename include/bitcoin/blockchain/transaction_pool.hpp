@@ -57,6 +57,8 @@ public:
         validate_handler;
     typedef std::function<bool(const code&, const index_list&,
         const chain::transaction&)> transaction_handler;
+    typedef resubscriber<const code&, const index_list&,
+        const chain::transaction&> transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
@@ -103,8 +105,6 @@ protected:
     typedef boost::circular_buffer<entry> buffer;
     typedef buffer::const_iterator iterator;
     typedef std::function<bool(const chain::input&)> input_compare;
-    typedef resubscriber<const code&, const index_list&,
-        const chain::transaction&> transaction_subscriber;
 
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;

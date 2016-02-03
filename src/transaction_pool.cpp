@@ -30,6 +30,9 @@
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
+// This must be declared in the global namespace.
+INITIALIZE_TRACK(bc::blockchain::transaction_pool::transaction_subscriber)
+
 namespace libbitcoin {
 namespace blockchain {
 
