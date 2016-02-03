@@ -125,7 +125,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\blockchain_impl.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\block_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp" />
@@ -158,7 +158,7 @@
     <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database.cpp" />
-    <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp" />
+    <ClCompile Include="..\..\..\..\src\implementation\block_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\simple_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp" />

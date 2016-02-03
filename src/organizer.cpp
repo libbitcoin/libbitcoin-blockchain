@@ -50,7 +50,7 @@ organizer::organizer(threadpool& pool, orphan_pool& orphans,
 {
 }
 
-// This is called on *every* blockchain_impl::do_store() call.
+// This is called on *every* block_chain_impl::do_store() call.
 void organizer::organize()
 {
     // Load unprocessed blocks

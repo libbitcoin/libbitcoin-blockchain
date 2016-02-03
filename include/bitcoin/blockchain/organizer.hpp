@@ -52,7 +52,7 @@ namespace blockchain {
  *   ___________________      [ common ]
  *  [_simple_chain_impl_]---->[________]
  *
- * All these components are managed and kept inside blockchain_impl.
+ * All these components are managed and kept inside block_chain_impl.
  */
 
 // Structure which organises the blocks from the orphan pool to the blockchain.

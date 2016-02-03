@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCKCHAIN_IMPL_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_CHAIN_IMPL_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_CHAIN_IMPL_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -40,17 +40,17 @@
 namespace libbitcoin {
 namespace blockchain {
 
-class BCB_API blockchain_impl
+class BCB_API block_chain_impl
   : public block_chain
 {
 public:
     // TODO: create threadpool internally from config.
-    blockchain_impl(threadpool& pool,
+    block_chain_impl(threadpool& pool,
         const settings& settings=settings::mainnet);
 
     /// This class is not copyable.
-    blockchain_impl(const blockchain_impl&) = delete;
-    void operator=(const blockchain_impl&) = delete;
+    block_chain_impl(const block_chain_impl&) = delete;
+    void operator=(const block_chain_impl&) = delete;
 
     void start(result_handler handler);
     void stop(result_handler handler);

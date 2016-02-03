@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <sstream>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/implementation/blockchain_impl.hpp>
+#include <bitcoin/blockchain/implementation/block_chain_impl.hpp>
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 namespace libbitcoin {
