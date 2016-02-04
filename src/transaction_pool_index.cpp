@@ -31,7 +31,6 @@ namespace blockchain {
     
 using namespace bc::blockchain;
 using namespace bc::chain;
-using namespace bc::network;
 using namespace bc::wallet;
 using std::placeholders::_1;
 using std::placeholders::_2;
