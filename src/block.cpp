@@ -93,32 +93,32 @@ chain::block testnet_genesis_block()
     return genesis;
 }
 
-chain::index_list block_locator_indexes(uint64_t top_height)
+index_list block_locator_indexes(size_t top_height)
 {
-    // Start at max_height
-    chain::index_list indexes;
+    BITCOIN_ASSERT(top_height <= bc::max_int64);
+    const auto top_height64 = static_cast<int64_t>(top_height);
 
-    // Push last 10 indexes first
-    int step = 1;
-    int start = 0;
+    index_list indexes;
 
-    BITCOIN_ASSERT(top_height <= max_int64);
-    const auto signed_height = static_cast<int64_t>(top_height);
+    // Modify the step in the iteration.
+    int64_t step = 1;
 
-    for (auto i = signed_height; i > 0; i -= step, ++start)
+    // Start at the top of the chain and work backwards.
+    for (auto index = top_height64; index > 0; index -= step)
     {
-        if (start >= 10)
-            step *= 2;
+        // Push top 10 indexes first, then back off exponentially.
+        if (indexes.size() >= 10)
+            step <<= 1;
 
-        indexes.push_back(i);
+        indexes.push_back(static_cast<size_t>(index));
     }
 
+    //  Push the genesis block index.
     indexes.push_back(0);
-
     return indexes;
 }
 
-uint64_t block_value(uint64_t height)
+uint64_t block_mint(size_t height)
 {
     uint64_t subsidy = coin_price(initial_block_reward);
     subsidy >>= (height / reward_interval);

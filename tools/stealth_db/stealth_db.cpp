@@ -115,7 +115,7 @@ int main(int argc, char** argv)
         }
         db.start();
         std::string filter_str(args[0]);
-        binary_type filter(filter_str);
+        binary filter(filter_str);
         size_t from_height;
         if (!parse_uint(from_height, args[1]))
             return -1;

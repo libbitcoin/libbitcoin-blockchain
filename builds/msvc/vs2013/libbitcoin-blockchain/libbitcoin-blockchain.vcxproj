@@ -58,7 +58,7 @@
   <PropertyGroup Label="Configuration">
     <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) == -1">StaticLibrary</ConfigurationType>
     <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) != -1">DynamicLibrary</ConfigurationType>
-    <NuGetPackageImportStamp>1ed8189c</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>683952c3</NuGetPackageImportStamp>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -67,6 +67,30 @@
     <Import Project="$(ProjectDir)..\..\properties\Output.props" />
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLTCG|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\blockchain\impl\disk_array.ipp" />
     <None Include="..\..\..\..\include\bitcoin\blockchain\impl\htdb_record.ipp" />
@@ -85,9 +109,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\checkpoint.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_locator_fetcher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk_array.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp" />
@@ -103,7 +125,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\blockchain_impl.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\block_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\simple_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp" />
@@ -113,6 +135,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
@@ -123,8 +146,6 @@
     <ClCompile Include="..\..\..\..\src\block_chain.cpp" />
     <ClCompile Include="..\..\..\..\src\block_detail.cpp" />
     <ClCompile Include="..\..\..\..\src\block_fetcher.cpp" />
-    <ClCompile Include="..\..\..\..\src\block_locator_fetcher.cpp" />
-    <ClCompile Include="..\..\..\..\src\checkpoint.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\linked_records.cpp" />
@@ -137,13 +158,15 @@
     <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database.cpp" />
-    <ClCompile Include="..\..\..\..\src\implementation\blockchain_impl.cpp" />
+    <ClCompile Include="..\..\..\..\src\implementation\block_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\simple_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_transaction.cpp" />
   </ItemGroup>
@@ -156,8 +179,7 @@
     <Import Project="..\..\..\..\..\..\nuget\boost_program_options-vc120.1.56.0.0\build\native\boost_program_options-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_program_options-vc120.1.56.0.0\build\native\boost_program_options-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -170,7 +192,6 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_program_options-vc120.1.56.0.0\build\native\boost_program_options-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_program_options-vc120.1.56.0.0\build\native\boost_program_options-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets'))" />
   </Target>
 </Project>

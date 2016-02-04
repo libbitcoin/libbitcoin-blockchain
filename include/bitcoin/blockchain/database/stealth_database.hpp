@@ -50,8 +50,7 @@ public:
     /**
      * Linearly scans all entries starting at from_height.
      */
-    block_chain::stealth scan(const binary_type& filter,
-        size_t from_height) const;
+    block_chain::stealth scan(const binary& filter, size_t from_height) const;
 
     /**
      * Add a stealth row to the database.

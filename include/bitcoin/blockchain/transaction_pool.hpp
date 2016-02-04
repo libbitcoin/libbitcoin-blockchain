@@ -22,10 +22,14 @@
 
 #include <cstddef>
 #include <functional>
+#include <mutex>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/transaction_pool_index.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -46,15 +50,21 @@ class BCB_API transaction_pool
 {
 public:
     typedef handle0 exists_handler;
+    typedef handle1<hash_list> missing_hashes_fetch_handler;
     typedef handle1<chain::transaction> fetch_handler;
     typedef handle2<chain::transaction, hash_digest> confirm_handler;
-    typedef handle3<chain::transaction, hash_digest, chain::index_list>
+    typedef handle3<chain::transaction, hash_digest, index_list>
         validate_handler;
+    typedef std::function<bool(const code&, const index_list&,
+        const chain::transaction&)> transaction_handler;
+    typedef resubscriber<const code&, const index_list&,
+        const chain::transaction&> transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
-    transaction_pool(threadpool& pool, block_chain& chain, size_t capacity);
+    transaction_pool(threadpool& pool, block_chain& chain,
+        const settings& settings);
     ~transaction_pool();
 
     /// This class is not copyable.
@@ -65,10 +75,17 @@ public:
     void stop();
 
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    void fetch_history(const wallet::payment_address& address, size_t limit,
+        size_t from_height, block_chain::history_fetch_handler handler);
+    void fetch_missing_hashes(const hash_list& hashes,
+        missing_hashes_fetch_handler handler);
     void exists(const hash_digest& tx_hash, exists_handler handler);
     void validate(const chain::transaction& tx, validate_handler handler);
     void store(const chain::transaction& tx, confirm_handler confirm_handler,
         validate_handler validate_handler);
+
+    /// Subscribe to transaction acceptance into the mempool.
+    void subscribe_transaction(transaction_handler handler);
 
     // TODO: these should be access-limited to validate_transaction.
     // These are not stranded and therefore represent a thread safety issue.
@@ -92,23 +109,29 @@ protected:
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
 
-    void handle_reorganized(const code& ec, size_t fork_point,
-        const block_chain::list& new_blocks,
-        const block_chain::list& replaced_blocks);
+    bool handle_reorganized(const code& ec, size_t fork_point,
+        const chain::block::ptr_list& new_blocks,
+        const chain::block::ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const chain::index_list& unconfirmed,
+        const hash_digest& hash, const index_list& unconfirmed,
         validate_handler handler);
 
-    void do_store(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const chain::index_list& unconfirmed,
-        confirm_handler handle_confirm, validate_handler handle_validate);
     void do_validate(const chain::transaction& tx, validate_handler handler);
+    void do_store(const code& ec, const chain::transaction& tx,
+        const hash_digest& hash, const index_list& unconfirmed,
+        confirm_handler handle_confirm, validate_handler handle_validate);
+
+    void notify_stop();
+    void notify_transaction(const index_list& unconfirmed,
+        const chain::transaction& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
-    void delete_all(const code& ec);
-    void delete_superseded(const block_chain::list& blocks);
-    void delete_spent_in_blocks(const block_chain::list& blocks);
-    void delete_confirmed_in_blocks(const block_chain::list& blocks);
+    void remove(const chain::block::ptr_list& blocks);
+    void clear(const code& ec);
+
+    // testable private
+    void delete_spent_in_blocks(const chain::block::ptr_list& blocks);
+    void delete_confirmed_in_blocks(const chain::block::ptr_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
@@ -125,6 +148,10 @@ protected:
     buffer buffer_;
     dispatcher dispatch_;
     block_chain& blockchain_;
+    transaction_pool_index index_;
+    const bool maintain_consistency_;
+    transaction_subscriber::ptr subscriber_;
+    std::mutex mutex_;
 };
 
 } // namespace blockchain

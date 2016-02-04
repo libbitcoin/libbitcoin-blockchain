@@ -5,7 +5,7 @@
     <PlatformToolset>v120</PlatformToolset>
     <ProjectGuid>{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}</ProjectGuid>
     <ProjectName>libbitcoin-blockchain-test</ProjectName>
-    <NuGetPackageImportStamp>6e1a9fab</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>3686e772</NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugDEXE|Win32">
@@ -64,6 +64,30 @@
     <Import Project="$(ProjectDir)..\..\properties\Output.props" />
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLEXE|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDEXE|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDEXE|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLEXE|Win32'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLEXE|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDEXE|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDEXE|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLEXE|x64'">
+    <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\databases.cpp" />
     <ClCompile Include="..\..\..\..\test\disk_objs.cpp" />
@@ -88,8 +112,7 @@
     <Import Project="..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets')" />
     <Import Project="..\..\..\..\..\..\nuget\boost_unit_test_framework-vc120.1.56.0.0\build\native\boost_unit_test_framework-vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_unit_test_framework-vc120.1.56.0.0\build\native\boost_unit_test_framework-vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" />
-    <Import Project="..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -103,8 +126,7 @@
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_regex-vc120.1.56.0.0\build\native\boost_regex-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_system-vc120.1.56.0.0\build\native\boost_system-vc120.targets'))" />
     <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_unit_test_framework-vc120.1.56.0.0\build\native\boost_unit_test_framework-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_unit_test_framework-vc120.1.56.0.0\build\native\boost_unit_test_framework-vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.8\build\native\secp256k1_vc120.targets'))" />
-    <Error Condition="!Exists('..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\openssl_no-asm_vc120.1.0.1.800\build\native\openssl_no-asm_vc120.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc120.0.1.0.13\build\native\secp256k1_vc120.targets'))" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-blockchain\libbitcoin-blockchain.vcxproj">

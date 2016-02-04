@@ -16,7 +16,7 @@ includedir=@includedir@
 # Metadata
 #==============================================================================
 Name: libbitcoin-blockchain
-Description: Bitcoin Blockchain Implementation
+Description: Bitcoin Blockchain Library
 URL: https://github.com/libbitcoin/libbitcoin-blockchain
 Version: @PACKAGE_VERSION@
 

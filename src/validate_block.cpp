@@ -27,7 +27,6 @@
 #include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
 namespace libbitcoin {
@@ -38,68 +37,158 @@ namespace blockchain {
 if (stopped()) \
     return error::service_stopped
 
+using namespace chain;
 using boost::posix_time::ptime;
 using boost::posix_time::from_time_t;
 using boost::posix_time::second_clock;
 using boost::posix_time::hours;
 
-// Max block size is 1,000,000.
+// Consensus rule change activation and enforcement parameters.
+static constexpr uint8_t version_4 = 4;
+static constexpr uint8_t version_3 = 3;
+static constexpr uint8_t version_2 = 2;
+static constexpr uint8_t version_1 = 1;
+
+// Mainnet activation parameters.
+static constexpr size_t mainnet_active = 51;
+static constexpr size_t mainnet_enforce = 75;
+static constexpr size_t mainnet_sample = 100;
+
+// Testnet activation parameters.
+static constexpr size_t testnet_active = 750u;
+static constexpr size_t testnet_enforce = 950u;
+static constexpr size_t testnet_sample = 1000u;
+
+// Block 173805 is the first mainnet block after date-based activation.
+// Block 514 is the first testnet block after date-based activation.
+static constexpr size_t mainnet_bip16_activation_height = 173805;
+static constexpr size_t testnet_bip16_activation_height = 514;
+
+// github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
+static constexpr size_t mainnet_bip30_exception_height1 = 91842;
+static constexpr size_t mainnet_bip30_exception_height2 = 91880;
+static constexpr size_t testnet_bip30_exception_height1 = 0;
+static constexpr size_t testnet_bip30_exception_height2 = 0;
+
+// Max block size (1000000 bytes).
 static constexpr uint32_t max_block_size = 1000000;
 
-// Maximum signature operations per block is 20,000.
-static constexpr uint32_t max_block_script_sig_operations = 
-    max_block_size / 50;
+// Maximum signature operations per block (20000).
+static constexpr uint32_t max_block_script_sigops = max_block_size / 50;
 
-// BIP30 exception blocks.
-// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
-static const config::checkpoint mainnet_block_91842 =
-{ "00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec", 91842 };
-static const config::checkpoint mainnet_block_91880 =
-{ "00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721", 91880 };
-
-// The maximum height of version 1 blocks.
-// Is this correct, looks like it should be 227835?
-// see: github.com/bitcoin/bips/blob/master/bip-0034.mediawiki#result
-static constexpr uint64_t max_version1_height = 237370;
-
-// Target readjustment every 2 weeks (in seconds).
-static constexpr uint64_t target_timespan = 2 * 7 * 24 * 60 * 60;
-
-// Aim for blocks every 10 mins (in seconds).
-static constexpr uint64_t target_spacing = 10 * 60;
+// The default sigops count for mutisignature scripts.
+static constexpr uint32_t multisig_default_sigops = 20;
 
 // Value used to define retargeting range constraint.
 static constexpr uint64_t retargeting_factor = 4;
 
-// Two weeks worth of blocks (count of blocks).
-static constexpr uint64_t retargeting_interval = 
-    target_timespan / target_spacing;
+// Aim for blocks every 10 mins (600 seconds).
+static constexpr uint64_t target_spacing_seconds = 10 * 60;
 
-// BIP30 exception blocks (with duplicate transactions).
-// see: github.com/bitcoin/bips/blob/master/bip-0030.mediawiki#specification
-bool validate_block::is_special_duplicate(const chain::block& block,
-    size_t height)
-{
-    if (height != mainnet_block_91842.height() &&
-        height != mainnet_block_91880.height())
-        return false;
+// Target readjustment every 2 weeks (1209600 seconds).
+static constexpr uint64_t target_timespan_seconds = 2 * 7 * 24 * 60 * 60;
 
-    const auto hash = block.header.hash();
-    return 
-        hash == mainnet_block_91842.hash() || 
-        hash == mainnet_block_91880.hash();
-}
+// The target number of blocks for 2 weeks of work (2016 blocks).
+static constexpr uint64_t retargeting_interval = target_timespan_seconds /
+    target_spacing_seconds;
+
+// The window by which a time stamp may exceed our current time (2 hours).
+static const auto time_stamp_window = hours(2);
 
 // The nullptr option is for backward compatibility only.
-validate_block::validate_block(size_t height, const chain::block& block,
-    bool testnet, const config::checkpoint::list& checks,
-    stopped_callback callback)
+validate_block::validate_block(size_t height, const block& block, bool testnet,
+    const config::checkpoint::list& checks, stopped_callback callback)
   : testnet_(testnet),
     height_(height),
+    activations_(script_context::none_enabled),
+    minimum_version_(0),
     current_block_(block),
     checkpoints_(checks),
     stop_callback_(callback == nullptr ? [](){ return false; } : callback)
 {
+}
+
+void validate_block::initialize_context()
+{
+    const auto bip30_exception_height1 = testnet_ ?
+        testnet_bip30_exception_height1 :
+        mainnet_bip30_exception_height1;
+
+    const auto bip30_exception_height2 = testnet_ ?
+        testnet_bip30_exception_height2 :
+        mainnet_bip30_exception_height2;
+
+    const auto bip16_activation_height = testnet_ ?
+        testnet_bip16_activation_height :
+        mainnet_bip16_activation_height;
+
+    const auto active = testnet_ ? testnet_active : mainnet_active;
+    const auto enforce = testnet_ ? testnet_enforce : mainnet_enforce;
+    const auto sample = testnet_ ? testnet_sample : mainnet_sample;
+
+    // Continue even if this is too small or empty (fast and simpler).
+    const auto versions = preceding_block_versions(sample);
+
+    const auto ge_4 = [](uint8_t version) { return version >= version_4; };
+    const auto ge_3 = [](uint8_t version) { return version >= version_3; };
+    const auto ge_2 = [](uint8_t version) { return version >= version_2; };
+
+    const auto count_4 = std::count_if(versions.begin(), versions.end(), ge_4);
+    const auto count_3 = std::count_if(versions.begin(), versions.end(), ge_3);
+    const auto count_2 = std::count_if(versions.begin(), versions.end(), ge_2);
+
+    const auto activate = [active](size_t count) { return count >= active; };
+    const auto enforced = [enforce](size_t count) { return count >= enforce; };
+
+    // version 4/3/2 enforced based on 95% of preceding 1000 mainnet blocks.
+    if (enforced(count_4))
+        minimum_version_ = version_4;
+    else if (enforced(count_3))
+        minimum_version_ = version_3;
+    else if (enforced(count_2))
+        minimum_version_ = version_2;
+    else
+        minimum_version_ = version_1;
+
+    // bip65 is activated based on 75% of preceding 1000 mainnet blocks.
+    if (activate(count_4))
+        activations_ |= script_context::bip65_enabled;
+
+    // bip66 is activated based on 75% of preceding 1000 mainnet blocks.
+    if (activate(count_3))
+        activations_ |= script_context::bip66_enabled;
+
+    // bip34 is activated based on 75% of preceding 1000 mainnet blocks.
+    if (activate(count_2))
+        activations_ |= script_context::bip34_enabled;
+
+    // bip30 applies to all but two mainnet blocks that violate the rule.
+    if (height_ != bip30_exception_height1 &&
+        height_ != bip30_exception_height2)
+        activations_ |= script_context::bip30_enabled;
+
+    // bip16 was activated with a one-time test on mainnet/testnet (~55% rule).
+    if (height_ >= bip16_activation_height)
+        activations_ |= script_context::bip16_enabled;
+}
+
+// initialize_context must be called first (to set activations_).
+bool validate_block::is_active(script_context flag) const
+{
+    if (!script::is_active(activations_, flag))
+        return false;
+
+    const auto version = current_block_.header.version;
+    return
+        (flag == script_context::bip65_enabled && version >= version_4) ||
+        (flag == script_context::bip66_enabled && version >= version_3) ||
+        (flag == script_context::bip34_enabled && version >= version_2);
+}
+
+// validate_version must be called first (to set minimum_version_).
+bool validate_block::is_valid_version() const
+{
+    return current_block_.header.version >= minimum_version_;
 }
 
 bool validate_block::stopped() const
@@ -114,16 +203,13 @@ code validate_block::check_block() const
 
     const auto& transactions = current_block_.transactions;
 
-    if (transactions.empty() || transactions.size() > max_block_size ||
+    if (transactions.empty() ||
         current_block_.serialized_size() > max_block_size)
-    {
         return error::size_limits;
-    }
 
     const auto& header = current_block_.header;
-    const auto hash = header.hash();
 
-    if (!is_valid_proof_of_work(hash, header.bits))
+    if (!is_valid_proof_of_work(header.hash(), header.bits))
         return error::proof_of_work;
 
     RETURN_IF_STOPPED();
@@ -140,7 +226,7 @@ code validate_block::check_block() const
     {
         RETURN_IF_STOPPED();
 
-        if ((*it).is_coinbase())
+        if (it->is_coinbase())
             return error::extra_coinbases;
     }
 
@@ -161,21 +247,21 @@ code validate_block::check_block() const
     RETURN_IF_STOPPED();
 
     const auto sigops = legacy_sigops_count(transactions);
-    if (sigops > max_block_script_sig_operations)
+    if (sigops > max_block_script_sigops)
         return error::too_many_sigs;
 
     RETURN_IF_STOPPED();
 
-    if (header.merkle != chain::block::generate_merkle_root(transactions))
+    if (header.merkle != block::generate_merkle_root(transactions))
         return error::merkle_mismatch;
 
     return error::success;
 }
 
-bool validate_block::is_distinct_tx_set(const chain::transaction::list& txs)
+bool validate_block::is_distinct_tx_set(const transaction::list& txs)
 {
     // We define distinctness by transaction hash.
-    const auto hasher = [](const chain::transaction& transaction)
+    const auto hasher = [](const transaction& transaction)
     {
         return transaction.hash();
     };
@@ -193,63 +279,59 @@ ptime validate_block::current_time() const
 
 bool validate_block::is_valid_time_stamp(uint32_t timestamp) const
 {
-    const auto two_hour_future = current_time() + hours(2);
+    const auto two_hour_future = current_time() + time_stamp_window;
     const auto block_time = from_time_t(timestamp);
     return block_time <= two_hour_future;
 }
 
 bool validate_block::is_valid_proof_of_work(hash_digest hash, uint32_t bits)
 {
-    hash_number target;
-    if (!target.set_compact(bits))
-        return false;
-
-    if (target <= 0 || target > max_target())
+    hash_number target_value;
+    if (!target_value.set_compact(bits) || target_value > max_target())
         return false;
 
     hash_number our_value;
     our_value.set_hash(hash);
-    return (our_value <= target);
+    return (our_value <= target_value);
 }
 
 // Determine if code is in the op_n range.
-inline bool within_op_n(chain::opcode code)
+inline bool within_op_n(opcode code)
 {
     const auto value = static_cast<uint8_t>(code);
-    constexpr auto op_1 = static_cast<uint8_t>(chain::opcode::op_1);
-    constexpr auto op_16 = static_cast<uint8_t>(chain::opcode::op_16);
+    constexpr auto op_1 = static_cast<uint8_t>(opcode::op_1);
+    constexpr auto op_16 = static_cast<uint8_t>(opcode::op_16);
     return op_1 <= value && value <= op_16;
 }
 
 // Return the op_n index (i.e. value of n).
-inline uint8_t decode_op_n(chain::opcode code)
+inline uint8_t decode_op_n(opcode code)
 {
     BITCOIN_ASSERT(within_op_n(code));
     const auto value = static_cast<uint8_t>(code);
-    constexpr auto op_0 = static_cast<uint8_t>(chain::opcode::op_1) - 1;
+    constexpr auto op_0 = static_cast<uint8_t>(opcode::op_1) - 1;
     return value - op_0;
 }
 
-inline size_t count_script_sigops(
-    const chain::operation::stack& operations, bool accurate)
+inline size_t count_script_sigops(const operation::stack& operations,
+    bool accurate)
 {
     size_t total_sigs = 0;
-    chain::opcode last_opcode = chain::opcode::bad_operation;
+    opcode last_opcode = opcode::bad_operation;
     for (const auto& op: operations)
     {
-        if (op.code == chain::opcode::checksig ||
-            op.code == chain::opcode::checksigverify)
+        if (op.code == opcode::checksig || 
+            op.code == opcode::checksigverify)
         {
             total_sigs++;
         }
-        else if (
-            op.code == chain::opcode::checkmultisig ||
-            op.code == chain::opcode::checkmultisigverify)
+        else if (op.code == opcode::checkmultisig ||
+            op.code == opcode::checkmultisigverify)
         {
             if (accurate && within_op_n(last_opcode))
                 total_sigs += decode_op_n(last_opcode);
             else
-                total_sigs += 20;
+                total_sigs += multisig_default_sigops;
         }
 
         last_opcode = op.code;
@@ -258,7 +340,7 @@ inline size_t count_script_sigops(
     return total_sigs;
 }
 
-size_t validate_block::legacy_sigops_count(const chain::transaction& tx)
+size_t validate_block::legacy_sigops_count(const transaction& tx)
 {
     size_t total_sigs = 0;
     for (const auto& input: tx.inputs)
@@ -276,7 +358,7 @@ size_t validate_block::legacy_sigops_count(const chain::transaction& tx)
     return total_sigs;
 }
 
-size_t validate_block::legacy_sigops_count(const chain::transaction::list& txs)
+size_t validate_block::legacy_sigops_count(const transaction::list& txs)
 {
     size_t total_sigs = 0;
     for (const auto& tx: txs)
@@ -310,19 +392,19 @@ code validate_block::accept_block() const
     // Ensure that the block passes checkpoints.
     // This is both DOS protection and performance optimization for sync.
     const auto block_hash = header.hash();
-    if (!checkpoint::validate(block_hash, height_, checkpoints_))
+    if (!config::checkpoint::validate(block_hash, height_, checkpoints_))
         return error::checkpoints_failed;
 
     RETURN_IF_STOPPED();
 
-    // Reject version=1 blocks after switchover point.
-    if (header.version < 2 && height_ > max_version1_height)
+    // Reject blocks that are below the minimum version for the current height.
+    if (!is_valid_version())
         return error::old_version_block;
 
     RETURN_IF_STOPPED();
 
-    // Enforce version=2 rule that coinbase starts with serialized height.
-    if (header.version >= 2 &&
+    // Enforce rule that the coinbase starts with serialized height.
+    if (is_active(script_context::bip34_enabled) &&
         !is_valid_coinbase_height(height_, current_block_))
         return error::coinbase_height_mismatch;
 
@@ -346,13 +428,13 @@ uint32_t validate_block::work_required(bool is_testnet) const
 
         // Now constrain the time between an upper and lower bound.
         const auto constrained = range_constrain(actual,
-            target_timespan / retargeting_factor,
-            target_timespan * retargeting_factor);
+            target_timespan_seconds / retargeting_factor,
+            target_timespan_seconds * retargeting_factor);
 
         hash_number retarget;
         retarget.set_compact(previous_block_bits());
         retarget *= constrained;
-        retarget /= target_timespan;
+        retarget /= target_timespan_seconds;
         if (retarget > max_target())
             retarget = max_target();
 
@@ -362,18 +444,18 @@ uint32_t validate_block::work_required(bool is_testnet) const
     if (!is_testnet)
         return previous_block_bits();
 
-    // Remainder is testnet in not-retargeting scenario.
+    // This section is testnet in not-retargeting scenario.
     // ------------------------------------------------------------------------
 
-    const auto max_time_gap = fetch_block(height_ - 1).timestamp + 
-        2 * target_spacing;
+    const auto max_time_gap = fetch_block(height_ - 1).timestamp + 2 * 
+        target_spacing_seconds;
 
     if (current_block_.header.timestamp > max_time_gap)
         return max_work_bits;
 
     const auto last_non_special_bits = [this, is_retarget_height]()
     {
-        chain::header previous_block;
+        header previous_block;
         auto previous_height = height_;
 
         // TODO: this is very suboptimal, cache the set of change points.
@@ -393,48 +475,38 @@ uint32_t validate_block::work_required(bool is_testnet) const
     };
 
     return last_non_special_bits();
+
+    // ------------------------------------------------------------------------
 }
 
-bool validate_block::is_valid_coinbase_height(size_t height, 
-    const chain::block& block)
+bool validate_block::is_valid_coinbase_height(size_t height, const block& block)
 {
-    // There are old blocks with version incorrectly set to 2. Ignore them.
-    if (height < max_version1_height)
-        return true;
-
-    // Checks whether the block height is in the coinbase tx input script.
-    // Version 2 blocks and onwards.
-    if (block.header.version < 2 || block.transactions.empty() || 
+    // There must be a transaction with an input.
+    if (block.transactions.empty() ||
         block.transactions.front().inputs.empty())
         return false;
 
-    // First get the serialized coinbase input script as a series of bytes.
-    const auto& coinbase_tx = block.transactions.front();
-    const auto& coinbase_script = coinbase_tx.inputs.front().script;
-    const auto raw_coinbase = coinbase_script.to_data(false);
+    // Get the serialized coinbase input script as a byte vector.
+    const auto& actual_tx = block.transactions.front();
+    const auto& actual_script = actual_tx.inputs.front().script;
+    const auto actual = actual_script.to_data(false);
 
-    // Try to recreate the expected bytes.
-    chain::script expect_coinbase;
-    script_number expect_number(height);
-    expect_coinbase.operations.push_back(
-        { chain::opcode::special, expect_number.data() });
+    // Create the expected script as a byte vector.
+    script expected_script;
+    script_number number(height);
+    expected_script.operations.push_back({ opcode::special, number.data() });
+    const auto expected = expected_script.to_data(false);
 
-    // Save the expected coinbase script.
-    const auto expect = expect_coinbase.to_data(false);
-
-    // Perform comparison of the first bytes with raw_coinbase.
-    if (expect.size() > raw_coinbase.size())
-        return false;
-
-    return std::equal(expect.begin(), expect.end(), raw_coinbase.begin());
+    // Require that the coinbase script match the expected coinbase script.
+    return std::equal(expected.begin(), expected.end(), actual.begin());
 }
 
 code validate_block::connect_block() const
 {
     const auto& transactions = current_block_.transactions;
 
-    // BIP30 security fix, and exclusion for two txs/blocks.
-    if (!is_special_duplicate(current_block_, height_))
+    // BIP30 duplicate exceptions are spent and are not indexed.
+    if (is_active(script_context::bip30_enabled))
     {
         ////////////// TODO: parallelize. //////////////
         for (const auto& tx: transactions)
@@ -458,13 +530,12 @@ code validate_block::connect_block() const
 
         // It appears that this is also checked in check_block().
         total_sigops += legacy_sigops_count(tx);
-        if (total_sigops > max_block_script_sig_operations)
+        if (total_sigops > max_block_script_sigops)
             return error::too_many_sigs;
 
         RETURN_IF_STOPPED();
 
-        // Count sigops for tx 0, but we don't perform
-        // the other checks on coinbase tx.
+        // Count sigops for coinbase tx, but no other checks.
         if (tx.is_coinbase())
             continue;
 
@@ -483,15 +554,12 @@ code validate_block::connect_block() const
     RETURN_IF_STOPPED();
 
     const auto& coinbase = transactions.front();
-    const auto coinbase_value = coinbase.total_output_value();
-
-    if (coinbase_value > block_value(height_) + fees)
-        return error::coinbase_too_large;
-
-    return error::success;
+    const auto reward = coinbase.total_output_value();
+    const auto value = block_mint(height_) + fees;
+    return reward > value ? error::coinbase_too_large : error::success;
 }
 
-bool validate_block::is_spent_duplicate(const chain::transaction& tx) const
+bool validate_block::is_spent_duplicate(const transaction& tx) const
 {
     const auto tx_hash = tx.hash();
 
@@ -511,7 +579,7 @@ bool validate_block::is_spent_duplicate(const chain::transaction& tx) const
     return true;
 }
 
-bool validate_block::validate_inputs(const chain::transaction& tx,
+bool validate_block::validate_inputs(const transaction& tx,
     size_t index_in_parent, uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(!tx.is_coinbase());
@@ -531,7 +599,7 @@ bool validate_block::validate_inputs(const chain::transaction& tx,
 }
 
 bool script_hash_signature_operations_count(size_t& out_count,
-    const chain::script& output_script, const chain::script& input_script)
+    const script& output_script, const script& input_script)
 {
     using namespace chain;
     constexpr auto strict = script::parse_mode::strict;
@@ -555,14 +623,14 @@ bool script_hash_signature_operations_count(size_t& out_count,
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const chain::transaction& current_tx, size_t input_index,
+    const transaction& current_tx, size_t input_index,
     uint64_t& value_in, size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
 
     // Lookup previous output
     size_t previous_height;
-    chain::transaction previous_tx;
+    transaction previous_tx;
     const auto& input = current_tx.inputs[input_index];
     const auto& previous_output = input.previous_output;
 
@@ -570,7 +638,9 @@ bool validate_block::connect_input(size_t index_in_parent,
     // including the current (orphan) block and excluding blocks above fork.
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
-        log::warning(LOG_VALIDATE) << "Failure fetching input transaction.";
+        log::warning(LOG_VALIDATE)
+            << "Failure fetching input transaction ["
+            << encode_hash(previous_output.hash) << "]";
         return false;
     }
 
@@ -586,7 +656,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     }
 
     total_sigops += count;
-    if (total_sigops > max_block_script_sig_operations)
+    if (total_sigops > max_block_script_sigops)
     {
         log::warning(LOG_VALIDATE) << "Total sigops exceeds block maximum.";
         return false;
@@ -612,8 +682,8 @@ bool validate_block::connect_input(size_t index_in_parent,
         }
     }
 
-    if (!validate_transaction::validate_consensus(previous_tx_out.script,
-        current_tx, input_index, current_block_.header, height_))
+    if (!validate_transaction::check_consensus(previous_tx_out.script,
+        current_tx, input_index, activations_))
     {
         log::warning(LOG_VALIDATE) << "Input script invalid consensus.";
         return false;

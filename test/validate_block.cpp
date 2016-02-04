@@ -30,7 +30,7 @@ class validate_block_fixture
 {
 public:
     validate_block_fixture()
-        : validate_block(0, chain::block(), false, config::checkpoint::list())
+      : validate_block(0, chain::block(), false, config::checkpoint::list())
     {
     }
 
@@ -45,6 +45,11 @@ public:
     uint32_t previous_block_bits() const
     {
         return 0;
+    }
+
+    versions preceding_block_versions(size_t count) const
+    {
+        return versions();
     }
 
     uint64_t actual_timespan(size_t interval) const

@@ -21,7 +21,6 @@
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 
 #include <cstdint>
-#include <bitcoin/blockchain/checkpoint.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>

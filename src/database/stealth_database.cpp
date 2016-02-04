@@ -55,7 +55,7 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-block_chain::stealth stealth_database::scan(const binary_type& filter,
+block_chain::stealth stealth_database::scan(const binary& filter,
     size_t from_height) const
 {
     if (from_height >= index_.count())

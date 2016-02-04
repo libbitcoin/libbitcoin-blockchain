@@ -30,6 +30,7 @@ orphan_pool::orphan_pool(size_t size)
 {
 }
 
+// TODO: there is no guard for entry here apart from nonexistence of the block.
 bool orphan_pool::add(block_detail::ptr incoming_block)
 {
     // No duplicates allowed.

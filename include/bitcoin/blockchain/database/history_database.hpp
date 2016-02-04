@@ -65,14 +65,14 @@ public:
      * it will be created.
      */
     void add_output(const short_hash& key, const chain::output_point& outpoint,
-        const uint32_t output_height, const uint64_t value);
+        const uint32_t output_height, uint64_t value);
 
     /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */
     void add_spend(const short_hash& key, const chain::output_point& previous,
-        const chain::input_point& spend, const size_t spend_height);
+        const chain::input_point& spend, size_t spend_height);
 
     /**
      * Delete the last row that was added to key.
@@ -84,8 +84,8 @@ public:
      * spends and the block heights associated with a Bitcoin address.
      * The returned history is a list of rows and a stop index.
      */
-    block_chain::history get(const short_hash& key, const size_t limit=0,
-        const size_t from_height=0) const;
+    block_chain::history get(const short_hash& key, size_t limit,
+        size_t from_height) const;
 
     /**
      * Synchonise with disk.

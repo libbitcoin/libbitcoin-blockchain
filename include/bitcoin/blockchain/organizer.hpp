@@ -22,12 +22,11 @@
 
 #include <cstdint>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <mutex>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
@@ -43,7 +42,7 @@ namespace blockchain {
  *           /                        \
  *  ________/_____                 ____\_________
  * |              |               |              |
- * | orphan_pool |               | simple_chain |
+ * | orphan_pool  |               | simple_chain |
  * |______________|               |______________|
  *
  * And both implementations of the organizer and simple_chain
@@ -53,7 +52,7 @@ namespace blockchain {
  *   ___________________      [ common ]
  *  [_simple_chain_impl_]---->[________]
  *
- * All these components are managed and kept inside blockchain_impl.
+ * All these components are managed and kept inside block_chain_impl.
  */
 
 // Structure which organises the blocks from the orphan pool to the blockchain.
@@ -61,14 +60,17 @@ class BCB_API organizer
 {
 public:
     typedef std::shared_ptr<organizer> ptr;
-    typedef subscriber<const code&, uint64_t, const block_chain::list&,
-        const block_chain::list&> reorganize_subscriber;
+    typedef std::function<bool(const code&, uint64_t,
+        const chain::block::ptr_list&, const chain::block::ptr_list&)>
+        reorganize_handler;
+    typedef resubscriber<const code&, uint64_t, const chain::block::ptr_list&,
+        const chain::block::ptr_list&> reorganize_subscriber;
 
     organizer(threadpool& pool, orphan_pool& orphans, simple_chain& chain);
 
-    bool start();
-    bool stop();
-    void subscribe_reorganize(block_chain::reorganize_handler handler);
+    void organize();
+    void subscribe_reorganize(reorganize_handler handler);
+    void stop();
 
 protected:
     bool stopped();
@@ -85,11 +87,12 @@ private:
         const block_detail::list& replaced_chain);
     void notify_stop();
 
-    orphan_pool& orphans_;
-    simple_chain& chain_;
-    reorganize_subscriber::ptr subscriber_;
-    block_detail::list process_queue_;
     bool stopped_;
+    simple_chain& chain_;
+    orphan_pool& orphans_;
+    block_detail::list process_queue_;
+    reorganize_subscriber::ptr subscriber_;
+    std::mutex mutex_;
 };
 
 } // namespace blockchain

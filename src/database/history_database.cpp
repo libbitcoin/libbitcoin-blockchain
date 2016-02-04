@@ -26,18 +26,20 @@
 namespace libbitcoin {
 namespace blockchain {
 
-constexpr size_t number_buckets = 97210744;
+using boost::filesystem::path;
+
+BC_CONSTEXPR size_t number_buckets = 97210744;
 BC_CONSTEXPR size_t header_size = htdb_record_header_fsize(number_buckets);
 BC_CONSTEXPR size_t initial_lookup_file_size = header_size + min_records_fsize;
 
 BC_CONSTEXPR position_type allocator_offset = header_size;
 BC_CONSTEXPR size_t alloc_record_size = map_record_fsize_multimap<short_hash>();
 
-constexpr size_t value_size = 1 + 36 + 4 + 8;
+BC_CONSTEXPR size_t value_size = 1 + 36 + 4 + 8;
 BC_CONSTEXPR size_t row_record_size = record_fsize_htdb<hash_digest>(value_size);
 
-history_database::history_database(const boost::filesystem::path& lookup_filename,
-    const boost::filesystem::path& rows_filename)
+history_database::history_database(const path& lookup_filename,
+    const path& rows_filename)
   : lookup_file_(lookup_filename), 
     header_(lookup_file_, 0),
     allocator_(lookup_file_, allocator_offset, alloc_record_size),
@@ -68,9 +70,9 @@ void history_database::start()
     rows_.start();
 }
 
-void history_database::add_output(
-    const short_hash& key, const chain::output_point& outpoint,
-    const uint32_t output_height, const uint64_t value)
+void history_database::add_output(const short_hash& key,
+    const chain::output_point& outpoint, uint32_t output_height,
+    uint64_t value)
 {
     auto write = [&](uint8_t* data)
     {
@@ -84,9 +86,9 @@ void history_database::add_output(
     map_.add_row(key, write);
 }
 
-void history_database::add_spend(
-    const short_hash& key, const chain::output_point& previous,
-    const chain::input_point& spend, const size_t spend_height)
+void history_database::add_spend(const short_hash& key,
+    const chain::output_point& previous, const chain::input_point& spend,
+    size_t spend_height)
 {
     auto write = [&](uint8_t* data)
     {
@@ -115,13 +117,13 @@ inline block_chain::point_kind marker_to_kind(uint8_t marker)
         block_chain::point_kind::spend;
 }
 
-block_chain::history history_database::get(const short_hash& key,
-    const size_t limit, const size_t from_height) const
+block_chain::history history_database::get(const short_hash& key, size_t limit,
+    size_t from_height) const
 {
     // Read the height value from the row.
     auto read_height = [](const uint8_t* data)
     {
-        constexpr position_type height_position = 1 + 36;
+        static constexpr position_type height_position = 1 + 36;
         return from_little_endian_unsafe<uint32_t>(data + height_position);
     };
 
@@ -166,7 +168,7 @@ block_chain::history history_database::get(const short_hash& key,
         };
     };
 
-    const index_type start = map_.lookup(key);
+    const auto start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
     {
         // Stop once we reach the limit (if specified).

@@ -23,8 +23,7 @@
 #include <cstdint>
 #include <sstream>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/checkpoint.hpp>
-#include <bitcoin/blockchain/implementation/blockchain_impl.hpp>
+#include <bitcoin/blockchain/implementation/block_chain_impl.hpp>
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 namespace libbitcoin {
@@ -37,7 +36,7 @@ organizer_impl::organizer_impl(threadpool& pool, database& database,
     testnet_(testnet), database_(database), checkpoints_(checks)
 {
     // Sort checkpoints by height so that top is sure to be properly obtained.
-    checkpoint::sort(checkpoints_);
+    config::checkpoint::sort(checkpoints_);
 }
 
 uint64_t organizer_impl::count_inputs(const chain::block& block)
@@ -70,13 +69,15 @@ code organizer_impl::verify(uint64_t fork_point,
         return stopped();
     };
 
-    const validate_block_impl validate(database_, fork_point, orphan_chain,
+    validate_block_impl validate(database_, fork_point, orphan_chain,
         orphan_index, height, current_block, testnet_, checkpoints_, callback);
 
     // Checks that are independent of the chain.
     auto ec = validate.check_block();
     if (ec)
         return ec;
+
+    validate.initialize_context();
 
     // Checks that are dependent on height and preceding blocks.
     ec = validate.accept_block();

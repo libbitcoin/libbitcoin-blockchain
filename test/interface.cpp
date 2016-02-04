@@ -84,7 +84,7 @@ void test_block_exists(const database& interface,
                 if (!address)
                     continue;
 
-                auto history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash(), 0, 0);
                 auto found = false;
 
                 for (const auto row: history)
@@ -110,7 +110,7 @@ void test_block_exists(const database& interface,
             if (!address)
                 continue;
 
-            auto history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash(), 0, 0);
             auto found = false;
 
             for (const auto& row: history)
@@ -158,7 +158,7 @@ void test_block_not_exists(
                 if (!address)
                     continue;
 
-                auto history = interface.history.get(address.hash());
+                auto history = interface.history.get(address.hash(), 0, 0);
                 auto found = false;
 
                 for (const auto& row: history)
@@ -183,7 +183,7 @@ void test_block_not_exists(
             if (!address)
                 continue;
 
-            auto history = interface.history.get(address.hash());
+            auto history = interface.history.get(address.hash(), 0, 0);
             auto found = false;
 
             for (const auto& row: history)
@@ -243,12 +243,7 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
     BOOST_REQUIRE_EQUAL(height, 0);
 
     chain::block block0 = mainnet_genesis_block();
-    ////test_block_not_exists(instance, block0);
-    ////instance.push(block0);
     test_block_exists(instance, 0, block0);
-
-    ////BOOST_REQUIRE(instance.blocks.top(height));
-    ////BOOST_REQUIRE_EQUAL(height, 0);
 
     std::cout << "pushpop: block 179" << std::endl;
 

@@ -20,8 +20,9 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_FETCHER_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_FETCHER_HPP
 
-#include <atomic>
-#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -29,52 +30,35 @@
 namespace libbitcoin {
 namespace blockchain {
 
-class BCB_API block_fetcher
-  : public std::enable_shared_from_this<block_fetcher>
-{
-public:
-    typedef block_chain::block_fetch_handler handler;
+typedef std::function<void(const code&, chain::block::ptr)>
+    block_fetch_handler;
 
-    static void fetch(block_chain& chain, uint64_t height,
-        handler handle_fetch);
-    static void fetch(block_chain& chain, const hash_digest& hash,
-        handler handle_fetch);
+/**
+ * Fetch a block by height.
+ *
+ * If the blockchain reorganises this call may fail.
+ *
+ * @param[in]   chain           Blockchain service
+ * @param[in]   height          Height of block to fetch.
+ * @param[in]   handle_fetch    Completion handler for fetch operation.
+ */
+BCB_API void fetch_block(block_chain& chain, uint64_t height,
+    block_fetch_handler handle_fetch);
 
-    block_fetcher(block_chain& chain);
+/**
+ * Fetch a block by hash.
+ *
+ * If the blockchain reorganises this call may fail.
+ *
+ * @param[in]   chain           Blockchain service
+ * @param[in]   hash            Block hash
+ * @param[in]   handle_fetch    Completion handler for fetch operation.
+ */
+BCB_API void fetch_block(block_chain& chain, const hash_digest& hash,
+    block_fetch_handler handle_fetch);
 
-    template <typename BlockIndex>
-    void start(const BlockIndex& index, handler handle_fetch)
-    {
-        // Keep the class in scope until this handler completes.
-        const auto self = shared_from_this();
-        const auto handle_fetch_header = [self](const code ec,
-            const chain::header block_header)
-        {
-            if (self->stop_on_error(ec))
-                return;
-
-            self->block_.header = block_header;
-            //self->fetch_hashes();
-        };
-
-        handler_ = handle_fetch;
-        blockchain_.fetch_block_header(index, handle_fetch_header);
-    }
-
-private:
-    bool stop_on_error(const code& ec);
-    void fetch_tx(const hash_digest& tx_hash, size_t tx_index);
-    void fetch_transactions(const code& ec, const hash_list& tx_hashes);
-    //void fetch_hashes();
-
-    handler handler_;
-    chain::block block_;
-    block_chain& blockchain_;
-    std::atomic<size_t> handled_count_;
-    bool stopped_;
-};
-
-} // namespace blockchain
+} // namespace chain
 } // namespace libbitcoin
 
 #endif
+
