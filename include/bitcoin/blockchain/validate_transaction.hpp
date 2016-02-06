@@ -36,7 +36,7 @@ namespace blockchain {
  * transaction_pool::validate() method instead.
  */
 class BCB_API validate_transaction
-  : public std::enable_shared_from_this<validate_transaction>
+  : public enable_shared_from_base<validate_transaction>
 {
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
