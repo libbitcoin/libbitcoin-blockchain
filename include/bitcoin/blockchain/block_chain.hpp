@@ -27,55 +27,16 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
+#include <bitcoin/blockchain/stealth_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// TODO: move to interface subfolder.
 /// An interface for encapsulation of the blockchain for public exposure.
 class BCB_API block_chain
 {
 public:
-    /// Use "kind" for union differentiation.
-    enum class point_kind : uint32_t
-    {
-        output = 0,
-        spend = 1
-    };
-
-    struct history_row
-    {
-        /// Is this an output or spend
-        point_kind kind;
-
-        /// Input or output point.
-        chain::point point;
-
-        /// Block height of the transaction.
-        uint64_t height;
-
-        union
-        {
-            /// If output, then satoshis value of output.
-            uint64_t value;
-
-            /// If spend, then checksum hash of previous output point
-            /// To match up this row with the output, recompute the
-            /// checksum from the output row with spend_checksum(row.point)
-            uint64_t previous_checksum;
-        };
-    };
-
-    struct stealth_row
-    {
-        hash_digest ephemkey;
-        short_hash address;
-        hash_digest transaction_hash;
-    };
-
-    typedef std::vector<history_row> history;
-    typedef std::vector<stealth_row> stealth;
-    
     typedef handle0 result_handler;
     typedef handle0 block_import_handler;
     typedef handle1<block_info> block_store_handler;
@@ -91,14 +52,9 @@ public:
     typedef handle1<history> history_fetch_handler;
     typedef handle1<stealth> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
-
     typedef std::function<bool(const code&, uint64_t,
         const chain::block::ptr_list&, const chain::block::ptr_list&)>
         reorganize_handler;
-
-    /// Create checksum so spend can be matched with corresponding
-    /// output point without needing the whole previous outpoint.
-    static uint64_t spend_checksum(chain::output_point outpoint);
 
     virtual void start(result_handler handler) = 0;
     virtual void stop(result_handler handler) = 0;
@@ -153,10 +109,6 @@ public:
         stealth_fetch_handler handler) = 0;
 
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
-
-private:
-    static uint64_t remainder_fast(const hash_digest& value,
-        const uint64_t divisor);
 };
 
 } // namespace blockchain

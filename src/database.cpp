@@ -271,7 +271,7 @@ void database::push_stealth(const hash_digest& tx_hash, size_t height,
         if (!address)
             continue;
 
-        const block_chain::stealth_row row
+        const stealth_row row
         {
             unsigned_ephemeral_key,
             address.hash(),

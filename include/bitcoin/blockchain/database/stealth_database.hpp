@@ -25,6 +25,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/database/record_allocator.hpp>
+#include <bitcoin/blockchain/stealth_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -50,12 +51,12 @@ public:
     /**
      * Linearly scans all entries starting at from_height.
      */
-    block_chain::stealth scan(const binary& filter, size_t from_height) const;
+    stealth scan(const binary& filter, size_t from_height) const;
 
     /**
      * Add a stealth row to the database.
      */
-    void store(uint32_t prefix, const block_chain::stealth_row& row);
+    void store(uint32_t prefix, const stealth_row& row);
 
     /**
      * Delete all rows after and including from_height.

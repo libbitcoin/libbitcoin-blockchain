@@ -250,7 +250,7 @@ int main(int argc, char** argv)
         auto history = db.get(key, limit, from_height);
         for (const auto& row: history)
         {
-            if (row.kind == block_chain::point_kind::output)
+            if (row.kind == point_kind::output)
                 std::cout << "OUTPUT: ";
             else //if (row.id == point_ident::spend)
                 std::cout << "SPEND:  ";

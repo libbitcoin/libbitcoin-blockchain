@@ -337,70 +337,70 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     db.add_output(key2, out21, out_h21, val21);
     db.add_output(key2, out22, out_h22, val22);
 
-    auto fetch_s1 = [=](const block_chain::history& history)
+    auto fetch_s1 = [=](const history& history)
     {
         BOOST_REQUIRE(history.size() == 5);
 
         auto entry4 = history[4];
         BOOST_REQUIRE(entry4.point.is_valid());
-        BOOST_REQUIRE(history[4].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[4].kind == point_kind::output);
         BOOST_REQUIRE(history[4].point.hash == out11.hash);
         BOOST_REQUIRE(history[4].point.index == out11.index);
         BOOST_REQUIRE(history[4].height == out_h11);
         BOOST_REQUIRE(history[4].value == val11);
 
-        BOOST_REQUIRE(history[3].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[3].kind == point_kind::output);
         BOOST_REQUIRE(history[3].point.hash == out12.hash);
         BOOST_REQUIRE(history[3].point.index == out12.index);
         BOOST_REQUIRE(history[3].height == out_h12);
         BOOST_REQUIRE(history[3].value == val12);
 
-        BOOST_REQUIRE(history[2].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[2].kind == point_kind::output);
         BOOST_REQUIRE(history[2].point.hash == out13.hash);
         BOOST_REQUIRE(history[2].point.index == out13.index);
         BOOST_REQUIRE(history[2].height == out_h13);
         BOOST_REQUIRE(history[2].value == val13);
 
-        BOOST_REQUIRE(history[1].kind == block_chain::point_kind::spend);
+        BOOST_REQUIRE(history[1].kind == point_kind::spend);
         BOOST_REQUIRE(history[1].point.hash == spend11.hash);
         BOOST_REQUIRE(history[1].point.index == spend11.index);
         BOOST_REQUIRE(history[1].height == spend_h11);
-        BOOST_REQUIRE(history[1].previous_checksum == block_chain::spend_checksum(out11));
+        BOOST_REQUIRE(history[1].previous_checksum == checksum(out11));
 
-        BOOST_REQUIRE(history[0].kind == block_chain::point_kind::spend);
+        BOOST_REQUIRE(history[0].kind == point_kind::spend);
         BOOST_REQUIRE(history[0].point.hash == spend13.hash);
         BOOST_REQUIRE(history[0].point.index == spend13.index);
         BOOST_REQUIRE(history[0].height == spend_h13);
-        BOOST_REQUIRE(history[0].previous_checksum == block_chain::spend_checksum(out13));
+        BOOST_REQUIRE(history[0].previous_checksum == checksum(out13));
     };
     auto res_s1 = db.get(key1, 0, 0);
     fetch_s1(res_s1);
-    auto no_spend = [=](const block_chain::history& history)
+    auto no_spend = [=](const history& history)
     {
         BOOST_REQUIRE(history.size() == 2);
-        BOOST_REQUIRE(history[0].kind == block_chain::point_kind::output);
-        BOOST_REQUIRE(history[1].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[0].kind == point_kind::output);
+        BOOST_REQUIRE(history[1].kind == point_kind::output);
     };
     auto res_ns = db.get(key2, 0, 0);
     no_spend(res_ns);
     db.add_spend(key2, out22, spend22, spend_h22);
-    auto has_spend = [=](const block_chain::history& history)
+    auto has_spend = [=](const history& history)
     {
         BOOST_REQUIRE(history.size() == 3);
 
-        BOOST_REQUIRE(history[0].kind == block_chain::point_kind::spend);
+        BOOST_REQUIRE(history[0].kind == point_kind::spend);
         BOOST_REQUIRE(history[0].point.hash == spend22.hash);
         BOOST_REQUIRE(history[0].point.index == spend22.index);
         BOOST_REQUIRE(history[0].height == spend_h22);
-        BOOST_REQUIRE(history[0].previous_checksum == block_chain::spend_checksum(out22));
+        BOOST_REQUIRE(history[0].previous_checksum == checksum(out22));
 
-        BOOST_REQUIRE(history[1].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[1].kind == point_kind::output);
         BOOST_REQUIRE(history[1].point.hash == out22.hash);
         BOOST_REQUIRE(history[1].point.index == out22.index);
         BOOST_REQUIRE(history[1].height == out_h22);
         BOOST_REQUIRE(history[1].value == val22);
 
-        BOOST_REQUIRE(history[2].kind == block_chain::point_kind::output);
+        BOOST_REQUIRE(history[2].kind == point_kind::output);
         BOOST_REQUIRE(history[2].point.hash == out21.hash);
         BOOST_REQUIRE(history[2].point.index == out21.index);
         BOOST_REQUIRE(history[2].height == out_h21);
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
 
     db.add_output(key3, out31, out_h31, val31);
     db.add_output(key4, out31, out_h41, val41);
-    auto has_one_row = [=](const block_chain::history& history)
+    auto has_one_row = [=](const history& history)
     {
         BOOST_REQUIRE(history.size() == 1);
     };
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     has_one_row(res_1r1);
     auto res_1r2 = db.get(key4, 0, 0);
     has_one_row(res_1r2);
-    auto has_no_rows = [=](const block_chain::history& history)
+    auto has_no_rows = [=](const history& history)
     {
         BOOST_REQUIRE(history.empty());
     };

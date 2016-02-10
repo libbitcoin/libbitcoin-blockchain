@@ -23,8 +23,6 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
-#include <string>
 #include <system_error>
 #include <vector>
 #include <boost/interprocess/sync/file_lock.hpp>
@@ -151,7 +149,7 @@ public:
         stealth_fetch_handler handler);
 
     /// Subscribe to blockchain reorganizations.
-    void subscribe_reorganize(organizer::reorganize_handler handler);
+    void subscribe_reorganize(reorganize_handler handler);
 
 private:
     typedef std::atomic<size_t> sequential_lock;

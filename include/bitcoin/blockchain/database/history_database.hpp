@@ -22,9 +22,10 @@
 
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/database/multimap_records.hpp>
+#include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -84,8 +85,7 @@ public:
      * spends and the block heights associated with a Bitcoin address.
      * The returned history is a list of rows and a stop index.
      */
-    block_chain::history get(const short_hash& key, size_t limit,
-        size_t from_height) const;
+    history get(const short_hash& key, size_t limit, size_t from_height) const;
 
     /**
      * Synchonise with disk.
