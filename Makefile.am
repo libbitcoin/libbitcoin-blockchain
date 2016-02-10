@@ -61,7 +61,6 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/database/mman-win32/mman.h \
     src/implementation/block_chain_impl.cpp \
     src/implementation/organizer_impl.cpp \
-    src/implementation/simple_chain_impl.cpp \
     src/implementation/validate_block_impl.cpp
 
 # local: test/libbitcoin_blockchain_test
@@ -333,7 +332,6 @@ include_bitcoin_blockchain_implementationdir = ${includedir}/bitcoin/blockchain/
 include_bitcoin_blockchain_implementation_HEADERS = \
     include/bitcoin/blockchain/implementation/block_chain_impl.hpp \
     include/bitcoin/blockchain/implementation/organizer_impl.hpp \
-    include/bitcoin/blockchain/implementation/simple_chain_impl.hpp \
     include/bitcoin/blockchain/implementation/validate_block_impl.hpp
 
 

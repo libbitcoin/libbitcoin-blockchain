@@ -28,18 +28,24 @@
 namespace libbitcoin {
 namespace blockchain {
 
-// The actual blockchain is encapsulated by this.
+/// This provides encapsulation for the blockchain database for the organizer.
 class BCB_API simple_chain
 {
 public:
     typedef std::shared_ptr<simple_chain> ptr;
 
-    virtual void append(block_detail::ptr incoming_block) = 0;
-    virtual hash_number sum_difficulty(uint64_t begin_index) = 0;
-    virtual bool release(uint64_t begin_index,
-        block_detail::list& released_blocks) = 0;
-    virtual bool find_height(uint64_t& out_height,
-        const hash_digest& search_block_hash) = 0;
+    /// Get the dificulty of a block at the given height.
+    virtual hash_number get_difficulty(uint64_t height) = 0;
+
+    /// Get the height of the given block.
+    virtual bool get_height(uint64_t& out_height,
+        const hash_digest& block_hash) = 0;
+
+    /// Append the block to the top of the chain.
+    virtual void push(block_detail::ptr block) = 0;
+
+    /// Remove blocks at or above the given height, returning them in order.
+    virtual bool pop_from(block_detail::list& out_blocks, uint64_t height) = 0;
 };
 
 } // namespace blockchain

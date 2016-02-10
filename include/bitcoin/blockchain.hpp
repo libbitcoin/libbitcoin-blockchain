@@ -52,7 +52,6 @@
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 #include <bitcoin/blockchain/implementation/block_chain_impl.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
-#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 #endif

@@ -96,7 +96,7 @@ void organizer::process(block_detail::ptr process_block)
     const auto& hash = orphan_chain[0]->actual().header.previous_block_hash;
 
     uint64_t fork_index;
-    if (chain_.find_height(fork_index, hash))
+    if (chain_.get_height(fork_index, hash))
         replace_chain(fork_index, orphan_chain);
 
     // Don't mark all orphan_chain as processed here because there might be
@@ -137,13 +137,13 @@ void organizer::replace_chain(uint64_t fork_index,
     // All remaining blocks in orphan_chain should all be valid now
     // Compare the difficulty of the 2 forks (original and orphan)
     const auto begin_index = fork_index + 1;
-    const auto main_work = chain_.sum_difficulty(begin_index);
+    const auto main_work = chain_.get_difficulty(begin_index);
     if (orphan_work <= main_work)
         return;
 
     // Replace! Switch!
     block_detail::list released_blocks;
-    DEBUG_ONLY(bool success =) chain_.release(begin_index, released_blocks);
+    DEBUG_ONLY(bool success =) chain_.pop_from(released_blocks, begin_index);
     BITCOIN_ASSERT(success);
 
     if (!released_blocks.empty())
@@ -164,7 +164,7 @@ void organizer::replace_chain(uint64_t fork_index,
         orphans_.remove(arrival_block);
         ++arrival_index;
         arrival_block->set_info({ block_status::confirmed, arrival_index });
-        chain_.append(arrival_block);
+        chain_.push(arrival_block);
     }
 
     // Now add the old blocks back to the pool

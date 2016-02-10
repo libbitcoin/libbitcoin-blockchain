@@ -150,9 +150,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\simple_chain_impl.hpp">
-      <Filter>include\bitcoin\blockchain\implementation</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp">
       <Filter>include\bitcoin\blockchain\implementation</Filter>
     </ClInclude>
@@ -240,9 +237,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp">
-      <Filter>src\implementation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\implementation\simple_chain_impl.cpp">
       <Filter>src\implementation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp">
