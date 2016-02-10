@@ -217,7 +217,7 @@ chain::block database::pop()
         const auto tx_hash = block_result.transaction_hash(index);
         auto tx_result = transactions.get(tx_hash);
         BITCOIN_ASSERT(tx_result);
-        BITCOIN_ASSERT(tx_result.height() == block_height);
+        BITCOIN_ASSERT(tx_result.height() == height);
         BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(index));
 
         const auto tx = tx_result.transaction();
