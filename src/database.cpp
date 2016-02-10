@@ -148,6 +148,9 @@ static bool is_allowed_duplicate(const header& head, size_t height)
         (height == exception2.height() && head.hash() == exception2.hash());
 }
 
+// TODO: create push that stores the block and its transactions without
+// createing indexes for inputs, outputs or stealth.
+
 void database::push(const block& block)
 {
     const auto height = get_next_height(blocks);
@@ -163,16 +166,14 @@ void database::push(const block& block)
         const auto tx_hash = tx.hash();
 
         // Add inputs
-        if (height >= history_height_ && !tx.is_coinbase())
+        if (!tx.is_coinbase())
             push_inputs(tx_hash, height, tx.inputs);
 
         // Add outputs
-        if (height >= history_height_)
-            push_outputs(tx_hash, height, tx.outputs);
+        push_outputs(tx_hash, height, tx.outputs);
 
         // Add stealth outputs
-        if (height >= stealth_height_)
-            push_stealth(tx_hash, tx.outputs);
+        push_stealth(tx_hash, height, tx.outputs);
 
         // Add transaction
         transactions.store(height, index, tx);
@@ -194,58 +195,7 @@ void database::push(const block& block)
     blocks.sync();
 }
 
-chain::block database::pop()
-{
-    size_t height;
-    if (!blocks.top(height))
-        throw std::runtime_error("The blockchain is empty.");
-
-    auto block_result = blocks.get(height);
-
-    // Set result header.
-    chain::block result;
-    result.header = block_result.header();
-    const auto count = block_result.transactions_size();
-
-    // TODO: unreverse the loop so we can avoid this.
-    BITCOIN_ASSERT_MSG(count <= max_int64, "overflow");
-    const auto unsigned_count = static_cast<int64_t>(count);
-
-    // Loop backwards (in reverse to how we added).
-    for (int64_t index = unsigned_count - 1; index >= 0; --index)
-    {
-        const auto tx_hash = block_result.transaction_hash(index);
-        auto tx_result = transactions.get(tx_hash);
-        BITCOIN_ASSERT(tx_result);
-        BITCOIN_ASSERT(tx_result.height() == height);
-        BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(index));
-
-        const auto tx = tx_result.transaction();
-
-        // Do things in reverse so pop txs, then outputs, then inputs.
-        transactions.remove(tx_hash);
-
-        // Remove outputs
-        if (height >= history_height_)
-            pop_outputs(tx.outputs);
-
-        // Remove inputs
-        if (height >= history_height_ && !tx.is_coinbase())
-            pop_inputs(tx.inputs);
-
-        // Add transaction to result
-        result.transactions.push_back(tx);
-    }
-
-    stealth.unlink(height);
-    blocks.unlink(height);
-
-    // Reverse, since we looped backwards.
-    std::reverse(result.transactions.begin(), result.transactions.end());
-    return result;
-}
-
-void database::push_inputs(const hash_digest& tx_hash, size_t block_height,
+void database::push_inputs(const hash_digest& tx_hash, size_t height,
     const input::list& inputs)
 {
     for (uint32_t index = 0; index < inputs.size(); ++index)
@@ -254,19 +204,25 @@ void database::push_inputs(const hash_digest& tx_hash, size_t block_height,
         const chain::input_point spend{ tx_hash, index };
         spends.store(input.previous_output, spend);
 
+        if (height < history_height_)
+            continue;
+
         // Try to extract an address.
         const auto address = payment_address::extract(input.script);
         if (!address)
             continue;
 
         history.add_spend(address.hash(), input.previous_output, spend,
-            block_height);
+            height);
     }
 }
 
-void database::push_outputs(const hash_digest& tx_hash, size_t block_height,
+void database::push_outputs(const hash_digest& tx_hash, size_t height,
     const output::list& outputs)
 {
+    if (height < history_height_)
+        return;
+
     for (uint32_t index = 0; index < outputs.size(); ++index)
     {
         const auto& output = outputs[index];
@@ -277,14 +233,17 @@ void database::push_outputs(const hash_digest& tx_hash, size_t block_height,
         if (!address)
             continue;
 
-        history.add_output(address.hash(), outpoint, block_height,
+        history.add_output(address.hash(), outpoint, height,
             output.value);
     }
 }
 
-void database::push_stealth(const hash_digest& tx_hash,
+void database::push_stealth(const hash_digest& tx_hash, size_t height,
     const output::list& outputs)
 {
+    if (height < stealth_height_)
+        return;
+
     // TODO: unreverse the loop so we can avoid this.
     BITCOIN_ASSERT_MSG(outputs.size() <= max_int64, "overflow");
     const auto outputs_size = static_cast<int64_t>(outputs.size());
@@ -322,7 +281,57 @@ void database::push_stealth(const hash_digest& tx_hash,
     }
 }
 
-void database::pop_inputs(const input::list& inputs)
+chain::block database::pop()
+{
+    size_t height;
+    if (!blocks.top(height))
+        throw std::runtime_error("The blockchain is empty.");
+
+    auto block_result = blocks.get(height);
+
+    // Set result header.
+    chain::block result;
+    result.header = block_result.header();
+    const auto count = block_result.transactions_size();
+
+    // TODO: unreverse the loop so we can avoid this.
+    BITCOIN_ASSERT_MSG(count <= max_int64, "overflow");
+    const auto unsigned_count = static_cast<int64_t>(count);
+
+    // Loop backwards (in reverse to how we added).
+    for (int64_t index = unsigned_count - 1; index >= 0; --index)
+    {
+        const auto tx_hash = block_result.transaction_hash(index);
+        auto tx_result = transactions.get(tx_hash);
+        BITCOIN_ASSERT(tx_result);
+        BITCOIN_ASSERT(tx_result.height() == height);
+        BITCOIN_ASSERT(tx_result.index() == static_cast<size_t>(index));
+
+        const auto tx = tx_result.transaction();
+
+        // Do things in reverse so pop txs, then outputs, then inputs.
+        transactions.remove(tx_hash);
+
+        // Remove outputs
+        pop_outputs(tx.outputs, height);
+
+        // Remove inputs
+        if (!tx.is_coinbase())
+            pop_inputs(tx.inputs, height);
+
+        // Add transaction to result
+        result.transactions.push_back(tx);
+    }
+
+    stealth.unlink(height);
+    blocks.unlink(height);
+
+    // Reverse, since we looped backwards.
+    std::reverse(result.transactions.begin(), result.transactions.end());
+    return result;
+}
+
+void database::pop_inputs(const input::list& inputs, size_t height)
 {
     // TODO: unreverse the loop so we can avoid this.
     BITCOIN_ASSERT_MSG(inputs.size() <= max_int64, "overflow");
@@ -334,6 +343,9 @@ void database::pop_inputs(const input::list& inputs)
         const auto& input = inputs[index];
         spends.remove(input.previous_output);
 
+        if (height < history_height_)
+            continue;
+
         // Try to extract an address.
         const auto address = payment_address::extract(input.script);
         if (address)
@@ -341,8 +353,11 @@ void database::pop_inputs(const input::list& inputs)
     }
 }
 
-void database::pop_outputs(const output::list& outputs)
+void database::pop_outputs(const output::list& outputs, size_t height)
 {
+    if (height < history_height_)
+        return;
+
     // TODO: unreverse the loop so we can avoid this.
     BITCOIN_ASSERT_MSG(outputs.size() <= max_int64, "overflow");
     const auto outputs_size = static_cast<int64_t>(outputs.size());
