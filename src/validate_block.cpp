@@ -623,8 +623,8 @@ bool script_hash_signature_operations_count(size_t& out_count,
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const transaction& current_tx, size_t input_index,
-    uint64_t& value_in, size_t& total_sigops) const
+    const transaction& current_tx, size_t input_index, uint64_t& value_in,
+    size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
 
