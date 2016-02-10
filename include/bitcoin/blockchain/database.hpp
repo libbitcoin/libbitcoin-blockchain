@@ -81,6 +81,7 @@ private:
     typedef chain::input::list inputs;
     typedef chain::output::list outputs;
 
+    void synchronize();
     void push_inputs(const hash_digest& tx_hash, size_t height,
         const inputs& inputs);
     void push_outputs(const hash_digest& tx_hash, size_t height,
