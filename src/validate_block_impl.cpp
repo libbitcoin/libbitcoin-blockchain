@@ -115,13 +115,15 @@ bool tx_after_fork(size_t tx_height, size_t fork_index)
 
 bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 {
-    size_t out_height;
+    uint64_t out_height;
     chain::transaction unused;
     const auto result = chain_.get_transaction(unused, out_height, tx_hash);
     if (!result)
         return false;
 
-    return !tx_after_fork(out_height, fork_index_);
+    BITCOIN_ASSERT(out_height <= max_size_t);
+    const auto out_height_size = static_cast<size_t>(out_height);
+    return !tx_after_fork(out_height_size, fork_index_);
 }
 
 bool validate_block_impl::is_output_spent(
