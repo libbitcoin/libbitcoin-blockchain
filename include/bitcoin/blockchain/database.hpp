@@ -81,13 +81,14 @@ private:
     typedef chain::input::list inputs;
     typedef chain::output::list outputs;
 
-    void push_inputs(const hash_digest& tx_hash, size_t block_height,
+    void push_inputs(const hash_digest& tx_hash, size_t height,
         const inputs& inputs);
-    void push_outputs(const hash_digest& tx_hash, size_t block_height,
+    void push_outputs(const hash_digest& tx_hash, size_t height,
         const outputs& outputs);
-    void push_stealth(const hash_digest& tx_hash, const outputs& outputs);
-    void pop_inputs(const inputs& inputs);
-    void pop_outputs(const outputs& outputs);
+    void push_stealth(const hash_digest& tx_hash, size_t height,
+        const outputs& outputs);
+    void pop_inputs(const inputs& inputs, size_t height);
+    void pop_outputs(const outputs& outputs, size_t height);
 
     const size_t history_height_;
     const size_t stealth_height_;
