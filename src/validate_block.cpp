@@ -424,7 +424,7 @@ uint32_t validate_block::work_required(bool is_testnet) const
     if (is_retarget_height(height_))
     {
         // This is the total time it took for the last 2016 blocks.
-        const auto actual = actual_timespan(retargeting_interval);
+        const auto actual = actual_time_span(retargeting_interval);
 
         // Now constrain the time between an upper and lower bound.
         const auto constrained = range_constrain(actual,

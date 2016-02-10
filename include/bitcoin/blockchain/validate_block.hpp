@@ -50,17 +50,17 @@ protected:
         bool testnet, const config::checkpoint::list& checks,
         stopped_callback stop_callback=nullptr);
 
-    virtual uint64_t actual_timespan(size_t interval) const = 0;
+    virtual uint64_t median_time_past() const = 0;
+    virtual uint32_t previous_block_bits() const = 0;
+    virtual uint64_t actual_time_span(size_t interval) const = 0;
+    virtual versions preceding_block_versions(size_t count) const = 0;
     virtual chain::header fetch_block(size_t fetch_height) const = 0;
+    virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
     virtual bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const = 0;
     virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;
     virtual bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const = 0;
-    virtual uint64_t median_time_past() const = 0;
-    virtual uint32_t previous_block_bits() const = 0;
-    virtual versions preceding_block_versions(size_t count) const = 0;
-    virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
 
     // These have default implementations that can be overriden.
     virtual bool connect_input(size_t index_in_parent,

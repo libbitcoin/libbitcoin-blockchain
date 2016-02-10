@@ -41,13 +41,13 @@ public:
         stopped_callback stopped);
 
 protected:
-    uint64_t actual_timespan(size_t interval) const;
+    uint64_t median_time_past() const;
+    uint32_t previous_block_bits() const;
+    uint64_t actual_time_span(size_t interval) const;
+    versions preceding_block_versions(size_t maximum) const;
     chain::header fetch_block(size_t fetch_height) const;
     bool fetch_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const;
-    uint64_t median_time_past() const;
-    uint32_t previous_block_bits() const;
-    versions preceding_block_versions(size_t maximum) const;
     bool is_output_spent(const chain::output_point& outpoint) const;
     bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const;
