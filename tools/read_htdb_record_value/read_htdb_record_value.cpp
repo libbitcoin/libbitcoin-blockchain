@@ -1,7 +1,6 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
-#include <bitcoin/blockchain/database/htdb_record.hpp>
 
 using namespace bc;
 using namespace bc::blockchain;
