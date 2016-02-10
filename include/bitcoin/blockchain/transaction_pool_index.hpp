@@ -26,6 +26,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -54,7 +55,6 @@ public:
     void remove(const chain::transaction& tx, completion_handler handler);
 
 private:
-    typedef block_chain::history history;
     typedef chain::spend_info spend_info;
     typedef chain::output_info output_info;
     typedef wallet::payment_address payment_address;
@@ -69,7 +69,7 @@ private:
     static void add(history& history, const output_info::list& outputs);
     static void index_history_fetched(const code& ec,
         const spend_info::list& spends, const output_info::list& outputs,
-        history history, fetch_handler handler);
+        const history& history, fetch_handler handler);
 
     void blockchain_history_fetched(const code& ec, const history& history,
         const wallet::payment_address& address, fetch_handler handler);

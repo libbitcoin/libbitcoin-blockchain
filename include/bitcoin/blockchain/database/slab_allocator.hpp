@@ -78,7 +78,7 @@ public:
     /**
      * Return distance from slab to eof providing a read boundary.
      */
-    BCB_API uint64_t to_eof(slab_type slab) const;
+    uint64_t to_eof(slab_type slab) const;
 
 private:
     /// File data access, by byte-wise position relative to start.

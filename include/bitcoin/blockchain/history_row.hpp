@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
+/**
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,27 +17,47 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HISTORY_ROW_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HISTORY_ROW_HPP
 
 #include <cstdint>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
-    
-BCB_API chain::block mainnet_genesis_block();
 
-BCB_API chain::block testnet_genesis_block();
+/// Use "kind" for union differentiation.
+enum class point_kind : uint32_t
+{
+    output = 0,
+    spend = 1
+};
 
-BCB_API index_list block_locator_indexes(size_t top_height);
+struct history_row
+{
+    /// Is this an output or spend.
+    point_kind kind;
 
-BCB_API uint64_t block_mint(size_t height);
+    /// Input or output point.
+    chain::point point;
 
-BCB_API hash_number block_work(uint32_t bits);
+    /// Block height of the transaction.
+    uint64_t height;
 
-BCB_API uint64_t checksum(chain::output_point outpoint);
+    union
+    {
+        /// If output, then satoshis value of output.
+        uint64_t value;
+
+        /// If spend, then checksum hash of previous output point
+        /// To match up this row with the output, recompute the
+        /// checksum from the output row with spend_checksum(row.point)
+        uint64_t previous_checksum;
+    };
+};
+
+typedef std::vector<history_row> history;
 
 } // namespace blockchain
 } // namespace libbitcoin

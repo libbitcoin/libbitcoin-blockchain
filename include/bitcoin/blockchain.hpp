@@ -28,11 +28,13 @@
 #include <bitcoin/blockchain/block_info.hpp>
 #include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/pointer_array_source.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/stealth_row.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>

@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
+#include <bitcoin/blockchain/stealth_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -55,13 +56,12 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
-block_chain::stealth stealth_database::scan(const binary& filter,
-    size_t from_height) const
+stealth stealth_database::scan(const binary& filter, size_t from_height) const
 {
     if (from_height >= index_.count())
-        return block_chain::stealth();
+        return stealth();
 
-    block_chain::stealth result;
+    stealth result;
     const auto start = read_index(from_height);
     for (auto index = start; index < rows_.count(); ++index)
     {
@@ -84,8 +84,7 @@ block_chain::stealth stealth_database::scan(const binary& filter,
     return result;
 }
 
-void stealth_database::store(uint32_t prefix,
-    const block_chain::stealth_row& row)
+void stealth_database::store(uint32_t prefix, const stealth_row& row)
 {
     // Allocate new row.
     const auto index = rows_.allocate();

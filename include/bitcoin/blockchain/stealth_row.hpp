@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2011-2013 libbitcoin developers (see AUTHORS)
+/**
+ * Copyright (c) 2011-2015 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -17,27 +17,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCK_LOCATOR_INDEXES_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_STEALTH_ROW_HPP
+#define LIBBITCOIN_BLOCKCHAIN_STEALTH_ROW_HPP
 
-#include <cstdint>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
-    
-BCB_API chain::block mainnet_genesis_block();
 
-BCB_API chain::block testnet_genesis_block();
+struct stealth_row
+{
+    hash_digest ephemkey;
+    short_hash address;
+    hash_digest transaction_hash;
+};
 
-BCB_API index_list block_locator_indexes(size_t top_height);
-
-BCB_API uint64_t block_mint(size_t height);
-
-BCB_API hash_number block_work(uint32_t bits);
-
-BCB_API uint64_t checksum(chain::output_point outpoint);
+typedef std::vector<stealth_row> stealth;
 
 } // namespace blockchain
 } // namespace libbitcoin

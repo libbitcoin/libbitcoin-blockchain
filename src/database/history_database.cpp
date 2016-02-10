@@ -20,8 +20,8 @@
 #include <bitcoin/blockchain/database/history_database.hpp>
 
 #include <boost/filesystem.hpp>
-//#include <boost/iostreams/stream.hpp>
-//#include <bitcoin/blockchain/pointer_array_source.hpp>
+#include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -97,8 +97,7 @@ void history_database::add_spend(const short_hash& key,
         auto raw_spend = spend.to_data();
         serial.write_data(raw_spend);
         serial.write_4_bytes_little_endian(spend_height);
-        serial.write_8_bytes_little_endian(
-            block_chain::spend_checksum(previous));
+        serial.write_8_bytes_little_endian(checksum(previous));
     };
     map_.add_row(key, write);
 }
@@ -108,33 +107,30 @@ void history_database::delete_last_row(const short_hash& key)
     map_.delete_last_row(key);
 }
 
-// Each row contains a start byte which signifies whether
-// it is an output or a spend.
-inline block_chain::point_kind marker_to_kind(uint8_t marker)
+// Each row contains a start byte which signals output or a spend.
+inline point_kind marker_to_kind(uint8_t marker)
 {
     BITCOIN_ASSERT(marker == 0 || marker == 1);
-    return marker == 0 ? block_chain::point_kind::output : 
-        block_chain::point_kind::spend;
+    return marker == 0 ? point_kind::output : point_kind::spend;
 }
 
-block_chain::history history_database::get(const short_hash& key, size_t limit,
+history history_database::get(const short_hash& key, size_t limit,
     size_t from_height) const
 {
     // Read the height value from the row.
-    auto read_height = [](const uint8_t* data)
+    const auto read_height = [](const uint8_t* data)
     {
         static constexpr position_type height_position = 1 + 36;
         return from_little_endian_unsafe<uint32_t>(data + height_position);
     };
 
-    // Read a row from the data into the history list.
-    block_chain::history history;
-    auto read_row = [&history](const uint8_t* data/*, std::streamsize length*/)
+    // Read a row from the data for the history list.
+    const auto read_row = [](const uint8_t* data/*, std::streamsize length*/)
     {
 //        boost::iostreams::stream<byte_pointer_array_source> istream(data, length);
 //        istream.exceptions(std::ios_base::failbit);
 //
-//        block_chain::history_row result
+//        history_row result
 //        {
 //            // output or spend?
 //            marker_to_id(read_byte(istream)),
@@ -152,7 +148,7 @@ block_chain::history history_database::get(const short_hash& key, size_t limit,
 //        return result;
 
         auto deserial = make_deserializer_unsafe(data);
-        return block_chain::history_row
+        return history_row
         {
             // output or spend?
             marker_to_kind(deserial.read_byte()),
@@ -168,11 +164,12 @@ block_chain::history history_database::get(const short_hash& key, size_t limit,
         };
     };
 
+    history result;
     const auto start = map_.lookup(key);
     for (const index_type index: multimap_iterable(linked_rows_, start))
     {
         // Stop once we reach the limit (if specified).
-        if (limit && history.size() >= limit)
+        if (limit && result.size() >= limit)
             break;
 
         const auto data = linked_rows_.get(index);
@@ -182,10 +179,10 @@ block_chain::history history_database::get(const short_hash& key, size_t limit,
             continue;
 
         // Read this row into the list.
-        history.emplace_back(read_row(data /*, value_size*/));
+        result.emplace_back(read_row(data /*, value_size*/));
     }
 
-    return history;
+    return result;
 }
 
 void history_database::sync()

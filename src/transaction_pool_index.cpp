@@ -22,7 +22,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/history_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -169,7 +171,7 @@ void transaction_pool_index::fetch_all_history(const payment_address& address,
 }
 
 void transaction_pool_index::blockchain_history_fetched(const code& ec,
-    const block_chain::history& history, const payment_address& address,
+    const history& history, const payment_address& address,
     fetch_handler handler)
 {
     if (ec)
@@ -185,7 +187,7 @@ void transaction_pool_index::blockchain_history_fetched(const code& ec,
 
 void transaction_pool_index::index_history_fetched(const code& ec,
     const spend_info::list& spends, const output_info::list& outputs,
-    block_chain::history history, fetch_handler handler)
+    const history& history, fetch_handler handler)
 {
     if (ec)
     {
@@ -193,13 +195,16 @@ void transaction_pool_index::index_history_fetched(const code& ec,
         return;
     }
 
+    // Copy the list for modification and return.
+    auto result = history;
+
     // Race conditions raise the possiblity of seeing a spend or output more
     // than once. We collapse any duplicates here and continue.
-    add(history, spends);
-    add(history, outputs);
+    add(result, spends);
+    add(result, outputs);
 
     // This is the end of the fetch_all_history sequence.
-    handler(error::success, history);
+    handler(error::success, result);
 }
 
 // ----------------------------------------------------------------------------
@@ -237,52 +242,47 @@ void transaction_pool_index::do_fetch(const payment_address& address,
 // ----------------------------------------------------------------------------
 // Static helpers
 
-bool transaction_pool_index::exists(block_chain::history& history,
-    const spend_info& spend)
+bool transaction_pool_index::exists(history& history, const spend_info& spend)
 {
     // Transactions may exist in the memory pool and in the blockchain,
     // although this circumstance should not persist.
     for (const auto& row: history)
-        if (row.kind == block_chain::point_kind::spend &&
-            row.point == spend.point)
+        if (row.kind == point_kind::spend && row.point == spend.point)
             return true;
 
     return false;
 }
 
-bool transaction_pool_index::exists(block_chain::history& history,
+bool transaction_pool_index::exists(history& history,
     const output_info& output)
 {
     // Transactions may exist in the memory pool and in the blockchain,
     // although this circumstance should not persist.
     for (const auto& row: history)
-        if (row.kind == block_chain::point_kind::output &&
-            row.point == output.point)
+        if (row.kind == point_kind::output && row.point == output.point)
             return true;
 
     return false;
 }
 
-void transaction_pool_index::add(block_chain::history& history,
-    const spend_info& spend)
+void transaction_pool_index::add(history& history, const spend_info& spend)
 {
-    const auto row = block_chain::history_row
+    const history_row row
     {
-        block_chain::point_kind::spend,
+        point_kind::spend,
         spend.point,
         genesis_height,
-        { block_chain::spend_checksum(spend.previous_output) }
+        { checksum(spend.previous_output) }
     };
 
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add(block_chain::history& history,
-    const output_info& output)
+void transaction_pool_index::add(history& history, const output_info& output)
 {
-    const auto row = block_chain::history_row
+    const history_row row
     {
-        block_chain::point_kind::output,
+        point_kind::output,
         output.point,
         genesis_height,
         { output.value }
@@ -291,7 +291,7 @@ void transaction_pool_index::add(block_chain::history& history,
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add(block_chain::history& history,
+void transaction_pool_index::add(history& history,
     const spend_info::list& spends)
 {
     for (const auto& spend: spends)
@@ -299,7 +299,7 @@ void transaction_pool_index::add(block_chain::history& history,
             add(history, spend);
 }
 
-void transaction_pool_index::add(block_chain::history& history,
+void transaction_pool_index::add(history& history,
     const output_info::list& outputs)
 {
     for (const auto& output: outputs)
