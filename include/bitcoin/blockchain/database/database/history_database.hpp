@@ -60,6 +60,11 @@ public:
     void start();
 
     /**
+     * Call stop to unload the memory map.
+     */
+    bool stop();
+
+    /**
      * Add another row value to the key. If key doesn't exist then
      * it will be created.
      */

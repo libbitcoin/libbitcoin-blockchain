@@ -85,6 +85,11 @@ public:
     void start();
 
     /**
+     * Call stop to unload the memory map.
+     */
+    bool stop();
+
+    /**
      * Fetch block by height using the index table.
      */
     block_result get(const size_t height) const;

@@ -70,6 +70,11 @@ void history_database::start()
     rows_.start();
 }
 
+bool history_database::stop()
+{
+    return lookup_file_.stop() && rows_file_.stop();
+}
+
 void history_database::add_output(const short_hash& key,
     const chain::output_point& outpoint, uint32_t output_height,
     uint64_t value)

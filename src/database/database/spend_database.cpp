@@ -94,6 +94,11 @@ void spend_database::start()
     allocator_.start();
 }
 
+bool spend_database::stop()
+{
+    return file_.stop();
+}
+
 spend_result spend_database::get(const chain::output_point& outpoint) const
 {
     const auto key = output_to_hash(outpoint);

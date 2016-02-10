@@ -133,6 +133,11 @@ void block_database::start()
     index_.start();
 }
 
+bool block_database::stop()
+{
+    return map_file_.stop() && index_file_.stop();
+}
+
 block_result block_database::get(const size_t height) const
 {
     if (height >= index_.count())

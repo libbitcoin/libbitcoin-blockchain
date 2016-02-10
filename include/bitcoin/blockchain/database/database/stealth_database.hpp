@@ -48,6 +48,11 @@ public:
     void start();
 
     /**
+     * Call stop to unload the memory map.
+     */
+    bool stop();
+
+    /**
      * Linearly scans all entries starting at from_height.
      */
     chain::stealth scan(const binary& filter, size_t from_height) const;

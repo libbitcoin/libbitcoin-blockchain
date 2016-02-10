@@ -57,6 +57,11 @@ void stealth_database::start()
     block_start_ = rows_.count();
 }
 
+bool stealth_database::stop()
+{
+    return index_file_.stop() && rows_file_.stop();
+}
+
 stealth stealth_database::scan(const binary& filter, size_t from_height) const
 {
     if (from_height >= index_.count())

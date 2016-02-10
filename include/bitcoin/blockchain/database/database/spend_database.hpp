@@ -81,6 +81,11 @@ public:
     void start();
 
     /**
+     * Call stop to unload the memory map.
+     */
+    bool stop();
+
+    /**
      * Get input spend of an output point.
      */
     spend_result get(const chain::output_point& outpoint) const;

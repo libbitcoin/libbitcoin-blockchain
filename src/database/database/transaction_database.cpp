@@ -107,6 +107,11 @@ void transaction_database::start()
     allocator_.start();
 }
 
+bool transaction_database::stop()
+{
+    return map_file_.stop();
+}
+
 transaction_result transaction_database::get(const hash_digest& hash) const
 {
     const auto slab = map_.get(hash);

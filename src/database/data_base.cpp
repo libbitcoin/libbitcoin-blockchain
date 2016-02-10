@@ -56,15 +56,17 @@ bool data_base::initialize(const path& prefix, const chain::block& genesis)
 {
     // Create paths.
     const store paths(prefix);
-    const auto result = paths.touch_all();
 
-    // Initialize data_bases.
+    if (!paths.touch_all())
+        return false;
+
     data_base instance(paths, 0, 0);
-    instance.create();
-    instance.start();
-    instance.push(genesis);
 
-    return result;
+    if (!instance.create() || !instance.start())
+        return false;
+
+    instance.push(genesis);
+    return instance.stop();
 }
 
 data_base::store::store(const path& prefix)
@@ -95,10 +97,15 @@ bool data_base::store::touch_all() const
 
 data_base::file_lock data_base::initialize_lock(const path& lock)
 {
-    // Touch the lock file (open/close).
+    // Touch the lock file to ensure its existence.
     const auto lock_file_path = lock.string();
     bc::ofstream file(lock_file_path, std::ios::app);
     file.close();
+
+    // BOOST:
+    // Opens a file lock. Throws interprocess_exception if the file does not
+    // exist or there are no operating system resources. The file lock is
+    // destroyed on its destruct and does not throw.
     return file_lock(lock_file_path.c_str());
 }
 
@@ -131,6 +138,8 @@ data_base::data_base(const store& paths, size_t history_height,
 // ----------------------------------------------------------------------------
 // Startup and shutdown.
 
+// TODO: merge this with file creation (initialization above).
+// This is actually first initialization of existing files, not file creation.
 bool data_base::create()
 {
     blocks.create();
@@ -138,30 +147,39 @@ bool data_base::create()
     transactions.create();
     history.create();
     stealth.create();
-    
-    // TODO: detect and return failure condition.
     return true;
 }
 
 bool data_base::start()
 {
+    // BOOST:
+    // Effects: The calling thread tries to acquire exclusive ownership of the
+    // mutex without waiting. If no other thread has exclusive, or sharable
+    // ownership of the mutex this succeeds. Returns: If it can acquire
+    // exclusive ownership immediately returns true. If it has to wait, returns
+    // false. Throws: interprocess_exception on error. Note that a file lock
+    // can't guarantee synchronization between threads of the same process so
+    // just use file locks to synchronize threads from different processes.
     if (!file_lock_.try_lock())
         return false;
 
+    const auto start_exclusive = start_write();
     blocks.start();
     spends.start();
     transactions.start();
     history.start();
     stealth.start();
-
-    // TODO: detect and return failure condition.
-    return true;
+    const auto end_exclusive = end_write();
+    return start_exclusive && end_exclusive;
 }
 
 bool data_base::stop()
 {
-    // TODO: close file descriptors and return result.
-    return true;
+    const auto start_exclusive = start_write();
+    const auto result = blocks.stop() && spends.stop() &&
+        transactions.stop() && history.stop() && stealth.stop();
+    const auto end_exclusive = end_write();
+    return start_exclusive && result && end_exclusive;
 }
 
 // ----------------------------------------------------------------------------

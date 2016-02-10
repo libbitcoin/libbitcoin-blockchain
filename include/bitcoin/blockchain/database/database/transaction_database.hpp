@@ -83,6 +83,11 @@ public:
     void start();
 
     /**
+     * Call stop to unload the memory map.
+     */
+    bool stop();
+
+    /**
      * Fetch transaction from its hash.
      */
     transaction_result get(const hash_digest& hash) const;
