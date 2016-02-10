@@ -73,12 +73,6 @@
     <Filter Include="src\database\slab">
       <UniqueIdentifier>{81b1544f-4dc7-4120-9fcc-294d0458f83f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\implementation">
-      <UniqueIdentifier>{e0bb57d3-a8d3-431b-8534-ee6112cb761d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin\blockchain\implementation">
-      <UniqueIdentifier>{1c07bf35-eb8a-4ef7-8e73-6ea432dabd30}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
@@ -150,12 +144,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp">
-      <Filter>include\bitcoin\blockchain\implementation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp">
-      <Filter>include\bitcoin\blockchain\implementation</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -183,8 +171,11 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\block_chain_impl.hpp">
-      <Filter>include\bitcoin\blockchain\implementation</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -236,12 +227,6 @@
     <ClCompile Include="..\..\..\..\src\validate_block.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp">
-      <Filter>src\implementation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp">
-      <Filter>src\implementation</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\block.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -263,8 +248,11 @@
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\implementation\block_chain_impl.cpp">
-      <Filter>src\implementation</Filter>
+    <ClCompile Include="..\..\..\..\src\block_chain_impl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validate_block_impl.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

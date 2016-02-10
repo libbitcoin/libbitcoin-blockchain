@@ -24,12 +24,13 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 
 INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 
@@ -40,20 +41,103 @@ using namespace chain;
 
 #define NAME "organizer"
 
-organizer::organizer(threadpool& pool, orphan_pool& orphans,
-    simple_chain& chain)
+organizer::organizer(threadpool& pool, simple_chain& chain,
+    const settings& settings)
   : stopped_(false),
+    testnet_(settings.use_testnet_rules),
     chain_(chain),
-    orphans_(orphans),
+    orphan_pool_(settings.block_pool_capacity),
+    checkpoints_(settings.checkpoints),
     subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME))
 {
+    // Sort checkpoints by height so that top is sure to be properly obtained.
+    config::checkpoint::sort(checkpoints_);
+}
+
+uint64_t organizer::count_inputs(const chain::block& block)
+{
+    uint64_t total_inputs = 0;
+    for (const auto& tx : block.transactions)
+        total_inputs += tx.inputs.size();
+
+    return total_inputs;
+}
+
+bool organizer::strict(uint64_t fork_point)
+{
+    return checkpoints_.empty() || fork_point >= checkpoints_.back().height();
+}
+
+code organizer::verify(uint64_t fork_point,
+    const block_detail::list& orphan_chain, uint64_t orphan_index)
+{
+    if (stopped())
+        return error::service_stopped;
+
+    BITCOIN_ASSERT(orphan_index < orphan_chain.size());
+    const auto& current_block = orphan_chain[orphan_index]->actual();
+    const uint64_t height = fork_point + orphan_index + 1;
+    BITCOIN_ASSERT(height != 0);
+
+    const auto callback = [this]()
+    {
+        return stopped();
+    };
+
+    validate_block_impl validate(chain_, fork_point, orphan_chain,
+        orphan_index, height, current_block, testnet_, checkpoints_, callback);
+
+    // Checks that are independent of the chain.
+    auto ec = validate.check_block();
+    if (ec)
+        return ec;
+
+    validate.initialize_context();
+
+    // Checks that are dependent on height and preceding blocks.
+    ec = validate.accept_block();
+    if (ec)
+        return ec;
+
+    // Start strict validation if past last checkpoint.
+    if (strict(fork_point))
+    {
+        const auto total_inputs = count_inputs(current_block);
+        const auto total_transactions = current_block.transactions.size();
+
+        log::info(LOG_BLOCKCHAIN)
+            << "Block [" << height << "] verify ("
+            << total_transactions << ") txs and ("
+            << total_inputs << ") inputs";
+
+        // Time this for logging.
+        const auto timed = [&ec, &validate]()
+        {
+            // Checks that include input->output traversal.
+            ec = validate.connect_block();
+        };
+
+        // Execute the timed validation.
+        const auto elapsed = timer<std::chrono::milliseconds>::duration(timed);
+        const auto ms_per_block = static_cast<float>(elapsed.count());
+        const auto ms_per_input = ms_per_block / total_inputs;
+        const auto secs_per_block = ms_per_block / 1000;
+        const auto verified = ec ? "unverified" : "verified";
+
+        log::info(LOG_BLOCKCHAIN)
+            << "Block [" << height << "] " << verified << " in ("
+            << secs_per_block << ") secs or ("
+            << ms_per_input << ") ms/input";
+    }
+
+    return ec;
 }
 
 // This is called on *every* block_chain_impl::do_store() call.
 void organizer::organize()
 {
     // Load unprocessed blocks
-    process_queue_ = orphans_.unprocessed();
+    process_queue_ = orphan_pool_.unprocessed();
 
     // As we loop, we pop blocks off and process them
     while (!process_queue_.empty() && !stopped())
@@ -64,6 +148,11 @@ void organizer::organize()
         // process() can remove blocks from the queue too
         process(process_block);
     }
+}
+
+bool organizer::add(block_detail::ptr block)
+{
+    return orphan_pool_.add(block);
 }
 
 // The subscriber is not restartable.
@@ -89,7 +178,7 @@ void organizer::process(block_detail::ptr process_block)
     BITCOIN_ASSERT(process_block);
 
     // Trace the chain in the orphan pool
-    auto orphan_chain = orphans_.trace(process_block);
+    auto orphan_chain = orphan_pool_.trace(process_block);
     BITCOIN_ASSERT(orphan_chain.size() >= 1);
 
     const auto& hash = orphan_chain[0]->actual().header.previous_block_hash;
@@ -136,18 +225,27 @@ void organizer::replace_chain(uint64_t fork_index,
     // All remaining blocks in orphan_chain should all be valid now
     // Compare the difficulty of the 2 forks (original and orphan)
     const auto begin_index = fork_index + 1;
-    const auto main_work = chain_.get_difficulty(begin_index);
+
+    hash_number main_work;
+    DEBUG_ONLY(auto result =) chain_.get_difficulty(main_work, begin_index);
+    BITCOIN_ASSERT(result);
+
     if (orphan_work <= main_work)
+    {
+        log::debug(LOG_BLOCKCHAIN)
+            << "Insufficient work to reorganize at [" << begin_index << "]";
         return;
+    }
 
     // Replace! Switch!
     block_detail::list released_blocks;
-    DEBUG_ONLY(bool success =) chain_.pop_from(released_blocks, begin_index);
+    DEBUG_ONLY(auto success =) chain_.pop_from(released_blocks, begin_index);
     BITCOIN_ASSERT(success);
 
     if (!released_blocks.empty())
-        log::warning(LOG_BLOCKCHAIN) << "Reorganizing blockchain ["
-            << begin_index << ", " << released_blocks.size() << "]";
+        log::warning(LOG_BLOCKCHAIN)
+            << "Reorganizing blockchain [" << begin_index << ", "
+            << released_blocks.size() << "]";
 
     // We add the arriving blocks first to the main chain because if
     // we add the blocks being replaced back to the pool first then
@@ -160,10 +258,11 @@ void organizer::replace_chain(uint64_t fork_index,
     auto arrival_index = fork_index;
     for (const auto arrival_block: orphan_chain)
     {
-        orphans_.remove(arrival_block);
+        orphan_pool_.remove(arrival_block);
         ++arrival_index;
         arrival_block->set_info({ block_status::confirmed, arrival_index });
-        chain_.push(arrival_block);
+        DEBUG_ONLY(const auto result =) chain_.push(arrival_block);
+        BITCOIN_ASSERT(result);
     }
 
     // Now add the old blocks back to the pool
@@ -172,7 +271,7 @@ void organizer::replace_chain(uint64_t fork_index,
         static constexpr uint64_t no_height = 0;
         replaced_block->mark_processed();
         replaced_block->set_info({ block_status::orphan, no_height });
-        orphans_.add(replaced_block);
+        orphan_pool_.add(replaced_block);
     }
 
     notify_reorganize(fork_index, orphan_chain, released_blocks);
@@ -205,7 +304,7 @@ void organizer::clip_orphans(block_detail::list& orphan_chain,
         static const uint64_t no_height = 0;
         const block_info info{ block_status::rejected, no_height };
         (*it)->set_info(info);
-        orphans_.remove(*it);
+        orphan_pool_.remove(*it);
 
         // Also erase from process_queue so we avoid trying to re-process
         // invalid blocks and remove try to remove non-existant blocks.

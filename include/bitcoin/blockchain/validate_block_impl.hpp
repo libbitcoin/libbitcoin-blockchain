@@ -24,8 +24,7 @@
 #include <cstdint>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database.hpp>
-#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
@@ -35,7 +34,7 @@ class BCB_API validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(database& database, size_t fork_index,
+    validate_block_impl(simple_chain& chain, size_t fork_index,
         const block_detail::list& orphan_chain, size_t orphan_index,
         size_t height, const chain::block& block, bool testnet,
         const config::checkpoint::list& checkpoints,
@@ -60,12 +59,10 @@ private:
     bool orphan_is_spent(const chain::output_point& previous_output,
         size_t skip_tx, size_t skip_input) const;
 
-    database& database_;
+    simple_chain& chain_;
     size_t height_;
     size_t fork_index_;
     size_t orphan_index_;
-    uint32_t activations_;
-    uint32_t minimum_version_;
     const block_detail::list& orphan_chain_;
 };
 

@@ -24,6 +24,7 @@
 #include <boost/filesystem.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/database/mmfile.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
@@ -82,6 +83,16 @@ bool database::store::touch_all() const
         touch_file(history_rows) &&
         touch_file(stealth_index) &&
         touch_file(stealth_rows);
+}
+
+database::database(const settings& settings)
+  : database(settings.database_path, settings.history_start_height)
+{
+}
+
+database::database(const path& prefix, size_t history_height)
+  : database(store(prefix), history_height)
+{
 }
 
 database::database(const store& paths, size_t history_height)

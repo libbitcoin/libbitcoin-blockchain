@@ -17,21 +17,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-validate_block_impl::validate_block_impl(database& database,
+validate_block_impl::validate_block_impl(simple_chain& chain,
     size_t fork_index, const block_detail::list& orphan_chain,
     size_t orphan_index, size_t height, const chain::block& block,
     bool testnet, const config::checkpoint::list& checks,
     stopped_callback stopped)
   : validate_block(height, block, testnet, checks, stopped),
-    database_(database),
+    chain_(chain),
     height_(height),
     fork_index_(fork_index),
     orphan_index_(orphan_index),
@@ -49,9 +51,10 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
         return orphan_chain_[fetch_index]->actual().header;
     }
 
-    auto result = database_.blocks.get(fetch_height);
+    chain::header out;
+    DEBUG_ONLY(const auto result =) chain_.get_header(out, fetch_height);
     BITCOIN_ASSERT(result);
-    return result.header();
+    return out;
 }
 
 uint32_t validate_block_impl::previous_block_bits() const
@@ -112,33 +115,34 @@ bool tx_after_fork(size_t tx_height, size_t fork_index)
 
 bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 {
-    const auto result = database_.transactions.get(tx_hash);
+    size_t out_height;
+    chain::transaction unused;
+    const auto result = chain_.get_transaction(unused, out_height, tx_hash);
     if (!result)
         return false;
 
-    return !tx_after_fork(result.height(), fork_index_);
+    return !tx_after_fork(out_height, fork_index_);
 }
 
 bool validate_block_impl::is_output_spent(
     const chain::output_point& outpoint) const
 {
-    const auto result = database_.spends.get(outpoint);
+    hash_digest out_hash;
+    const auto result = chain_.get_outpoint_transaction(out_hash, outpoint);
     if (!result)
         return false;
 
     // Lookup block height. Is the spend after the fork point?
-    return transaction_exists(result.hash());
+    return transaction_exists(out_hash);
 }
 
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    const auto result = database_.transactions.get(tx_hash);
-    if (!result || tx_after_fork(result.height(), fork_index_))
+    const auto result = chain_.get_transaction(tx, tx_height, tx_hash);
+    if (!result || tx_after_fork(tx_height, fork_index_))
         return fetch_orphan_transaction(tx, tx_height, tx_hash);
 
-    tx = result.transaction();
-    tx_height = result.height();
     return true;
 }
 

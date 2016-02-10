@@ -31,6 +31,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+// TODO: this is not an interface, collapse with validate_block_impl.
 class BCB_API validate_block
 {
 public:

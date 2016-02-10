@@ -28,6 +28,7 @@
 #include <bitcoin/blockchain/database/transaction_database.hpp>
 #include <bitcoin/blockchain/database/history_database.hpp>
 #include <bitcoin/blockchain/database/stealth_database.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -56,7 +57,13 @@ public:
         const chain::block& genesis);
     static bool touch_file(const boost::filesystem::path& file);
 
+    database(const settings& settings);
+
+    /// Deprecated
     database(const store& paths, size_t history_height=0);
+
+    /// Deprecated
+    database(const boost::filesystem::path& prefix, size_t history_height=0);
 
     void create();
     void start();
