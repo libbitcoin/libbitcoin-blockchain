@@ -78,7 +78,7 @@ void history_database::add_output(const short_hash& key,
     {
         auto serial = make_serializer(data);
         serial.write_byte(0);
-        data_chunk raw_outpoint = outpoint.to_data();
+        auto raw_outpoint = outpoint.to_data();
         serial.write_data(raw_outpoint);
         serial.write_4_bytes_little_endian(output_height);
         serial.write_8_bytes_little_endian(value);
@@ -94,7 +94,7 @@ void history_database::add_spend(const short_hash& key,
     {
         auto serial = make_serializer(data);
         serial.write_byte(1);
-        data_chunk raw_spend = spend.to_data();
+        auto raw_spend = spend.to_data();
         serial.write_data(raw_spend);
         serial.write_4_bytes_little_endian(spend_height);
         serial.write_8_bytes_little_endian(
@@ -175,7 +175,7 @@ block_chain::history history_database::get(const short_hash& key, size_t limit,
         if (limit && history.size() >= limit)
             break;
 
-        const record_type data = linked_rows_.get(index);
+        const auto data = linked_rows_.get(index);
 
         // Skip rows below from_height (if specified).
         if (from_height && read_height(data) < from_height)

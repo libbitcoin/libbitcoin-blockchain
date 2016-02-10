@@ -109,7 +109,7 @@ void transaction_database::start()
 
 transaction_result transaction_database::get(const hash_digest& hash) const
 {
-    const slab_type slab = map_.get(hash);
+    const auto slab = map_.get(hash);
     return transaction_result(slab, allocator_.to_eof(slab));
 }
 
@@ -124,7 +124,7 @@ void transaction_database::store(size_t height, size_t index,
         auto serial = make_serializer(data);
         serial.write_4_bytes_little_endian(height);
         serial.write_4_bytes_little_endian(index);
-        data_chunk tx_data = tx.to_data();
+        const auto tx_data = tx.to_data();
         serial.write_data(tx_data);
     };
     map_.store(key, write, value_size);
