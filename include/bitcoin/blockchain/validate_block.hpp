@@ -56,8 +56,8 @@ protected:
     virtual versions preceding_block_versions(size_t count) const = 0;
     virtual chain::header fetch_block(size_t fetch_height) const = 0;
     virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
-    virtual bool fetch_transaction(chain::transaction& tx,
-        size_t& previous_height, const hash_digest& tx_hash) const = 0;
+    virtual bool fetch_transaction(chain::transaction& tx, size_t& tx_height,
+        const hash_digest& tx_hash) const = 0;
     virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;
     virtual bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const = 0;

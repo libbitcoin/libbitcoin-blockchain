@@ -46,8 +46,8 @@ protected:
     uint64_t actual_time_span(size_t interval) const;
     versions preceding_block_versions(size_t maximum) const;
     chain::header fetch_block(size_t fetch_height) const;
-    bool fetch_transaction(chain::transaction& tx,
-        size_t& previous_height, const hash_digest& tx_hash) const;
+    bool fetch_transaction(chain::transaction& tx, size_t& tx_height,
+        const hash_digest& tx_hash) const;
     bool is_output_spent(const chain::output_point& outpoint) const;
     bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_parent, size_t input_index) const;
