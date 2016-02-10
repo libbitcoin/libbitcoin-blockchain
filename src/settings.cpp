@@ -31,7 +31,7 @@ static const settings mainnet_defaults()
     settings value;
     value.threads = 6;
     value.history_start_height = 0;
-    value.stealth_start_height = 0;
+    value.stealth_start_height = 350000;
     value.block_pool_capacity = 50;
     value.transaction_pool_capacity = 1000;
     value.transaction_pool_consistency = false;
@@ -69,6 +69,7 @@ static const settings testnet_defaults()
 {
     auto value = mainnet_defaults();
     value.use_testnet_rules = true;
+    value.stealth_start_height = 500000;
     value.checkpoints =
     {
         { "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 },
@@ -76,7 +77,8 @@ static const settings testnet_defaults()
         { "0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2", 200000 },
         { "000000000000226f7618566e70a2b5e020e29579b46743f05348427239bf41a1", 300000 },
         { "000000000598cbbb1e79057b79eef828c495d4fc31050e6b179c57d07d00367c", 400000 },
-        { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 }
+        { "000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606", 500000 },
+        { "000000000000624f06c69d3a9fe8d25e0a9030569128d63ad1b704bbb3059a16", 600000 }
     };
 
     return value;
