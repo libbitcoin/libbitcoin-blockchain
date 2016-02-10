@@ -29,7 +29,6 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>

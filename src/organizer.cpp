@@ -27,7 +27,6 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
-#include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
