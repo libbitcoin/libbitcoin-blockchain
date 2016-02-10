@@ -206,14 +206,14 @@ chain::block database::pop()
 
     // Set result header.
     result.header = block_result.header();
-    const auto txs_size = block_result.transactions_size();
+    const auto count = block_result.transactions_size();
 
     // TODO: unreverse the loop so we can avoid this.
-    BITCOIN_ASSERT_MSG(txs_size <= max_int64, "overflow");
-    const auto unsigned_txs_size = static_cast<int64_t>(txs_size);
+    BITCOIN_ASSERT_MSG(count <= max_int64, "overflow");
+    const auto unsigned_count = static_cast<int64_t>(count);
 
     // Loop backwards (in reverse to how we added).
-    for (int64_t index = unsigned_txs_size - 1; index >= 0; --index)
+    for (int64_t index = unsigned_count - 1; index >= 0; --index)
     {
         const auto tx_hash = block_result.transaction_hash(index);
         auto tx_result = transactions.get(tx_hash);
