@@ -424,7 +424,7 @@ uint32_t validate_block::work_required(bool is_testnet) const
     if (is_retarget_height(height_))
     {
         // This is the total time it took for the last 2016 blocks.
-        const auto actual = actual_timespan(retargeting_interval);
+        const auto actual = actual_time_span(retargeting_interval);
 
         // Now constrain the time between an upper and lower bound.
         const auto constrained = range_constrain(actual,
@@ -623,8 +623,8 @@ bool script_hash_signature_operations_count(size_t& out_count,
 }
 
 bool validate_block::connect_input(size_t index_in_parent,
-    const transaction& current_tx, size_t input_index,
-    uint64_t& value_in, size_t& total_sigops) const
+    const transaction& current_tx, size_t input_index, uint64_t& value_in,
+    size_t& total_sigops) const
 {
     BITCOIN_ASSERT(input_index < current_tx.inputs.size());
 

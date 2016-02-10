@@ -22,6 +22,7 @@
 
 #include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/block_chain_impl.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_fetcher.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
@@ -35,6 +36,7 @@
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>
 #include <bitcoin/blockchain/database/block_database.hpp>
@@ -50,8 +52,5 @@
 #include <bitcoin/blockchain/database/spend_database.hpp>
 #include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/blockchain/database/transaction_database.hpp>
-#include <bitcoin/blockchain/implementation/block_chain_impl.hpp>
-#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
-#include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
 
 #endif

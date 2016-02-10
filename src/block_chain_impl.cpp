@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/implementation/block_chain_impl.hpp>
+#include <bitcoin/blockchain/block_chain_impl.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -29,7 +29,6 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -37,57 +36,116 @@ namespace libbitcoin {
 namespace blockchain {
 
 #define NAME "blockchain"
-#define BC_CHAIN_DATABASE_LOCK_FILE "db-lock"
     
-using namespace bc::message;
+using namespace bc::chain;
 using namespace boost::interprocess;
-using path = boost::filesystem::path;
+using boost::filesystem::path;
 
 // This is a protocol limit that we incorporate into the query.
 static constexpr size_t maximum_get_blocks = 500;
 
-static file_lock init_lock(const path& prefix)
+// Hardwired lock file name.
+static const auto database_lock_file = "db-lock";
+
+// TODO: move threadpool management into the implementation (see network::p2p).
+block_chain_impl::block_chain_impl(threadpool& pool, const settings& settings)
+  : stopped_(true),
+    database_(settings),
+    organizer_(pool, *this, settings),
+    read_dispatch_(pool, NAME),
+    write_dispatch_(pool, NAME),
+    flock_(initialize_lock(settings.database_path)),
+    slock_(0),
+    settings_(settings)
+{
+}
+
+file_lock block_chain_impl::initialize_lock(const path& prefix)
 {
     // Touch the lock file (open/close).
-    const auto lockfile = prefix / BC_CHAIN_DATABASE_LOCK_FILE;
+    const auto lockfile = prefix / database_lock_file;
     bc::ofstream file(lockfile.string(), std::ios::app);
     file.close();
     return file_lock(lockfile.string().c_str());
 }
 
-// TODO: move threadpool management into the implementation (see network::p2p).
-block_chain_impl::block_chain_impl(threadpool& pool, const settings& settings)
-  : read_dispatch_(pool, NAME),
-    write_dispatch_(pool, NAME),
-    flock_(init_lock(settings.database_path)),
-    slock_(0),
-    stopped_(true),
-    store_(settings.database_path),
-    database_(store_, settings.history_start_height),
-    orphans_(settings.block_pool_capacity),
-    organizer_(pool, database_, orphans_, *this, settings.use_testnet_rules,
-        settings.checkpoints)
+// ----------------------------------------------------------------------------
+// Properties.
+
+const settings& block_chain_impl::chain_settings() const
 {
+    return settings_;
+}
+
+bool block_chain_impl::stopped()
+{
+    return stopped_;
 }
 
 // ----------------------------------------------------------------------------
-// simple_chain
+// Start sequence.
 
-hash_number block_chain_impl::get_difficulty(uint64_t height)
+void block_chain_impl::start(result_handler handler)
 {
-    hash_number total_work = 0;
+    if (!flock_.try_lock())
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
+    // TODO: can we actually restart?
+    stopped_ = false;
+
+    database_.start();
+    handler(error::success);
+}
+
+// ----------------------------------------------------------------------------
+// Stop sequence.
+
+void block_chain_impl::stop()
+{
+    const auto unhandled = [](const code){};
+    stop(unhandled);
+}
+
+// TODO: close all file descriptors once threadpool has stopped and return
+// result of file close in handler.
+void block_chain_impl::stop(result_handler handler)
+{
+    stopped_ = true;
+    organizer_.stop();
+    handler(error::success);
+}
+
+// ----------------------------------------------------------------------------
+// simple_chain (no locks).
+
+bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
+    uint64_t height)
+{
     size_t top;
     if (!database_.blocks.top(top))
-        return total_work;
+        return false;
 
+    out_difficulty = 0;
     for (uint64_t index = height; index <= top; ++index)
     {
         const auto bits = database_.blocks.get(index).header().bits;
-        total_work += block_work(bits);
+        out_difficulty += block_work(bits);
     }
 
-    return total_work;
+    return true;
+}
+
+bool block_chain_impl::get_header(header& out_header, uint64_t height)
+{
+    auto result = database_.blocks.get(height);
+    if (!result)
+        return false;
+
+    out_header = result.header();
+    return true;
 }
 
 bool block_chain_impl::get_height(uint64_t& out_height,
@@ -101,9 +159,33 @@ bool block_chain_impl::get_height(uint64_t& out_height,
     return true;
 }
 
-void block_chain_impl::push(block_detail::ptr block)
+bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
+    const output_point& outpoint)
+{
+    const auto result = database_.spends.get(outpoint);
+    if (!result)
+        return false;
+
+    out_transaction = result.hash();
+    return true;
+}
+
+bool block_chain_impl::get_transaction(transaction& out_transaction,
+    uint64_t& out_block_height, const hash_digest& transaction_hash)
+{
+    const auto result = database_.transactions.get(transaction_hash);
+    if (!result)
+        return false;
+
+    out_transaction = result.transaction();
+    out_block_height = result.height();
+    return true;
+}
+
+bool block_chain_impl::push(block_detail::ptr block)
 {
     database_.push(block->actual());
+    return true;
 }
 
 bool block_chain_impl::pop_from(block_detail::list& out_blocks,
@@ -123,49 +205,7 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 }
 
 // ----------------------------------------------------------------------------
-// block_chain (and private helpers).
-
-void block_chain_impl::start(result_handler handler)
-{
-    if (!flock_.try_lock())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // TODO: can we actually restart?
-    stopped_ = false;
-
-    database_.start();
-    handler(error::success);
-}
-
-void block_chain_impl::stop()
-{
-    const auto unhandled = [](const code){};
-    stop(unhandled);
-}
-
-// TODO: close all file descriptors once threadpool has stopped and return
-// result of file close in handler.
-void block_chain_impl::stop(result_handler handler)
-{
-    stopped_ = true;
-    organizer_.stop();
-    handler(error::success);
-}
-
-bool block_chain_impl::stopped()
-{
-    return stopped_;
-}
-
-void block_chain_impl::subscribe_reorganize(
-    organizer::reorganize_handler handler)
-{
-    // Pass this through to the organizer, which issues the notifications.
-    organizer_.subscribe_reorganize(handler);
-}
+// block_chain (internal locks).
 
 void block_chain_impl::start_write()
 {
@@ -177,6 +217,9 @@ void block_chain_impl::start_write()
 
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
 {
+    if (stopped())
+        return;
+
     write_dispatch_.ordered(
         std::bind(&block_chain_impl::do_store,
             this, block, handler));
@@ -199,7 +242,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     }
 
     const auto detail = std::make_shared<block_detail>(block);
-    if (!orphans_.add(detail))
+    if (!organizer_.add(detail))
     {
         static constexpr uint64_t height = 0;
         const auto info = block_info{ block_status::orphan, height };
@@ -207,12 +250,16 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
         return;
     }
 
+    // See replace_chain for block push.
     organizer_.organize();
     stop_write(handler, detail->error(), detail->info());
 }
 
 void block_chain_impl::import(block::ptr block, block_import_handler handler)
 {
+    if (stopped())
+        return;
+
     write_dispatch_.ordered(
         std::bind(&block_chain_impl::do_import,
             this, block, handler));
@@ -220,13 +267,31 @@ void block_chain_impl::import(block::ptr block, block_import_handler handler)
 
 void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
 {
+    if (stopped())
+        return;
+
     start_write();
+
+    // Disallow import of a duplicate?
+    ////auto result = database_.blocks.get(block->header.hash());
+    ////if (result)
+    ////{
+    ////    const auto height = result.height();
+    ////    const auto info = block_info{ block_status::confirmed, height };
+    ////    stop_write(handler, error::duplicate, info);
+    ////    return;
+    ////}
+
+    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
     database_.push(*block);
     stop_write(handler, error::success);
 }
 
 void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 {
+    if (stopped())
+        return;
+
     // Writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
@@ -261,6 +326,9 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 ///////////////////////////////////////////////////////////////////////////////
 void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
 {
+    if (stopped())
+        return;
+
     const auto try_read = [this, perform_read]() -> bool
     {
         // Implements the seqlock counter logic.
@@ -285,7 +353,7 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
 {
     const auto do_fetch = [this, handler](size_t slock)
     {
-        block_locator locator;
+        message::block_locator locator;
         size_t top_height;
         if (!database_.blocks.top(top_height))
             return finish_fetch(slock, handler,
@@ -321,8 +389,8 @@ static hash_list to_hashes(const block_result& result)
 
 // Fetch start-base-stop|top+1(max 500)
 // This may generally execute 502 but as many as 531+ queries.
-void block_chain_impl::fetch_locator_block_hashes(const get_blocks& locator,
-    const hash_digest& threshold,
+void block_chain_impl::fetch_locator_block_hashes(
+    const message::get_blocks& locator, const hash_digest& threshold,
     locator_block_hashes_fetch_handler handler)
 {
     // This is based on the idea that looking up by block hash to get heights
@@ -544,6 +612,12 @@ void block_chain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
         return finish_fetch(slock, handler, error::success, stealth);
     };
     fetch_parallel(do_fetch);
+}
+
+void block_chain_impl::subscribe_reorganize(reorganize_handler handler)
+{
+    // Pass this through to the organizer, which issues the notifications.
+    organizer_.subscribe_reorganize(handler);
 }
 
 } // namespace blockchain

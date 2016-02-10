@@ -28,21 +28,34 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This provides encapsulation for the blockchain database for the organizer.
+/// TODO: move to interface subfolder.
+/// A interface for encapsulation of the blockchain database for the organizer.
+/// These queries are immediate and assume the database is externally locked.
 class BCB_API simple_chain
 {
 public:
-    typedef std::shared_ptr<simple_chain> ptr;
 
     /// Get the dificulty of a block at the given height.
-    virtual hash_number get_difficulty(uint64_t height) = 0;
+    virtual bool get_difficulty(hash_number& out_difficulty,
+        uint64_t height) = 0;
 
-    /// Get the height of the given block.
+    /// Get the header of the block at the given height.
+    virtual bool get_header(chain::header& out_header, uint64_t height) = 0;
+
+    /// Get the height of the block with the given hash.
     virtual bool get_height(uint64_t& out_height,
         const hash_digest& block_hash) = 0;
 
+    /// Get the hash digest of the transaction of the outpoint.
+    virtual bool get_outpoint_transaction(hash_digest& out_transaction,
+        const chain::output_point& outpoint) = 0;
+
+    /// Get the transaction of the given hash and its block height.
+    virtual bool get_transaction(chain::transaction& out_transaction,
+        uint64_t& out_block_height, const hash_digest& transaction_hash) = 0;
+
     /// Append the block to the top of the chain.
-    virtual void push(block_detail::ptr block) = 0;
+    virtual bool push(block_detail::ptr block) = 0;
 
     /// Remove blocks at or above the given height, returning them in order.
     virtual bool pop_from(block_detail::list& out_blocks, uint64_t height) = 0;

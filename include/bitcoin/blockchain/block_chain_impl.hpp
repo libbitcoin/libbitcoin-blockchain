@@ -32,7 +32,6 @@
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database.hpp>
-#include <bitcoin/blockchain/implementation/organizer_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
@@ -52,27 +51,43 @@ public:
     block_chain_impl(const block_chain_impl&) = delete;
     void operator=(const block_chain_impl&) = delete;
 
+    const settings& chain_settings() const;
+
+    // ------------------------------------------------------------------------
+    // block_chain start/stop (TODO: this also affects simple_chain).
+
     void start(result_handler handler);
     void stop(result_handler handler);
     void stop();
 
     // ------------------------------------------------------------------------
-    // simple_chain
+    // simple_chain (no internal locks).
 
     /// Get the dificulty of a block at the given height.
-    hash_number get_difficulty(uint64_t height);
+    bool get_difficulty(hash_number& out_difficulty, uint64_t height);
 
-    /// Get the height of the given block.
+    /// Get the header of the block at the given height.
+    bool get_header(chain::header& out_header, uint64_t height);
+
+    /// Get the height of the block with the given hash.
     bool get_height(uint64_t& out_height, const hash_digest& block_hash);
 
+    /// Get the hash digest of the transaction of the outpoint.
+    bool get_outpoint_transaction(hash_digest& out_transaction,
+        const chain::output_point& outpoint);
+
+    /// Get the transaction of the given hash and its block height.
+    bool get_transaction(chain::transaction& out_transaction,
+        uint64_t& out_block_height, const hash_digest& transaction_hash);
+
     /// Append the block to the top of the chain.
-    void push(block_detail::ptr block);
+    bool push(block_detail::ptr block);
 
     /// Remove blocks at or above the given height, returning them in order.
     bool pop_from(block_detail::list& out_blocks, uint64_t height);
 
     // ------------------------------------------------------------------------
-    // block_chain
+    // block_chain queries (internal locks).
 
     /// Store a block to the blockchain, with FULL validation and indexing.
     void store(chain::block::ptr block, block_store_handler handler);
@@ -142,8 +157,15 @@ private:
     typedef std::atomic<size_t> sequential_lock;
     typedef std::function<bool(uint64_t)> perform_read_functor;
 
-    void initialize_lock(const std::string& prefix);
-    void start_write();
+    template <typename Handler, typename... Args>
+    bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
+    {
+        if (slock != slock_)
+            return false;
+
+        handler(std::forward<Args>(args)...);
+        return true;
+    }
 
     template <typename Handler, typename... Args>
     void stop_write(Handler handler, Args&&... args)
@@ -155,55 +177,27 @@ private:
         handler(std::forward<Args>(args)...);
     }
 
+    static boost::interprocess::file_lock initialize_lock(
+        const boost::filesystem::path& prefix);
+
+    void start_write();
     void do_store(chain::block::ptr block, block_store_handler handler);
     void do_import(chain::block::ptr block, block_import_handler handler);
-
-    // Fetch uses sequential lock to try to read shared data.
-    // Try to initiate asynchronous read operation. If it fails then
-    // sleep for a small amount of time and then retry read operation.
-
-    // Asynchronous fetch.
-    void fetch_parallel(perform_read_functor perform_read);
-
-    // Ordered fetch (order only amoung other calls to fetch_ordered).
     void fetch_ordered(perform_read_functor perform_read);
-
-    template <typename Handler, typename... Args>
-    bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
-    {
-        if (slock != slock_)
-            return false;
-
-        handler(std::forward<Args>(args)...);
-        return true;
-    }
-
+    void fetch_parallel(perform_read_functor perform_read);
     bool stopped();
 
-    // Queue for reads of the blockchain.
-    dispatcher read_dispatch_;
-
-    // Queue for writes to the blockchain.
-    dispatcher write_dispatch_;
-
-    // Lock the database directory with a file lock.
-    boost::interprocess::file_lock flock_;
-
-    // sequential lock used for writes.
-    sequential_lock slock_;
     bool stopped_;
-
-    // Main database core.
-    database::store store_;
     database database_;
-
-    // Organize stuff
-    orphan_pool orphans_;
-    organizer_impl organizer_;
+    organizer organizer_;
+    dispatcher read_dispatch_;
+    dispatcher write_dispatch_;
+    boost::interprocess::file_lock flock_;
+    sequential_lock slock_;
+    const settings& settings_;
 };
 
 } // namespace blockchain
 } // namespace libbitcoin
 
 #endif
-

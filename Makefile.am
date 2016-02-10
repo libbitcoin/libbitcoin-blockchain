@@ -37,6 +37,7 @@ src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
     src/block.cpp \
     src/block_chain.cpp \
+    src/block_chain_impl.cpp \
     src/block_detail.cpp \
     src/block_fetcher.cpp \
     src/database.cpp \
@@ -46,6 +47,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/transaction_pool.cpp \
     src/transaction_pool_index.cpp \
     src/validate_block.cpp \
+    src/validate_block_impl.cpp \
     src/validate_transaction.cpp \
     src/database/block_database.cpp \
     src/database/history_database.cpp \
@@ -58,10 +60,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/database/stealth_database.cpp \
     src/database/transaction_database.cpp \
     src/database/mman-win32/mman.c \
-    src/database/mman-win32/mman.h \
-    src/implementation/block_chain_impl.cpp \
-    src/implementation/organizer_impl.cpp \
-    src/implementation/validate_block_impl.cpp
+    src/database/mman-win32/mman.h
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -286,6 +285,7 @@ include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/block.hpp \
     include/bitcoin/blockchain/block_chain.hpp \
+    include/bitcoin/blockchain/block_chain_impl.hpp \
     include/bitcoin/blockchain/block_detail.hpp \
     include/bitcoin/blockchain/block_fetcher.hpp \
     include/bitcoin/blockchain/block_info.hpp \
@@ -299,6 +299,7 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/transaction_pool_index.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
+    include/bitcoin/blockchain/validate_block_impl.hpp \
     include/bitcoin/blockchain/validate_transaction.hpp \
     include/bitcoin/blockchain/version.hpp
 
@@ -327,12 +328,6 @@ include_bitcoin_blockchain_impl_HEADERS = \
     include/bitcoin/blockchain/impl/htdb_slab_list_item.ipp \
     include/bitcoin/blockchain/impl/multimap_records.ipp \
     include/bitcoin/blockchain/impl/remainder.ipp
-
-include_bitcoin_blockchain_implementationdir = ${includedir}/bitcoin/blockchain/implementation
-include_bitcoin_blockchain_implementation_HEADERS = \
-    include/bitcoin/blockchain/implementation/block_chain_impl.hpp \
-    include/bitcoin/blockchain/implementation/organizer_impl.hpp \
-    include/bitcoin/blockchain/implementation/validate_block_impl.hpp
 
 
 # Custom make targets.

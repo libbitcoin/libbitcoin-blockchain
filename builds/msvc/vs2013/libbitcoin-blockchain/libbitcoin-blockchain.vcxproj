@@ -107,6 +107,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
@@ -125,9 +126,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\block_chain_impl.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\organizer_impl.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\implementation\validate_block_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pointer_array_source.hpp" />
@@ -136,6 +134,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
     <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
@@ -143,6 +142,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\block.cpp" />
     <ClCompile Include="..\..\..\..\src\block_chain.cpp" />
+    <ClCompile Include="..\..\..\..\src\block_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\block_detail.cpp" />
     <ClCompile Include="..\..\..\..\src\block_fetcher.cpp" />
     <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
@@ -157,15 +157,13 @@
     <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
     <ClCompile Include="..\..\..\..\src\database.cpp" />
-    <ClCompile Include="..\..\..\..\src\implementation\block_chain_impl.cpp" />
-    <ClCompile Include="..\..\..\..\src\implementation\organizer_impl.cpp" />
-    <ClCompile Include="..\..\..\..\src\implementation\validate_block_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_block.cpp" />
+    <ClCompile Include="..\..\..\..\src\validate_block_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\validate_transaction.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

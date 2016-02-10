@@ -17,41 +17,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/implementation/validate_block_impl.hpp>
+#include <bitcoin/blockchain/validate_block_impl.hpp>
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block_detail.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+    
+// Value used to define median time past.
+static constexpr size_t median_time_past_blocks = 11;
 
-validate_block_impl::validate_block_impl(database& database,
+validate_block_impl::validate_block_impl(simple_chain& chain,
     size_t fork_index, const block_detail::list& orphan_chain,
     size_t orphan_index, size_t height, const chain::block& block,
     bool testnet, const config::checkpoint::list& checks,
     stopped_callback stopped)
   : validate_block(height, block, testnet, checks, stopped),
-    database_(database),
+    chain_(chain),
     height_(height),
     fork_index_(fork_index),
     orphan_index_(orphan_index),
     orphan_chain_(orphan_chain)
 {
-}
-
-chain::header validate_block_impl::fetch_block(size_t fetch_height) const
-{
-    if (fetch_height > fork_index_)
-    {
-        const auto fetch_index = fetch_height - fork_index_ - 1;
-        BITCOIN_ASSERT(fetch_index <= orphan_index_);
-        BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
-        return orphan_chain_[fetch_index]->actual().header;
-    }
-
-    auto result = database_.blocks.get(fetch_height);
-    BITCOIN_ASSERT(result);
-    return result.header();
 }
 
 uint32_t validate_block_impl::previous_block_bits() const
@@ -83,7 +73,7 @@ validate_block::versions validate_block_impl::preceding_block_versions(
     return result;
 }
 
-uint64_t validate_block_impl::actual_timespan(size_t interval) const
+uint64_t validate_block_impl::actual_time_span(size_t interval) const
 {
     BITCOIN_ASSERT(height_ > 0 && height_ >= interval);
 
@@ -95,14 +85,31 @@ uint64_t validate_block_impl::actual_timespan(size_t interval) const
 uint64_t validate_block_impl::median_time_past() const
 {
     // Read last 11 (or height if height < 11) block times into array.
+    const auto count = std::min(height_, median_time_past_blocks);
+
     std::vector<uint64_t> times;
-    const auto count = std::min(height_, (size_t)11);
     for (size_t i = 0; i < count; ++i)
         times.push_back(fetch_block(height_ - i - 1).timestamp);
 
-    // Select median value from the array.
+    // Sort and select middle (median) value from the array.
     std::sort(times.begin(), times.end());
     return times.empty() ? 0 : times[times.size() / 2];
+}
+
+chain::header validate_block_impl::fetch_block(size_t fetch_height) const
+{
+    if (fetch_height > fork_index_)
+    {
+        const auto fetch_index = fetch_height - fork_index_ - 1;
+        BITCOIN_ASSERT(fetch_index <= orphan_index_);
+        BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
+        return orphan_chain_[fetch_index]->actual().header;
+    }
+
+    chain::header out;
+    DEBUG_ONLY(const auto result =) chain_.get_header(out, fetch_height);
+    BITCOIN_ASSERT(result);
+    return out;
 }
 
 bool tx_after_fork(size_t tx_height, size_t fork_index)
@@ -112,33 +119,41 @@ bool tx_after_fork(size_t tx_height, size_t fork_index)
 
 bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
 {
-    const auto result = database_.transactions.get(tx_hash);
+    uint64_t out_height;
+    chain::transaction unused;
+    const auto result = chain_.get_transaction(unused, out_height, tx_hash);
     if (!result)
         return false;
-
-    return !tx_after_fork(result.height(), fork_index_);
+    
+    BITCOIN_ASSERT(out_height <= max_size_t);
+    const auto tx_height = static_cast<size_t>(out_height);
+    return tx_height <= fork_index_;
 }
 
 bool validate_block_impl::is_output_spent(
     const chain::output_point& outpoint) const
 {
-    const auto result = database_.spends.get(outpoint);
+    hash_digest out_hash;
+    const auto result = chain_.get_outpoint_transaction(out_hash, outpoint);
     if (!result)
         return false;
 
     // Lookup block height. Is the spend after the fork point?
-    return transaction_exists(result.hash());
+    return transaction_exists(out_hash);
 }
 
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    const auto result = database_.transactions.get(tx_hash);
-    if (!result || tx_after_fork(result.height(), fork_index_))
+    uint64_t out_height;
+    const auto result = chain_.get_transaction(tx, out_height, tx_hash);
+
+    BITCOIN_ASSERT(out_height <= max_size_t);
+    tx_height = static_cast<size_t>(out_height);
+
+    if (!result || tx_after_fork(tx_height, fork_index_))
         return fetch_orphan_transaction(tx, tx_height, tx_hash);
 
-    tx = result.transaction();
-    tx_height = result.height();
     return true;
 }
 

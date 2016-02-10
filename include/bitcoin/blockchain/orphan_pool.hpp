@@ -36,11 +36,11 @@ class BCB_API orphan_pool
 public:
     typedef std::shared_ptr<orphan_pool> ptr;
 
-    orphan_pool(size_t size=20);
+    orphan_pool(size_t capacity);
 
-    bool add(block_detail::ptr incoming_block);
-    void remove(block_detail::ptr remove_block);
-    block_detail::list trace(block_detail::ptr end_block);
+    bool add(block_detail::ptr block);
+    void remove(block_detail::ptr block);
+    block_detail::list trace(block_detail::ptr end);
     block_detail::list unprocessed();
 
 private:

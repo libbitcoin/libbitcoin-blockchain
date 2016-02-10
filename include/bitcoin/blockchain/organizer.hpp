@@ -28,69 +28,55 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/**
- * Dependency graph:
- *                   ___________
- *                  |           |
- *             -----| organizer |----
- *            /     |___________|    \
- *           /                        \
- *  ________/_____                 ____\_________
- * |              |               |              |
- * | orphan_pool  |               | simple_chain |
- * |______________|               |______________|
- *
- * And both implementations of the organizer and simple_chain
- * depend on blockchain_common.
- *   ________________          ________
- *  [_organizer_impl_]------->[        ]
- *   ___________________      [ common ]
- *  [_simple_chain_impl_]---->[________]
- *
- * All these components are managed and kept inside block_chain_impl.
- */
-
-// Structure which organises the blocks from the orphan pool to the blockchain.
+// TODO: This is not an interface, collapse with organizer_impl.
+/// Structure which organises the blocks from the orphan pool to the blockchain.
 class BCB_API organizer
 {
 public:
     typedef std::shared_ptr<organizer> ptr;
-    typedef std::function<bool(const code&, uint64_t,
-        const chain::block::ptr_list&, const chain::block::ptr_list&)>
+    typedef chain::block::ptr_list list;
+    typedef resubscriber<const code&, uint64_t, const list&, const list&>
+        reorganize_subscriber;
+    typedef std::function<bool(const code&, uint64_t, const list&, const list&)>
         reorganize_handler;
-    typedef resubscriber<const code&, uint64_t, const chain::block::ptr_list&,
-        const chain::block::ptr_list&> reorganize_subscriber;
 
-    organizer(threadpool& pool, orphan_pool& orphans, simple_chain& chain);
+    organizer(threadpool& pool, simple_chain& chain, const settings& settings);
 
-    void organize();
-    void subscribe_reorganize(reorganize_handler handler);
-    void stop();
+    virtual void organize();
+    virtual bool add(block_detail::ptr block);
+    virtual void subscribe_reorganize(reorganize_handler handler);
+    virtual void stop();
 
 protected:
-    bool stopped();
-    virtual code verify(uint64_t fork_index,
-        const block_detail::list& orphan_chain, uint64_t orphan_index) = 0;
+    virtual bool stopped();
+    virtual code verify(uint64_t fork_index, 
+        const block_detail::list& orphan_chain, uint64_t orphan_index);
 
 private:
+    typedef block_detail::list detail_list;
+    static uint64_t count_inputs(const chain::block& block);
+
+    bool strict(uint64_t fork_point);
     void process(block_detail::ptr process_block);
-    void replace_chain(uint64_t fork_index, block_detail::list& orphan_chain);
-    void clip_orphans(block_detail::list& orphan_chain, uint64_t orphan_index,
+    void replace_chain(uint64_t fork_index, detail_list& orphan_chain);
+    void clip_orphans(detail_list& orphan_chain, uint64_t orphan_index,
         const code& invalid_reason);
     void notify_reorganize(uint64_t fork_point,
-        const block_detail::list& orphan_chain,
-        const block_detail::list& replaced_chain);
+        const detail_list& orphan_chain, const detail_list& replaced_chain);
     void notify_stop();
 
     bool stopped_;
+    bool testnet_;
     simple_chain& chain_;
-    orphan_pool& orphans_;
+    orphan_pool orphan_pool_;
     block_detail::list process_queue_;
+    config::checkpoint::list checkpoints_;
     reorganize_subscriber::ptr subscriber_;
     std::mutex mutex_;
 };

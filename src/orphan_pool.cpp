@@ -25,46 +25,46 @@
 namespace libbitcoin {
 namespace blockchain {
 
-orphan_pool::orphan_pool(size_t size)
-  : buffer_(size)
+orphan_pool::orphan_pool(size_t capacity)
+  : buffer_(capacity)
 {
 }
 
 // TODO: there is no guard for entry here apart from nonexistence of the block.
-bool orphan_pool::add(block_detail::ptr incoming_block)
+bool orphan_pool::add(block_detail::ptr block)
 {
     // No duplicates allowed.
-    const auto& incoming_header = incoming_block->actual().header;
+    const auto& incoming_header = block->actual().header;
     for (const auto current_block: buffer_)
         if (current_block->actual().header == incoming_header)
             return false;
 
-    buffer_.push_back(incoming_block);
+    buffer_.push_back(block);
 
     log::debug(LOG_BLOCKCHAIN)
         << "Orphan pool add (" << buffer_.size() << ") block ["
-        << encode_hash(incoming_block->hash()) << "] previous ["
-        << encode_hash(incoming_block->actual().header.previous_block_hash)
+        << encode_hash(block->hash()) << "] previous ["
+        << encode_hash(block->actual().header.previous_block_hash)
         << "]";
 
     return true;
 }
 
-void orphan_pool::remove(block_detail::ptr remove_block)
+void orphan_pool::remove(block_detail::ptr block)
 {
-    const auto it = std::find(buffer_.begin(), buffer_.end(), remove_block);
+    const auto it = std::find(buffer_.begin(), buffer_.end(), block);
     BITCOIN_ASSERT(it != buffer_.end());
     buffer_.erase(it);
 
     log::debug(LOG_BLOCKCHAIN)
         << "Orphan pool remove (" << buffer_.size() << ") block ["
-        << encode_hash(remove_block->hash()) << "]";
+        << encode_hash(block->hash()) << "]";
 }
 
-block_detail::list orphan_pool::trace(block_detail::ptr end_block)
+block_detail::list orphan_pool::trace(block_detail::ptr end)
 {
     block_detail::list traced_chain;
-    traced_chain.push_back(end_block);
+    traced_chain.push_back(end);
     for (auto found = true; found;)
     {
         const auto& actual = traced_chain.back()->actual();
