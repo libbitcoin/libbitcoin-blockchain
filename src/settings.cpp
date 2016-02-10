@@ -31,6 +31,7 @@ static const settings mainnet_defaults()
     settings value;
     value.threads = 6;
     value.history_start_height = 0;
+    value.stealth_start_height = 0;
     value.block_pool_capacity = 50;
     value.transaction_pool_capacity = 1000;
     value.transaction_pool_consistency = false;

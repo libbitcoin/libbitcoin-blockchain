@@ -60,10 +60,12 @@ public:
     database(const settings& settings);
 
     /// Deprecated
-    database(const store& paths, size_t history_height=0);
+    database(const store& paths, size_t history_height=0,
+        size_t stealth_height=0);
 
     /// Deprecated
-    database(const boost::filesystem::path& prefix, size_t history_height=0);
+    database(const boost::filesystem::path& prefix, size_t history_height=0,
+        size_t stealth_height=0);
 
     void create();
     void start();
@@ -78,18 +80,19 @@ public:
     stealth_database stealth;
 
 private:
-    void push_inputs(const hash_digest& tx_hash,
-        const size_t block_height, const chain::input::list& inputs);
-    void push_outputs(const hash_digest& tx_hash, const size_t block_height,
-        const chain::output::list& outputs);
-    void push_stealth_outputs(const hash_digest& tx_hash,
-        const chain::output::list& outputs);
-    void pop_inputs(const size_t block_height,
-        const chain::input::list& inputs);
-    void pop_outputs(const size_t block_height,
-        const chain::output::list& outputs);
+    typedef chain::input::list inputs;
+    typedef chain::output::list outputs;
+
+    void push_inputs(const hash_digest& tx_hash, size_t block_height,
+        const inputs& inputs);
+    void push_outputs(const hash_digest& tx_hash, size_t block_height,
+        const outputs& outputs);
+    void push_stealth(const hash_digest& tx_hash, const outputs& outputs);
+    void pop_inputs(const inputs& inputs);
+    void pop_outputs(const outputs& outputs);
 
     const size_t history_height_;
+    const size_t stealth_height_;
 };
 
 } // namespace blockchain
