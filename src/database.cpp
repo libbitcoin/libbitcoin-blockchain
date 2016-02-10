@@ -150,32 +150,32 @@ static bool is_allowed_duplicate(const header& head, size_t height)
 
 void database::push(const block& block)
 {
-    const auto block_height = get_next_height(blocks);
+    const auto height = get_next_height(blocks);
 
     for (size_t index = 0; index < block.transactions.size(); ++index)
     {
         // Skip BIP30 allowed duplicates (coinbase txs of excepted blocks).
         // We handle here because this is the lowest public level exposed.
-        if (index == 0 && is_allowed_duplicate(block.header, block_height))
+        if (index == 0 && is_allowed_duplicate(block.header, height))
             continue;
 
         const auto& tx = block.transactions[index];
         const auto tx_hash = tx.hash();
 
         // Add inputs
-        if (block_height >= history_height_ && !tx.is_coinbase())
-            push_inputs(tx_hash, block_height, tx.inputs);
+        if (height >= history_height_ && !tx.is_coinbase())
+            push_inputs(tx_hash, height, tx.inputs);
 
         // Add outputs
-        if (block_height >= history_height_)
-            push_outputs(tx_hash, block_height, tx.outputs);
+        if (height >= history_height_)
+            push_outputs(tx_hash, height, tx.outputs);
 
         // Add stealth outputs
-        if (block_height >= stealth_height_)
+        if (height >= stealth_height_)
             push_stealth(tx_hash, tx.outputs);
 
         // Add transaction
-        transactions.store(block_height, index, tx);
+        transactions.store(height, index, tx);
     }
 
     // Add block itself.
@@ -196,15 +196,14 @@ void database::push(const block& block)
 
 chain::block database::pop()
 {
-    chain::block result;
-    size_t block_height;
-
-    if (!blocks.top(block_height))
+    size_t height;
+    if (!blocks.top(height))
         throw std::runtime_error("The blockchain is empty.");
 
-    auto block_result = blocks.get(block_height);
+    auto block_result = blocks.get(height);
 
     // Set result header.
+    chain::block result;
     result.header = block_result.header();
     const auto count = block_result.transactions_size();
 
@@ -227,19 +226,19 @@ chain::block database::pop()
         transactions.remove(tx_hash);
 
         // Remove outputs
-        if (block_height >= history_height_)
+        if (height >= history_height_)
             pop_outputs(tx.outputs);
 
         // Remove inputs
-        if (block_height >= history_height_ && !tx.is_coinbase())
+        if (height >= history_height_ && !tx.is_coinbase())
             pop_inputs(tx.inputs);
 
         // Add transaction to result
         result.transactions.push_back(tx);
     }
 
-    stealth.unlink(block_height);
-    blocks.unlink(block_height);
+    stealth.unlink(height);
+    blocks.unlink(height);
 
     // Reverse, since we looped backwards.
     std::reverse(result.transactions.begin(), result.transactions.end());
