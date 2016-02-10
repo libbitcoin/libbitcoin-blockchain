@@ -48,7 +48,6 @@ static_assert(sizeof(void*) == sizeof(uint64_t), "Not a 64 bit system!");
 namespace libbitcoin {
 namespace database {
 
-
 using boost::format;
 using boost::filesystem::path;
 
@@ -65,18 +64,21 @@ static void handle_error(const char* context, const path& filename)
 }
 
 mmfile::mmfile(const path& filename)
-  : filename_(filename)
+  : filename_(filename),
+    stopped_(true)
 {
     log::info(LOG_DATABASE) << "Mapping: " << filename_;
     file_handle_ = open_file(filename);
     size_ = file_size(file_handle_);
-    const auto mapped = map(size_);
-    if (!mapped)
+    stopped_ = !map(size_);
+    if (stopped_)
         handle_error("map", filename_);
 }
 
 mmfile::mmfile(mmfile&& file)
-  : file_handle_(file.file_handle_), data_(file.data_), size_(file.size_)
+  : file_handle_(file.file_handle_),
+    data_(file.data_),
+    size_(file.size_)
 {
     file.file_handle_ = -1;
     file.data_ = nullptr;
@@ -85,6 +87,14 @@ mmfile::mmfile(mmfile&& file)
 
 mmfile::~mmfile()
 {
+    stop();
+}
+
+bool mmfile::stop()
+{
+    if (stopped_)
+        return true;
+
     log::info(LOG_DATABASE) << "Unmapping: " << filename_;
     const auto unmapped = unmap();
     if (!unmapped)
@@ -105,6 +115,9 @@ mmfile::~mmfile()
     const auto closed = close(file_handle_) != -1;
     if (!closed)
         handle_error("close", filename_);
+
+    stopped_ = true;
+    return unmapped && flushed && closed;
 }
 
 uint8_t* mmfile::data()

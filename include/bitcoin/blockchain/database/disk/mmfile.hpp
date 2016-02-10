@@ -47,6 +47,7 @@ public:
     size_t size() const;
     bool reserve(size_t size);
     bool resize(size_t new_size);
+    bool stop();
 
 private:
     size_t file_size(int file_handle);
@@ -61,6 +62,7 @@ private:
     int file_handle_ = 0;
     uint8_t* data_ = nullptr;
     size_t size_ = 0;
+    bool stopped_;
 
     // for logging
     boost::filesystem::path filename_;
