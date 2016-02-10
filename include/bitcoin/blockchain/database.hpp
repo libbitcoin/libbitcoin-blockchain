@@ -36,36 +36,30 @@ namespace blockchain {
 class BCB_API database
 {
 public:
+    typedef boost::filesystem::path path;
+
     class store
     {
     public:
-        store(const boost::filesystem::path& prefix);
+
+        store(const path& prefix);
         bool touch_all() const;
 
-        boost::filesystem::path blocks_lookup;
-        boost::filesystem::path blocks_rows;
-        boost::filesystem::path spends;
-        boost::filesystem::path transactions;
-        boost::filesystem::path history_lookup;
-        boost::filesystem::path history_rows;
-        boost::filesystem::path stealth_index;
-        boost::filesystem::path stealth_rows;
+        path blocks_lookup;
+        path blocks_rows;
+        path spends;
+        path transactions;
+        path history_lookup;
+        path history_rows;
+        path stealth_index;
+        path stealth_rows;
     };
 
     /// Create a new blockchain with a given path prefix and default paths.
-    static bool initialize(const boost::filesystem::path& prefix,
-        const chain::block& genesis);
-    static bool touch_file(const boost::filesystem::path& file);
+    static bool initialize(const path& prefix, const chain::block& genesis);
+    static bool touch_file(const path& file);
 
     database(const settings& settings);
-
-    /// Deprecated
-    database(const store& paths, size_t history_height=0,
-        size_t stealth_height=0);
-
-    /// Deprecated
-    database(const boost::filesystem::path& prefix, size_t history_height=0,
-        size_t stealth_height=0);
 
     void create();
     void start();
@@ -78,6 +72,10 @@ public:
     transaction_database transactions;
     history_database history;
     stealth_database stealth;
+
+protected:
+    database(const store& paths, size_t history_height, size_t stealth_height);
+    database(const path& prefix, size_t history_height, size_t stealth_height);
 
 private:
     typedef chain::input::list inputs;

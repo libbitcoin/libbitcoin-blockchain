@@ -59,7 +59,7 @@ bool database::initialize(const path& prefix, const chain::block& genesis)
     const auto result = paths.touch_all();
 
     // Initialize databases.
-    database instance(paths, 0);
+    database instance(paths, 0, 0);
     instance.create();
     instance.start();
     instance.push(genesis);
