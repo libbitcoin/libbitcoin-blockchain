@@ -232,10 +232,10 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
     // This test causes Travis run failures for performance reasons.
 
     auto settings = database::settings::mainnet;
-    settings.database_path = { "chain" };
+    settings.directory = { "chain" };
 
-    boost::filesystem::create_directory(settings.database_path);
-    BOOST_REQUIRE(data_base::initialize(settings.database_path, mainnet_genesis_block()));
+    boost::filesystem::create_directory(settings.directory);
+    BOOST_REQUIRE(data_base::initialize(settings.directory, mainnet_genesis_block()));
 
     data_base instance(settings);
     instance.start();

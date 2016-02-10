@@ -31,7 +31,7 @@ static const settings mainnet_defaults()
     settings value;
     value.history_start_height = 0;
     value.stealth_start_height = 350000;
-    value.database_path = { "mainnet" };
+    value.directory = { "mainnet" };
     return value;
 }
 
@@ -39,7 +39,7 @@ static const settings testnet_defaults()
 {
     auto value = mainnet_defaults();
     value.stealth_start_height = 500000;
-    value.database_path = { "testnet" };
+    value.directory = { "testnet" };
     return value;
 }
 

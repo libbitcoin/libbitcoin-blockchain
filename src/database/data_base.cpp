@@ -110,7 +110,7 @@ data_base::file_lock data_base::initialize_lock(const path& lock)
 }
 
 data_base::data_base(const settings& settings)
-  : data_base(settings.database_path, settings.history_start_height,
+  : data_base(settings.directory, settings.history_start_height,
         settings.stealth_start_height)
 {
 }

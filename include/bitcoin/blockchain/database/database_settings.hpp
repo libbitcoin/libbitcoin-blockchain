@@ -37,7 +37,7 @@ struct BCD_API settings
     /// Properties.
     uint32_t history_start_height;
     uint32_t stealth_start_height;
-    boost::filesystem::path database_path;
+    boost::filesystem::path directory;
 };
 
 } // namespace database
