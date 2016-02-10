@@ -52,7 +52,7 @@ public:
         return versions();
     }
 
-    uint64_t actual_timespan(size_t interval) const
+    uint64_t actual_time_span(size_t interval) const
     {
         return 0;
     }
