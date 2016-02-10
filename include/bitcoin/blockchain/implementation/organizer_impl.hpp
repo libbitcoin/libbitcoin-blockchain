@@ -21,9 +21,11 @@
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_IMPL_HPP
 
 #include <cstdint>
+#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
-#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

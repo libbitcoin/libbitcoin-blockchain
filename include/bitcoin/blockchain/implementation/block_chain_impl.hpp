@@ -33,15 +33,15 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
-#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 class BCB_API block_chain_impl
-  : public block_chain
+  : public block_chain, public simple_chain
 {
 public:
     // TODO: create threadpool internally from config.
@@ -55,6 +55,24 @@ public:
     void start(result_handler handler);
     void stop(result_handler handler);
     void stop();
+
+    // ------------------------------------------------------------------------
+    // simple_chain
+
+    /// Get the dificulty of a block at the given height.
+    hash_number get_difficulty(uint64_t height);
+
+    /// Get the height of the given block.
+    bool get_height(uint64_t& out_height, const hash_digest& block_hash);
+
+    /// Append the block to the top of the chain.
+    void push(block_detail::ptr block);
+
+    /// Remove blocks at or above the given height, returning them in order.
+    bool pop_from(block_detail::list& out_blocks, uint64_t height);
+
+    // ------------------------------------------------------------------------
+    // block_chain
 
     /// Store a block to the blockchain, with FULL validation and indexing.
     void store(chain::block::ptr block, block_store_handler handler);
@@ -181,7 +199,6 @@ private:
 
     // Organize stuff
     orphan_pool orphans_;
-    simple_chain_impl chain_;
     organizer_impl organizer_;
 };
 

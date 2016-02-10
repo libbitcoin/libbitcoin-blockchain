@@ -29,9 +29,7 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
-#include <bitcoin/blockchain/database/block_database.hpp>
 #include <bitcoin/blockchain/implementation/organizer_impl.hpp>
-#include <bitcoin/blockchain/implementation/simple_chain_impl.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -67,11 +65,65 @@ block_chain_impl::block_chain_impl(threadpool& pool, const settings& settings)
     store_(settings.database_path),
     database_(store_, settings.history_start_height),
     orphans_(settings.block_pool_capacity),
-    chain_(database_),
-    organizer_(pool, database_, orphans_, chain_, settings.use_testnet_rules,
+    organizer_(pool, database_, orphans_, *this, settings.use_testnet_rules,
         settings.checkpoints)
 {
 }
+
+// ----------------------------------------------------------------------------
+// simple_chain
+
+hash_number block_chain_impl::get_difficulty(uint64_t height)
+{
+    hash_number total_work = 0;
+
+    size_t top;
+    if (!database_.blocks.top(top))
+        return total_work;
+
+    for (uint64_t index = height; index <= top; ++index)
+    {
+        const auto bits = database_.blocks.get(index).header().bits;
+        total_work += block_work(bits);
+    }
+
+    return total_work;
+}
+
+bool block_chain_impl::get_height(uint64_t& out_height,
+    const hash_digest& block_hash)
+{
+    auto result = database_.blocks.get(block_hash);
+    if (!result)
+        return false;
+
+    out_height = result.height();
+    return true;
+}
+
+void block_chain_impl::push(block_detail::ptr block)
+{
+    database_.push(block->actual());
+}
+
+bool block_chain_impl::pop_from(block_detail::list& out_blocks,
+    uint64_t height)
+{
+    size_t top;
+    if (!database_.blocks.top(top))
+        return false;
+
+    for (uint64_t index = top; index >= height; --index)
+    {
+        const auto block = std::make_shared<block_detail>(database_.pop());
+        out_blocks.push_back(block);
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+// block_chain (and private helpers).
 
 void block_chain_impl::start(result_handler handler)
 {
@@ -137,9 +189,10 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 
     start_write();
 
-    uint64_t height;
-    if (chain_.find_height(height, block->header.hash()))
+    auto result = database_.blocks.get(block->header.hash());
+    if (result)
     {
+        const auto height = result.height();
         const auto info = block_info{ block_status::confirmed, height };
         stop_write(handler, error::duplicate, info);
         return;
