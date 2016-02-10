@@ -250,6 +250,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
         return;
     }
 
+    // See replace_chain for block push.
     organizer_.organize();
     stop_write(handler, detail->error(), detail->info());
 }
@@ -270,6 +271,18 @@ void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
         return;
 
     start_write();
+
+    // Disallow import of a duplicate?
+    ////auto result = database_.blocks.get(block->header.hash());
+    ////if (result)
+    ////{
+    ////    const auto height = result.height();
+    ////    const auto info = block_info{ block_status::confirmed, height };
+    ////    stop_write(handler, error::duplicate, info);
+    ////    return;
+    ////}
+
+    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
     database_.push(*block);
     stop_write(handler, error::success);
 }

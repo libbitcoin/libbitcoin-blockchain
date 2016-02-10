@@ -261,6 +261,8 @@ void organizer::replace_chain(uint64_t fork_index,
         orphan_pool_.remove(arrival_block);
         ++arrival_index;
         arrival_block->set_info({ block_status::confirmed, arrival_index });
+
+        // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
         DEBUG_ONLY(const auto result =) chain_.push(arrival_block);
         BITCOIN_ASSERT(result);
     }
