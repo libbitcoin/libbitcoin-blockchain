@@ -217,6 +217,9 @@ void block_chain_impl::start_write()
 
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
 {
+    if (stopped())
+        return;
+
     write_dispatch_.ordered(
         std::bind(&block_chain_impl::do_store,
             this, block, handler));
@@ -253,6 +256,9 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 
 void block_chain_impl::import(block::ptr block, block_import_handler handler)
 {
+    if (stopped())
+        return;
+
     write_dispatch_.ordered(
         std::bind(&block_chain_impl::do_import,
             this, block, handler));
@@ -260,6 +266,9 @@ void block_chain_impl::import(block::ptr block, block_import_handler handler)
 
 void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
 {
+    if (stopped())
+        return;
+
     start_write();
     database_.push(*block);
     stop_write(handler, error::success);
@@ -267,6 +276,9 @@ void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
 
 void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 {
+    if (stopped())
+        return;
+
     // Writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
@@ -301,6 +313,9 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 ///////////////////////////////////////////////////////////////////////////////
 void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
 {
+    if (stopped())
+        return;
+
     const auto try_read = [this, perform_read]() -> bool
     {
         // Implements the seqlock counter logic.
