@@ -5,6 +5,7 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::database;
 
 void show_help()
 {
@@ -147,8 +148,8 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        database::touch_file(map_filename);
-        database::touch_file(rows_filename);
+        data_base::touch_file(map_filename);
+        data_base::touch_file(rows_filename);
     }
     block_database db(map_filename, rows_filename);
     if (command == "initialize_new")

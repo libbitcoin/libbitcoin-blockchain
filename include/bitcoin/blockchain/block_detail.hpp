@@ -59,7 +59,7 @@ private:
     chain::block::ptr actual_block_;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

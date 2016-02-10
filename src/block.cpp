@@ -142,32 +142,5 @@ hash_number block_work(uint32_t bits)
     return (~target / (target + 1)) + 1;
 }
 
-// Fast modulus calculation where divisor is a power of 2.
-static uint64_t remainder(const hash_digest& value, const uint64_t divisor)
-{
-    BITCOIN_ASSERT(divisor % 2 == 0);
-
-    // Only use the first 8 bytes of hash value for this calculation.
-    const auto hash_value = from_little_endian_unsafe<uint64_t>(value.begin());
-
-    // x mod 2**n == x & (2**n - 1)
-    return hash_value & (divisor - 1);
-}
-
-uint64_t checksum(chain::output_point outpoint)
-{
-    // Assuming outpoint hash is sufficiently random, this method works well
-    // for generating row checksums. Max pow2 value for a uint64_t is 1 << 63.
-    static constexpr uint64_t divisor = uint64_t{ 1 } << 63;
-    static_assert(divisor == 9223372036854775808ull, "Wrong divisor value.");
-
-    // Write index onto outpoint hash.
-    auto serial = make_serializer(outpoint.hash.begin());
-    serial.write_4_bytes_little_endian(outpoint.index);
-
-    // Collapse it into uint64_t.
-    return remainder(outpoint.hash, divisor);
-}
-
 } // namespace blockchain
 } // namespace libbitcoin

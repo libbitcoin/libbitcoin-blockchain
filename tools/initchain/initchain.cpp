@@ -31,6 +31,7 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::database;
 using namespace boost::filesystem;
 using namespace boost::system;
 using boost::format;
@@ -59,7 +60,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if (!database::initialize(prefix, mainnet_genesis_block()))
+    if (!data_base::initialize(prefix, mainnet_genesis_block()))
     {
         std::cerr << BS_INITCHAIN_FAIL;
         return -1;

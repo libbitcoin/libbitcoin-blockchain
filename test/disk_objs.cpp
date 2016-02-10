@@ -20,14 +20,15 @@
 #include <boost/test/unit_test.hpp>
 #include <bitcoin/blockchain.hpp>
 
-using namespace libbitcoin;
-using namespace libbitcoin::blockchain;
+using namespace bc;
+using namespace bc::blockchain;
+using namespace bc::database;
 
 BOOST_AUTO_TEST_SUITE(disk_objs)
 
 BOOST_AUTO_TEST_CASE(slab)
 {
-    database::touch_file("slabs");
+    data_base::touch_file("slabs");
     mmfile file("slabs");
     BITCOIN_ASSERT(file.data());
     file.resize(200);
@@ -49,7 +50,7 @@ BOOST_AUTO_TEST_CASE(slab)
 
 BOOST_AUTO_TEST_CASE(array)
 {
-    database::touch_file("array");
+    data_base::touch_file("array");
     mmfile file("array");
     BITCOIN_ASSERT(file.data());
     file.resize(4 + 4 * 10);
@@ -64,7 +65,7 @@ BOOST_AUTO_TEST_CASE(array)
 
 BOOST_AUTO_TEST_CASE(record)
 {
-    database::touch_file("records");
+    data_base::touch_file("records");
     mmfile file("records");
     BITCOIN_ASSERT(file.data());
     file.resize(4);
@@ -83,7 +84,7 @@ BOOST_AUTO_TEST_CASE(record)
 
 BOOST_AUTO_TEST_CASE(linked_records_tst)
 {
-    database::touch_file("lrs");
+    data_base::touch_file("lrs");
     mmfile file("lrs");
     BITCOIN_ASSERT(file.data());
     file.resize(4);
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(linked_records_tst)
 
 BOOST_AUTO_TEST_CASE(htdb_slab_tst)
 {
-    database::touch_file("htdb_slab");
+    data_base::touch_file("htdb_slab");
     mmfile file("htdb_slab");
     BITCOIN_ASSERT(file.data());
     file.resize(4 + 8 * 100 + 8);

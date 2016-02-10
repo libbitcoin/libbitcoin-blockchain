@@ -1,9 +1,10 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
-#include <bitcoin/blockchain/database/htdb_slab.hpp>
-using namespace libbitcoin;
-using namespace libbitcoin::blockchain;
+
+using namespace bc;
+using namespace bc::blockchain;
+using namespace bc::database;
 
 template <size_t N>
 slab_type get_slab(htdb_slab_header& header, slab_allocator& alloc,

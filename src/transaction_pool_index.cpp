@@ -24,7 +24,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
-#include <bitcoin/blockchain/history_row.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -272,7 +271,7 @@ void transaction_pool_index::add(history& history, const spend_info& spend)
         point_kind::spend,
         spend.point,
         genesis_height,
-        { checksum(spend.previous_output) }
+        { spend.previous_output.checksum() }
     };
 
     history.emplace_back(row);

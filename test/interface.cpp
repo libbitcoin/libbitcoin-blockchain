@@ -23,6 +23,7 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::database;
 using namespace bc::wallet;
 
 struct low_thread_priority_fixture
@@ -40,7 +41,7 @@ struct low_thread_priority_fixture
     }
 };
 
-void test_block_exists(const database& interface,
+void test_block_exists(const data_base& interface,
     const size_t height, const chain::block block0)
 {
     const hash_digest blk_hash = block0.header.hash();
@@ -134,8 +135,8 @@ void test_block_exists(const database& interface,
     }
 }
 
-void test_block_not_exists(
-    const database& interface, const chain::block block0)
+void test_block_not_exists(const data_base& interface,
+    const chain::block block0)
 {
     //const hash_digest blk_hash = hash_block_header(block0.header);
     //auto r0_byhash = interface.blocks.get(blk_hash);
@@ -230,13 +231,13 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
 
     // This test causes Travis run failures for performance reasons.
 
-    auto settings = blockchain::settings::mainnet;
-    settings.database_path = { "chain" };
+    auto settings = database::settings::mainnet;
+    settings.directory = { "chain" };
 
-    boost::filesystem::create_directory(settings.database_path);
-    BOOST_REQUIRE(database::initialize(settings.database_path, mainnet_genesis_block()));
+    boost::filesystem::create_directory(settings.directory);
+    BOOST_REQUIRE(data_base::initialize(settings.directory, mainnet_genesis_block()));
 
-    database instance(settings);
+    data_base instance(settings);
     instance.start();
     
     size_t height = 42;

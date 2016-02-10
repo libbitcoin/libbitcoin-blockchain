@@ -5,6 +5,8 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::chain;
+using namespace bc::database;
 
 void show_help()
 {
@@ -97,8 +99,8 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        database::touch_file(index_filename);
-        database::touch_file(rows_filename);
+        data_base::touch_file(index_filename);
+        data_base::touch_file(rows_filename);
     }
     stealth_database db(index_filename, rows_filename);
     if (command == "initialize_new")
@@ -123,8 +125,8 @@ int main(int argc, char** argv)
         const auto rows = db.scan(filter, from_height);
         for (const auto row: rows)
         {
-            std::cout << "Ephemkey: "
-                << encode_base16(row.ephemkey) << std::endl;
+            std::cout << "Ephemeral key: "
+                << encode_base16(row.ephemeral_key) << std::endl;
             std::cout << "Address: "
                 << encode_base16(row.address) << std::endl;
             std::cout << "Tx hash: "

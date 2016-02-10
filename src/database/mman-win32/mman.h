@@ -1,7 +1,8 @@
+
 /* mman-win32 from code.google.com/p/mman-win32 (MIT License). */
 
-#ifndef LIBBITCOIN_BLOCKCHAIN_MMAN_H
-#define LIBBITCOIN_BLOCKCHAIN_MMAN_H
+#ifndef LIBBITCOIN_DATABASE_MMAN_H
+#define LIBBITCOIN_DATABASE_MMAN_H
 
 #ifdef _WIN32
 

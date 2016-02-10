@@ -21,7 +21,9 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
+using namespace bc::chain;
 using namespace bc::blockchain;
+using namespace bc::database;
 
 BOOST_AUTO_TEST_SUITE(databases)
 
@@ -45,7 +47,7 @@ BOOST_AUTO_TEST_CASE(spend_db_test)
     chain::input_point val4{
         hash_literal("4742b3eac32d35961f9da9d42d495ff13cc768bbaef30587c72c6eba8dbf6aee"), 0};
 
-    database::touch_file("spend_db");
+    data_base::touch_file("spend_db");
     spend_database db("spend_db");
     db.create();
     db.start();
@@ -159,8 +161,8 @@ BOOST_AUTO_TEST_CASE(block_db_test)
     block5b.transactions.push_back(random_tx(29));
     const hash_digest h5b = block5b.header.hash();
 
-    database::touch_file("block_db_lookup");
-    database::touch_file("block_db_rows");
+    data_base::touch_file("block_db_lookup");
+    data_base::touch_file("block_db_rows");
     block_database db("block_db_lookup", "block_db_rows");
     db.create();
     db.start();
@@ -260,7 +262,7 @@ BOOST_AUTO_TEST_CASE(transaction_db_test)
 
     const hash_digest h2 = tx2.hash();
 
-    database::touch_file("tx_db_map");
+    data_base::touch_file("tx_db_map");
     transaction_database db("tx_db_map");
     db.create();
     db.start();
@@ -323,8 +325,8 @@ BOOST_AUTO_TEST_CASE(history_db_test)
     const uint32_t out_h41 = 74448;
     const uint64_t val41 = 990;
 
-    database::touch_file("history_db_lookup");
-    database::touch_file("history_db_rows");
+    data_base::touch_file("history_db_lookup");
+    data_base::touch_file("history_db_rows");
     history_database db("history_db_lookup", "history_db_rows");
     db.create();
     db.start();
@@ -365,13 +367,13 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[1].point.hash == spend11.hash);
         BOOST_REQUIRE(history[1].point.index == spend11.index);
         BOOST_REQUIRE(history[1].height == spend_h11);
-        BOOST_REQUIRE(history[1].previous_checksum == checksum(out11));
+        BOOST_REQUIRE(history[1].previous_checksum == out11.checksum());
 
         BOOST_REQUIRE(history[0].kind == point_kind::spend);
         BOOST_REQUIRE(history[0].point.hash == spend13.hash);
         BOOST_REQUIRE(history[0].point.index == spend13.index);
         BOOST_REQUIRE(history[0].height == spend_h13);
-        BOOST_REQUIRE(history[0].previous_checksum == checksum(out13));
+        BOOST_REQUIRE(history[0].previous_checksum == out13.checksum());
     };
     auto res_s1 = db.get(key1, 0, 0);
     fetch_s1(res_s1);
@@ -392,7 +394,7 @@ BOOST_AUTO_TEST_CASE(history_db_test)
         BOOST_REQUIRE(history[0].point.hash == spend22.hash);
         BOOST_REQUIRE(history[0].point.index == spend22.index);
         BOOST_REQUIRE(history[0].height == spend_h22);
-        BOOST_REQUIRE(history[0].previous_checksum == checksum(out22));
+        BOOST_REQUIRE(history[0].previous_checksum == out22.checksum());
 
         BOOST_REQUIRE(history[1].kind == point_kind::output);
         BOOST_REQUIRE(history[1].point.hash == out22.hash);
