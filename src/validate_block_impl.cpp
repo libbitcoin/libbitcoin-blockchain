@@ -145,7 +145,12 @@ bool validate_block_impl::is_output_spent(
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    const auto result = chain_.get_transaction(tx, tx_height, tx_hash);
+    uint64_t out_height;
+    const auto result = chain_.get_transaction(tx, out_height, tx_hash);
+
+    BITCOIN_ASSERT(out_height <= max_size_t);
+    tx_height = static_cast<size_t>(out_height);
+
     if (!result || tx_after_fork(tx_height, fork_index_))
         return fetch_orphan_transaction(tx, tx_height, tx_hash);
 
