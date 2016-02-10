@@ -23,13 +23,11 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <system_error>
 #include <vector>
-#include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database.hpp>
+#include <bitcoin/blockchain/database/data_base.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
@@ -42,7 +40,7 @@ class BCB_API block_chain_impl
 {
 public:
     // TODO: create threadpool internally from config.
-    block_chain_impl(threadpool& pool,
+    block_chain_impl(threadpool& pool, database::data_base& database,
         const settings& settings=settings::mainnet);
 
     /// This class is not copyable.
@@ -152,13 +150,12 @@ public:
     void subscribe_reorganize(reorganize_handler handler);
 
 private:
-    typedef std::atomic<size_t> sequential_lock;
-    typedef std::function<bool(uint64_t)> perform_read_functor;
+    typedef std::function<bool(database::handle)> perform_read_functor;
 
     template <typename Handler, typename... Args>
-    bool finish_fetch(uint64_t slock, Handler handler, Args&&... args)
+    bool finish_fetch(database::handle handle, Handler handler, Args&&... args)
     {
-        if (slock != slock_)
+        if (!database_.is_read_valid(handle))
             return false;
 
         handler(std::forward<Args>(args)...);
@@ -168,15 +165,10 @@ private:
     template <typename Handler, typename... Args>
     void stop_write(Handler handler, Args&&... args)
     {
-        ++slock_;
-
-        // slock_ is now even again.
-        BITCOIN_ASSERT(slock_ % 2 == 0);
+        const auto result = database_.end_write();
+        BITCOIN_ASSERT(result);
         handler(std::forward<Args>(args)...);
     }
-
-    static boost::interprocess::file_lock initialize_lock(
-        const boost::filesystem::path& prefix);
 
     void start_write();
     void do_store(chain::block::ptr block, block_store_handler handler);
@@ -186,13 +178,11 @@ private:
     bool stopped();
 
     bool stopped_;
-    database database_;
     organizer organizer_;
     dispatcher read_dispatch_;
     dispatcher write_dispatch_;
-    boost::interprocess::file_lock flock_;
-    sequential_lock slock_;
     const settings& settings_;
+    database::data_base& database_;
 };
 
 } // namespace blockchain

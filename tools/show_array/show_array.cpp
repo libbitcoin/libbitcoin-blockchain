@@ -2,10 +2,9 @@
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
 
-// Not published.
-#include <bitcoin/blockchain/database/disk_array.hpp>
-using namespace libbitcoin;
-using namespace libbitcoin::blockchain;
+using namespace bc;
+using namespace bc::blockchain;
+using namespace bc::database;
 
 template <typename IndexType, typename ValueType>
 int show_array(const std::string& filename, position_type offset)

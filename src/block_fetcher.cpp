@@ -157,5 +157,5 @@ void fetch_block(block_chain& chain, const hash_digest& hash,
     fetcher->start(hash, handle_fetch);
 }
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin

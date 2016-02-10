@@ -57,7 +57,7 @@ BCB_API void fetch_block(block_chain& chain, uint64_t height,
 BCB_API void fetch_block(block_chain& chain, const hash_digest& hash,
     block_fetch_handler handle_fetch);
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

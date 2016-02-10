@@ -30,13 +30,10 @@ static const settings mainnet_defaults()
 {
     settings value;
     value.threads = 6;
-    value.history_start_height = 0;
-    value.stealth_start_height = 350000;
     value.block_pool_capacity = 50;
     value.transaction_pool_capacity = 1000;
     value.transaction_pool_consistency = false;
     value.use_testnet_rules = false;
-    value.database_path = { "blockchain" };
     value.checkpoints = 
     {
         { "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 },
@@ -69,7 +66,6 @@ static const settings testnet_defaults()
 {
     auto value = mainnet_defaults();
     value.use_testnet_rules = true;
-    value.stealth_start_height = 500000;
     value.checkpoints =
     {
         { "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 },

@@ -4,6 +4,7 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
+using namespace bc::database;
 using namespace bc::blockchain;
 
 void show_help()
@@ -95,7 +96,7 @@ int main(int argc, char** argv)
         args.push_back(argv[i]);
     if (command == "initialize_new")
     {
-        database::touch_file(map_filename);
+        data_base::touch_file(map_filename);
     }
     transaction_database db(map_filename);
     if (command == "initialize_new")

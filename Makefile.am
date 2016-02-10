@@ -39,7 +39,6 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/block_chain_impl.cpp \
     src/block_detail.cpp \
     src/block_fetcher.cpp \
-    src/database.cpp \
     src/organizer.cpp \
     src/orphan_pool.cpp \
     src/settings.cpp \
@@ -48,18 +47,20 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/validate_block.cpp \
     src/validate_block_impl.cpp \
     src/validate_transaction.cpp \
-    src/database/block_database.cpp \
-    src/database/history_database.cpp \
-    src/database/linked_records.cpp \
-    src/database/mmfile.cpp \
-    src/database/multimap_records.cpp \
-    src/database/record_allocator.cpp \
-    src/database/slab_allocator.cpp \
-    src/database/spend_database.cpp \
-    src/database/stealth_database.cpp \
-    src/database/transaction_database.cpp \
+    src/database/data_base.cpp \
+    src/database/database_settings.cpp \
+    src/database/database/block_database.cpp \
+    src/database/database/history_database.cpp \
+    src/database/database/spend_database.cpp \
+    src/database/database/stealth_database.cpp \
+    src/database/database/transaction_database.cpp \
+    src/database/disk/mmfile.cpp \
     src/database/mman-win32/mman.c \
-    src/database/mman-win32/mman.h
+    src/database/mman-win32/mman.h \
+    src/database/record/linked_records.cpp \
+    src/database/record/multimap_records.cpp \
+    src/database/record/record_allocator.cpp \
+    src/database/slab/slab_allocator.cpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -288,15 +289,11 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/block_detail.hpp \
     include/bitcoin/blockchain/block_fetcher.hpp \
     include/bitcoin/blockchain/block_info.hpp \
-    include/bitcoin/blockchain/database.hpp \
     include/bitcoin/blockchain/define.hpp \
-    include/bitcoin/blockchain/history_row.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphan_pool.hpp \
-    include/bitcoin/blockchain/pointer_array_source.hpp \
     include/bitcoin/blockchain/settings.hpp \
     include/bitcoin/blockchain/simple_chain.hpp \
-    include/bitcoin/blockchain/stealth_row.hpp \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/transaction_pool_index.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
@@ -306,29 +303,44 @@ include_bitcoin_blockchain_HEADERS = \
 
 include_bitcoin_blockchain_databasedir = ${includedir}/bitcoin/blockchain/database
 include_bitcoin_blockchain_database_HEADERS = \
-    include/bitcoin/blockchain/database/block_database.hpp \
-    include/bitcoin/blockchain/database/disk_array.hpp \
-    include/bitcoin/blockchain/database/history_database.hpp \
-    include/bitcoin/blockchain/database/htdb_record.hpp \
-    include/bitcoin/blockchain/database/htdb_slab.hpp \
-    include/bitcoin/blockchain/database/linked_records.hpp \
-    include/bitcoin/blockchain/database/mmfile.hpp \
-    include/bitcoin/blockchain/database/multimap_records.hpp \
-    include/bitcoin/blockchain/database/record_allocator.hpp \
-    include/bitcoin/blockchain/database/slab_allocator.hpp \
-    include/bitcoin/blockchain/database/spend_database.hpp \
-    include/bitcoin/blockchain/database/stealth_database.hpp \
-    include/bitcoin/blockchain/database/transaction_database.hpp
+    include/bitcoin/blockchain/database/data_base.hpp \
+    include/bitcoin/blockchain/database/database_settings.hpp \
+    include/bitcoin/blockchain/database/pointer_array_source.hpp
 
-include_bitcoin_blockchain_impldir = ${includedir}/bitcoin/blockchain/impl
-include_bitcoin_blockchain_impl_HEADERS = \
-    include/bitcoin/blockchain/impl/disk_array.ipp \
-    include/bitcoin/blockchain/impl/htdb_record.ipp \
-    include/bitcoin/blockchain/impl/htdb_record_list_item.ipp \
-    include/bitcoin/blockchain/impl/htdb_slab.ipp \
-    include/bitcoin/blockchain/impl/htdb_slab_list_item.ipp \
-    include/bitcoin/blockchain/impl/multimap_records.ipp \
-    include/bitcoin/blockchain/impl/remainder.ipp
+include_bitcoin_blockchain_database_databasedir = ${includedir}/bitcoin/blockchain/database/database
+include_bitcoin_blockchain_database_database_HEADERS = \
+    include/bitcoin/blockchain/database/database/block_database.hpp \
+    include/bitcoin/blockchain/database/database/history_database.hpp \
+    include/bitcoin/blockchain/database/database/spend_database.hpp \
+    include/bitcoin/blockchain/database/database/stealth_database.hpp \
+    include/bitcoin/blockchain/database/database/transaction_database.hpp
+
+include_bitcoin_blockchain_database_diskdir = ${includedir}/bitcoin/blockchain/database/disk
+include_bitcoin_blockchain_database_disk_HEADERS = \
+    include/bitcoin/blockchain/database/disk/disk_array.hpp \
+    include/bitcoin/blockchain/database/disk/mmfile.hpp
+
+include_bitcoin_blockchain_database_impldir = ${includedir}/bitcoin/blockchain/database/impl
+include_bitcoin_blockchain_database_impl_HEADERS = \
+    include/bitcoin/blockchain/database/impl/disk_array.ipp \
+    include/bitcoin/blockchain/database/impl/htdb_record.ipp \
+    include/bitcoin/blockchain/database/impl/htdb_record_list_item.ipp \
+    include/bitcoin/blockchain/database/impl/htdb_slab.ipp \
+    include/bitcoin/blockchain/database/impl/htdb_slab_list_item.ipp \
+    include/bitcoin/blockchain/database/impl/multimap_records.ipp \
+    include/bitcoin/blockchain/database/impl/remainder.ipp
+
+include_bitcoin_blockchain_database_recorddir = ${includedir}/bitcoin/blockchain/database/record
+include_bitcoin_blockchain_database_record_HEADERS = \
+    include/bitcoin/blockchain/database/record/htdb_record.hpp \
+    include/bitcoin/blockchain/database/record/linked_records.hpp \
+    include/bitcoin/blockchain/database/record/multimap_records.hpp \
+    include/bitcoin/blockchain/database/record/record_allocator.hpp
+
+include_bitcoin_blockchain_database_slabdir = ${includedir}/bitcoin/blockchain/database/slab
+include_bitcoin_blockchain_database_slab_HEADERS = \
+    include/bitcoin/blockchain/database/slab/htdb_slab.hpp \
+    include/bitcoin/blockchain/database/slab/slab_allocator.hpp
 
 
 # Custom make targets.

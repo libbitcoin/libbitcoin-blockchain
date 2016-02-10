@@ -1,8 +1,10 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
+
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::database;
 
 void show_usage()
 {

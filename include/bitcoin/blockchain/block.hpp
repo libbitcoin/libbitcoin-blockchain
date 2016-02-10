@@ -37,8 +37,6 @@ BCB_API uint64_t block_mint(size_t height);
 
 BCB_API hash_number block_work(uint32_t bits);
 
-BCB_API uint64_t checksum(chain::output_point outpoint);
-
 } // namespace blockchain
 } // namespace libbitcoin
 

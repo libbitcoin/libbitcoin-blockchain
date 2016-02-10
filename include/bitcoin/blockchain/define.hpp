@@ -41,6 +41,23 @@
     #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
+// Now we use the generic helper definitions in libbitcoin to
+// define BCD_API and BCD_INTERNAL.
+// BCD_API is used for the public API symbols. It either DLL imports or
+// DLL exports (or does nothing for static build)
+// BCD_INTERNAL is used for non-api symbols.
+
+#if defined BCB_STATIC
+    #define BCD_API
+    #define BCD_INTERNAL
+#elif defined BCB_DLL
+    #define BCD_API      BC_HELPER_DLL_EXPORT
+    #define BCD_INTERNAL BC_HELPER_DLL_LOCAL
+#else
+    #define BCD_API      BC_HELPER_DLL_IMPORT
+    #define BCD_INTERNAL BC_HELPER_DLL_LOCAL
+#endif
+
 typedef uint32_t index_type;
 typedef uint64_t position_type;
 typedef std::vector<size_t> index_list;

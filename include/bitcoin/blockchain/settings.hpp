@@ -37,17 +37,14 @@ struct BCB_API settings
 
     /// Properties.
     uint32_t threads;
-    uint32_t history_start_height;
-    uint32_t stealth_start_height;
     uint32_t block_pool_capacity;
     uint32_t transaction_pool_capacity;
     bool transaction_pool_consistency;
     bool use_testnet_rules;
-    boost::filesystem::path database_path;
     config::checkpoint::list checkpoints;
 };
 
-} // namespace chain
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif

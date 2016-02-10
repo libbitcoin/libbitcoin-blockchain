@@ -29,6 +29,7 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/database/data_base.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -36,37 +37,25 @@ namespace libbitcoin {
 namespace blockchain {
 
 #define NAME "blockchain"
-    
+
 using namespace bc::chain;
+using namespace bc::database;
 using namespace boost::interprocess;
 using boost::filesystem::path;
 
 // This is a protocol limit that we incorporate into the query.
 static constexpr size_t maximum_get_blocks = 500;
 
-// Hardwired lock file name.
-static const auto database_lock_file = "db-lock";
-
 // TODO: move threadpool management into the implementation (see network::p2p).
-block_chain_impl::block_chain_impl(threadpool& pool, const settings& settings)
+block_chain_impl::block_chain_impl(threadpool& pool,
+    database::data_base& database, const settings& settings)
   : stopped_(true),
-    database_(settings),
     organizer_(pool, *this, settings),
     read_dispatch_(pool, NAME),
     write_dispatch_(pool, NAME),
-    flock_(initialize_lock(settings.database_path)),
-    slock_(0),
-    settings_(settings)
+    settings_(settings),
+    database_(database)
 {
-}
-
-file_lock block_chain_impl::initialize_lock(const path& prefix)
-{
-    // Touch the lock file (open/close).
-    const auto lockfile = prefix / database_lock_file;
-    bc::ofstream file(lockfile.string(), std::ios::app);
-    file.close();
-    return file_lock(lockfile.string().c_str());
 }
 
 // ----------------------------------------------------------------------------
@@ -79,6 +68,7 @@ const settings& block_chain_impl::chain_settings() const
 
 bool block_chain_impl::stopped()
 {
+    // TODO: consider relying on a database stopped state.
     return stopped_;
 }
 
@@ -87,16 +77,13 @@ bool block_chain_impl::stopped()
 
 void block_chain_impl::start(result_handler handler)
 {
-    if (!flock_.try_lock())
+    if (!database_.start())
     {
         handler(error::operation_failed);
         return;
     }
 
-    // TODO: can we actually restart?
     stopped_ = false;
-
-    database_.start();
     handler(error::success);
 }
 
@@ -109,13 +96,11 @@ void block_chain_impl::stop()
     stop(unhandled);
 }
 
-// TODO: close all file descriptors once threadpool has stopped and return
-// result of file close in handler.
 void block_chain_impl::stop(result_handler handler)
 {
     stopped_ = true;
     organizer_.stop();
-    handler(error::success);
+    handler(database_.stop() ? error::success : error::file_system);
 }
 
 // ----------------------------------------------------------------------------
@@ -209,10 +194,8 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 
 void block_chain_impl::start_write()
 {
-    DEBUG_ONLY(const auto lock =) ++slock_;
-
-    // slock was now odd.
-    BITCOIN_ASSERT(lock % 2 == 1);
+    DEBUG_ONLY(const auto result =) database_.start_write();
+    BITCOIN_ASSERT(result);
 }
 
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
@@ -296,23 +279,13 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
     {
-        // Implements the seqlock counter logic.
-        const size_t slock = slock_.load();
-        return ((slock % 2 == 0) && perform_read(slock));
+        const auto handle = database_.start_read();
+        return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
-    // The read is invalidated only if a write overlapped the read.
-    // This is less efficient than waiting on a write lock, since it requires
-    // a large arbitrary quanta and produces disacarded reads. It also
-    // complicates implementation in that read during write must be safe. This
-    // lack of safety produced the longstanding appearance-of-corruption during
-    // sync bug (which was resolved by making the read safe during write).
-    // If reads could be made *valid* during write this sleep could be removed
-    // and the design would be dramtically *more* efficient than even a read
-    // lock during write.
     const auto do_read = [this, try_read]()
     {
-        // Sleeping while waiting for write to complete.
+        // Sleep while waiting for write to complete.
         while (!try_read())
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     };
@@ -329,16 +302,17 @@ void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
     if (stopped())
         return;
 
+    // Writes are ordered on the strand, so never concurrent.
+    // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
     {
-        // Implements the seqlock counter logic.
-        const size_t slock = slock_.load();
-        return ((slock % 2 != 1) && perform_read(slock));
+        const auto handle = database_.start_read();
+        return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
     const auto do_read = [this, try_read]()
     {
-        // Sleeping while waiting for write to complete.
+        // Sleep while waiting for write to complete.
         while (!try_read())
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     };

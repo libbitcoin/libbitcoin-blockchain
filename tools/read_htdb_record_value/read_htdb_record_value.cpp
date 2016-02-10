@@ -2,8 +2,10 @@
 #include <boost/lexical_cast.hpp>
 #include <bitcoin/blockchain.hpp>
 #include <bitcoin/blockchain/database/htdb_record.hpp>
-using namespace libbitcoin;
-using namespace libbitcoin::blockchain;
+
+using namespace bc;
+using namespace bc::blockchain;
+using namespace bc::database;
 
 template <size_t N>
 record_type get_record(htdb_record_header& header, record_allocator& alloc,
