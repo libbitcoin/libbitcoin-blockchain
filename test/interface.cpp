@@ -230,12 +230,13 @@ BOOST_AUTO_TEST_CASE(pushpop_test)
 
     // This test causes Travis run failures for performance reasons.
 
-    const std::string prefix("chain");
-    boost::filesystem::create_directory(prefix);
-    BOOST_REQUIRE(database::initialize(prefix, mainnet_genesis_block()));
+    auto settings = blockchain::settings::mainnet;
+    settings.database_path = { "chain" };
 
-    database::store paths(prefix);
-    database instance(paths, {0});
+    boost::filesystem::create_directory(settings.database_path);
+    BOOST_REQUIRE(database::initialize(settings.database_path, mainnet_genesis_block()));
+
+    database instance(settings);
     instance.start();
     
     size_t height = 42;
