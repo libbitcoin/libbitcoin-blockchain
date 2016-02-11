@@ -47,13 +47,13 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/validate_block.cpp \
     src/validate_block_impl.cpp \
     src/validate_transaction.cpp \
+    src/database/block_database.cpp \
     src/database/data_base.cpp \
     src/database/database_settings.cpp \
-    src/database/database/block_database.cpp \
-    src/database/database/history_database.cpp \
-    src/database/database/spend_database.cpp \
-    src/database/database/stealth_database.cpp \
-    src/database/database/transaction_database.cpp \
+    src/database/history_database.cpp \
+    src/database/spend_database.cpp \
+    src/database/stealth_database.cpp \
+    src/database/transaction_database.cpp \
     src/database/disk/mmfile.cpp \
     src/database/mman-win32/mman.c \
     src/database/mman-win32/mman.h \
@@ -303,17 +303,14 @@ include_bitcoin_blockchain_HEADERS = \
 
 include_bitcoin_blockchain_databasedir = ${includedir}/bitcoin/blockchain/database
 include_bitcoin_blockchain_database_HEADERS = \
+    include/bitcoin/blockchain/database/block_database.hpp \
     include/bitcoin/blockchain/database/data_base.hpp \
     include/bitcoin/blockchain/database/database_settings.hpp \
-    include/bitcoin/blockchain/database/pointer_array_source.hpp
-
-include_bitcoin_blockchain_database_databasedir = ${includedir}/bitcoin/blockchain/database/database
-include_bitcoin_blockchain_database_database_HEADERS = \
-    include/bitcoin/blockchain/database/database/block_database.hpp \
-    include/bitcoin/blockchain/database/database/history_database.hpp \
-    include/bitcoin/blockchain/database/database/spend_database.hpp \
-    include/bitcoin/blockchain/database/database/stealth_database.hpp \
-    include/bitcoin/blockchain/database/database/transaction_database.hpp
+    include/bitcoin/blockchain/database/history_database.hpp \
+    include/bitcoin/blockchain/database/pointer_array_source.hpp \
+    include/bitcoin/blockchain/database/spend_database.hpp \
+    include/bitcoin/blockchain/database/stealth_database.hpp \
+    include/bitcoin/blockchain/database/transaction_database.hpp
 
 include_bitcoin_blockchain_database_diskdir = ${includedir}/bitcoin/blockchain/database/disk
 include_bitcoin_blockchain_database_disk_HEADERS = \

@@ -52,14 +52,8 @@
     <Filter Include="include\bitcoin\blockchain\database\record">
       <UniqueIdentifier>{69f93e8a-5f3e-4c96-bef4-f0515ff70564}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\database\database">
-      <UniqueIdentifier>{d13386da-bdc0-46ae-a722-aadcbde21646}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include\bitcoin\blockchain\database\disk">
       <UniqueIdentifier>{2e838da6-be77-4147-84ca-7d905cb11704}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\database\database">
-      <UniqueIdentifier>{699a26a5-4af7-4505-9aeb-0562caa4e3a5}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\database\disk">
       <UniqueIdentifier>{f193da0a-1a94-4deb-b781-485501d56579}</UniqueIdentifier>
@@ -162,22 +156,25 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk\disk_array.hpp">
       <Filter>include\bitcoin\blockchain\database\disk</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database\spend_database.hpp">
-      <Filter>include\bitcoin\blockchain\database\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database\stealth_database.hpp">
-      <Filter>include\bitcoin\blockchain\database\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database\transaction_database.hpp">
-      <Filter>include\bitcoin\blockchain\database\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database\block_database.hpp">
-      <Filter>include\bitcoin\blockchain\database\database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database\history_database.hpp">
-      <Filter>include\bitcoin\blockchain\database\database</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database_settings.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\spend_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\stealth_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp">
+      <Filter>include\bitcoin\blockchain\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database.hpp">
       <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
   </ItemGroup>
@@ -239,22 +236,22 @@
     <ClCompile Include="..\..\..\..\src\database\disk\mmfile.cpp">
       <Filter>src\database\disk</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\database\spend_database.cpp">
-      <Filter>src\database\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\database\stealth_database.cpp">
-      <Filter>src\database\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\database\transaction_database.cpp">
-      <Filter>src\database\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\database\block_database.cpp">
-      <Filter>src\database\database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\database\database\history_database.cpp">
-      <Filter>src\database\database</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\database\database_settings.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\block_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\history_database.cpp">
+      <Filter>src\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\database\spend_database.cpp">
       <Filter>src\database</Filter>
     </ClCompile>
   </ItemGroup>
