@@ -23,7 +23,7 @@
 using namespace bc;
 using namespace bc::blockchain;
 
-BOOST_AUTO_TEST_SUITE(validate_block)
+BOOST_AUTO_TEST_SUITE(validate_block_tests)
 
 class validate_block_fixture
   : public bc::blockchain::validate_block

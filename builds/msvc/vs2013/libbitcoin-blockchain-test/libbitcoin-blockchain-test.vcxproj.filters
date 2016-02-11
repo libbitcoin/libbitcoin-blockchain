@@ -22,9 +22,6 @@
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\genesis_block.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

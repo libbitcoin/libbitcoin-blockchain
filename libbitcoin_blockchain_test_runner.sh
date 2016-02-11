@@ -9,7 +9,7 @@
 # Define tests and options.
 #==============================================================================
 BOOST_UNIT_TEST_OPTIONS=\
-"--run_test=databases,disk_objs,htdb "\
+"--run_test=databases,disk_objs,htdb,transaction_pool_tests,validate_block_tests "\
 "--show_progress=no "\
 "--detect_memory_leak=0 "\
 "--report_level=no "\
