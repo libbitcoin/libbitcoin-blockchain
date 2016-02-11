@@ -25,11 +25,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/database/database/block_database.hpp>
-#include <bitcoin/blockchain/database/database/spend_database.hpp>
-#include <bitcoin/blockchain/database/database/transaction_database.hpp>
-#include <bitcoin/blockchain/database/database/history_database.hpp>
-#include <bitcoin/blockchain/database/database/stealth_database.hpp>
+#include <bitcoin/blockchain/database/block_database.hpp>
+#include <bitcoin/blockchain/database/spend_database.hpp>
+#include <bitcoin/blockchain/database/transaction_database.hpp>
+#include <bitcoin/blockchain/database/history_database.hpp>
+#include <bitcoin/blockchain/database/stealth_database.hpp>
 #include <bitcoin/blockchain/database/database_settings.hpp>
 
 namespace libbitcoin {
@@ -84,7 +84,10 @@ public:
     // ----------------------------------------------------------------------------
     // Push and pop.
 
+    /// Full indexing but no validation.
     void push(const chain::block& block);
+
+    /// Throws if the blockchain is empty.
     chain::block pop();
 
     // ----------------------------------------------------------------------------
@@ -107,7 +110,7 @@ private:
     typedef std::atomic<size_t> sequential_lock;
     typedef boost::interprocess::file_lock file_lock;
 
-    static boost::interprocess::file_lock initialize_lock(const path& lock);
+    static file_lock initialize_lock(const path& lock);
 
     void synchronize();
     void push_inputs(const hash_digest& tx_hash, size_t height,

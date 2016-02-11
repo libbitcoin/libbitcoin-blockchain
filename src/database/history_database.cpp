@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/database/database/history_database.hpp>
+#include <bitcoin/blockchain/database/history_database.hpp>
 
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain/block.hpp>
