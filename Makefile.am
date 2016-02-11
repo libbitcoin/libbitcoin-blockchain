@@ -74,7 +74,6 @@ test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_uni
 test_libbitcoin_blockchain_test_SOURCES = \
     test/databases.cpp \
     test/disk_objs.cpp \
-    test/genesis_block.cpp \
     test/htdb.cpp \
     test/interface.cpp \
     test/main.cpp \
@@ -289,6 +288,7 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/block_detail.hpp \
     include/bitcoin/blockchain/block_fetcher.hpp \
     include/bitcoin/blockchain/block_info.hpp \
+    include/bitcoin/blockchain/database.hpp \
     include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphan_pool.hpp \

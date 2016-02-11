@@ -91,7 +91,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\databases.cpp" />
     <ClCompile Include="..\..\..\..\test\disk_objs.cpp" />
-    <ClCompile Include="..\..\..\..\test\genesis_block.cpp" />
     <ClCompile Include="..\..\..\..\test\htdb.cpp" />
     <ClCompile Include="..\..\..\..\test\interface.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
