@@ -107,7 +107,7 @@ private:
     typedef std::atomic<size_t> sequential_lock;
     typedef boost::interprocess::file_lock file_lock;
 
-    static boost::interprocess::file_lock initialize_lock(const path& lock);
+    static file_lock initialize_lock(const path& lock);
 
     void synchronize();
     void push_inputs(const hash_digest& tx_hash, size_t height,
