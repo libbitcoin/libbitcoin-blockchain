@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/database/database.hpp>
+#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>

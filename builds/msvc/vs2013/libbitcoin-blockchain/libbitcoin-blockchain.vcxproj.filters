@@ -174,8 +174,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp">
       <Filter>include\bitcoin\blockchain\database</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database.hpp">
-      <Filter>include\bitcoin\blockchain\database</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

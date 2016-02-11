@@ -111,8 +111,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database_settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\data_base.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk\disk_array.hpp" />
