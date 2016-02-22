@@ -92,13 +92,6 @@
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\disk_array.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\htdb_record.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\htdb_record_list_item.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\htdb_slab.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\htdb_slab_list_item.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\multimap_records.ipp" />
-    <None Include="..\..\..\..\include\bitcoin\blockchain\database\impl\remainder.ipp" />
     <None Include="packages.config">
       <FileType>Document</FileType>
     </None>
@@ -111,23 +104,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\block_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\database_settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\data_base.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk\disk_array.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\disk\mmfile.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\history_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\pointer_array_source.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record\htdb_record.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record\linked_records.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record\multimap_records.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\record\record_allocator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\slab\htdb_slab.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\slab\slab_allocator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\spend_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\stealth_database.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\database\transaction_database.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool.hpp" />
@@ -139,26 +115,12 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
-    <ClInclude Include="..\..\..\..\src\database\mman-win32\mman.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\block.cpp" />
     <ClCompile Include="..\..\..\..\src\block_chain_impl.cpp" />
     <ClCompile Include="..\..\..\..\src\block_detail.cpp" />
     <ClCompile Include="..\..\..\..\src\block_fetcher.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\block_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\database_settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\data_base.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\disk\mmfile.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\history_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\mman-win32\mman.c" />
-    <ClCompile Include="..\..\..\..\src\database\record\linked_records.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\record\multimap_records.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\record\record_allocator.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\slab\slab_allocator.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\spend_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\stealth_database.cpp" />
-    <ClCompile Include="..\..\..\..\src\database\transaction_database.cpp" />
     <ClCompile Include="..\..\..\..\src\organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\orphan_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />

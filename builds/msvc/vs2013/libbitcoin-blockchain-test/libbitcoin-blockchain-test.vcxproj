@@ -89,10 +89,6 @@
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\databases.cpp" />
-    <ClCompile Include="..\..\..\..\test\disk_objs.cpp" />
-    <ClCompile Include="..\..\..\..\test\htdb.cpp" />
-    <ClCompile Include="..\..\..\..\test\interface.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />

@@ -21,6 +21,7 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <bitcoin/blockchain.hpp>
+#include <bitcoin/database.hpp>
 
 #define BS_INITCHAIN_DIR_NEW \
     "Failed to create directory %1% with error, '%2%'.\n"
