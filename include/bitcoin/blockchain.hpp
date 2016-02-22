@@ -14,7 +14,7 @@
  * Maintainers: Do not include this header internal to this library.
  */
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/database.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>
@@ -26,7 +26,6 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_fetcher.hpp>
 #include <bitcoin/blockchain/block_info.hpp>
-#include <bitcoin/blockchain/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
@@ -38,21 +37,5 @@
 #include <bitcoin/blockchain/validate_block_impl.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>
-#include <bitcoin/blockchain/database/block_database.hpp>
-#include <bitcoin/blockchain/database/data_base.hpp>
-#include <bitcoin/blockchain/database/database_settings.hpp>
-#include <bitcoin/blockchain/database/history_database.hpp>
-#include <bitcoin/blockchain/database/pointer_array_source.hpp>
-#include <bitcoin/blockchain/database/spend_database.hpp>
-#include <bitcoin/blockchain/database/stealth_database.hpp>
-#include <bitcoin/blockchain/database/transaction_database.hpp>
-#include <bitcoin/blockchain/database/disk/disk_array.hpp>
-#include <bitcoin/blockchain/database/disk/mmfile.hpp>
-#include <bitcoin/blockchain/database/record/htdb_record.hpp>
-#include <bitcoin/blockchain/database/record/linked_records.hpp>
-#include <bitcoin/blockchain/database/record/multimap_records.hpp>
-#include <bitcoin/blockchain/database/record/record_allocator.hpp>
-#include <bitcoin/blockchain/database/slab/htdb_slab.hpp>
-#include <bitcoin/blockchain/database/slab/slab_allocator.hpp>
 
 #endif
