@@ -43,7 +43,7 @@ using namespace bc::database;
 using namespace boost::interprocess;
 using boost::filesystem::path;
 
-// This is a protocol limit that we incorporate into the query.
+// TODO: This is a protocol limit, parameterize this in the query.
 static constexpr size_t maximum_get_blocks = 500;
 
 // TODO: move threadpool management into the implementation (see network::p2p).
@@ -56,6 +56,18 @@ block_chain_impl::block_chain_impl(threadpool& pool,
     settings_(settings),
     database_(database)
 {
+}
+
+// ----------------------------------------------------------------------------
+// Utilities.
+
+static hash_list to_hashes(const block_result& result)
+{
+    hash_list hashes;
+    for (size_t index = 0; index < result.transactions_size(); ++index)
+        hashes.push_back(result.transaction_hash(index));
+
+    return hashes;
 }
 
 // ----------------------------------------------------------------------------
@@ -351,16 +363,6 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
     fetch_ordered(do_fetch);
 }
 
-// TODO: parallelize these calls.
-static hash_list to_hashes(const block_result& result)
-{
-    hash_list hashes;
-    for (size_t index = 0; index < result.transactions_size(); ++index)
-        hashes.push_back(result.transaction_hash(index));
-
-    return hashes;
-}
-
 // Fetch start-base-stop|top+1(max 500)
 // This may generally execute 502 but as many as 531+ queries.
 void block_chain_impl::fetch_locator_block_hashes(
@@ -466,7 +468,6 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
     fetch_parallel(do_fetch);
 }
 
-// This may execute thousands of queries (a block's worth).
 void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
     transaction_hashes_fetch_handler handler)
 {
@@ -480,7 +481,6 @@ void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
     fetch_parallel(do_fetch);
 }
 
-// This may execute thousands of queries (a block's worth).
 void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
     transaction_hashes_fetch_handler handler)
 {
