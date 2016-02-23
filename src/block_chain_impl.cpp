@@ -277,7 +277,7 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 
     // Writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
-    const auto try_read = [this, perform_read]() -> bool
+    const auto try_read = [this, perform_read]()
     {
         const auto handle = database_.start_read();
         return (!database_.is_write_locked(handle) && perform_read(handle));
