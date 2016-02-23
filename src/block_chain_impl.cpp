@@ -204,10 +204,10 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 
 // This is not deconflicted with the blockchain dispatch queue, do not import
 // concurrently with store or query operations.
-void block_chain_impl::import(block::ptr block, uint64_t height)
+bool block_chain_impl::import(block::ptr block, uint64_t height)
 {
     if (stopped())
-        return;
+        return false;
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
@@ -215,6 +215,8 @@ void block_chain_impl::import(block::ptr block, uint64_t height)
 
     // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
     database_.push(*block, height);
+
+    return true;
     ///////////////////////////////////////////////////////////////////////////
 }
 

@@ -87,7 +87,7 @@ public:
     // block_chain queries (internal locks).
 
     /// Import a block to the blockchain, with indexing and NO validation.
-    void import(chain::block::ptr block, uint64_t height);
+    bool import(chain::block::ptr block, uint64_t height);
 
     /// Store a block to the blockchain, with indexing and FULL validation.
     void store(chain::block::ptr block, block_store_handler handler);
