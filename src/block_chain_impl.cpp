@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <unordered_map>
@@ -42,9 +43,6 @@ using namespace bc::chain;
 using namespace bc::database;
 using namespace boost::interprocess;
 using boost::filesystem::path;
-
-// TODO: This is a protocol limit, parameterize this in the query.
-static constexpr size_t maximum_get_blocks = 500;
 
 // TODO: move threadpool management into the implementation (see network::p2p).
 block_chain_impl::block_chain_impl(threadpool& pool,
@@ -204,9 +202,25 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 // ----------------------------------------------------------------------------
 // block_chain (internal locks).
 
+// This is not deconflicted with the blockchain dispatch queue, do not import
+// concurrently with store or query operations.
+void block_chain_impl::import(block::ptr block, uint64_t height)
+{
+    if (stopped())
+        return;
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
+    database_.push(*block, height);
+    ///////////////////////////////////////////////////////////////////////////
+}
+
 void block_chain_impl::start_write()
 {
-    DEBUG_ONLY(const auto result =) database_.start_write();
+    DEBUG_ONLY(const auto result =) database_.begin_write();
     BITCOIN_ASSERT(result);
 }
 
@@ -242,8 +256,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     const auto detail = std::make_shared<block_detail>(block);
     if (!organizer_.add(detail))
     {
-        static constexpr uint64_t height = 0;
-        const auto info = block_info{ block_status::orphan, height };
+        const auto info = block_info{ block_status::orphan, 0 };
         stop_write(handler, error::duplicate, info);
         return;
     }
@@ -251,39 +264,6 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     // See replace_chain for block push.
     organizer_.organize();
     stop_write(handler, detail->error(), detail->info());
-}
-
-void block_chain_impl::import(block::ptr block, block_import_handler handler)
-{
-    if (stopped())
-        return;
-
-    write_dispatch_.ordered(
-        std::bind(&block_chain_impl::do_import,
-            this, block, handler));
-}
-
-// This does not order the block or test for duplicates.
-void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
-{
-    if (stopped())
-        return;
-
-    start_write();
-
-    // Disallow import of a duplicate?
-    ////auto result = database_.blocks.get(block->header.hash());
-    ////if (result)
-    ////{
-    ////    const auto height = result.height();
-    ////    const auto info = block_info{ block_status::confirmed, height };
-    ////    stop_write(handler, error::duplicate, info);
-    ////    return;
-    ////}
-
-    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-    database_.push(*block);
-    stop_write(handler, error::success);
 }
 
 void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
@@ -295,7 +275,7 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]()
     {
-        const auto handle = database_.start_read();
+        const auto handle = database_.begin_read();
         return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
@@ -322,7 +302,7 @@ void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
     {
-        const auto handle = database_.start_read();
+        const auto handle = database_.begin_read();
         return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
@@ -371,11 +351,11 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
 // This may generally execute 502 but as many as 531+ queries.
 void block_chain_impl::fetch_locator_block_hashes(
     const message::get_blocks& locator, const hash_digest& threshold,
-    locator_block_hashes_fetch_handler handler)
+    size_t limit, locator_block_hashes_fetch_handler handler)
 {
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
-    const auto do_fetch = [this, locator, threshold, handler](
+    const auto do_fetch = [this, locator, threshold, limit, handler](
         size_t slock)
     {
         // Find the first block height.
@@ -393,7 +373,7 @@ void block_chain_impl::fetch_locator_block_hashes(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + maximum_get_blocks + 1;
+        size_t stop = start + limit + 1;
         if (locator.stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.

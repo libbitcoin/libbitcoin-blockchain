@@ -58,16 +58,15 @@ public:
     virtual void stop(result_handler handler) = 0;
     virtual void stop() = 0;
 
+    virtual void import(chain::block::ptr block, uint64_t height) = 0;
+
     virtual void store(chain::block::ptr block,
         block_store_handler handle_store) = 0;
-
-    virtual void import(chain::block::ptr block,
-        block_import_handler handle_import) = 0;
 
     virtual void fetch_block_locator(block_locator_fetch_handler handler) = 0;
 
     virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold,
+        const hash_digest& threshold, size_t limit,
         locator_block_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_missing_block_hashes(const hash_list& hashes,
