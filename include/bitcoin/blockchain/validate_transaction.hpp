@@ -31,10 +31,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/**
- * If you're looking to validate a transaction, then use the simpler
- * transaction_pool::validate() method instead.
- */
+/// This is a utility for transaction_pool::validate and validate_block.
 class BCB_API validate_transaction
   : public enable_shared_from_base<validate_transaction>
 {

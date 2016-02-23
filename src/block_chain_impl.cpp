@@ -220,6 +220,7 @@ void block_chain_impl::store(block::ptr block, block_store_handler handler)
             this, block, handler));
 }
 
+// This orders the block via the organizer.
 void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
@@ -227,6 +228,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 
     start_write();
 
+    // Disallow duplicate of on-chain block.
     auto result = database_.blocks.get(block->header.hash());
     if (result)
     {
@@ -236,6 +238,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
         return;
     }
 
+    // Disallow duplicate of in-pool block.
     const auto detail = std::make_shared<block_detail>(block);
     if (!organizer_.add(detail))
     {
@@ -260,6 +263,7 @@ void block_chain_impl::import(block::ptr block, block_import_handler handler)
             this, block, handler));
 }
 
+// This does not order the block or test for duplicates.
 void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
 {
     if (stopped())
