@@ -62,7 +62,7 @@ block_chain_impl::block_chain_impl(threadpool& pool,
 static hash_list to_hashes(const block_result& result)
 {
     hash_list hashes;
-    for (size_t index = 0; index < result.transactions_size(); ++index)
+    for (size_t index = 0; index < result.transaction_count(); ++index)
         hashes.push_back(result.transaction_hash(index));
 
     return hashes;
@@ -157,11 +157,11 @@ bool block_chain_impl::get_height(uint64_t& out_height,
 bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
     const output_point& outpoint)
 {
-    const auto result = database_.spends.get(outpoint);
-    if (!result)
+    const auto spend = database_.spends.get(outpoint);
+    if (!spend.valid)
         return false;
 
-    out_transaction = result.hash();
+    out_transaction = spend.hash;
     return true;
 }
 
@@ -538,11 +538,11 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
 {
     const auto do_fetch = [this, outpoint, handler](size_t slock)
     {
-        const auto result = database_.spends.get(outpoint);
-        const auto point = result ?
-            chain::input_point{ result.hash(), result.index() } :
+        const auto spend = database_.spends.get(outpoint);
+        const auto point = spend.valid ?
+            chain::input_point{ spend.hash, spend.index } :
             chain::input_point();
-        return result ?
+        return spend.valid ?
             finish_fetch(slock, handler, error::success, point) :
             finish_fetch(slock, handler, error::unspent_output, point);
     };
