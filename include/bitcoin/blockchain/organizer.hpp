@@ -22,7 +22,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <mutex>
+#include <boost/thread.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
@@ -78,7 +78,7 @@ private:
     block_detail::list process_queue_;
     config::checkpoint::list checkpoints_;
     reorganize_subscriber::ptr subscriber_;
-    std::mutex mutex_;
+    boost::shared_mutex mutex_;
 };
 
 } // namespace blockchain

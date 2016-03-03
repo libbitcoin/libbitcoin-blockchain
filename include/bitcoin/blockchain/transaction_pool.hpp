@@ -22,8 +22,8 @@
 
 #include <cstddef>
 #include <functional>
-#include <mutex>
 #include <boost/circular_buffer.hpp>
+#include <boost/thread.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
@@ -150,7 +150,7 @@ protected:
     transaction_pool_index index_;
     const bool maintain_consistency_;
     transaction_subscriber::ptr subscriber_;
-    std::mutex mutex_;
+    boost::shared_mutex mutex_;
 };
 
 } // namespace blockchain
