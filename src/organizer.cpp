@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
-#include <boost/thread.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
@@ -160,7 +159,7 @@ void organizer::stop()
 {
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    boost::shared_lock<boost::shared_mutex> unique_lock(mutex_);
+    unique_lock lock(mutex_);
 
     // stopped_/subscriber_ is the guarded relation.
     notify_stop();
@@ -322,7 +321,7 @@ void organizer::subscribe_reorganize(reorganize_handler handler)
     ///////////////////////////////////////////////////////////////////////////
     if (true)
     {
-        boost::shared_lock<boost::shared_mutex> shared_lock(mutex_);
+        shared_lock lock(mutex_);
 
         if (!stopped())
         {

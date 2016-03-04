@@ -211,7 +211,7 @@ bool block_chain_impl::import(block::ptr block, uint64_t height)
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    ////std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
 
     // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
     database_.push(*block, height);
