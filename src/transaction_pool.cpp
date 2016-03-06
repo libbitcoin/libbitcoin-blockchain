@@ -94,7 +94,12 @@ void transaction_pool::stop()
 
 bool transaction_pool::stopped()
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    shared_lock lock(mutex_);
+
     return stopped_;
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 void transaction_pool::validate(const transaction& tx,
@@ -331,7 +336,7 @@ void transaction_pool::subscribe_transaction(
     {
         shared_lock lock(mutex_);
 
-        if (!stopped())
+        if (!stopped_)
         {
             subscriber_->subscribe(handle_transaction);
             return;

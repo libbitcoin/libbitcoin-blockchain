@@ -23,7 +23,6 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <mutex>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
@@ -178,12 +177,12 @@ private:
     bool stopped();
 
     bool stopped_;
-    std::mutex mutex_;
     organizer organizer_;
     dispatcher read_dispatch_;
     dispatcher write_dispatch_;
     const settings& settings_;
     database::data_base& database_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

@@ -77,7 +77,7 @@ private:
     block_detail::list process_queue_;
     config::checkpoint::list checkpoints_;
     reorganize_subscriber::ptr subscriber_;
-    shared_mutex mutex_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain
