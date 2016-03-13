@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
 #define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
@@ -68,16 +69,16 @@ private:
         const code& invalid_reason);
     void notify_reorganize(uint64_t fork_point,
         const detail_list& orphan_chain, const detail_list& replaced_chain);
-    void notify_stop();
 
-    bool stopped_;
-    bool testnet_;
+    std::atomic<bool> stopped_;
+    const bool use_testnet_rules_;
+
+    // These are thread safe.
     simple_chain& chain_;
     orphan_pool orphan_pool_;
     block_detail::list process_queue_;
     config::checkpoint::list checkpoints_;
     reorganize_subscriber::ptr subscriber_;
-    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain
