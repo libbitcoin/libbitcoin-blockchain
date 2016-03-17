@@ -85,18 +85,18 @@ public:
     // ------------------------------------------------------------------------
     // block_chain queries (internal locks).
 
-    /// Store a block to the blockchain, with FULL validation and indexing.
-    void store(chain::block::ptr block, block_store_handler handler);
+    /// Import a block to the blockchain, with indexing and NO validation.
+    bool import(chain::block::ptr block, uint64_t height);
 
-    /// Import a block to the blockchain, with NO validation or indexing.
-    void import(chain::block::ptr block, block_import_handler handler);
+    /// Store a block to the blockchain, with indexing and FULL validation.
+    void store(chain::block::ptr block, block_store_handler handler);
 
     /// fetch a block locator relative to the current top and threshold
     void fetch_block_locator(block_locator_fetch_handler handler);
 
     /// fetch the set of block hashes indicated by the block locator
     void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold,
+        const hash_digest& threshold, size_t limit,
         locator_block_hashes_fetch_handler handler);
 
     /// fetch subset of specified block hashes that are not stored
@@ -172,7 +172,6 @@ private:
 
     void start_write();
     void do_store(chain::block::ptr block, block_store_handler handler);
-    void do_import(chain::block::ptr block, block_import_handler handler);
     void fetch_ordered(perform_read_functor perform_read);
     void fetch_parallel(perform_read_functor perform_read);
     bool stopped();
@@ -183,6 +182,7 @@ private:
     dispatcher write_dispatch_;
     const settings& settings_;
     database::data_base& database_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

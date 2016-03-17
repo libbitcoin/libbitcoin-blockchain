@@ -20,9 +20,9 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_HPP
 
+#include <atomic>
 #include <cstddef>
 #include <functional>
-#include <mutex>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -120,7 +120,6 @@ protected:
         const hash_digest& hash, const index_list& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
-    void notify_stop();
     void notify_transaction(const index_list& unconfirmed,
         const chain::transaction& tx);
 
@@ -143,14 +142,15 @@ protected:
     bool delete_single(const chain::transaction& tx, const hash_digest& tx_hash,
         const code& ec);
 
-    bool stopped_;
+    std::atomic<bool> stopped_;
+    const bool maintain_consistency_;
+
+    // These are thread safe.
     buffer buffer_;
     dispatcher dispatch_;
     block_chain& blockchain_;
     transaction_pool_index index_;
-    const bool maintain_consistency_;
     transaction_subscriber::ptr subscriber_;
-    std::mutex mutex_;
 };
 
 } // namespace blockchain

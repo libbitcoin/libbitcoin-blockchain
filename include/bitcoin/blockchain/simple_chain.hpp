@@ -28,7 +28,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// TODO: move to interface subfolder.
 /// A interface for encapsulation of the blockchain database for the organizer.
 /// These queries are immediate and assume the database is externally locked.
 class BCB_API simple_chain

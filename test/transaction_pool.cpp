@@ -48,11 +48,12 @@ public:
     {
     }
 
-    virtual void store(block::ptr block, block_store_handler handler)
+    virtual bool import(chain::block::ptr block, uint64_t height)
     {
+        return false;
     }
 
-    virtual void import(chain::block::ptr block, block_import_handler handler)
+    virtual void store(block::ptr block, block_store_handler handler)
     {
     }
 
@@ -71,7 +72,7 @@ public:
     }
 
     virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold,
+        const hash_digest& threshold, size_t limit,
         locator_block_hashes_fetch_handler handler)
     {
     }

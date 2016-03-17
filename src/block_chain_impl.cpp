@@ -43,9 +43,6 @@ using namespace bc::database;
 using namespace boost::interprocess;
 using boost::filesystem::path;
 
-// This is a protocol limit that we incorporate into the query.
-static constexpr size_t maximum_get_blocks = 500;
-
 // TODO: move threadpool management into the implementation (see network::p2p).
 block_chain_impl::block_chain_impl(threadpool& pool,
     database::data_base& database, const settings& settings)
@@ -56,6 +53,18 @@ block_chain_impl::block_chain_impl(threadpool& pool,
     settings_(settings),
     database_(database)
 {
+}
+
+// ----------------------------------------------------------------------------
+// Utilities.
+
+static hash_list to_hashes(const block_result& result)
+{
+    hash_list hashes;
+    for (size_t index = 0; index < result.transaction_count(); ++index)
+        hashes.push_back(result.transaction_hash(index));
+
+    return hashes;
 }
 
 // ----------------------------------------------------------------------------
@@ -147,11 +156,11 @@ bool block_chain_impl::get_height(uint64_t& out_height,
 bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
     const output_point& outpoint)
 {
-    const auto result = database_.spends.get(outpoint);
-    if (!result)
+    const auto spend = database_.spends.get(outpoint);
+    if (!spend.valid)
         return false;
 
-    out_transaction = result.hash();
+    out_transaction = spend.hash;
     return true;
 }
 
@@ -192,9 +201,27 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 // ----------------------------------------------------------------------------
 // block_chain (internal locks).
 
+// This is not deconflicted with the blockchain dispatch queue, do not import
+// concurrently with store or query operations.
+bool block_chain_impl::import(block::ptr block, uint64_t height)
+{
+    if (stopped())
+        return false;
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    ////unique_lock lock(mutex_);
+
+    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
+    database_.push(*block, height);
+
+    return true;
+    ///////////////////////////////////////////////////////////////////////////
+}
+
 void block_chain_impl::start_write()
 {
-    DEBUG_ONLY(const auto result =) database_.start_write();
+    DEBUG_ONLY(const auto result =) database_.begin_write();
     BITCOIN_ASSERT(result);
 }
 
@@ -208,6 +235,7 @@ void block_chain_impl::store(block::ptr block, block_store_handler handler)
             this, block, handler));
 }
 
+// This orders the block via the organizer.
 void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
@@ -215,6 +243,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 
     start_write();
 
+    // Disallow duplicate of on-chain block.
     auto result = database_.blocks.get(block->header.hash());
     if (result)
     {
@@ -224,11 +253,11 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
         return;
     }
 
+    // Disallow duplicate of in-pool block.
     const auto detail = std::make_shared<block_detail>(block);
     if (!organizer_.add(detail))
     {
-        static constexpr uint64_t height = 0;
-        const auto info = block_info{ block_status::orphan, height };
+        const auto info = block_info{ block_status::orphan, 0 };
         stop_write(handler, error::duplicate, info);
         return;
     }
@@ -238,38 +267,6 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     stop_write(handler, detail->error(), detail->info());
 }
 
-void block_chain_impl::import(block::ptr block, block_import_handler handler)
-{
-    if (stopped())
-        return;
-
-    write_dispatch_.ordered(
-        std::bind(&block_chain_impl::do_import,
-            this, block, handler));
-}
-
-void block_chain_impl::do_import(block::ptr block, block_import_handler handler)
-{
-    if (stopped())
-        return;
-
-    start_write();
-
-    // Disallow import of a duplicate?
-    ////auto result = database_.blocks.get(block->header.hash());
-    ////if (result)
-    ////{
-    ////    const auto height = result.height();
-    ////    const auto info = block_info{ block_status::confirmed, height };
-    ////    stop_write(handler, error::duplicate, info);
-    ////    return;
-    ////}
-
-    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-    database_.push(*block);
-    stop_write(handler, error::success);
-}
-
 void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 {
     if (stopped())
@@ -277,9 +274,9 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 
     // Writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
-    const auto try_read = [this, perform_read]() -> bool
+    const auto try_read = [this, perform_read]()
     {
-        const auto handle = database_.start_read();
+        const auto handle = database_.begin_read();
         return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
@@ -306,7 +303,7 @@ void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]() -> bool
     {
-        const auto handle = database_.start_read();
+        const auto handle = database_.begin_read();
         return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
@@ -351,25 +348,15 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
     fetch_ordered(do_fetch);
 }
 
-// TODO: parallelize these calls.
-static hash_list to_hashes(const block_result& result)
-{
-    hash_list hashes;
-    for (size_t index = 0; index < result.transactions_size(); ++index)
-        hashes.push_back(result.transaction_hash(index));
-
-    return hashes;
-}
-
 // Fetch start-base-stop|top+1(max 500)
 // This may generally execute 502 but as many as 531+ queries.
 void block_chain_impl::fetch_locator_block_hashes(
     const message::get_blocks& locator, const hash_digest& threshold,
-    locator_block_hashes_fetch_handler handler)
+    size_t limit, locator_block_hashes_fetch_handler handler)
 {
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
-    const auto do_fetch = [this, locator, threshold, handler](
+    const auto do_fetch = [this, locator, threshold, limit, handler](
         size_t slock)
     {
         // Find the first block height.
@@ -387,7 +374,7 @@ void block_chain_impl::fetch_locator_block_hashes(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + maximum_get_blocks + 1;
+        size_t stop = start + limit + 1;
         if (locator.stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
@@ -466,7 +453,6 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
     fetch_parallel(do_fetch);
 }
 
-// This may execute thousands of queries (a block's worth).
 void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
     transaction_hashes_fetch_handler handler)
 {
@@ -480,7 +466,6 @@ void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
     fetch_parallel(do_fetch);
 }
 
-// This may execute thousands of queries (a block's worth).
 void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
     transaction_hashes_fetch_handler handler)
 {
@@ -552,11 +537,11 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
 {
     const auto do_fetch = [this, outpoint, handler](size_t slock)
     {
-        const auto result = database_.spends.get(outpoint);
-        const auto point = result ?
-            chain::input_point{ result.hash(), result.index() } :
+        const auto spend = database_.spends.get(outpoint);
+        const auto point = spend.valid ?
+            chain::input_point{ spend.hash, spend.index } :
             chain::input_point();
-        return result ?
+        return spend.valid ?
             finish_fetch(slock, handler, error::success, point) :
             finish_fetch(slock, handler, error::unspent_output, point);
     };

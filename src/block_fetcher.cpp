@@ -22,7 +22,6 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <system_error>
 #include <bitcoin/blockchain/block_chain.hpp>
 
@@ -119,7 +118,7 @@ private:
         // A vector write cannot be executed concurrently with read|write.
         if (true)
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            unique_lock lock(mutex_);
 
             // Set a transaction into the block.
             block->transactions[index] = transaction;
@@ -139,8 +138,8 @@ private:
             handler(error::success, block);
     }
 
-    std::mutex mutex_;
     block_chain& blockchain_;
+    mutable shared_mutex mutex_;
 };
 
 void fetch_block(block_chain& chain, size_t height,

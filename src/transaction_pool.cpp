@@ -22,15 +22,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <mutex>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
-
-// This must be declared in the global namespace.
-INITIALIZE_TRACK(bc::blockchain::transaction_pool::transaction_subscriber)
 
 namespace libbitcoin {
 namespace blockchain {
@@ -47,13 +43,15 @@ using std::placeholders::_4;
 transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
     const settings& settings)
   : stopped_(true),
+    maintain_consistency_(settings.transaction_pool_consistency),
     buffer_(settings.transaction_pool_capacity),
     dispatch_(pool, NAME),
     blockchain_(chain),
     index_(pool, chain),
-    maintain_consistency_(settings.transaction_pool_consistency),
     subscriber_(std::make_shared<transaction_subscriber>(pool, NAME))
 {
+    // The transaction pool is not restartable.
+    subscriber_->start();
 }
 
 transaction_pool::~transaction_pool()
@@ -63,16 +61,7 @@ transaction_pool::~transaction_pool()
 
 void transaction_pool::start()
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    if (true)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        // stopped_/subscriber_ is the guarded relation.
-        stopped_ = false;
-    }
-    ///////////////////////////////////////////////////////////////////////////
+    stopped_ = false;
 
     // Subscribe to blockchain (organizer) reorg notifications.
     blockchain_.subscribe_reorganize(
@@ -83,14 +72,8 @@ void transaction_pool::start()
 // The subscriber is not restartable.
 void transaction_pool::stop()
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    // stopped_/subscriber_ is the guarded relation.
-    notify_stop();
-    stopped_ = true;
-    ///////////////////////////////////////////////////////////////////////////
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, {}, {});
 }
 
 bool transaction_pool::stopped()
@@ -326,33 +309,13 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 void transaction_pool::subscribe_transaction(
     transaction_handler handle_transaction)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    if (true)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        if (!stopped())
-        {
-            subscriber_->subscribe(handle_transaction);
-            return;
-        }
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    handle_transaction(error::service_stopped, {}, {});
+    subscriber_->subscribe(handle_transaction, error::service_stopped, {}, {});
 }
 
 void transaction_pool::notify_transaction(const index_list& unconfirmed,
     const transaction& tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);
-}
-
-void transaction_pool::notify_stop()
-{
-    subscriber_->stop();
-    subscriber_->relay(error::service_stopped, {}, {});
 }
 
 // Entry methods.

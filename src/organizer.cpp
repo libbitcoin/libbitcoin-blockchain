@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
@@ -31,8 +30,6 @@
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/validate_block_impl.hpp>
-
-INITIALIZE_TRACK(bc::blockchain::organizer::reorganize_subscriber);
 
 namespace libbitcoin {
 namespace blockchain {
@@ -44,7 +41,7 @@ using namespace chain;
 organizer::organizer(threadpool& pool, simple_chain& chain,
     const settings& settings)
   : stopped_(false),
-    testnet_(settings.use_testnet_rules),
+    use_testnet_rules_(settings.use_testnet_rules),
     chain_(chain),
     orphan_pool_(settings.block_pool_capacity),
     checkpoints_(settings.checkpoints),
@@ -52,6 +49,9 @@ organizer::organizer(threadpool& pool, simple_chain& chain,
 {
     // Sort checkpoints by height so that top is sure to be properly obtained.
     config::checkpoint::sort(checkpoints_);
+
+    // The organizer is not restartable.
+    subscriber_->start();
 }
 
 uint64_t organizer::count_inputs(const chain::block& block)
@@ -85,7 +85,8 @@ code organizer::verify(uint64_t fork_point,
     };
 
     validate_block_impl validate(chain_, fork_point, orphan_chain,
-        orphan_index, height, current_block, testnet_, checkpoints_, callback);
+        orphan_index, height, current_block, use_testnet_rules_, checkpoints_,
+            callback);
 
     // Checks that are independent of the chain.
     auto ec = validate.check_block();
@@ -158,14 +159,9 @@ bool organizer::add(block_detail::ptr block)
 // The subscriber is not restartable.
 void organizer::stop()
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    // stopped_/subscriber_ is the guarded relation.
-    notify_stop();
     stopped_ = true;
-    ///////////////////////////////////////////////////////////////////////////
+    subscriber_->stop();
+    subscriber_->relay(error::service_stopped, 0, {}, {});
 }
 
 bool organizer::stopped()
@@ -318,21 +314,7 @@ void organizer::clip_orphans(block_detail::list& orphan_chain,
 
 void organizer::subscribe_reorganize(reorganize_handler handler)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    if (true)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        if (!stopped())
-        {
-            subscriber_->subscribe(handler);
-            return;
-        }
-    }
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(error::service_stopped, 0, {}, {});
+    subscriber_->subscribe(handler, error::service_stopped, 0, {}, {});
 }
 
 void organizer::notify_reorganize(uint64_t fork_point,
@@ -353,12 +335,6 @@ void organizer::notify_reorganize(uint64_t fork_point,
         replacements.begin(), to_raw_pointer);
 
     subscriber_->relay(error::success, fork_point, arrivals, replacements);
-}
-
-void organizer::notify_stop()
-{
-    subscriber_->stop();
-    subscriber_->relay(error::service_stopped, 0, {}, {});
 }
 
 } // namespace blockchain
