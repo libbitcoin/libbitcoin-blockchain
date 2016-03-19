@@ -68,6 +68,9 @@ public:
     /// Get the height of the block with the given hash.
     bool get_height(uint64_t& out_height, const hash_digest& block_hash);
 
+    /// Get height of latest block.
+    bool get_last_height(size_t& out_height);
+
     /// Get the hash digest of the transaction of the outpoint.
     bool get_outpoint_transaction(hash_digest& out_transaction,
         const chain::output_point& outpoint);
@@ -91,50 +94,50 @@ public:
     /// Store a block to the blockchain, with indexing and FULL validation.
     void store(chain::block::ptr block, block_store_handler handler);
 
-    /// fetch a block locator relative to the current top and threshold
+    /// fetch a block locator relative to the current top and threshold.
     void fetch_block_locator(block_locator_fetch_handler handler);
 
-    /// fetch the set of block hashes indicated by the block locator
+    /// fetch the set of block hashes indicated by the block locator.
     void fetch_locator_block_hashes(const message::get_blocks& locator,
         const hash_digest& threshold, size_t limit,
         locator_block_hashes_fetch_handler handler);
 
-    /// fetch subset of specified block hashes that are not stored
+    /// fetch subset of specified block hashes that are not stored.
     void fetch_missing_block_hashes(const hash_list& hashes,
         missing_block_hashes_fetch_handler handler);
 
-    /// fetch block header by height
+    /// fetch block header by height.
     void fetch_block_header(uint64_t height,
         block_header_fetch_handler handler);
 
-    /// fetch block header by hash
+    /// fetch block header by hash.
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
-    /// fetch hashes of transactions for a block, by block height
+    /// fetch hashes of transactions for a block, by block height.
     void fetch_block_transaction_hashes(uint64_t height,
         transaction_hashes_fetch_handler handler);
 
-    /// fetch hashes of transactions for a block, by block hash
+    /// fetch hashes of transactions for a block, by block hash.
     void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler);
 
-    /// fetch height of block by hash
+    /// fetch height of block by hash.
     void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler);
 
-    /// fetch height of latest block
+    /// fetch height of latest block.
     void fetch_last_height(last_height_fetch_handler handler);
 
-    /// fetch transaction by hash
+    /// fetch transaction by hash.
     void fetch_transaction(const hash_digest& hash,
         transaction_fetch_handler handler);
 
-    /// fetch height and offset within block of transaction by hash
+    /// fetch height and offset within block of transaction by hash.
     void fetch_transaction_index(const hash_digest& hash,
         transaction_index_fetch_handler handler);
 
-    /// fetch spend of an output point
+    /// fetch spend of an output point.
     void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler);
 
