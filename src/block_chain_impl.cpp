@@ -73,7 +73,7 @@ static hash_list to_hashes(const block_result& result)
 // Properties.
 // ----------------------------------------------------------------------------
 
-transaction_pool& block_chain_impl::transaction_pool()
+transaction_pool& block_chain_impl::pool()
 {
     return transaction_pool_;
 }

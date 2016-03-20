@@ -56,7 +56,7 @@ public:
     // ------------------------------------------------------------------------
 
     // Get a reference to the transaction pool.
-    transaction_pool& transaction_pool();
+    transaction_pool& pool();
 
     // Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
