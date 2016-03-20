@@ -48,8 +48,8 @@ transaction_pool_index::transaction_pool_index(threadpool& pool,
 
 // TODO: add stop property, method and handling - to speed shutdown.
 
-// ----------------------------------------------------------------------------
 // Add sequence.
+// ----------------------------------------------------------------------------
 
 void transaction_pool_index::add(const transaction& tx,
     completion_handler handler)
@@ -96,8 +96,8 @@ void transaction_pool_index::do_add(const transaction& tx,
     handler(error::success);
 }
 
-// ----------------------------------------------------------------------------
 // Remove sequence.
+// ----------------------------------------------------------------------------
 
 void transaction_pool_index::remove(const transaction& tx,
     completion_handler handler)
@@ -157,8 +157,8 @@ void transaction_pool_index::do_remove(const transaction& tx,
     handler(error::success);
 }
 
-// ----------------------------------------------------------------------------
 // Fetch all history sequence.
+// ----------------------------------------------------------------------------
 
 // Fetch the history first from the blockchain and then from the tx pool index.
 void transaction_pool_index::fetch_all_history(const payment_address& address,
@@ -206,8 +206,8 @@ void transaction_pool_index::index_history_fetched(const code& ec,
     handler(error::success, result);
 }
 
-// ----------------------------------------------------------------------------
 // Fetch index history sequence.
+// ----------------------------------------------------------------------------
 
 // Fetch history from the transaction pool index only.
 void transaction_pool_index::fetch_index_history(
@@ -238,8 +238,8 @@ void transaction_pool_index::do_fetch(const payment_address& address,
         to_info_list<output_info::list>(address, outputs_map_));
 }
 
-// ----------------------------------------------------------------------------
 // Static helpers
+// ----------------------------------------------------------------------------
 
 bool transaction_pool_index::exists(history& history, const spend_info& spend)
 {

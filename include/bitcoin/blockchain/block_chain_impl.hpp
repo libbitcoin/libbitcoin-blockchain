@@ -31,6 +31,7 @@
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,25 +40,36 @@ class BCB_API block_chain_impl
   : public block_chain, public simple_chain
 {
 public:
-    // TODO: create threadpool internally from config.
-    block_chain_impl(threadpool& pool, database::data_base& database,
-        const settings& settings=settings::mainnet);
+    block_chain_impl(const blockchain::settings& 
+        chain_settings=blockchain::settings::mainnet,
+        const database::settings&
+        database_settings=database::settings::mainnet);
+
+    /// The thread pool is stopped on destruct.
+    ~block_chain_impl();
 
     /// This class is not copyable.
     block_chain_impl(const block_chain_impl&) = delete;
     void operator=(const block_chain_impl&) = delete;
 
+    // Properties.
+    // ------------------------------------------------------------------------
+
+    // Get a reference to the transaction pool.
+    transaction_pool& transaction_pool();
+
+    // Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
-    // ------------------------------------------------------------------------
     // block_chain start/stop (TODO: this also affects simple_chain).
+    // ------------------------------------------------------------------------
 
     void start(result_handler handler);
     void stop(result_handler handler);
-    void stop();
+    void close();
 
-    // ------------------------------------------------------------------------
     // simple_chain (no internal locks).
+    // ------------------------------------------------------------------------
 
     /// Get the dificulty of a block at the given height.
     bool get_difficulty(hash_number& out_difficulty, uint64_t height);
@@ -85,8 +97,8 @@ public:
     /// Remove blocks at or above the given height, returning them in order.
     bool pop_from(block_detail::list& out_blocks, uint64_t height);
 
-    // ------------------------------------------------------------------------
     // block_chain queries (internal locks).
+    // ------------------------------------------------------------------------
 
     /// Import a block to the blockchain, with indexing and NO validation.
     bool import(chain::block::ptr block, uint64_t height);
@@ -177,15 +189,19 @@ private:
     void do_store(chain::block::ptr block, block_store_handler handler);
     void fetch_ordered(perform_read_functor perform_read);
     void fetch_parallel(perform_read_functor perform_read);
+    void handle_stopped(const code&);
     bool stopped();
 
-    bool stopped_;
+    std::atomic<bool> stopped_;
+    const settings& settings_;
+    mutable shared_mutex mutex_;
+
+    threadpool threadpool_;
     organizer organizer_;
     dispatcher read_dispatch_;
     dispatcher write_dispatch_;
-    const settings& settings_;
-    database::data_base& database_;
-    mutable shared_mutex mutex_;
+    database::data_base database_;
+    blockchain::transaction_pool transaction_pool_;
 };
 
 } // namespace blockchain

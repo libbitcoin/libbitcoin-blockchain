@@ -32,6 +32,7 @@
 #include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -42,21 +43,23 @@ using namespace bc::chain;
 using namespace bc::database;
 using namespace boost::interprocess;
 using boost::filesystem::path;
+using std::placeholders::_1;
 
-// TODO: move threadpool management into the implementation (see network::p2p).
-block_chain_impl::block_chain_impl(threadpool& pool,
-    database::data_base& database, const settings& settings)
+block_chain_impl::block_chain_impl(const blockchain::settings& chain_settings,
+    const database::settings& database_settings)
   : stopped_(true),
-    organizer_(pool, *this, settings),
-    read_dispatch_(pool, NAME),
-    write_dispatch_(pool, NAME),
-    settings_(settings),
-    database_(database)
+    settings_(chain_settings),
+    organizer_(threadpool_, *this, chain_settings),
+    read_dispatch_(threadpool_, NAME),
+    write_dispatch_(threadpool_, NAME),
+    database_(database_settings),
+    transaction_pool_(threadpool_, *this, chain_settings)
+
 {
 }
 
-// ----------------------------------------------------------------------------
 // Utilities.
+// ----------------------------------------------------------------------------
 
 static hash_list to_hashes(const block_result& result)
 {
@@ -67,13 +70,19 @@ static hash_list to_hashes(const block_result& result)
     return hashes;
 }
 
-// ----------------------------------------------------------------------------
 // Properties.
+// ----------------------------------------------------------------------------
+
+transaction_pool& block_chain_impl::transaction_pool()
+{
+    return transaction_pool_;
+}
 
 const settings& block_chain_impl::chain_settings() const
 {
     return settings_;
 }
+
 
 bool block_chain_impl::stopped()
 {
@@ -81,39 +90,63 @@ bool block_chain_impl::stopped()
     return stopped_;
 }
 
-// ----------------------------------------------------------------------------
 // Start sequence.
+// ----------------------------------------------------------------------------
 
 void block_chain_impl::start(result_handler handler)
 {
-    if (!database_.start())
+    if (!stopped() || !database_.start())
     {
         handler(error::operation_failed);
         return;
     }
 
+    threadpool_.join();
+    threadpool_.spawn(settings_.threads, thread_priority::low);
+
     stopped_ = false;
     handler(error::success);
 }
 
-// ----------------------------------------------------------------------------
 // Stop sequence.
-
-void block_chain_impl::stop()
-{
-    const auto unhandled = [](const code){};
-    stop(unhandled);
-}
+// ----------------------------------------------------------------------------
 
 void block_chain_impl::stop(result_handler handler)
 {
     stopped_ = true;
+
     organizer_.stop();
+    transaction_pool_.stop();
+    threadpool_.shutdown();
+
     handler(database_.stop() ? error::success : error::file_system);
 }
 
+// Destruct sequence.
 // ----------------------------------------------------------------------------
+
+block_chain_impl::~block_chain_impl()
+{
+    // This allows for shutdown based on destruct without need to call stop.
+    block_chain_impl::close();
+}
+
+void block_chain_impl::close()
+{
+    block_chain_impl::stop(
+        std::bind(&block_chain_impl::handle_stopped,
+            this, _1));
+}
+
+void block_chain_impl::handle_stopped(const code&)
+{
+    // This is the end of the destruct sequence.
+    threadpool_.join();
+    database_.stop();
+}
+
 // simple_chain (no locks).
+// ----------------------------------------------------------------------------
 
 bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
     uint64_t height)
@@ -203,8 +236,8 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
     return true;
 }
 
-// ----------------------------------------------------------------------------
 // block_chain (internal locks).
+// ----------------------------------------------------------------------------
 
 // This is not deconflicted with the blockchain dispatch queue, do not import
 // concurrently with store or query operations.

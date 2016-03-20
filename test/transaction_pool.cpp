@@ -44,7 +44,7 @@ public:
     {
     }
 
-    virtual void stop()
+    virtual void close()
     {
     }
 
