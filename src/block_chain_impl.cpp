@@ -153,6 +153,11 @@ bool block_chain_impl::get_height(uint64_t& out_height,
     return true;
 }
 
+bool block_chain_impl::get_last_height(size_t& out_height)
+{
+    return database_.blocks.top(out_height);
+}
+
 bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
     const output_point& outpoint)
 {

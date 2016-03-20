@@ -45,6 +45,9 @@ public:
     virtual bool get_height(uint64_t& out_height,
         const hash_digest& block_hash) = 0;
 
+    /// Get height of latest block.
+    virtual bool get_last_height(size_t& out_height) = 0;
+
     /// Get the hash digest of the transaction of the outpoint.
     virtual bool get_outpoint_transaction(hash_digest& out_transaction,
         const chain::output_point& outpoint) = 0;
