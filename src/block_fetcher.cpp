@@ -92,8 +92,8 @@ private:
                 shared_from_this(), _1, _2, handler);
 
         // Synchronize transaction fetch calls to one completion call.
-        const auto complete = synchronizer<block_fetch_handler>(
-            completion_handler, count, "block_fetcher");
+        const auto complete = synchronize(completion_handler, count,
+            "block_fetcher");
 
         // blockchain::fetch_transaction is thread safe.
         size_t index = 0;
