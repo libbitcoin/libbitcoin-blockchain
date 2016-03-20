@@ -56,7 +56,7 @@ public:
 
     virtual void start(result_handler handler) = 0;
     virtual void stop(result_handler handler) = 0;
-    virtual void stop() = 0;
+    virtual void close() = 0;
 
     virtual bool import(chain::block::ptr block, uint64_t height) = 0;
 
