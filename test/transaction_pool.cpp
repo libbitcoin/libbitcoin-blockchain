@@ -138,16 +138,16 @@ public:
     typedef transaction_pool::entry entry;
     typedef transaction_pool::buffer buffer;
 
-    static settings settings_factory(size_t capacity, bool consistency)
+    static blockchain::settings settings_factory(size_t capacity, bool consistency)
     {
-        settings value;
+        blockchain::settings value;
         value.transaction_pool_capacity = capacity;
         value.transaction_pool_consistency = consistency;
         return value;
     }
 
     transaction_pool_fixture(threadpool& pool, block_chain& chain,
-        const settings& settings)
+        const blockchain::settings& settings)
       : transaction_pool(pool, chain, settings)
     {
     }

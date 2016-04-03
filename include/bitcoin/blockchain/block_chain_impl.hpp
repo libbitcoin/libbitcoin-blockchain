@@ -40,10 +40,8 @@ class BCB_API block_chain_impl
   : public block_chain, public simple_chain
 {
 public:
-    block_chain_impl(const blockchain::settings& 
-        chain_settings=blockchain::settings::mainnet,
-        const database::settings&
-        database_settings=database::settings::mainnet);
+    block_chain_impl(const blockchain::settings& chain_settings,
+        const database::settings& database_settings);
 
     /// The thread pool is stopped on destruct.
     ~block_chain_impl();
