@@ -212,10 +212,11 @@ void validate_transaction::handle_previous_tx(const code& ec,
     // Search for double spends...
     blockchain_.fetch_spend(tx_.inputs[current_input_].previous_output,
         dispatch_.unordered_delegate(&validate_transaction::check_double_spend,
-            shared_from_this(), _1));
+            shared_from_this(), _1, _2));
 }
 
-void validate_transaction::check_double_spend(const code& ec)
+void validate_transaction::check_double_spend(const code& ec, 
+    const chain::input_point&)
 {
     if (ec != error::unspent_output)
     {
