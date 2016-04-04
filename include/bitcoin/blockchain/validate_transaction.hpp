@@ -75,7 +75,7 @@ private:
     // After running connect_input, we check whether this validated previous
     // output was not already spent by another input in the blockchain.
     // is_spent() earlier already checked in the pool.
-    void check_double_spend(const code& ec);
+    void check_double_spend(const code& ec, const chain::input_point& point);
     void check_fees();
 
     block_chain& blockchain_;
