@@ -54,7 +54,6 @@ block_chain_impl::block_chain_impl(const blockchain::settings& chain_settings,
     write_dispatch_(threadpool_, NAME),
     database_(database_settings),
     transaction_pool_(threadpool_, *this, chain_settings)
-
 {
 }
 
