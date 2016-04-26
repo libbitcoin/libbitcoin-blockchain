@@ -44,7 +44,7 @@ settings::settings(bc::settings context)
     {
         case bc::settings::mainnet:
         {
-            checkpoints.reserve(21);
+            checkpoints.reserve(22);
             checkpoints.push_back({ "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 });
             checkpoints.push_back({ "0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d", 11111 });
             checkpoints.push_back({ "000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6", 33333 });
@@ -74,7 +74,7 @@ settings::settings(bc::settings context)
         {
             use_testnet_rules = true;
 
-            checkpoints.reserve(21);
+            checkpoints.reserve(7);
             checkpoints.push_back({ "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 });
             checkpoints.push_back({ "00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e", 100000 });
             checkpoints.push_back({ "0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2", 200000 });
