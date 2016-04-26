@@ -66,6 +66,7 @@ settings::settings(bc::settings context)
             checkpoints.push_back({ "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8", 330791 });
             checkpoints.push_back({ "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1", 337459 });
             checkpoints.push_back({ "0000000000000000086672a8c97ad666f89cf04736951791150015419810d586", 368991 });
+            checkpoints.push_back({ "000000000000000004ec466ce4732fe6f1ed1cddc2ed4b328fff5224276e3f6f", 400000 });
             break;
         }
 
