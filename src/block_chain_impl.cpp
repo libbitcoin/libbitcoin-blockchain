@@ -104,6 +104,7 @@ void block_chain_impl::start(result_handler handler)
     threadpool_.spawn(settings_.threads, thread_priority::low);
 
     stopped_ = false;
+    transaction_pool_.start();
     handler(error::success);
 }
 
