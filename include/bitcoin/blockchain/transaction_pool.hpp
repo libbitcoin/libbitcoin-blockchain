@@ -52,11 +52,11 @@ public:
     typedef handle1<hash_list> missing_hashes_fetch_handler;
     typedef handle1<chain::transaction> fetch_handler;
     typedef handle2<chain::transaction, hash_digest> confirm_handler;
-    typedef handle3<chain::transaction, hash_digest, index_list>
+    typedef handle3<chain::transaction, hash_digest, chain::point::indexes>
         validate_handler;
-    typedef std::function<bool(const code&, const index_list&,
+    typedef std::function<bool(const code&, const chain::point::indexes&,
         const chain::transaction&)> transaction_handler;
-    typedef resubscriber<const code&, const index_list&,
+    typedef resubscriber<const code&, const chain::point::indexes&,
         const chain::transaction&> transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
@@ -112,15 +112,15 @@ protected:
         const chain::block::ptr_list& new_blocks,
         const chain::block::ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const index_list& unconfirmed,
+        const hash_digest& hash, const chain::point::indexes& unconfirmed,
         validate_handler handler);
 
     void do_validate(const chain::transaction& tx, validate_handler handler);
     void do_store(const code& ec, const chain::transaction& tx,
-        const hash_digest& hash, const index_list& unconfirmed,
+        const hash_digest& hash, const chain::point::indexes& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
-    void notify_transaction(const index_list& unconfirmed,
+    void notify_transaction(const chain::point::indexes& unconfirmed,
         const chain::transaction& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);

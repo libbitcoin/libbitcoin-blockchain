@@ -93,7 +93,7 @@ void transaction_pool::do_validate(const transaction& tx,
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, hash_digest(), index_list());
+        handler(error::service_stopped, tx, {}, {});
         return;
     }
 
@@ -107,11 +107,11 @@ void transaction_pool::do_validate(const transaction& tx,
 
 void transaction_pool::handle_validated(const code& ec,
     const transaction& tx, const hash_digest& hash,
-    const index_list& unconfirmed, validate_handler handler)
+    const point::indexes& unconfirmed, validate_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, hash, index_list());
+        handler(error::service_stopped, tx, hash, {});
         return;
     }
 
@@ -153,7 +153,7 @@ void transaction_pool::store(const transaction& tx,
 
 // TODO: this is overly complex due to the transaction pool and index split.
 void transaction_pool::do_store(const code& ec, const transaction& tx,
-    const hash_digest& hash, const index_list& unconfirmed,
+    const hash_digest& hash, const point::indexes& unconfirmed,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     if (ec)
@@ -312,7 +312,7 @@ void transaction_pool::subscribe_transaction(
     subscriber_->subscribe(handle_transaction, error::service_stopped, {}, {});
 }
 
-void transaction_pool::notify_transaction(const index_list& unconfirmed,
+void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
     const transaction& tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);

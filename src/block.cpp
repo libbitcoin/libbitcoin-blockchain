@@ -25,30 +25,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-index_list block_locator_indexes(size_t top_height)
-{
-    BITCOIN_ASSERT(top_height <= bc::max_int64);
-    const auto top_height64 = static_cast<int64_t>(top_height);
-
-    index_list indexes;
-
-    // Modify the step in the iteration.
-    int64_t step = 1;
-
-    // Start at the top of the chain and work backwards.
-    for (auto index = top_height64; index > 0; index -= step)
-    {
-        // Push top 10 indexes first, then back off exponentially.
-        if (indexes.size() >= 10)
-            step <<= 1;
-
-        indexes.push_back(static_cast<size_t>(index));
-    }
-
-    //  Push the genesis block index.
-    indexes.push_back(0);
-    return indexes;
-}
+using namespace chain;
 
 uint64_t block_mint(size_t height)
 {
@@ -72,6 +49,31 @@ hash_number block_work(uint32_t bits)
     // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
     // or ~bnTarget / (nTarget+1) + 1.
     return (~target / (target + 1)) + 1;
+}
+
+block::indexes block_locator_indexes(size_t top_height)
+{
+    BITCOIN_ASSERT(top_height <= bc::max_int64);
+    const auto top_height64 = static_cast<int64_t>(top_height);
+
+    block::indexes indexes;
+
+    // Modify the step in the iteration.
+    int64_t step = 1;
+
+    // Start at the top of the chain and work backwards.
+    for (auto index = top_height64; index > 0; index -= step)
+    {
+        // Push top 10 indexes first, then back off exponentially.
+        if (indexes.size() >= 10)
+            step <<= 1;
+
+        indexes.push_back(static_cast<size_t>(index));
+    }
+
+    //  Push the genesis block index.
+    indexes.push_back(0);
+    return indexes;
 }
 
 } // namespace blockchain

@@ -60,6 +60,5 @@
 
 typedef uint32_t index_type;
 typedef uint64_t position_type;
-typedef std::vector<size_t> index_list;
 
 #endif

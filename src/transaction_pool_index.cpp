@@ -170,7 +170,7 @@ void transaction_pool_index::fetch_all_history(const payment_address& address,
 }
 
 void transaction_pool_index::blockchain_history_fetched(const code& ec,
-    const history& history, const payment_address& address,
+    const history_list& history, const payment_address& address,
     fetch_handler handler)
 {
     if (ec)
@@ -186,7 +186,7 @@ void transaction_pool_index::blockchain_history_fetched(const code& ec,
 
 void transaction_pool_index::index_history_fetched(const code& ec,
     const spend_info::list& spends, const output_info::list& outputs,
-    const history& history, fetch_handler handler)
+    const history_list& history, fetch_handler handler)
 {
     if (ec)
     {
@@ -241,7 +241,8 @@ void transaction_pool_index::do_fetch(const payment_address& address,
 // Static helpers
 // ----------------------------------------------------------------------------
 
-bool transaction_pool_index::exists(history& history, const spend_info& spend)
+bool transaction_pool_index::exists(history_list& history,
+    const spend_info& spend)
 {
     // Transactions may exist in the memory pool and in the blockchain,
     // although this circumstance should not persist.
@@ -252,7 +253,7 @@ bool transaction_pool_index::exists(history& history, const spend_info& spend)
     return false;
 }
 
-bool transaction_pool_index::exists(history& history,
+bool transaction_pool_index::exists(history_list& history,
     const output_info& output)
 {
     // Transactions may exist in the memory pool and in the blockchain,
@@ -264,9 +265,9 @@ bool transaction_pool_index::exists(history& history,
     return false;
 }
 
-void transaction_pool_index::add(history& history, const spend_info& spend)
+void transaction_pool_index::add(history_list& history, const spend_info& spend)
 {
-    const history_row row
+    const history_compact row
     {
         point_kind::spend,
         spend.point,
@@ -277,9 +278,9 @@ void transaction_pool_index::add(history& history, const spend_info& spend)
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add(history& history, const output_info& output)
+void transaction_pool_index::add(history_list& history, const output_info& output)
 {
-    const history_row row
+    const history_compact row
     {
         point_kind::output,
         output.point,
@@ -290,7 +291,7 @@ void transaction_pool_index::add(history& history, const output_info& output)
     history.emplace_back(row);
 }
 
-void transaction_pool_index::add(history& history,
+void transaction_pool_index::add(history_list& history,
     const spend_info::list& spends)
 {
     for (const auto& spend: spends)
@@ -298,7 +299,7 @@ void transaction_pool_index::add(history& history,
             add(history, spend);
 }
 
-void transaction_pool_index::add(history& history,
+void transaction_pool_index::add(history_list& history,
     const output_info::list& outputs)
 {
     for (const auto& output: outputs)
