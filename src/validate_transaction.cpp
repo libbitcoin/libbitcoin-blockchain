@@ -328,8 +328,9 @@ bool validate_transaction::check_consensus(const script& prevout_script,
 #endif
 
     if (!valid)
-        log::warning(LOG_VALIDATE) << "Invalid transaction ["
-        << encode_hash(current_tx.hash()) << "]";
+        log::warning(LOG_VALIDATE)
+            << "Invalid transaction ["
+            << encode_hash(current_tx.hash()) << "]";
 
     return valid;
 }
