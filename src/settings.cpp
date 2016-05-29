@@ -27,8 +27,7 @@ namespace blockchain {
 using namespace boost::filesystem;
 
 settings::settings()
-  : threads(6),
-    block_pool_capacity(50),
+  : block_pool_capacity(50),
     transaction_pool_capacity(1000),
     transaction_pool_consistency(false),
     use_testnet_rules(false)

@@ -45,15 +45,16 @@ using namespace boost::interprocess;
 using boost::filesystem::path;
 using std::placeholders::_1;
 
-block_chain_impl::block_chain_impl(const blockchain::settings& chain_settings,
+block_chain_impl::block_chain_impl(threadpool& pool,
+    const blockchain::settings& chain_settings,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
-    organizer_(threadpool_, *this, chain_settings),
-    read_dispatch_(threadpool_, NAME),
-    write_dispatch_(threadpool_, NAME),
-    database_(database_settings),
-    transaction_pool_(threadpool_, *this, chain_settings)
+    organizer_(pool, *this, chain_settings),
+    read_dispatch_(pool, NAME),
+    write_dispatch_(pool, NAME),
+    transaction_pool_(pool, *this, chain_settings),
+    database_(database_settings)
 {
 }
 
@@ -82,7 +83,6 @@ const settings& block_chain_impl::chain_settings() const
     return settings_;
 }
 
-
 bool block_chain_impl::stopped()
 {
     // TODO: consider relying on a database stopped state.
@@ -100,11 +100,10 @@ void block_chain_impl::start(result_handler handler)
         return;
     }
 
-    threadpool_.join();
-    threadpool_.spawn(settings_.threads, thread_priority::low);
-
     stopped_ = false;
     transaction_pool_.start();
+
+    // This is the end of the start sequence.
     handler(error::success);
 }
 
@@ -114,35 +113,28 @@ void block_chain_impl::start(result_handler handler)
 void block_chain_impl::stop(result_handler handler)
 {
     stopped_ = true;
-
     organizer_.stop();
     transaction_pool_.stop();
-    threadpool_.shutdown();
+    const auto ec = database_.stop() ? error::success : error::file_system;
 
-    handler(database_.stop() ? error::success : error::file_system);
+    // This is the end of the stop sequence.
+    handler(ec);
 }
 
-// Destruct sequence.
+// Close sequence.
 // ----------------------------------------------------------------------------
 
+// This allows for shutdown based on destruct without need to call stop.
 block_chain_impl::~block_chain_impl()
 {
-    // This allows for shutdown based on destruct without need to call stop.
     block_chain_impl::close();
 }
 
 void block_chain_impl::close()
 {
-    block_chain_impl::stop(
-        std::bind(&block_chain_impl::handle_stopped,
-            this, _1));
-}
-
-void block_chain_impl::handle_stopped(const code&)
-{
-    // This is the end of the destruct sequence.
-    threadpool_.join();
-    database_.stop();
+    // This is the end of the close sequence.
+    const auto unused = [](const code&){};
+    stop(unused);
 }
 
 // simple_chain (no locks).
