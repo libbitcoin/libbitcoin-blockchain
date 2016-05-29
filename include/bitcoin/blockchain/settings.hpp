@@ -36,7 +36,6 @@ public:
     settings(bc::settings context);
 
     /// Properties.
-    uint32_t threads;
     uint32_t block_pool_capacity;
     uint32_t transaction_pool_capacity;
     bool transaction_pool_consistency;

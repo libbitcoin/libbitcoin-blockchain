@@ -40,10 +40,11 @@ class BCB_API block_chain_impl
   : public block_chain, public simple_chain
 {
 public:
-    block_chain_impl(const blockchain::settings& chain_settings,
+    block_chain_impl(threadpool& pool, 
+        const blockchain::settings& chain_settings,
         const database::settings& database_settings);
 
-    /// The thread pool is stopped on destruct.
+    /// The database is closed on destruct.
     ~block_chain_impl();
 
     /// This class is not copyable.
@@ -187,19 +188,17 @@ private:
     void do_store(chain::block::ptr block, block_store_handler handler);
     void fetch_ordered(perform_read_functor perform_read);
     void fetch_parallel(perform_read_functor perform_read);
-    void handle_stopped(const code&);
     bool stopped();
 
     std::atomic<bool> stopped_;
     const settings& settings_;
-    mutable shared_mutex mutex_;
+    ////mutable shared_mutex mutex_;
 
-    threadpool threadpool_;
     organizer organizer_;
     dispatcher read_dispatch_;
     dispatcher write_dispatch_;
-    database::data_base database_;
     blockchain::transaction_pool transaction_pool_;
+    database::data_base database_;
 };
 
 } // namespace blockchain
