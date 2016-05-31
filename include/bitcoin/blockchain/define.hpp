@@ -58,6 +58,9 @@
     #define BCD_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
+// Log name.
+#define LOG_BLOCKCHAIN "blockchain"
+
 typedef uint32_t index_type;
 typedef uint64_t position_type;
 
