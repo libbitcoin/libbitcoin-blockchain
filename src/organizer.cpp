@@ -203,7 +203,7 @@ void organizer::replace_chain(uint64_t fork_index,
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
                 const auto block_hash = encode_hash(header.hash());
-                log::warning(LOG_VALIDATE)
+                log::warning(LOG_BLOCKCHAIN)
                     << "Invalid block [" << block_hash << "] " << ec.message();
             }
 

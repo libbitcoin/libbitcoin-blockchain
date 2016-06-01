@@ -589,7 +589,7 @@ bool validate_block::validate_inputs(const transaction& tx,
         if (!connect_input(index_in_parent, tx, input_index, value_in,
             total_sigops))
         {
-            log::warning(LOG_VALIDATE) << "Invalid input ["
+            log::warning(LOG_BLOCKCHAIN) << "Invalid input ["
                 << encode_hash(tx.hash()) << ":"
                 << input_index << "]";
             return false;
@@ -638,7 +638,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     // including the current (orphan) block and excluding blocks above fork.
     if (!fetch_transaction(previous_tx, previous_height, previous_output.hash))
     {
-        log::warning(LOG_VALIDATE)
+        log::warning(LOG_BLOCKCHAIN)
             << "Failure fetching input transaction ["
             << encode_hash(previous_output.hash) << "]";
         return false;
@@ -651,14 +651,14 @@ bool validate_block::connect_input(size_t index_in_parent,
     if (!script_hash_signature_operations_count(count,
         previous_tx_out.script, input.script))
     {
-        log::warning(LOG_VALIDATE) << "Invalid eval script.";
+        log::warning(LOG_BLOCKCHAIN) << "Invalid eval script.";
         return false;
     }
 
     total_sigops += count;
     if (total_sigops > max_block_script_sigops)
     {
-        log::warning(LOG_VALIDATE) << "Total sigops exceeds block maximum.";
+        log::warning(LOG_BLOCKCHAIN) << "Total sigops exceeds block maximum.";
         return false;
     }
 
@@ -666,7 +666,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     const auto output_value = previous_tx_out.value;
     if (output_value > max_money())
     {
-        log::warning(LOG_VALIDATE) << "Output money exceeds 21 million.";
+        log::warning(LOG_BLOCKCHAIN) << "Output money exceeds 21 million.";
         return false;
     }
 
@@ -677,7 +677,7 @@ bool validate_block::connect_input(size_t index_in_parent,
         const auto height_difference = height_ - previous_height;
         if (height_difference < coinbase_maturity)
         {
-            log::warning(LOG_VALIDATE) << "Immature coinbase spend attempt.";
+            log::warning(LOG_BLOCKCHAIN) << "Immature coinbase spend attempt.";
             return false;
         }
     }
@@ -685,14 +685,14 @@ bool validate_block::connect_input(size_t index_in_parent,
     if (!validate_transaction::check_consensus(previous_tx_out.script,
         current_tx, input_index, activations_))
     {
-        log::warning(LOG_VALIDATE) << "Input script invalid consensus.";
+        log::warning(LOG_BLOCKCHAIN) << "Input script invalid consensus.";
         return false;
     }
 
     // Search for double spends.
     if (is_output_spent(previous_output, index_in_parent, input_index))
     {
-        log::warning(LOG_VALIDATE) << "Double spend attempt.";
+        log::warning(LOG_BLOCKCHAIN) << "Double spend attempt.";
         return false;
     }
 
@@ -700,7 +700,7 @@ bool validate_block::connect_input(size_t index_in_parent,
     value_in += output_value;
     if (value_in > max_money())
     {
-        log::warning(LOG_VALIDATE) << "Input money exceeds 21 million.";
+        log::warning(LOG_BLOCKCHAIN) << "Input money exceeds 21 million.";
         return false;
     }
 
