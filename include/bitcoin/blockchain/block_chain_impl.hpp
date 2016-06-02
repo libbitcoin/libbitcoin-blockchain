@@ -186,8 +186,9 @@ private:
 
     void start_write();
     void do_store(chain::block::ptr block, block_store_handler handler);
-    void fetch_ordered(perform_read_functor perform_read);
-    void fetch_parallel(perform_read_functor perform_read);
+    ////void fetch_ordered(perform_read_functor perform_read);
+    ////void fetch_parallel(perform_read_functor perform_read);
+    void fetch_serial(perform_read_functor perform_read);
     bool stopped();
 
     std::atomic<bool> stopped_;
