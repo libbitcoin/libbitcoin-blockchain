@@ -58,6 +58,12 @@ block_chain_impl::block_chain_impl(threadpool& pool,
 {
 }
 
+// Database threads must be joined before close is called (or destruct).
+block_chain_impl::~block_chain_impl()
+{
+    close();
+}
+
 // Utilities.
 // ----------------------------------------------------------------------------
 
@@ -83,58 +89,40 @@ const settings& block_chain_impl::chain_settings() const
     return settings_;
 }
 
-bool block_chain_impl::stopped()
-{
-    // TODO: consider relying on a database stopped state.
-    return stopped_;
-}
-
-// Start sequence.
+// Startup and shutdown.
 // ----------------------------------------------------------------------------
 
-void block_chain_impl::start(result_handler handler)
+// TODO: make thread safe!!!!
+
+bool block_chain_impl::start()
 {
     if (!stopped() || !database_.start())
-    {
-        handler(error::operation_failed);
-        return;
-    }
+        return false;
 
     stopped_ = false;
     transaction_pool_.start();
-
-    // This is the end of the start sequence.
-    handler(error::success);
+    return true;
 }
 
-// Stop sequence.
-// ----------------------------------------------------------------------------
-
-void block_chain_impl::stop(result_handler handler)
+bool block_chain_impl::stop()
 {
     stopped_ = true;
     organizer_.stop();
     transaction_pool_.stop();
-    const auto ec = database_.stop() ? error::success : error::file_system;
-
-    // This is the end of the stop sequence.
-    handler(ec);
+    return database_.stop();
 }
 
-// Close sequence.
-// ----------------------------------------------------------------------------
-
-// This allows for shutdown based on destruct without need to call stop.
-block_chain_impl::~block_chain_impl()
+// Close does not call stop because there is no way to detect thread join.
+bool block_chain_impl::close()
 {
-    block_chain_impl::close();
+    return database_.close();
 }
 
-void block_chain_impl::close()
+// private
+bool block_chain_impl::stopped()
 {
-    // This is the end of the close sequence.
-    const auto unused = [](const code&){};
-    stop(unused);
+    // TODO: consider relying on a database stopped state.
+    return stopped_;
 }
 
 // Subscriber

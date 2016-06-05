@@ -63,9 +63,9 @@ public:
     // block_chain start/stop (TODO: this also affects simple_chain).
     // ------------------------------------------------------------------------
 
-    void start(result_handler handler);
-    void stop(result_handler handler);
-    void close();
+    virtual bool start();
+    virtual bool stop();
+    virtual bool close();
 
     // simple_chain (no internal locks).
     // ------------------------------------------------------------------------

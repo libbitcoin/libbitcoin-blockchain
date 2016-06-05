@@ -36,16 +36,19 @@ class blockchain_fixture
   : public block_chain
 {
 public:
-    virtual void start(result_handler handler)
+    virtual bool start()
     {
+        return false;
     }
 
-    virtual void stop(result_handler handler)
+    virtual bool stop()
     {
+        return false;
     }
 
-    virtual void close()
+    virtual bool close()
     {
+        return false;
     }
 
     virtual bool import(chain::block::ptr block, uint64_t height)
@@ -138,7 +141,8 @@ public:
     typedef transaction_pool::entry entry;
     typedef transaction_pool::buffer buffer;
 
-    static blockchain::settings settings_factory(size_t capacity, bool consistency)
+    static blockchain::settings settings_factory(size_t capacity,
+        bool consistency)
     {
         blockchain::settings value;
         value.transaction_pool_capacity = capacity;
