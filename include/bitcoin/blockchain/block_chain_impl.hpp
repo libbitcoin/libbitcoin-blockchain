@@ -44,7 +44,7 @@ public:
         const blockchain::settings& chain_settings,
         const database::settings& database_settings);
 
-    /// The database is closed on destruct.
+    /// The database is closed on destruct, threads must be joined.
     ~block_chain_impl();
 
     /// This class is not copyable.
@@ -63,8 +63,13 @@ public:
     // block_chain start/stop (TODO: this also affects simple_chain).
     // ------------------------------------------------------------------------
 
+    /// Start or restart the blockchain.
     virtual bool start();
+
+    /// Signal stop of current work, speeds shutdown with multiple threads.
     virtual bool stop();
+
+    /// Close the blockchain, threads must first be joined, can be restarted.
     virtual bool close();
 
     // simple_chain (no internal locks).

@@ -62,15 +62,21 @@ public:
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
 
+    /// Construct a transaction memory pool.
     transaction_pool(threadpool& pool, block_chain& chain,
         const settings& settings);
+
+    /// Clear the pool, threads must be joined.
     ~transaction_pool();
 
     /// This class is not copyable.
     transaction_pool(const transaction_pool&) = delete;
     void operator=(const transaction_pool&) = delete;
 
+    /// Start the threadpool (allow work to proceed).
     void start();
+
+    /// Signal stop of current work, speeds shutdown, threads must be joined.
     void stop();
 
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
@@ -87,7 +93,7 @@ public:
     void subscribe_transaction(transaction_handler handler);
 
     // TODO: these should be access-limited to validate_transaction.
-    // These are not stranded and therefore represent a thread safety issue.
+    // These are not stranded so therefore are otherwise a thread safety issue.
     bool is_in_pool(const hash_digest& tx_hash) const;
     bool is_spent_in_pool(const chain::transaction& tx) const;
     bool is_spent_in_pool(const chain::output_point& outpoint) const;

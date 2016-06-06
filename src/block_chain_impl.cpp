@@ -58,7 +58,7 @@ block_chain_impl::block_chain_impl(threadpool& pool,
 {
 }
 
-// Database threads must be joined before close is called (or destruct).
+// Close does not call stop because there is no way to detect thread join.
 block_chain_impl::~block_chain_impl()
 {
     close();
@@ -92,8 +92,7 @@ const settings& block_chain_impl::chain_settings() const
 // Startup and shutdown.
 // ----------------------------------------------------------------------------
 
-// TODO: make thread safe!!!!
-
+// Start is required and the blockchain is restartable.
 bool block_chain_impl::start()
 {
     if (!stopped() || !database_.start())
@@ -104,6 +103,7 @@ bool block_chain_impl::start()
     return true;
 }
 
+// Stop is not required, speeds work shutdown with multiple threads.
 bool block_chain_impl::stop()
 {
     stopped_ = true;
@@ -112,7 +112,7 @@ bool block_chain_impl::stop()
     return database_.stop();
 }
 
-// Close does not call stop because there is no way to detect thread join.
+// Database threads must be joined before close is called (or destruct).
 bool block_chain_impl::close()
 {
     return database_.close();
