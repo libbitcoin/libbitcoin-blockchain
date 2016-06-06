@@ -58,6 +58,12 @@ block_chain_impl::block_chain_impl(threadpool& pool,
 {
 }
 
+// Close does not call stop because there is no way to detect thread join.
+block_chain_impl::~block_chain_impl()
+{
+    close();
+}
+
 // Utilities.
 // ----------------------------------------------------------------------------
 
@@ -83,58 +89,49 @@ const settings& block_chain_impl::chain_settings() const
     return settings_;
 }
 
+// Startup and shutdown.
+// ----------------------------------------------------------------------------
+
+// Start is required and the blockchain is restartable.
+bool block_chain_impl::start()
+{
+    if (!stopped() || !database_.start())
+        return false;
+
+    stopped_ = false;
+    transaction_pool_.start();
+    return true;
+}
+
+// Stop is not required, speeds work shutdown with multiple threads.
+bool block_chain_impl::stop()
+{
+    stopped_ = true;
+    organizer_.stop();
+    transaction_pool_.stop();
+    return database_.stop();
+}
+
+// Database threads must be joined before close is called (or destruct).
+bool block_chain_impl::close()
+{
+    return database_.close();
+}
+
+// private
 bool block_chain_impl::stopped()
 {
     // TODO: consider relying on a database stopped state.
     return stopped_;
 }
 
-// Start sequence.
-// ----------------------------------------------------------------------------
+// Subscriber
+// ------------------------------------------------------------------------
 
-void block_chain_impl::start(result_handler handler)
+void block_chain_impl::subscribe_reorganize(reorganize_handler handler)
 {
-    if (!stopped() || !database_.start())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    stopped_ = false;
-    transaction_pool_.start();
-
-    // This is the end of the start sequence.
-    handler(error::success);
-}
-
-// Stop sequence.
-// ----------------------------------------------------------------------------
-
-void block_chain_impl::stop(result_handler handler)
-{
-    stopped_ = true;
-    organizer_.stop();
-    transaction_pool_.stop();
-    const auto ec = database_.stop() ? error::success : error::file_system;
-
-    // This is the end of the stop sequence.
-    handler(ec);
-}
-
-// Close sequence.
-// ----------------------------------------------------------------------------
-
-// This allows for shutdown based on destruct without need to call stop.
-block_chain_impl::~block_chain_impl()
-{
-    block_chain_impl::close();
-}
-
-void block_chain_impl::close()
-{
-    // This is the end of the close sequence.
-    const auto unused = [](const code&){};
-    stop(unused);
+    // Pass this through to the organizer, which issues the notifications.
+    organizer_.subscribe_reorganize(handler);
 }
 
 // simple_chain (no locks).
@@ -231,8 +228,7 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 // block_chain (internal locks).
 // ----------------------------------------------------------------------------
 
-// This is not deconflicted with the blockchain dispatch queue, do not import
-// concurrently with store or query operations.
+// **Do not import concurrently with other database operations.**
 bool block_chain_impl::import(block::ptr block, uint64_t height)
 {
     if (stopped())
@@ -255,6 +251,7 @@ void block_chain_impl::start_write()
     BITCOIN_ASSERT(result);
 }
 
+// This maintains the order of block store via the strand.
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
@@ -265,7 +262,7 @@ void block_chain_impl::store(block::ptr block, block_store_handler handler)
             this, block, handler));
 }
 
-// This orders the block via the organizer.
+// This processes the block through the organizer.
 void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
@@ -297,12 +294,15 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     stop_write(handler, detail->error(), detail->info());
 }
 
-void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
+// This performs a query in the context of the calling thread.
+// The callback model is preserved currently in order to limit downstream changes.
+// This change allows the caller to manage worker threads.
+void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 {
     if (stopped())
         return;
 
-    // Writes are ordered on the strand, so never concurrent.
+    // Post IBD writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]()
     {
@@ -317,36 +317,61 @@ void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     };
 
-    // Initiate async read operation.
-    read_dispatch_.concurrent(do_read);
+    // Initiate serial read operation.
+    do_read();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: This should be ordered on the channel's strand, not across channels.
-///////////////////////////////////////////////////////////////////////////////
-void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
-{
-    if (stopped())
-        return;
+////void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
+////{
+////    if (stopped())
+////        return;
+////
+////    // Post IBD writes are ordered on the strand, so never concurrent.
+////    // Reads are unordered and concurrent, but effectively blocked by writes.
+////    const auto try_read = [this, perform_read]()
+////    {
+////        const auto handle = database_.begin_read();
+////        return (!database_.is_write_locked(handle) && perform_read(handle));
+////    };
+////
+////    const auto do_read = [this, try_read]()
+////    {
+////        // Sleep while waiting for write to complete.
+////        while (!try_read())
+////            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+////    };
+////
+////    // Initiate async read operation.
+////    read_dispatch_.concurrent(do_read);
+////}
 
-    // Writes are ordered on the strand, so never concurrent.
-    // Reads are unordered and concurrent, but effectively blocked by writes.
-    const auto try_read = [this, perform_read]() -> bool
-    {
-        const auto handle = database_.begin_read();
-        return (!database_.is_write_locked(handle) && perform_read(handle));
-    };
+////// TODO: This should be ordered on the channel's strand, not across channels.
+////void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
+////{
+////    if (stopped())
+////        return;
+////
+////    // Writes are ordered on the strand, so never concurrent.
+////    // Reads are unordered and concurrent, but effectively blocked by writes.
+////    const auto try_read = [this, perform_read]() -> bool
+////    {
+////        const auto handle = database_.begin_read();
+////        return (!database_.is_write_locked(handle) && perform_read(handle));
+////    };
+////
+////    const auto do_read = [this, try_read]()
+////    {
+////        // Sleep while waiting for write to complete.
+////        while (!try_read())
+////            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+////    };
+////
+////    // Initiate async read operation.
+////    read_dispatch_.ordered(do_read);
+////}
 
-    const auto do_read = [this, try_read]()
-    {
-        // Sleep while waiting for write to complete.
-        while (!try_read())
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    };
-
-    // Initiate async read operation.
-    read_dispatch_.ordered(do_read);
-}
+// block_chain (formerly fetch_ordered)
+// ------------------------------------------------------------------------
 
 // This may generally execute 29+ queries.
 // TODO: Collect asynchronous calls in a function invoked directly by caller.
@@ -375,7 +400,7 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
             error::success, locator);
     };
 
-    fetch_ordered(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 // Fetch start-base-stop|top+1(max 500)
@@ -438,7 +463,7 @@ void block_chain_impl::fetch_locator_block_hashes(
         return finish_fetch(slock, handler,
             error::success, hashes);
     };
-    fetch_ordered(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 // This may execute up to 500 queries.
@@ -454,8 +479,11 @@ void block_chain_impl::fetch_missing_block_hashes(const hash_list& hashes,
 
         return finish_fetch(slock, handler, error::success, missing);
     };
-    fetch_ordered(do_fetch);
+    fetch_serial(do_fetch);
 }
+
+// block_chain (formerly fetch_parallel)
+// ------------------------------------------------------------------------
 
 void block_chain_impl::fetch_block_header(uint64_t height,
     block_header_fetch_handler handler)
@@ -467,7 +495,7 @@ void block_chain_impl::fetch_block_header(uint64_t height,
             finish_fetch(slock, handler, error::success, result.header()) :
             finish_fetch(slock, handler, error::not_found, chain::header());
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_block_header(const hash_digest& hash,
@@ -480,7 +508,7 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
             finish_fetch(slock, handler, error::success, result.header()) :
             finish_fetch(slock, handler, error::not_found, chain::header());
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
@@ -493,7 +521,7 @@ void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
             finish_fetch(slock, handler, error::success, to_hashes(result)) :
             finish_fetch(slock, handler, error::not_found, hash_list());
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
@@ -506,7 +534,7 @@ void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
             finish_fetch(slock, handler, error::success, to_hashes(result)) :
             finish_fetch(slock, handler, error::not_found, hash_list());
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_block_height(const hash_digest& hash,
@@ -519,7 +547,7 @@ void block_chain_impl::fetch_block_height(const hash_digest& hash,
             finish_fetch(slock, handler, error::success, result.height()) :
             finish_fetch(slock, handler, error::not_found, 0);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_last_height(last_height_fetch_handler handler)
@@ -531,7 +559,7 @@ void block_chain_impl::fetch_last_height(last_height_fetch_handler handler)
             finish_fetch(slock, handler, error::success, last_height) :
             finish_fetch(slock, handler, error::not_found, 0);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_transaction(const hash_digest& hash,
@@ -545,7 +573,7 @@ void block_chain_impl::fetch_transaction(const hash_digest& hash,
             finish_fetch(slock, handler, error::success, tx) :
             finish_fetch(slock, handler, error::not_found, tx);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_transaction_index(const hash_digest& hash,
@@ -559,7 +587,7 @@ void block_chain_impl::fetch_transaction_index(const hash_digest& hash,
                 result.index()) :
             finish_fetch(slock, handler, error::not_found, 0, 0);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
@@ -575,7 +603,7 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
             finish_fetch(slock, handler, error::success, point) :
             finish_fetch(slock, handler, error::unspent_output, point);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_history(const wallet::payment_address& address,
@@ -588,7 +616,7 @@ void block_chain_impl::fetch_history(const wallet::payment_address& address,
             from_height);
         return finish_fetch(slock, handler, error::success, history);
     };
-    fetch_parallel(do_fetch);
+    fetch_serial(do_fetch);
 }
 
 void block_chain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
@@ -600,13 +628,7 @@ void block_chain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
         const auto stealth = database_.stealth.scan(filter, from_height);
         return finish_fetch(slock, handler, error::success, stealth);
     };
-    fetch_parallel(do_fetch);
-}
-
-void block_chain_impl::subscribe_reorganize(reorganize_handler handler)
-{
-    // Pass this through to the organizer, which issues the notifications.
-    organizer_.subscribe_reorganize(handler);
+    fetch_serial(do_fetch);
 }
 
 } // namespace blockchain

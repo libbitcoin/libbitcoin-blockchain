@@ -44,7 +44,7 @@ public:
         const blockchain::settings& chain_settings,
         const database::settings& database_settings);
 
-    /// The database is closed on destruct.
+    /// The database is closed on destruct, threads must be joined.
     ~block_chain_impl();
 
     /// This class is not copyable.
@@ -63,9 +63,14 @@ public:
     // block_chain start/stop (TODO: this also affects simple_chain).
     // ------------------------------------------------------------------------
 
-    void start(result_handler handler);
-    void stop(result_handler handler);
-    void close();
+    /// Start or restart the blockchain.
+    virtual bool start();
+
+    /// Signal stop of current work, speeds shutdown with multiple threads.
+    virtual bool stop();
+
+    /// Close the blockchain, threads must first be joined, can be restarted.
+    virtual bool close();
 
     // simple_chain (no internal locks).
     // ------------------------------------------------------------------------
@@ -186,8 +191,9 @@ private:
 
     void start_write();
     void do_store(chain::block::ptr block, block_store_handler handler);
-    void fetch_ordered(perform_read_functor perform_read);
-    void fetch_parallel(perform_read_functor perform_read);
+    ////void fetch_ordered(perform_read_functor perform_read);
+    ////void fetch_parallel(perform_read_functor perform_read);
+    void fetch_serial(perform_read_functor perform_read);
     bool stopped();
 
     std::atomic<bool> stopped_;

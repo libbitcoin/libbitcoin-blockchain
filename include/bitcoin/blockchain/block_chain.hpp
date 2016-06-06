@@ -54,9 +54,9 @@ public:
         const chain::block::ptr_list&, const chain::block::ptr_list&)>
         reorganize_handler;
 
-    virtual void start(result_handler handler) = 0;
-    virtual void stop(result_handler handler) = 0;
-    virtual void close() = 0;
+    virtual bool start() = 0;
+    virtual bool stop() = 0;
+    virtual bool close() = 0;
 
     virtual bool import(chain::block::ptr block, uint64_t height) = 0;
 
