@@ -6,8 +6,6 @@
 
 *Bitcoin blockchain library*
 
-Note that you need g++ 4.8 or higher. For this reason Ubuntu 12.04 and older are not supported.
-
 Make sure you have installed [libbitcoin-database](https://github.com/libbitcoin/libbitcoin-database) and [libbitcoin-consensus](https://github.com/libbitcoin/libbitcoin-consensus) (optional) beforehand according to their respective build instructions.
 
 ```sh
