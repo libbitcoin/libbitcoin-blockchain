@@ -95,11 +95,6 @@ public:
     //{
     //}
 
-    boost::posix_time::ptime current_time() const
-    {
-        return validate_block::current_time();
-    }
-
     //bool is_valid_time_stamp(uint32_t timestamp) const
     //{
     //}
@@ -113,15 +108,6 @@ public:
         return validate_block::is_distinct_tx_set(txs);
     }
 };
-
-BOOST_FIXTURE_TEST_SUITE(validate_block__current_time, validate_block_fixture)
-
-BOOST_AUTO_TEST_CASE(validate_block__current_time__always__does_not_throw)
-{
-    BOOST_REQUIRE_NO_THROW(current_time());
-}
-
-BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(validate_block__is_distinct_tx_set)
 
