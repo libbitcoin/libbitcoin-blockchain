@@ -73,7 +73,7 @@ void transaction_pool::start()
 void transaction_pool::stop()
 {
     subscriber_->stop();
-    subscriber_->do_relay(error::service_stopped, {}, {});
+    subscriber_->invoke(error::service_stopped, {}, {});
 }
 
 bool transaction_pool::stopped()
