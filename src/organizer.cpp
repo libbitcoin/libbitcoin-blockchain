@@ -161,7 +161,7 @@ void organizer::stop()
 {
     stopped_ = true;
     subscriber_->stop();
-    subscriber_->do_relay(error::service_stopped, 0, {}, {});
+    subscriber_->invoke(error::service_stopped, 0, {}, {});
 }
 
 bool organizer::stopped()

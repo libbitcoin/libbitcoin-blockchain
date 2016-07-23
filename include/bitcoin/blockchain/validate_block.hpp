@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <system_error>
 #include <vector>
-#include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -71,7 +70,6 @@ protected:
         size_t& total_sigops) const;
 
     // These are protected virtual for testability.
-    boost::posix_time::ptime current_time() const;
     bool stopped() const;
     virtual bool is_valid_version() const;
     virtual bool is_active(chain::script_context flag) const;

@@ -20,11 +20,11 @@
 #include <bitcoin/blockchain/validate_block.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <system_error>
 #include <vector>
-#include <boost/date_time.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
@@ -38,10 +38,6 @@ if (stopped()) \
     return error::service_stopped
 
 using namespace chain;
-using boost::posix_time::ptime;
-using boost::posix_time::from_time_t;
-using boost::posix_time::second_clock;
-using boost::posix_time::hours;
 
 // Consensus rule change activation and enforcement parameters.
 static constexpr uint8_t version_4 = 4;
@@ -93,7 +89,7 @@ static constexpr uint64_t retargeting_interval = target_timespan_seconds /
     target_spacing_seconds;
 
 // The window by which a time stamp may exceed our current time (2 hours).
-static const auto time_stamp_window = hours(2);
+static const auto time_stamp_window = asio::hours(2);
 
 // The nullptr option is for backward compatibility only.
 validate_block::validate_block(size_t height, const block& block, bool testnet,
@@ -272,15 +268,12 @@ bool validate_block::is_distinct_tx_set(const transaction::list& txs)
     return distinct_end == hashes.end();
 }
 
-ptime validate_block::current_time() const
-{
-    return second_clock::universal_time();
-}
-
 bool validate_block::is_valid_time_stamp(uint32_t timestamp) const
 {
-    const auto two_hour_future = current_time() + time_stamp_window;
-    const auto block_time = from_time_t(timestamp);
+    // Use system clock because we require accurate time of day.
+    typedef std::chrono::system_clock wall_clock;
+    const auto block_time = wall_clock::from_time_t(timestamp);
+    const auto two_hour_future = wall_clock::now() + time_stamp_window;
     return block_time <= two_hour_future;
 }
 
@@ -295,6 +288,7 @@ bool validate_block::is_valid_proof_of_work(hash_digest hash, uint32_t bits)
     return (our_value <= target_value);
 }
 
+// TODO: move to bc::chain::opcode.
 // Determine if code is in the op_n range.
 inline bool within_op_n(opcode code)
 {
@@ -304,6 +298,7 @@ inline bool within_op_n(opcode code)
     return op_1 <= value && value <= op_16;
 }
 
+// TODO: move to bc::chain::opcode.
 // Return the op_n index (i.e. value of n).
 inline uint8_t decode_op_n(opcode code)
 {
@@ -313,6 +308,7 @@ inline uint8_t decode_op_n(opcode code)
     return value - op_0;
 }
 
+// TODO: move to bc::chain::operation::stack.
 inline size_t count_script_sigops(const operation::stack& operations,
     bool accurate)
 {
@@ -340,6 +336,7 @@ inline size_t count_script_sigops(const operation::stack& operations,
     return total_sigs;
 }
 
+// TODO: move to bc::chain::transaction.
 size_t validate_block::legacy_sigops_count(const transaction& tx)
 {
     size_t total_sigs = 0;
