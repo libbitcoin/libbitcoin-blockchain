@@ -143,7 +143,17 @@ bool block_chain_impl::get_next_gap(uint64_t& out_height,
     if (stopped())
         return false;
 
-    return database_.blocks.gap(out_height, start_height);
+    BITCOIN_ASSERT(start_height <= bc::max_size_t);
+    const auto start = static_cast<size_t>(start_height);
+    size_t out;
+
+    if (database_.blocks.gap(out, start))
+    {
+        out_height = static_cast<uint64_t>(out);
+        return true;
+    }
+
+    return false;
 }
 
 bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
