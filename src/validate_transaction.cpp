@@ -101,6 +101,7 @@ void validate_transaction::handle_duplicate_check(
 {
     if (ec != error::not_found)
     {
+        // BUGBUG: overly restrictive, dups allowed if previous spent (BIP30).
         handle_validate_(error::duplicate, tx_, tx_hash_, {});
         return;
     }

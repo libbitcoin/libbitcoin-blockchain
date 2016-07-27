@@ -75,6 +75,9 @@ public:
     // simple_chain (no internal locks).
     // ------------------------------------------------------------------------
 
+    /// Return the next chain gap at or after the specified start height.
+    bool get_next_gap(uint64_t& out_height, uint64_t start_height);
+
     /// Get the dificulty of a block at the given height.
     bool get_difficulty(hash_number& out_difficulty, uint64_t height);
 
@@ -95,6 +98,9 @@ public:
     bool get_transaction(chain::transaction& out_transaction,
         uint64_t& out_block_height, const hash_digest& transaction_hash);
 
+    /// Import a block to the blockchain.
+    bool import(chain::block::ptr block, uint64_t height);
+
     /// Append the block to the top of the chain.
     bool push(block_detail::ptr block);
 
@@ -103,9 +109,6 @@ public:
 
     // block_chain queries (internal locks).
     // ------------------------------------------------------------------------
-
-    /// Import a block to the blockchain, with indexing and NO validation.
-    bool import(chain::block::ptr block, uint64_t height);
 
     /// Store a block to the blockchain, with indexing and FULL validation.
     void store(chain::block::ptr block, block_store_handler handler);

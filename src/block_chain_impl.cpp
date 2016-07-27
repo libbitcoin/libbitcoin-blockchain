@@ -134,8 +134,27 @@ void block_chain_impl::subscribe_reorganize(reorganize_handler handler)
     organizer_.subscribe_reorganize(handler);
 }
 
-// simple_chain (no locks).
+// simple_chain (no locks, not thread safe).
 // ----------------------------------------------------------------------------
+
+bool block_chain_impl::get_next_gap(uint64_t& out_height,
+    uint64_t start_height)
+{
+    if (stopped())
+        return false;
+
+    BITCOIN_ASSERT(start_height <= bc::max_size_t);
+    const auto start = static_cast<size_t>(start_height);
+    size_t out;
+
+    if (database_.blocks.gap(out, start))
+    {
+        out_height = static_cast<uint64_t>(out);
+        return true;
+    }
+
+    return false;
+}
 
 bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
     uint64_t height)
@@ -203,6 +222,16 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     return true;
 }
 
+bool block_chain_impl::import(block::ptr block, uint64_t height)
+{
+    if (stopped())
+        return false;
+
+    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
+    database_.push(*block, height);
+    return true;
+}
+
 bool block_chain_impl::push(block_detail::ptr block)
 {
     database_.push(block->actual());
@@ -227,23 +256,6 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
 
 // block_chain (internal locks).
 // ----------------------------------------------------------------------------
-
-// **Do not import concurrently with other database operations.**
-bool block_chain_impl::import(block::ptr block, uint64_t height)
-{
-    if (stopped())
-        return false;
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    ////unique_lock lock(mutex_);
-
-    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-    database_.push(*block, height);
-
-    return true;
-    ///////////////////////////////////////////////////////////////////////////
-}
 
 void block_chain_impl::start_write()
 {

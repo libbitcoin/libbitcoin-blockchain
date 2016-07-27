@@ -28,11 +28,14 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// A interface for encapsulation of the blockchain database for the organizer.
+/// A interface for encapsulation of the blockchain database.
 /// These queries are immediate and assume the database is externally locked.
 class BCB_API simple_chain
 {
 public:
+
+    /// Return the next chain gap at or after the specified start height.
+    virtual bool get_next_gap(uint64_t& out_height, uint64_t start_height) = 0;
 
     /// Get the dificulty of a block at the given height.
     virtual bool get_difficulty(hash_number& out_difficulty,
@@ -55,6 +58,9 @@ public:
     /// Get the transaction of the given hash and its block height.
     virtual bool get_transaction(chain::transaction& out_transaction,
         uint64_t& out_block_height, const hash_digest& transaction_hash) = 0;
+
+    /// Import a block for the given height.
+    virtual bool import(chain::block::ptr block, uint64_t height) = 0;
 
     /// Append the block to the top of the chain.
     virtual bool push(block_detail::ptr block) = 0;

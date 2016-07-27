@@ -364,6 +364,7 @@ size_t validate_block::legacy_sigops_count(const transaction::list& txs)
     return total_sigs;
 }
 
+// BUGBUG: we should confirm block hash doesn't exist.
 code validate_block::accept_block() const
 {
     const auto& header = current_block_.header;

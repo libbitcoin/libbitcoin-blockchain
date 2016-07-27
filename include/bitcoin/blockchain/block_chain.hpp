@@ -58,8 +58,6 @@ public:
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    virtual bool import(chain::block::ptr block, uint64_t height) = 0;
-
     virtual void store(chain::block::ptr block,
         block_store_handler handle_store) = 0;
 
