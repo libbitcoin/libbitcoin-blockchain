@@ -119,7 +119,7 @@ bool block_chain_impl::close()
 }
 
 // private
-bool block_chain_impl::stopped()
+bool block_chain_impl::stopped() const
 {
     // TODO: consider relying on a database stopped state.
     return stopped_;
@@ -137,8 +137,22 @@ void block_chain_impl::subscribe_reorganize(reorganize_handler handler)
 // simple_chain (no locks, not thread safe).
 // ----------------------------------------------------------------------------
 
+bool block_chain_impl::get_gap_range(uint64_t& out_first,
+    uint64_t& out_last) const
+{
+    size_t first;
+    size_t last;
+
+    if (!database_.blocks.gap_range(first, last))
+        return false;
+
+    out_first = static_cast<uint64_t>(first);
+    out_last = static_cast<uint64_t>(last);
+    return true;
+}
+
 bool block_chain_impl::get_next_gap(uint64_t& out_height,
-    uint64_t start_height)
+    uint64_t start_height) const
 {
     if (stopped())
         return false;
@@ -147,7 +161,7 @@ bool block_chain_impl::get_next_gap(uint64_t& out_height,
     const auto start = static_cast<size_t>(start_height);
     size_t out;
 
-    if (database_.blocks.gap(out, start))
+    if (database_.blocks.next_gap(out, start))
     {
         out_height = static_cast<uint64_t>(out);
         return true;
@@ -157,7 +171,7 @@ bool block_chain_impl::get_next_gap(uint64_t& out_height,
 }
 
 bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
-    uint64_t height)
+    uint64_t height) const
 {
     size_t top;
     if (!database_.blocks.top(top))
@@ -173,7 +187,7 @@ bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
     return true;
 }
 
-bool block_chain_impl::get_header(header& out_header, uint64_t height)
+bool block_chain_impl::get_header(header& out_header, uint64_t height) const
 {
     auto result = database_.blocks.get(height);
     if (!result)
@@ -184,7 +198,7 @@ bool block_chain_impl::get_header(header& out_header, uint64_t height)
 }
 
 bool block_chain_impl::get_height(uint64_t& out_height,
-    const hash_digest& block_hash)
+    const hash_digest& block_hash) const
 {
     auto result = database_.blocks.get(block_hash);
     if (!result)
@@ -194,13 +208,20 @@ bool block_chain_impl::get_height(uint64_t& out_height,
     return true;
 }
 
-bool block_chain_impl::get_last_height(size_t& out_height)
+bool block_chain_impl::get_last_height(uint64_t& out_height) const
 {
-    return database_.blocks.top(out_height);
+    size_t top;
+    if (database_.blocks.top(top))
+    {
+        out_height = static_cast<uint64_t>(top);
+        return true;
+    }
+
+    return false;
 }
 
 bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
-    const output_point& outpoint)
+    const output_point& outpoint) const
 {
     const auto spend = database_.spends.get(outpoint);
     if (!spend.valid)
@@ -211,7 +232,7 @@ bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
 }
 
 bool block_chain_impl::get_transaction(transaction& out_transaction,
-    uint64_t& out_block_height, const hash_digest& transaction_hash)
+    uint64_t& out_block_height, const hash_digest& transaction_hash) const
 {
     const auto result = database_.transactions.get(transaction_hash);
     if (!result)
@@ -383,7 +404,7 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 ////}
 
 // block_chain (formerly fetch_ordered)
-// ------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 // This may generally execute 29+ queries.
 // TODO: Collect asynchronous calls in a function invoked directly by caller.
