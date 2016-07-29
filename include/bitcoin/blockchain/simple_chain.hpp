@@ -33,31 +33,37 @@ namespace blockchain {
 class BCB_API simple_chain
 {
 public:
+    /// Return the first and last gaps in the blockchain, or false if none.
+    virtual bool get_gap_range(uint64_t& out_first,
+        uint64_t& out_last) const = 0;
 
     /// Return the next chain gap at or after the specified start height.
-    virtual bool get_next_gap(uint64_t& out_height, uint64_t start_height) = 0;
+    virtual bool get_next_gap(uint64_t& out_height,
+        uint64_t start_height) const = 0;
 
     /// Get the dificulty of a block at the given height.
     virtual bool get_difficulty(hash_number& out_difficulty,
-        uint64_t height) = 0;
+        uint64_t height) const = 0;
 
     /// Get the header of the block at the given height.
-    virtual bool get_header(chain::header& out_header, uint64_t height) = 0;
+    virtual bool get_header(chain::header& out_header,
+        uint64_t height) const = 0;
 
     /// Get the height of the block with the given hash.
     virtual bool get_height(uint64_t& out_height,
-        const hash_digest& block_hash) = 0;
+        const hash_digest& block_hash) const = 0;
 
     /// Get height of latest block.
-    virtual bool get_last_height(size_t& out_height) = 0;
+    virtual bool get_last_height(uint64_t& out_height) const = 0;
 
     /// Get the hash digest of the transaction of the outpoint.
     virtual bool get_outpoint_transaction(hash_digest& out_transaction,
-        const chain::output_point& outpoint) = 0;
+        const chain::output_point& outpoint) const = 0;
 
     /// Get the transaction of the given hash and its block height.
     virtual bool get_transaction(chain::transaction& out_transaction,
-        uint64_t& out_block_height, const hash_digest& transaction_hash) = 0;
+        uint64_t& out_block_height,
+        const hash_digest& transaction_hash) const = 0;
 
     /// Import a block for the given height.
     virtual bool import(chain::block::ptr block, uint64_t height) = 0;
@@ -66,7 +72,8 @@ public:
     virtual bool push(block_detail::ptr block) = 0;
 
     /// Remove blocks at or above the given height, returning them in order.
-    virtual bool pop_from(block_detail::list& out_blocks, uint64_t height) = 0;
+    virtual bool pop_from(block_detail::list& out_blocks,
+        uint64_t height) = 0;
 };
 
 } // namespace blockchain

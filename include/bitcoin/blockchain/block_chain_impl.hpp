@@ -75,28 +75,31 @@ public:
     // simple_chain (no internal locks).
     // ------------------------------------------------------------------------
 
+    /// Return the first and last gaps in the blockchain, or false if none.
+    bool get_gap_range(uint64_t& out_first, uint64_t& out_last) const;
+
     /// Return the next chain gap at or after the specified start height.
-    bool get_next_gap(uint64_t& out_height, uint64_t start_height);
+    bool get_next_gap(uint64_t& out_height, uint64_t start_height) const;
 
     /// Get the dificulty of a block at the given height.
-    bool get_difficulty(hash_number& out_difficulty, uint64_t height);
+    bool get_difficulty(hash_number& out_difficulty, uint64_t height) const;
 
     /// Get the header of the block at the given height.
-    bool get_header(chain::header& out_header, uint64_t height);
+    bool get_header(chain::header& out_header, uint64_t height) const;
 
     /// Get the height of the block with the given hash.
-    bool get_height(uint64_t& out_height, const hash_digest& block_hash);
+    bool get_height(uint64_t& out_height, const hash_digest& block_hash) const;
 
     /// Get height of latest block.
-    bool get_last_height(size_t& out_height);
+    bool get_last_height(uint64_t& out_height) const;
 
     /// Get the hash digest of the transaction of the outpoint.
     bool get_outpoint_transaction(hash_digest& out_transaction,
-        const chain::output_point& outpoint);
+        const chain::output_point& outpoint) const;
 
     /// Get the transaction of the given hash and its block height.
     bool get_transaction(chain::transaction& out_transaction,
-        uint64_t& out_block_height, const hash_digest& transaction_hash);
+        uint64_t& out_block_height, const hash_digest& transaction_hash) const;
 
     /// Import a block to the blockchain.
     bool import(chain::block::ptr block, uint64_t height);
@@ -197,7 +200,7 @@ private:
     ////void fetch_ordered(perform_read_functor perform_read);
     ////void fetch_parallel(perform_read_functor perform_read);
     void fetch_serial(perform_read_functor perform_read);
-    bool stopped();
+    bool stopped() const;
 
     std::atomic<bool> stopped_;
     const settings& settings_;
