@@ -72,12 +72,12 @@ private:
 
     std::atomic<bool> stopped_;
     const bool use_testnet_rules_;
+    const config::checkpoint::list checkpoints_;
 
     // These are thread safe.
     simple_chain& chain_;
     orphan_pool orphan_pool_;
     block_detail::list process_queue_;
-    config::checkpoint::list checkpoints_;
     reorganize_subscriber::ptr subscriber_;
 };
 

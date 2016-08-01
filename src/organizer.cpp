@@ -34,7 +34,8 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace chain;
+using namespace bc::chain;
+using namespace bc::config;
 
 #define NAME "organizer"
 
@@ -42,14 +43,11 @@ organizer::organizer(threadpool& pool, simple_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_testnet_rules_(settings.use_testnet_rules),
+    checkpoints_(checkpoint::sort(settings.checkpoints)),
     chain_(chain),
     orphan_pool_(settings.block_pool_capacity),
-    checkpoints_(settings.checkpoints),
     subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME))
 {
-    // Sort checkpoints by height so that top is sure to be properly obtained.
-    config::checkpoint::sort(checkpoints_);
-
     // The organizer is not restartable.
     subscriber_->start();
 }
