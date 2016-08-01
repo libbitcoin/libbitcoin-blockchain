@@ -66,6 +66,7 @@ bool organizer::strict(uint64_t fork_point)
     return checkpoints_.empty() || fork_point >= checkpoints_.back().height();
 }
 
+// This verifies the block at orphan_chain[orphan_index]->actual()
 code organizer::verify(uint64_t fork_point,
     const block_detail::list& orphan_chain, uint64_t orphan_index)
 {
@@ -82,6 +83,7 @@ code organizer::verify(uint64_t fork_point,
         return stopped();
     };
 
+    // Validates current_block
     validate_block_impl validate(chain_, fork_point, orphan_chain,
         orphan_index, height, current_block, use_testnet_rules_, checkpoints_,
             callback);
@@ -132,7 +134,7 @@ code organizer::verify(uint64_t fork_point,
     return ec;
 }
 
-// This is called on *every* block_chain_impl::do_store() call.
+// This is called on every block_chain_impl::do_store() call.
 void organizer::organize()
 {
     // Load unprocessed blocks
@@ -192,11 +194,11 @@ void organizer::replace_chain(uint64_t fork_index,
     hash_number orphan_work = 0;
     for (uint64_t orphan = 0; orphan < orphan_chain.size(); ++orphan)
     {
+        // This verifies the block at orphan_chain[orphan]->actual()
         const auto ec = verify(fork_index, orphan_chain, orphan);
         if (ec)
         {
-            // If invalid for error::checkpoints_failed we should drop the
-            // connection, but there is no reference from here.
+            // If invalid block info is also set for the block.
             if (ec != error::service_stopped)
             {
                 const auto& header = orphan_chain[orphan]->actual().header;
