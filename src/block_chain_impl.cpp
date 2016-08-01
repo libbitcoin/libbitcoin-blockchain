@@ -37,13 +37,13 @@
 namespace libbitcoin {
 namespace blockchain {
 
-#define NAME "blockchain"
+////#define NAME "blockchain"
 
 using namespace bc::chain;
 using namespace bc::database;
 using namespace boost::interprocess;
+using namespace std::placeholders;
 using boost::filesystem::path;
-using std::placeholders::_1;
 
 block_chain_impl::block_chain_impl(threadpool& pool,
     const blockchain::settings& chain_settings,
@@ -51,8 +51,8 @@ block_chain_impl::block_chain_impl(threadpool& pool,
   : stopped_(true),
     settings_(chain_settings),
     organizer_(pool, *this, chain_settings),
-    read_dispatch_(pool, NAME),
-    write_dispatch_(pool, NAME),
+    ////read_dispatch_(pool, NAME),
+    ////write_dispatch_(pool, NAME),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -121,7 +121,7 @@ bool block_chain_impl::close()
 // private
 bool block_chain_impl::stopped() const
 {
-    // TODO: consider relying on a database stopped state.
+    // TODO: consider relying on the database stopped state.
     return stopped_;
 }
 
@@ -243,6 +243,7 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     return true;
 }
 
+// This is safe to call concurrently (but with no other methods).
 bool block_chain_impl::import(block::ptr block, uint64_t height)
 {
     if (stopped())
@@ -284,15 +285,27 @@ void block_chain_impl::start_write()
     BITCOIN_ASSERT(result);
 }
 
-// This maintains the order of block store via the strand.
+// This call is sequential, but we are preserving the callback model for now.
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
         return;
 
-    write_dispatch_.ordered(
-        std::bind(&block_chain_impl::do_store,
-            this, block, handler));
+    // We moved write to the network thread using a critical section here.
+    // We do not want to give the thread to any other activity at this point.
+    // A flood of valid orphans from multiple peers could tie up the CPU here,
+    // but resolving that cleanly requires removing the orphan pool.
+
+    ////write_dispatch_.ordered(
+    ////    std::bind(&block_chain_impl::do_store,
+    ////        this, block, handler));
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section.
+    unique_lock lock(mutex_);
+
+    do_store(block, handler);
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // This processes the block through the organizer.

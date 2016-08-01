@@ -113,7 +113,7 @@ public:
     // block_chain queries (internal locks).
     // ------------------------------------------------------------------------
 
-    /// Store a block to the blockchain, with indexing and FULL validation.
+    /// Store a block to the blockchain, with indexing and validation.
     void store(chain::block::ptr block, block_store_handler handler);
 
     /// fetch a block locator relative to the current top and threshold.
@@ -204,11 +204,11 @@ private:
 
     std::atomic<bool> stopped_;
     const settings& settings_;
-    ////mutable shared_mutex mutex_;
+    mutable shared_mutex mutex_;
 
     organizer organizer_;
-    dispatcher read_dispatch_;
-    dispatcher write_dispatch_;
+    ////dispatcher read_dispatch_;
+    ////dispatcher write_dispatch_;
     blockchain::transaction_pool transaction_pool_;
     database::data_base database_;
 };
