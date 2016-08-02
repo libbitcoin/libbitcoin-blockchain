@@ -30,6 +30,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/block.hpp>
+#include <bitcoin/blockchain/block_fetcher.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
@@ -289,7 +290,10 @@ void block_chain_impl::start_write()
 void block_chain_impl::store(block::ptr block, block_store_handler handler)
 {
     if (stopped())
+    {
+        handler(error::service_stopped, block_info{});
         return;
+    }
 
     // We moved write to the network thread using a critical section here.
     // We do not want to give the thread to any other activity at this point.
@@ -311,18 +315,13 @@ void block_chain_impl::store(block::ptr block, block_store_handler handler)
 // This processes the block through the organizer.
 void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 {
-    if (stopped())
-        return;
-
     start_write();
 
     // Disallow duplicate of on-chain block.
     auto result = database_.blocks.get(block->header.hash());
     if (result)
     {
-        const auto height = result.height();
-        const auto info = block_info{ block_status::confirmed, height };
-        stop_write(handler, error::duplicate, info);
+        stop_write(handler, error::duplicate, block_info{});
         return;
     }
 
@@ -330,8 +329,7 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
     const auto detail = std::make_shared<block_detail>(block);
     if (!organizer_.add(detail))
     {
-        const auto info = block_info{ block_status::orphan, 0 };
-        stop_write(handler, error::duplicate, info);
+        stop_write(handler, error::duplicate, block_info{});
         return;
     }
 
@@ -345,9 +343,6 @@ void block_chain_impl::do_store(block::ptr block, block_store_handler handler)
 // This change allows the caller to manage worker threads.
 void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 {
-    if (stopped())
-        return;
-
     // Post IBD writes are ordered on the strand, so never concurrent.
     // Reads are unordered and concurrent, but effectively blocked by writes.
     const auto try_read = [this, perform_read]()
@@ -360,7 +355,7 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
     {
         // Sleep while waiting for write to complete.
         while (!try_read())
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(asio::milliseconds(10));
     };
 
     // Initiate serial read operation.
@@ -369,9 +364,6 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 
 ////void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
 ////{
-////    if (stopped())
-////        return;
-////
 ////    // Post IBD writes are ordered on the strand, so never concurrent.
 ////    // Reads are unordered and concurrent, but effectively blocked by writes.
 ////    const auto try_read = [this, perform_read]()
@@ -394,9 +386,6 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 ////// TODO: This should be ordered on the channel's strand, not across channels.
 ////void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
 ////{
-////    if (stopped())
-////        return;
-////
 ////    // Writes are ordered on the strand, so never concurrent.
 ////    // Reads are unordered and concurrent, but effectively blocked by writes.
 ////    const auto try_read = [this, perform_read]() -> bool
@@ -420,32 +409,35 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 // ----------------------------------------------------------------------------
 
 // This may generally execute 29+ queries.
-// TODO: Collect asynchronous calls in a function invoked directly by caller.
+// TODO: collect asynchronous calls in a function invoked directly by caller.
 void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, handler](size_t slock)
     {
-        message::block_locator locator;
+        hash_list locator;
         size_t top_height;
         if (!database_.blocks.top(top_height))
-            return finish_fetch(slock, handler,
-                error::operation_failed, locator);
+            return finish_fetch(slock, handler, error::operation_failed,
+                locator);
 
         const auto indexes = block_locator_indexes(top_height);
-        for (auto index = indexes.begin(); index != indexes.end(); ++index)
+        for (const auto index: indexes)
         {
-            const auto result = database_.blocks.get(*index);
+            const auto result = database_.blocks.get(index);
             if (!result)
-                return finish_fetch(slock, handler,
-                    error::not_found, locator);
+                return finish_fetch(slock, handler, error::not_found, locator);
 
             locator.push_back(result.header().hash());
         }
 
-        return finish_fetch(slock, handler,
-            error::success, locator);
+        return finish_fetch(slock, handler, error::success, locator);
     };
-
     fetch_serial(do_fetch);
 }
 
@@ -455,6 +447,12 @@ void block_chain_impl::fetch_locator_block_hashes(
     const message::get_blocks& locator, const hash_digest& threshold,
     size_t limit, locator_block_hashes_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
     const auto do_fetch = [this, locator, threshold, limit, handler](
@@ -493,7 +491,7 @@ void block_chain_impl::fetch_locator_block_hashes(
                 start = std::max(start_result.height(), start);
         }
 
-        // This largest portion can be parallelized.
+        // TODO: This largest portion can be parallelized.
         // Build the hash list until we hit last or the blockchain top.
         hash_list hashes;
         for (size_t index = start + 1; index < stop; ++index)
@@ -506,16 +504,28 @@ void block_chain_impl::fetch_locator_block_hashes(
             }
         }
 
-        return finish_fetch(slock, handler,
-            error::success, hashes);
+        return finish_fetch(slock, handler, error::success, hashes);
     };
     fetch_serial(do_fetch);
+}
+
+void block_chain_impl::fetch_locator_block_headers(
+    const message::get_headers& locator, const hash_digest& threshold,
+    size_t limit, locator_block_headers_fetch_handler handler)
+{
+    // TODO:
 }
 
 // This may execute up to 500 queries.
 void block_chain_impl::fetch_missing_block_hashes(const hash_list& hashes,
     missing_block_hashes_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, hashes, handler](size_t slock)
     {
         hash_list missing;
@@ -531,9 +541,27 @@ void block_chain_impl::fetch_missing_block_hashes(const hash_list& hashes,
 // block_chain (formerly fetch_parallel)
 // ------------------------------------------------------------------------
 
+void block_chain_impl::fetch_block(uint64_t height,
+    block_fetch_handler handler)
+{
+    blockchain::fetch_block(*this, height, handler);
+}
+
+void block_chain_impl::fetch_block(const hash_digest& hash,
+    block_fetch_handler handler)
+{
+    blockchain::fetch_block(*this, hash, handler);
+}
+
 void block_chain_impl::fetch_block_header(uint64_t height,
     block_header_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, height, handler](size_t slock)
     {
         const auto result = database_.blocks.get(height);
@@ -547,6 +575,12 @@ void block_chain_impl::fetch_block_header(uint64_t height,
 void block_chain_impl::fetch_block_header(const hash_digest& hash,
     block_header_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
@@ -557,9 +591,29 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
     fetch_serial(do_fetch);
 }
 
+void block_chain_impl::fetch_merkle_block(uint64_t height,
+    merkle_block_fetch_handler handler)
+{
+    // TODO:
+    ////blockchain::fetch_merkle_block(*this, height, handler);
+}
+
+void block_chain_impl::fetch_merkle_block(const hash_digest& hash,
+    merkle_block_fetch_handler handler)
+{
+    // TODO:
+    ////blockchain::fetch_merkle_block(*this, hash, handler);
+}
+
 void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
     transaction_hashes_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, height, handler](size_t slock)
     {
         const auto result = database_.blocks.get(height);
@@ -573,6 +627,12 @@ void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
 void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
     transaction_hashes_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
@@ -586,6 +646,12 @@ void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
 void block_chain_impl::fetch_block_height(const hash_digest& hash,
     block_height_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
@@ -598,6 +664,12 @@ void block_chain_impl::fetch_block_height(const hash_digest& hash,
 
 void block_chain_impl::fetch_last_height(last_height_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, handler](size_t slock)
     {
         size_t last_height;
@@ -611,6 +683,12 @@ void block_chain_impl::fetch_last_height(last_height_fetch_handler handler)
 void block_chain_impl::fetch_transaction(const hash_digest& hash,
     transaction_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.transactions.get(hash);
@@ -625,6 +703,12 @@ void block_chain_impl::fetch_transaction(const hash_digest& hash,
 void block_chain_impl::fetch_transaction_index(const hash_digest& hash,
     transaction_index_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {}, {});
+        return;
+    }
+
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.transactions.get(hash);
@@ -639,6 +723,12 @@ void block_chain_impl::fetch_transaction_index(const hash_digest& hash,
 void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
     spend_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, outpoint, handler](size_t slock)
     {
         const auto spend = database_.spends.get(outpoint);
@@ -655,6 +745,12 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
 void block_chain_impl::fetch_history(const wallet::payment_address& address,
     uint64_t limit, uint64_t from_height, history_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, address, handler, limit, from_height](
         size_t slock)
     {
@@ -668,6 +764,12 @@ void block_chain_impl::fetch_history(const wallet::payment_address& address,
 void block_chain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
     stealth_fetch_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
     const auto do_fetch = [this, filter, handler, from_height](
         size_t slock)
     {

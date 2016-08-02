@@ -115,18 +115,12 @@ public:
 
     /// Store a block to the blockchain, with indexing and validation.
     void store(chain::block::ptr block, block_store_handler handler);
+    
+    /// fetch a block by height.
+    void fetch_block(uint64_t height, block_fetch_handler handler);
 
-    /// fetch a block locator relative to the current top and threshold.
-    void fetch_block_locator(block_locator_fetch_handler handler);
-
-    /// fetch the set of block hashes indicated by the block locator.
-    void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler);
-
-    /// fetch subset of specified block hashes that are not stored.
-    void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler);
+    /// fetch a block by height.
+    void fetch_block(const hash_digest& hash, block_fetch_handler handler);
 
     /// fetch block header by height.
     void fetch_block_header(uint64_t height,
@@ -136,6 +130,14 @@ public:
     void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler);
 
+    /// fetch a merkle block by height.
+    void fetch_merkle_block(uint64_t height,
+        merkle_block_fetch_handler handler);
+
+    /// fetch a merkle block by height.
+    void fetch_merkle_block(const hash_digest& hash,
+        merkle_block_fetch_handler handler);
+
     /// fetch hashes of transactions for a block, by block height.
     void fetch_block_transaction_hashes(uint64_t height,
         transaction_hashes_fetch_handler handler);
@@ -143,6 +145,23 @@ public:
     /// fetch hashes of transactions for a block, by block hash.
     void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler);
+
+    /// fetch a block locator relative to the current top and threshold.
+    void fetch_block_locator(block_locator_fetch_handler handler);
+
+    /// fetch the set of block hashes indicated by the block locator.
+    void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_hashes_fetch_handler handler);
+
+    /// fetch the set of block headers indicated by the block locator.
+    void fetch_locator_block_headers(const message::get_headers& locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler);
+
+    /// fetch subset of specified block hashes that are not stored.
+    void fetch_missing_block_hashes(const hash_list& hashes,
+        missing_block_hashes_fetch_handler handler);
 
     /// fetch height of block by hash.
     void fetch_block_height(const hash_digest& hash,
