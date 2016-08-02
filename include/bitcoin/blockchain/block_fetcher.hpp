@@ -30,9 +30,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-typedef std::function<void(const code&, chain::block::ptr)>
-    block_fetch_handler;
-
 /**
  * Fetch a block by height.
  *
@@ -43,7 +40,7 @@ typedef std::function<void(const code&, chain::block::ptr)>
  * @param[in]   handle_fetch    Completion handler for fetch operation.
  */
 BCB_API void fetch_block(block_chain& chain, uint64_t height,
-    block_fetch_handler handle_fetch);
+    block_chain::block_fetch_handler handle_fetch);
 
 /**
  * Fetch a block by hash.
@@ -55,7 +52,7 @@ BCB_API void fetch_block(block_chain& chain, uint64_t height,
  * @param[in]   handle_fetch    Completion handler for fetch operation.
  */
 BCB_API void fetch_block(block_chain& chain, const hash_digest& hash,
-    block_fetch_handler handle_fetch);
+    block_chain::block_fetch_handler handle_fetch);
 
 } // namespace blockchain
 } // namespace libbitcoin

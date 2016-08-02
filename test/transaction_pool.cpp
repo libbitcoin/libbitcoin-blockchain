@@ -51,12 +51,17 @@ public:
         return false;
     }
 
-    virtual bool import(chain::block::ptr block, uint64_t height)
+    virtual void store(block::ptr block, block_store_handler handler)
     {
-        return false;
     }
 
-    virtual void store(block::ptr block, block_store_handler handler)
+    virtual void fetch_block(uint64_t height,
+        block_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_block(const hash_digest& hash,
+        block_fetch_handler handler)
     {
     }
 
@@ -70,18 +75,14 @@ public:
     {
     }
 
-    virtual void fetch_block_locator(block_locator_fetch_handler handle_fetch)
+
+    virtual void fetch_merkle_block(uint64_t height,
+        merkle_block_fetch_handler handler)
     {
     }
 
-    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler)
-    {
-    }
-
-    virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler)
+    virtual void fetch_merkle_block(const hash_digest& hash,
+        merkle_block_fetch_handler handler)
     {
     }
 
@@ -92,6 +93,27 @@ public:
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_block_locator(block_locator_fetch_handler handle_fetch)
+    {
+    }
+
+    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_hashes_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_locator_block_headers(
+        const message::get_headers& locator, const hash_digest& threshold,
+        size_t limit, locator_block_headers_fetch_handler handler)
+    {
+    }
+
+    virtual void fetch_missing_block_hashes(const hash_list& hashes,
+        missing_block_hashes_fetch_handler handler)
     {
     }
 

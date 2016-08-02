@@ -29,8 +29,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace chain;
-using std::placeholders::_1;
-using std::placeholders::_2;
+using namespace std::placeholders;
 
 // TODO: split into header.
 // This class is used only locally.
@@ -44,7 +43,8 @@ public:
     }
 
     template <typename BlockIndex>
-    void start(const BlockIndex& index, block_fetch_handler handler)
+    void start(const BlockIndex& index,
+        block_chain::block_fetch_handler handler)
     {
         // Create the block.
         const auto block = std::make_shared<chain::block>();
@@ -56,7 +56,7 @@ public:
 
 private:
     void handle_fetch_header(const code& ec, const header& header,
-        block::ptr block, block_fetch_handler handler)
+        block::ptr block, block_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -74,7 +74,7 @@ private:
     }
 
     void fetch_transactions(const code& ec, const hash_list& hashes,
-        block::ptr block, block_fetch_handler handler)
+        block::ptr block, block_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -105,7 +105,7 @@ private:
 
     void handle_fetch_transaction(const code& ec,
         const transaction& transaction, size_t index, block::ptr block,
-        block_fetch_handler handler)
+        block_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -115,14 +115,12 @@ private:
 
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
-        // A vector write cannot be executed concurrently with read|write.
-        if (true)
-        {
-            unique_lock lock(mutex_);
+        mutex_.lock();
 
-            // Set a transaction into the block.
-            block->transactions[index] = transaction;
-        }
+        // Set a transaction into the block.
+        block->transactions[index] = transaction;
+
+        mutex_.unlock();
         ///////////////////////////////////////////////////////////////////////
 
         handler(error::success, block);
@@ -130,7 +128,7 @@ private:
 
     // If ec success then there is no possibility that block is being written.
     void handle_complete(const code& ec, block::ptr block,
-        block_fetch_handler handler)
+        block_chain::block_fetch_handler handler)
     {
         if (ec)
             handler(ec, nullptr);
@@ -143,14 +141,14 @@ private:
 };
 
 void fetch_block(block_chain& chain, size_t height,
-    block_fetch_handler handle_fetch)
+    block_chain::block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(height, handle_fetch);
 }
 
 void fetch_block(block_chain& chain, const hash_digest& hash,
-    block_fetch_handler handle_fetch)
+    block_chain::block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(hash, handle_fetch);

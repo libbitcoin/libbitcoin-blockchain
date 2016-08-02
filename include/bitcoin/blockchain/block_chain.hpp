@@ -39,8 +39,11 @@ public:
     typedef handle0 block_import_handler;
     typedef handle1<block_info> block_store_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
-    typedef handle1<message::block_locator> block_locator_fetch_handler;
+    typedef handle1<chain::block::ptr> block_fetch_handler;
+    typedef handle1<message::merkle_block::ptr> merkle_block_fetch_handler;
+    typedef handle1<hash_list> block_locator_fetch_handler;
     typedef handle1<hash_list> locator_block_hashes_fetch_handler;
+    typedef handle1<chain::header::list> locator_block_headers_fetch_handler;
     typedef handle1<hash_list> missing_block_hashes_fetch_handler;
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
     typedef handle1<uint64_t> block_height_fetch_handler;
@@ -59,7 +62,27 @@ public:
     virtual bool close() = 0;
 
     virtual void store(chain::block::ptr block,
-        block_store_handler handle_store) = 0;
+        block_store_handler handler) = 0;
+
+    virtual void fetch_block(uint64_t height,
+        block_fetch_handler handler) = 0;
+    virtual void fetch_block(const hash_digest& hash,
+        block_fetch_handler handler) = 0;
+
+    virtual void fetch_block_header(uint64_t height,
+        block_header_fetch_handler handler) = 0;
+    virtual void fetch_block_header(const hash_digest& hash,
+        block_header_fetch_handler handler) = 0;
+
+    virtual void fetch_merkle_block(uint64_t height,
+        merkle_block_fetch_handler handler) = 0;
+    virtual void fetch_merkle_block(const hash_digest& hash,
+        merkle_block_fetch_handler handler) = 0;
+
+    virtual void fetch_block_transaction_hashes(uint64_t height,
+        transaction_hashes_fetch_handler handler) = 0;
+    virtual void fetch_block_transaction_hashes(const hash_digest& hash,
+        transaction_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_locator(block_locator_fetch_handler handler) = 0;
 
@@ -67,20 +90,12 @@ public:
         const hash_digest& threshold, size_t limit,
         locator_block_hashes_fetch_handler handler) = 0;
 
+    virtual void fetch_locator_block_headers(
+        const message::get_headers& locator, const hash_digest& threshold,
+        size_t limit, locator_block_headers_fetch_handler handler) = 0;
+
     virtual void fetch_missing_block_hashes(const hash_list& hashes,
         missing_block_hashes_fetch_handler handler) = 0;
-
-    virtual void fetch_block_header(uint64_t height,
-        block_header_fetch_handler handler) = 0;
-
-    virtual void fetch_block_header(const hash_digest& hash,
-        block_header_fetch_handler handler) = 0;
-
-    virtual void fetch_block_transaction_hashes(uint64_t height,
-        transaction_hashes_fetch_handler handler) = 0;
-
-    virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handler) = 0;
 
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) = 0;
