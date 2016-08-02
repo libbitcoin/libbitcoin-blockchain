@@ -514,6 +514,7 @@ void block_chain_impl::fetch_locator_block_headers(
     size_t limit, locator_block_headers_fetch_handler handler)
 {
     // TODO:
+    handler(error::operation_failed, {});
 }
 
 // This may execute up to 500 queries.
@@ -596,6 +597,7 @@ void block_chain_impl::fetch_merkle_block(uint64_t height,
 {
     // TODO:
     ////blockchain::fetch_merkle_block(*this, height, handler);
+    handler(error::operation_failed, {});
 }
 
 void block_chain_impl::fetch_merkle_block(const hash_digest& hash,
@@ -603,6 +605,7 @@ void block_chain_impl::fetch_merkle_block(const hash_digest& hash,
 {
     // TODO:
     ////blockchain::fetch_merkle_block(*this, hash, handler);
+    handler(error::operation_failed, {});
 }
 
 void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
