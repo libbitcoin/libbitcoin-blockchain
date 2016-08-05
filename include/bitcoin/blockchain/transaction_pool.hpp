@@ -110,13 +110,14 @@ protected:
     typedef boost::circular_buffer<entry> buffer;
     typedef buffer::const_iterator iterator;
     typedef std::function<bool(const chain::input&)> input_compare;
+    typedef message::block_message::ptr_list block_ptr_list;
 
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
-        const chain::block::ptr_list& new_blocks,
-        const chain::block::ptr_list& replaced_blocks);
+        const message::block_message::ptr_list& new_blocks,
+        const message::block_message::ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
         const hash_digest& hash, const chain::point::indexes& unconfirmed,
         validate_handler handler);
@@ -130,12 +131,12 @@ protected:
         const chain::transaction& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
-    void remove(const chain::block::ptr_list& blocks);
+    void remove(const block_ptr_list& blocks);
     void clear(const code& ec);
 
     // testable private
-    void delete_spent_in_blocks(const chain::block::ptr_list& blocks);
-    void delete_confirmed_in_blocks(const chain::block::ptr_list& blocks);
+    void delete_spent_in_blocks(const block_ptr_list& blocks);
+    void delete_confirmed_in_blocks(const block_ptr_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);

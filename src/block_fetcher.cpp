@@ -117,7 +117,7 @@ private:
         ///////////////////////////////////////////////////////////////////////
         mutex_.lock();
 
-        // Set a transaction into the block.
+        // TRANSACTION COPY
         block->transactions[index] = transaction;
 
         mutex_.unlock();

@@ -54,14 +54,14 @@ public:
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
     typedef std::function<bool(const code&, uint64_t,
-        const chain::block::ptr_list&, const chain::block::ptr_list&)>
-        reorganize_handler;
+        const message::block_message::ptr_list&,
+        const message::block_message::ptr_list&)> reorganize_handler;
 
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    virtual void store(chain::block::ptr block,
+    virtual void store(message::block_message::ptr block,
         block_store_handler handler) = 0;
 
     virtual void fetch_block(uint64_t height,

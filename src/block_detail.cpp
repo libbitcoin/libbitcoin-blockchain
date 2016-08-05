@@ -20,14 +20,15 @@
 #include <bitcoin/blockchain/block_detail.hpp>
 
 #include <memory>
+#include <utility>
 #include <bitcoin/bitcoin.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace chain;
+using namespace message;
 
-block_detail::block_detail(block::ptr actual_block)
+block_detail::block_detail(block_message::ptr actual_block)
   : processed_(false),
     info_({ block_status::orphan, 0 }),
     block_hash_(actual_block->header.hash()),
@@ -35,27 +36,22 @@ block_detail::block_detail(block::ptr actual_block)
 {
 }
 
-block_detail::block_detail(const block& actual_block)
-  : block_detail(std::make_shared<block>(actual_block))
+block_detail::block_detail(chain::block&& actual_block)
+  : block_detail(std::make_shared<message::block_message>(actual_block))
 {
 }
 
-block_detail::block_detail(const header& actual_block_header)
-  : block_detail(chain::block{ actual_block_header, {} })
-{
-}
-
-chain::block& block_detail::actual()
+block_message& block_detail::actual()
 {
     return *actual_block_;
 }
 
-const chain::block& block_detail::actual() const
+const block_message& block_detail::actual() const
 {
     return *actual_block_;
 }
 
-block::ptr block_detail::actual_ptr() const
+block_message::ptr block_detail::actual_ptr() const
 {
     return actual_block_;
 }

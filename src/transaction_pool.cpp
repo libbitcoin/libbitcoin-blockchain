@@ -264,7 +264,8 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
 bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
-    const block::ptr_list& new_blocks, const block::ptr_list& replaced_blocks)
+    const message::block_message::ptr_list& new_blocks,
+    const message::block_message::ptr_list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -342,7 +343,7 @@ void transaction_pool::clear(const code& ec)
 }
 
 // Delete memory pool txs that are obsoleted by a new block acceptance.
-void transaction_pool::remove(const block::ptr_list& blocks)
+void transaction_pool::remove(const block_ptr_list& blocks)
 {
     // Delete by hash sets a success code.
     delete_confirmed_in_blocks(blocks);
@@ -356,8 +357,7 @@ void transaction_pool::remove(const block::ptr_list& blocks)
 // ----------------------------------------------------------------------------
 
 // Delete mempool txs that are duplicated in the new blocks.
-void transaction_pool::delete_confirmed_in_blocks(
-    const block::ptr_list& blocks)
+void transaction_pool::delete_confirmed_in_blocks(const block_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -368,7 +368,7 @@ void transaction_pool::delete_confirmed_in_blocks(
 }
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
-void transaction_pool::delete_spent_in_blocks(const block::ptr_list& blocks)
+void transaction_pool::delete_spent_in_blocks(const block_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -475,8 +475,12 @@ bool transaction_pool::find(transaction& out_tx,
 {
     const auto it = find(tx_hash);
     const auto found = it != buffer_.end();
+
     if (found)
+    {
+        // TRANSACTION COPY
         out_tx = it->tx;
+    }
 
     return found;
 }
