@@ -149,7 +149,7 @@ void validate_transaction::set_last_height(const code& ec,
 
 void validate_transaction::next_previous_transaction()
 {
-    BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
+    BITCOIN_ASSERT(current_input_ < tx_->inputs.size());
 
     // First we fetch the parent block height for a transaction.
     // Needed for checking the coinbase maturity.
@@ -169,7 +169,7 @@ void validate_transaction::previous_tx_index(const code& ec,
         return;
     }
 
-    BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
+    BITCOIN_ASSERT(current_input_ < tx_->inputs.size());
     const auto& prev_tx_hash = tx_->inputs[current_input_].previous_output.hash;
     
     // Now fetch actual transaction body
