@@ -137,7 +137,7 @@ void transaction_pool::handle_validated(const code& ec,
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(const transaction& tx,
+void transaction_pool::store(const message::transaction_message& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
@@ -152,9 +152,10 @@ void transaction_pool::store(const transaction& tx,
 }
 
 // TODO: this is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec, const transaction& tx,
-    const hash_digest& hash, const point::indexes& unconfirmed,
-    confirm_handler handle_confirm, validate_handler handle_validate)
+void transaction_pool::do_store(const code& ec,
+    const message::transaction_message& tx, const hash_digest& hash,
+    const point::indexes& unconfirmed, confirm_handler handle_confirm,
+    validate_handler handle_validate)
 {
     if (ec)
     {
@@ -314,7 +315,7 @@ void transaction_pool::subscribe_transaction(
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
-    const transaction& tx)
+    const message::transaction_message& tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);
 }

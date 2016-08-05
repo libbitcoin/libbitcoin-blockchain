@@ -55,9 +55,9 @@ public:
     typedef handle3<chain::transaction, hash_digest, chain::point::indexes>
         validate_handler;
     typedef std::function<bool(const code&, const chain::point::indexes&,
-        const chain::transaction&)> transaction_handler;
+        const message::transaction_message&)> transaction_handler;
     typedef resubscriber<const code&, const chain::point::indexes&,
-        const chain::transaction&> transaction_subscriber;
+        const message::transaction_message&> transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
@@ -86,8 +86,8 @@ public:
         missing_hashes_fetch_handler handler);
     void exists(const hash_digest& tx_hash, exists_handler handler);
     void validate(const chain::transaction& tx, validate_handler handler);
-    void store(const chain::transaction& tx, confirm_handler confirm_handler,
-        validate_handler validate_handler);
+    void store(const message::transaction_message& tx,
+        confirm_handler confirm_handler, validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler handler);
@@ -123,12 +123,12 @@ protected:
         validate_handler handler);
 
     void do_validate(const chain::transaction& tx, validate_handler handler);
-    void do_store(const code& ec, const chain::transaction& tx,
+    void do_store(const code& ec, const message::transaction_message& tx,
         const hash_digest& hash, const chain::point::indexes& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
     void notify_transaction(const chain::point::indexes& unconfirmed,
-        const chain::transaction& tx);
+        const message::transaction_message& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
     void remove(const block_ptr_list& blocks);
