@@ -35,10 +35,7 @@ namespace blockchain {
 
 using namespace chain;
 using namespace wallet;
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
-using std::placeholders::_4;
+using namespace std::placeholders;
 
 transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
     const settings& settings)
@@ -81,105 +78,102 @@ bool transaction_pool::stopped()
     return stopped_;
 }
 
-void transaction_pool::validate(const transaction& tx,
-    validate_handler handler)
+void transaction_pool::validate(transaction_ptr tx, validate_handler handler)
 {
     dispatch_.ordered(&transaction_pool::do_validate,
         this, tx, handler);
 }
 
-void transaction_pool::do_validate(const transaction& tx,
+void transaction_pool::do_validate(transaction_ptr tx,
     validate_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, {}, {});
+        handler(error::service_stopped, tx, {});
         return;
     }
 
     const auto validate = std::make_shared<validate_transaction>(
-        blockchain_, tx, *this, dispatch_);
+        blockchain_, *tx, *this, dispatch_);
 
     validate->start(
         dispatch_.ordered_delegate(&transaction_pool::handle_validated,
-            this, _1, _2, _3, _4, handler));
+            this, _1, _2, _3, handler));
 }
 
-void transaction_pool::handle_validated(const code& ec,
-    const transaction& tx, const hash_digest& hash,
-    const point::indexes& unconfirmed, validate_handler handler)
+void transaction_pool::handle_validated(const code& ec, transaction_ptr tx,
+    const indexes& unconfirmed, validate_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, hash, {});
+        handler(error::service_stopped, tx, {});
         return;
     }
 
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
-        handler(ec, tx, hash, unconfirmed);
+        handler(ec, tx, unconfirmed);
         return;
     }
 
     if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handler(ec, tx, hash, {});
+        handler(ec, tx, {});
         return;
     }
 
     // Recheck the memory pool, as a duplicate may have been added.
-    if (is_in_pool(hash))
-        handler(error::duplicate, tx, hash, {});
+    if (is_in_pool(tx->hash()))
+        handler(error::duplicate, tx, {});
     else
-        handler(error::success, tx, hash, unconfirmed);
+        handler(error::success, tx, unconfirmed);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(const message::transaction_message& tx,
+void transaction_pool::store(transaction_ptr tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, tx, {}, {});
+        handle_validate(error::service_stopped, tx, {});
         return;
     }
 
-    validate(tx, 
+    validate(tx,
         std::bind(&transaction_pool::do_store,
-            this, _1, _2, _3, _4, handle_confirm, handle_validate));
+            this, _1, _2, _3, handle_confirm, handle_validate));
 }
 
 // TODO: this is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec,
-    const message::transaction_message& tx, const hash_digest& hash,
-    const point::indexes& unconfirmed, confirm_handler handle_confirm,
+void transaction_pool::do_store(const code& ec, transaction_ptr tx,
+    const indexes& unconfirmed, confirm_handler handle_confirm,
     validate_handler handle_validate)
 {
     if (ec)
     {
-        handle_validate(ec, tx, hash, {});
+        handle_validate(ec, tx, {});
         return;
     }
 
     // Set up deindexing to run after transaction pool removal.
     const auto do_deindex = [this, handle_confirm](const code ec,
-        const chain::transaction tx, const hash_digest hash)
+        transaction_ptr tx)
     {
-        const auto do_confirm = [handle_confirm, tx, hash](const code ec)
+        const auto do_confirm = [handle_confirm, tx](const code ec)
         {
-            handle_confirm(ec, tx, hash);
+            handle_confirm(ec, tx);
         };
 
-        index_.remove(tx, do_confirm);
+        index_.remove(*tx, do_confirm);
     };
 
     // Add to pool.
     add(tx, do_deindex);
 
     // Notify after indexing.
-    const auto handle_indexed = [this, handle_validate, tx, hash, unconfirmed](
+    const auto handle_indexed = [this, handle_validate, tx, unconfirmed](
         const code ec)
     {
         notify_transaction(unconfirmed, tx);
@@ -187,11 +181,11 @@ void transaction_pool::do_store(const code& ec,
         log::debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
-        handle_validate(ec, tx, hash, unconfirmed);
+        handle_validate(ec, tx, unconfirmed);
     };
 
     // Add to index.
-    index_.add(tx, handle_indexed);
+    index_.add(*tx, handle_indexed);
 }
 
 void transaction_pool::fetch(const hash_digest& transaction_hash,
@@ -265,8 +259,7 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
 bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
-    const message::block_message::ptr_list& new_blocks,
-    const message::block_message::ptr_list& replaced_blocks)
+    const block_list& new_blocks, const block_list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -315,7 +308,7 @@ void transaction_pool::subscribe_transaction(
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
-    const message::transaction_message& tx)
+    transaction_ptr tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);
 }
@@ -324,27 +317,26 @@ void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
 // ----------------------------------------------------------------------------
 
 // A new transaction has been received, add it to the memory pool.
-void transaction_pool::add(const transaction& tx, confirm_handler handler)
+void transaction_pool::add(transaction_ptr tx, confirm_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
     if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
         delete_package(error::pool_filled);
 
-    // Store a precomputed tx hash to make lookups faster.
-    buffer_.push_back({ tx.hash(), tx, handler });
+    buffer_.push_back({ tx, handler });
 }
 
 // There has been a reorg, clear the memory pool.
 void transaction_pool::clear(const code& ec)
 {
     for (const auto& entry: buffer_)
-        entry.handle_confirm(ec, entry.tx, entry.hash);
+        entry.handle_confirm(ec, entry.tx);
 
     buffer_.clear();
 }
 
 // Delete memory pool txs that are obsoleted by a new block acceptance.
-void transaction_pool::remove(const block_ptr_list& blocks)
+void transaction_pool::remove(const block_list& blocks)
 {
     // Delete by hash sets a success code.
     delete_confirmed_in_blocks(blocks);
@@ -358,18 +350,18 @@ void transaction_pool::remove(const block_ptr_list& blocks)
 // ----------------------------------------------------------------------------
 
 // Delete mempool txs that are duplicated in the new blocks.
-void transaction_pool::delete_confirmed_in_blocks(const block_ptr_list& blocks)
+void transaction_pool::delete_confirmed_in_blocks(const block_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
 
     for (const auto block: blocks)
         for (const auto& tx: block->transactions)
-            delete_single(tx, error::success);
+            delete_single(tx.hash(), error::success);
 }
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
-void transaction_pool::delete_spent_in_blocks(const block_ptr_list& blocks)
+void transaction_pool::delete_spent_in_blocks(const block_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -385,11 +377,9 @@ void transaction_pool::delete_spent_in_blocks(const block_ptr_list& blocks)
 void transaction_pool::delete_dependencies(const output_point& point,
     const code& ec)
 {
-    // TODO: implement output_point comparison operator.
     const auto comparitor = [&point](const input& input)
     {
-        return input.previous_output.index == point.index &&
-            input.previous_output.hash == point.hash;
+        return input.previous_output == point;
     };
 
     delete_dependencies(comparitor, ec);
@@ -415,7 +405,7 @@ void transaction_pool::delete_dependencies(input_compare is_dependency,
 {
     std::vector<entry> dependencies;
     for (const auto& entry: buffer_)
-        for (const auto& input: entry.tx.inputs)
+        for (const auto& input: entry.tx->inputs)
             if (is_dependency(input))
             {
                 dependencies.push_back(entry);
@@ -424,7 +414,7 @@ void transaction_pool::delete_dependencies(input_compare is_dependency,
 
     // We queue deletion to protect the iterator.
     for (const auto& dependency: dependencies)
-        delete_package(dependency.tx, dependency.hash, ec);
+        delete_package(dependency.tx, ec);
 }
 
 void transaction_pool::delete_package(const code& ec)
@@ -435,43 +425,48 @@ void transaction_pool::delete_package(const code& ec)
     // Must copy the entry because it is going to be deleted from the list.
     const auto oldest = buffer_.front();
 
-    oldest.handle_confirm(ec, oldest.tx, oldest.hash);
-    delete_package(oldest.tx, oldest.hash, ec);
+    oldest.handle_confirm(ec, oldest.tx);
+    delete_package(oldest.tx, ec);
 }
 
-void transaction_pool::delete_package(const transaction& tx,
-    const hash_digest& tx_hash, const code& ec)
+void transaction_pool::delete_package(transaction_ptr tx, const code& ec)
 {
-    if (delete_single(tx, tx_hash, ec))
-        delete_dependencies(tx_hash, ec);
+    if (delete_single(tx->hash(), ec))
+        delete_dependencies(tx->hash(), ec);
 }
 
-bool transaction_pool::delete_single(const transaction& tx, 
-    const hash_digest& tx_hash, const code& ec)
+bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
 {
     if (stopped())
         return false;
 
     const auto matched = [&tx_hash](const entry& entry)
     {
-        return entry.hash == tx_hash;
+        return entry.tx->hash() == tx_hash;
     };
 
     const auto it = std::find_if(buffer_.begin(), buffer_.end(), matched);
     if (it == buffer_.end())
         return false;
 
-    it->handle_confirm(ec, tx, tx_hash);
+    it->handle_confirm(ec, it->tx);
     buffer_.erase(it);
     return true;
 }
 
-bool transaction_pool::delete_single(const transaction& tx, const code& ec)
+bool transaction_pool::find(transaction_ptr& out_tx,
+    const hash_digest& tx_hash) const
 {
-    return delete_single(tx, tx.hash(), ec);
+    const auto it = find(tx_hash);
+    const auto found = it != buffer_.end();
+
+    if (found)
+        out_tx = it->tx;
+
+    return found;
 }
 
-bool transaction_pool::find(transaction& out_tx,
+bool transaction_pool::find(chain::transaction& out_tx,
     const hash_digest& tx_hash) const
 {
     const auto it = find(tx_hash);
@@ -480,7 +475,7 @@ bool transaction_pool::find(transaction& out_tx,
     if (found)
     {
         // TRANSACTION COPY
-        out_tx = it->tx;
+        out_tx = *(it->tx);
     }
 
     return found;
@@ -491,7 +486,7 @@ transaction_pool::iterator transaction_pool::find(
 {
     const auto found = [&tx_hash](const entry& entry)
     {
-        return entry.hash == tx_hash;
+        return entry.tx->hash() == tx_hash;
     };
 
     return std::find_if(buffer_.begin(), buffer_.end(), found);
@@ -502,9 +497,14 @@ bool transaction_pool::is_in_pool(const hash_digest& tx_hash) const
     return find(tx_hash) != buffer_.end();
 }
 
+bool transaction_pool::is_spent_in_pool(transaction_ptr tx) const
+{
+    return is_spent_in_pool(*tx);
+}
+
 bool transaction_pool::is_spent_in_pool(const transaction& tx) const
 {
-    const auto found = [this, &tx](const input& input)
+    const auto found = [this](const input& input)
     {
         return is_spent_in_pool(input.previous_output);
     };
@@ -526,14 +526,14 @@ bool transaction_pool::is_spent_in_pool(const output_point& outpoint) const
 }
 
 bool transaction_pool::is_spent_by_tx(const output_point& outpoint,
-    const transaction& tx)
+    transaction_ptr tx)
 {
     const auto found = [&outpoint](const input& input)
     {
         return input.previous_output == outpoint;
     };
 
-    const auto& inputs = tx.inputs;
+    const auto& inputs = tx->inputs;
     const auto spend = std::find_if(inputs.begin(), inputs.end(), found);
     return spend != inputs.end();
 }

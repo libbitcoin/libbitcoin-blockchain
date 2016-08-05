@@ -37,21 +37,29 @@ class BCB_API validate_transaction
 {
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
-    typedef handle3<chain::transaction, hash_digest, chain::point::indexes>
-        validate_handler;
+    typedef message::transaction_message::ptr transaction_ptr;
+    typedef std::function<void(const code&, transaction_ptr,
+        chain::point::indexes)> validate_handler;
+
+    validate_transaction(block_chain& chain, transaction_ptr tx,
+        const transaction_pool& pool, dispatcher& dispatch);
 
     validate_transaction(block_chain& chain, const chain::transaction& tx,
         const transaction_pool& pool, dispatcher& dispatch);
+
     void start(validate_handler handler);
 
     static bool check_consensus(const chain::script& prevout_script,
         const chain::transaction& current_tx, size_t input_index,
         uint32_t flags);
+
     static code check_transaction(const chain::transaction& tx);
+
     static bool connect_input(const chain::transaction& tx,
         size_t current_input, const chain::transaction& previous_tx,
         size_t parent_height, size_t last_block_height, uint64_t& value_in,
         uint32_t flags);
+
     static bool tally_fees(const chain::transaction& tx, uint64_t value_in,
         uint64_t& fees);
 
@@ -79,7 +87,7 @@ private:
     void check_fees();
 
     block_chain& blockchain_;
-    const chain::transaction tx_;
+    const transaction_ptr tx_;
     const transaction_pool& pool_;
     dispatcher& dispatch_;
 
