@@ -118,30 +118,30 @@ BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__empty__true)
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__single__true)
 {
-    const chain::transaction tx1{ 1, 0 };
+    const chain::transaction tx1{ 1, 0, {}, {} };
     BOOST_REQUIRE(validate_block_fixture::is_distinct_tx_set({ tx1 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__duplicate__false)
 {
-    const chain::transaction tx1{ 1, 0 };
-    const chain::transaction tx2{ 1, 0 };
+    const chain::transaction tx1{ 1, 0, {}, {} };
+    const chain::transaction tx2{ 1, 0, {}, {} };
     BOOST_REQUIRE(!validate_block_fixture::is_distinct_tx_set({ tx1, tx2 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__distinct_by_version__true)
 {
-    const chain::transaction tx1{ 1, 0 };
-    const chain::transaction tx2{ 2, 0 };
-    const chain::transaction tx3{ 3, 0 };
+    const chain::transaction tx1{ 1, 0, {}, {} };
+    const chain::transaction tx2{ 2, 0, {}, {} };
+    const chain::transaction tx3{ 3, 0, {}, {} };
     BOOST_REQUIRE(validate_block_fixture::is_distinct_tx_set({ tx1, tx2, tx3 }));
 }
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__partialy_distinct_by_version__false)
 {
-    const chain::transaction tx1{ 1, 0 };
-    const chain::transaction tx2{ 2, 0 };
-    const chain::transaction tx3{ 2, 0 };
+    const chain::transaction tx1{ 1, 0, {}, {} };
+    const chain::transaction tx2{ 2, 0, {}, {} };
+    const chain::transaction tx3{ 2, 0, {}, {} };
     BOOST_REQUIRE(!validate_block_fixture::is_distinct_tx_set({ tx1, tx2, tx3 }));
 }
 

@@ -40,7 +40,7 @@ class BCB_API organizer
 {
 public:
     typedef std::shared_ptr<organizer> ptr;
-    typedef chain::block::ptr_list list;
+    typedef message::block_message::ptr_list list;
     typedef resubscriber<const code&, uint64_t, const list&, const list&>
         reorganize_subscriber;
     typedef std::function<bool(const code&, uint64_t, const list&, const list&)>

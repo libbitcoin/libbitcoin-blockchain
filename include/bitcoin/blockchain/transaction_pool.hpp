@@ -55,9 +55,9 @@ public:
     typedef handle3<chain::transaction, hash_digest, chain::point::indexes>
         validate_handler;
     typedef std::function<bool(const code&, const chain::point::indexes&,
-        const chain::transaction&)> transaction_handler;
+        const message::transaction_message&)> transaction_handler;
     typedef resubscriber<const code&, const chain::point::indexes&,
-        const chain::transaction&> transaction_subscriber;
+        const message::transaction_message&> transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
         const chain::transaction& tx);
@@ -86,8 +86,8 @@ public:
         missing_hashes_fetch_handler handler);
     void exists(const hash_digest& tx_hash, exists_handler handler);
     void validate(const chain::transaction& tx, validate_handler handler);
-    void store(const chain::transaction& tx, confirm_handler confirm_handler,
-        validate_handler validate_handler);
+    void store(const message::transaction_message& tx,
+        confirm_handler confirm_handler, validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler handler);
@@ -110,32 +110,33 @@ protected:
     typedef boost::circular_buffer<entry> buffer;
     typedef buffer::const_iterator iterator;
     typedef std::function<bool(const chain::input&)> input_compare;
+    typedef message::block_message::ptr_list block_ptr_list;
 
     bool stopped();
     iterator find(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
-        const chain::block::ptr_list& new_blocks,
-        const chain::block::ptr_list& replaced_blocks);
+        const message::block_message::ptr_list& new_blocks,
+        const message::block_message::ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const chain::transaction& tx,
         const hash_digest& hash, const chain::point::indexes& unconfirmed,
         validate_handler handler);
 
     void do_validate(const chain::transaction& tx, validate_handler handler);
-    void do_store(const code& ec, const chain::transaction& tx,
+    void do_store(const code& ec, const message::transaction_message& tx,
         const hash_digest& hash, const chain::point::indexes& unconfirmed,
         confirm_handler handle_confirm, validate_handler handle_validate);
 
     void notify_transaction(const chain::point::indexes& unconfirmed,
-        const chain::transaction& tx);
+        const message::transaction_message& tx);
 
     void add(const chain::transaction& tx, confirm_handler handler);
-    void remove(const chain::block::ptr_list& blocks);
+    void remove(const block_ptr_list& blocks);
     void clear(const code& ec);
 
     // testable private
-    void delete_spent_in_blocks(const chain::block::ptr_list& blocks);
-    void delete_confirmed_in_blocks(const chain::block::ptr_list& blocks);
+    void delete_spent_in_blocks(const block_ptr_list& blocks);
+    void delete_confirmed_in_blocks(const block_ptr_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);

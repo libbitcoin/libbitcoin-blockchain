@@ -37,12 +37,12 @@ public:
     typedef std::shared_ptr<block_detail> ptr;
     typedef std::vector<block_detail::ptr> list;
 
-    block_detail(chain::block::ptr actual_block);
-    block_detail(const chain::block& actual_block);
-    block_detail(const chain::header& actual_block_header);
-    chain::block& actual();
-    const chain::block& actual() const;
-    chain::block::ptr actual_ptr() const;
+    block_detail(chain::block&& actual_block);
+    block_detail(message::block_message::ptr actual_block);
+
+    message::block_message& actual();
+    const message::block_message& actual() const;
+    message::block_message::ptr actual_ptr() const;
     void mark_processed();
     bool is_processed();
     const hash_digest& hash() const;
@@ -56,7 +56,7 @@ private:
     bool processed_;
     block_info info_;
     const hash_digest block_hash_;
-    chain::block::ptr actual_block_;
+    message::block_message::ptr actual_block_;
 };
 
 } // namespace blockchain

@@ -326,11 +326,11 @@ void organizer::notify_reorganize(uint64_t fork_point,
         return detail->actual_ptr();
     };
 
-    block::ptr_list arrivals(orphan_chain.size());
+    message::block_message::ptr_list arrivals(orphan_chain.size());
     std::transform(orphan_chain.begin(), orphan_chain.end(),
         arrivals.begin(), to_raw_pointer);
 
-    block::ptr_list replacements(replaced_chain.size());
+    message::block_message::ptr_list replacements(replaced_chain.size());
     std::transform(replaced_chain.begin(), replaced_chain.end(),
         replacements.begin(), to_raw_pointer);
 

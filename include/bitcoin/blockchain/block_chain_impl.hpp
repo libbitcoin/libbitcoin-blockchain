@@ -114,7 +114,8 @@ public:
     // ------------------------------------------------------------------------
 
     /// Store a block to the blockchain, with indexing and validation.
-    void store(chain::block::ptr block, block_store_handler handler);
+    void store(message::block_message::ptr block,
+        block_store_handler handler);
     
     /// fetch a block by height.
     void fetch_block(uint64_t height, block_fetch_handler handler);
@@ -215,7 +216,9 @@ private:
     }
 
     void start_write();
-    void do_store(chain::block::ptr block, block_store_handler handler);
+    void do_store(message::block_message::ptr block,
+        block_store_handler handler);
+
     ////void fetch_ordered(perform_read_functor perform_read);
     ////void fetch_parallel(perform_read_functor perform_read);
     void fetch_serial(perform_read_functor perform_read);

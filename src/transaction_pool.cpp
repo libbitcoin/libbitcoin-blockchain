@@ -137,7 +137,7 @@ void transaction_pool::handle_validated(const code& ec,
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(const transaction& tx,
+void transaction_pool::store(const message::transaction_message& tx,
     confirm_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
@@ -152,9 +152,10 @@ void transaction_pool::store(const transaction& tx,
 }
 
 // TODO: this is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec, const transaction& tx,
-    const hash_digest& hash, const point::indexes& unconfirmed,
-    confirm_handler handle_confirm, validate_handler handle_validate)
+void transaction_pool::do_store(const code& ec,
+    const message::transaction_message& tx, const hash_digest& hash,
+    const point::indexes& unconfirmed, confirm_handler handle_confirm,
+    validate_handler handle_validate)
 {
     if (ec)
     {
@@ -264,7 +265,8 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
 bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
-    const block::ptr_list& new_blocks, const block::ptr_list& replaced_blocks)
+    const message::block_message::ptr_list& new_blocks,
+    const message::block_message::ptr_list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -313,7 +315,7 @@ void transaction_pool::subscribe_transaction(
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
-    const transaction& tx)
+    const message::transaction_message& tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);
 }
@@ -342,7 +344,7 @@ void transaction_pool::clear(const code& ec)
 }
 
 // Delete memory pool txs that are obsoleted by a new block acceptance.
-void transaction_pool::remove(const block::ptr_list& blocks)
+void transaction_pool::remove(const block_ptr_list& blocks)
 {
     // Delete by hash sets a success code.
     delete_confirmed_in_blocks(blocks);
@@ -356,8 +358,7 @@ void transaction_pool::remove(const block::ptr_list& blocks)
 // ----------------------------------------------------------------------------
 
 // Delete mempool txs that are duplicated in the new blocks.
-void transaction_pool::delete_confirmed_in_blocks(
-    const block::ptr_list& blocks)
+void transaction_pool::delete_confirmed_in_blocks(const block_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -368,7 +369,7 @@ void transaction_pool::delete_confirmed_in_blocks(
 }
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
-void transaction_pool::delete_spent_in_blocks(const block::ptr_list& blocks)
+void transaction_pool::delete_spent_in_blocks(const block_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -475,8 +476,12 @@ bool transaction_pool::find(transaction& out_tx,
 {
     const auto it = find(tx_hash);
     const auto found = it != buffer_.end();
+
     if (found)
+    {
+        // TRANSACTION COPY
         out_tx = it->tx;
+    }
 
     return found;
 }

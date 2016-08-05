@@ -168,6 +168,7 @@ bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
         {
             if (orphan_tx.hash() == tx_hash)
             {
+                // TRANSACTION COPY
                 tx = orphan_tx;
                 tx_height = fork_index_ + orphan + 1;
                 return true;
