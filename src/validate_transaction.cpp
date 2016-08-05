@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
 
@@ -41,13 +42,21 @@ using std::placeholders::_2;
 static constexpr uint32_t max_transaction_size = 1000000;
 
 validate_transaction::validate_transaction(block_chain& chain,
-    const chain::transaction& tx, const transaction_pool& pool,
+    transaction_ptr tx, const transaction_pool& pool,
     dispatcher& dispatch)
   : blockchain_(chain),
     tx_(tx),
     pool_(pool),
     dispatch_(dispatch),
-    tx_hash_(tx.hash())
+    tx_hash_(tx->hash())
+{
+}
+
+validate_transaction::validate_transaction(block_chain& chain,
+    const chain::transaction& tx, const transaction_pool& pool,
+    dispatcher& dispatch)
+  : validate_transaction(chain,
+        std::make_shared<message::transaction_message>(tx), pool, dispatch)
 {
 }
 
@@ -57,7 +66,7 @@ void validate_transaction::start(validate_handler handler)
     const auto ec = basic_checks();
     if (ec)
     {
-        handle_validate_(ec, tx_, tx_hash_, {});
+        handle_validate_(ec, tx_, {});
         return;
     }
 
@@ -70,12 +79,12 @@ void validate_transaction::start(validate_handler handler)
 
 code validate_transaction::basic_checks() const
 {
-    const auto ec = check_transaction(tx_);
+    const auto ec = check_transaction(*tx_);
     if (ec)
         return ec;
 
     // This should probably preceed check_transaction.
-    if (tx_.is_coinbase())
+    if (tx_->is_coinbase())
         return error::coinbase_transaction;
 
     // Ummm...
@@ -102,14 +111,14 @@ void validate_transaction::handle_duplicate_check(
     if (ec != error::not_found)
     {
         // BUGBUG: overly restrictive, dups allowed if previous spent (BIP30).
-        handle_validate_(error::duplicate, tx_, tx_hash_, {});
+        handle_validate_(error::duplicate, tx_, {});
         return;
     }
 
     // TODO: we may want to allow spent-in-pool (RBF).
     if (pool_.is_spent_in_pool(tx_))
     {
-        handle_validate_(error::double_spend, tx_, tx_hash_, {});
+        handle_validate_(error::double_spend, tx_, {});
         return;
     }
 
@@ -124,7 +133,7 @@ void validate_transaction::set_last_height(const code& ec,
 {
     if (ec)
     {
-        handle_validate_(ec, tx_, tx_hash_, {});
+        handle_validate_(ec, tx_, {});
         return;
     }
 
@@ -134,7 +143,7 @@ void validate_transaction::set_last_height(const code& ec,
     value_in_ = 0;
 
     // Begin looping through the inputs, fetching the previous tx.
-    if (!tx_.inputs.empty())
+    if (!tx_->inputs.empty())
         next_previous_transaction();
 }
 
@@ -145,7 +154,7 @@ void validate_transaction::next_previous_transaction()
     // First we fetch the parent block height for a transaction.
     // Needed for checking the coinbase maturity.
     blockchain_.fetch_transaction_index(
-        tx_.inputs[current_input_].previous_output.hash,
+        tx_->inputs[current_input_].previous_output.hash,
             dispatch_.unordered_delegate(
                 &validate_transaction::previous_tx_index,
                     shared_from_this(), _1, _2));
@@ -161,7 +170,7 @@ void validate_transaction::previous_tx_index(const code& ec,
     }
 
     BITCOIN_ASSERT(current_input_ < tx_.inputs.size());
-    const auto& prev_tx_hash = tx_.inputs[current_input_].previous_output.hash;
+    const auto& prev_tx_hash = tx_->inputs[current_input_].previous_output.hash;
     
     // Now fetch actual transaction body
     blockchain_.fetch_transaction(prev_tx_hash,
@@ -172,11 +181,11 @@ void validate_transaction::previous_tx_index(const code& ec,
 void validate_transaction::search_pool_previous_tx()
 {
     transaction previous_tx;
-    const auto& current_input = tx_.inputs[current_input_];
+    const auto& current_input = tx_->inputs[current_input_];
     if (!pool_.find(previous_tx, current_input.previous_output.hash))
     {
         const auto list = point::indexes{ current_input_ };
-        handle_validate_(error::input_not_found, tx_, tx_hash_, list);
+        handle_validate_(error::input_not_found, tx_, list);
         return;
     }
 
@@ -193,7 +202,7 @@ void validate_transaction::handle_previous_tx(const code& ec,
     if (ec)
     {
         const auto list = point::indexes{ current_input_ };
-        handle_validate_(error::input_not_found, tx_, tx_hash_, list);
+        handle_validate_(error::input_not_found, tx_, list);
         return;
     }
 
@@ -202,16 +211,16 @@ void validate_transaction::handle_previous_tx(const code& ec,
     ///////////////////////////////////////////////////////////////////////////
 
     // Should check if inputs are standard here...
-    if (!connect_input(tx_, current_input_, previous_tx, parent_height,
+    if (!connect_input(*tx_, current_input_, previous_tx, parent_height,
         last_block_height_, value_in_, script_context::all_enabled))
     {
         const auto list = point::indexes{ current_input_ };
-        handle_validate_(error::validate_inputs_failed, tx_, tx_hash_, list);
+        handle_validate_(error::validate_inputs_failed, tx_, list);
         return;
     }
 
     // Search for double spends...
-    blockchain_.fetch_spend(tx_.inputs[current_input_].previous_output,
+    blockchain_.fetch_spend(tx_->inputs[current_input_].previous_output,
         dispatch_.unordered_delegate(&validate_transaction::check_double_spend,
             shared_from_this(), _1, _2));
 }
@@ -221,13 +230,13 @@ void validate_transaction::check_double_spend(const code& ec,
 {
     if (ec != error::unspent_output)
     {
-        handle_validate_(error::double_spend, tx_, tx_hash_, {});
+        handle_validate_(error::double_spend, tx_, {});
         return;
     }
 
     // End of connect_input checks.
     ++current_input_;
-    if (current_input_ < tx_.inputs.size())
+    if (current_input_ < tx_->inputs.size())
     {
         next_previous_transaction();
         return;
@@ -240,16 +249,16 @@ void validate_transaction::check_double_spend(const code& ec,
 void validate_transaction::check_fees()
 {
     uint64_t fee = 0;
-    if (!tally_fees(tx_, value_in_, fee))
+    if (!tally_fees(*tx_, value_in_, fee))
     {
-        handle_validate_(error::fees_out_of_range, tx_, tx_hash_, {});
+        handle_validate_(error::fees_out_of_range, tx_, {});
         return;
     }
 
     // Who cares?
     // Fuck the police
     // Every tx equal!
-    handle_validate_(error::success, tx_, tx_hash_, unconfirmed_);
+    handle_validate_(error::success, tx_, unconfirmed_);
 }
 
 code validate_transaction::check_transaction(const transaction& tx)
