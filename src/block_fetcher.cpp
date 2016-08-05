@@ -140,7 +140,7 @@ private:
     mutable shared_mutex mutex_;
 };
 
-void fetch_block(block_chain& chain, size_t height,
+void fetch_block(block_chain& chain, uint64_t height,
     block_chain::block_fetch_handler handle_fetch)
 {
     const auto fetcher = std::make_shared<block_fetcher>(chain);
