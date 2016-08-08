@@ -36,6 +36,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+/// The simple_chain interface portion of this class is not thread safe.
 class BCB_API block_chain_impl
   : public block_chain, public simple_chain
 {
@@ -51,7 +52,7 @@ public:
     block_chain_impl(const block_chain_impl&) = delete;
     void operator=(const block_chain_impl&) = delete;
 
-    // Properties.
+    // Properties (thread safe).
     // ------------------------------------------------------------------------
 
     // Get a reference to the transaction pool.
@@ -60,7 +61,7 @@ public:
     // Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
-    // block_chain start/stop (TODO: this also affects simple_chain).
+    // block_chain start/stop (thread safe).
     // ------------------------------------------------------------------------
 
     /// Start or restart the blockchain.
@@ -72,7 +73,7 @@ public:
     /// Close the blockchain, threads must first be joined, can be restarted.
     virtual bool close();
 
-    // simple_chain (no internal locks).
+    // simple_chain (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
@@ -110,7 +111,7 @@ public:
     /// Remove blocks at or above the given height, returning them in order.
     bool pop_from(block_detail::list& out_blocks, uint64_t height);
 
-    // block_chain queries (internal locks).
+    // block_chain queries (thread safe).
     // ------------------------------------------------------------------------
 
     /// Store a block to the blockchain, with indexing and validation.
@@ -160,10 +161,6 @@ public:
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler);
 
-    /// fetch subset of specified block hashes that are not stored.
-    void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler);
-
     /// fetch height of block by hash.
     void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler);
@@ -191,8 +188,16 @@ public:
     void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler);
 
+    /// filter out block hashes that exist in the store.
+    virtual void filter_blocks(message::get_data::ptr message,
+        result_handler handler);
+
+    /// filter out block hashes that exist in the orphan pool.
+    virtual void filter_orphans(message::get_data::ptr message,
+        result_handler handler);
+
     /// Subscribe to blockchain reorganizations.
-    void subscribe_reorganize(reorganize_handler handler);
+    virtual void subscribe_reorganize(reorganize_handler handler);
 
 private:
     typedef std::function<bool(database::handle)> perform_read_functor;
@@ -226,13 +231,16 @@ private:
 
     std::atomic<bool> stopped_;
     const settings& settings_;
-    mutable shared_mutex mutex_;
 
+    // These are thread safe.
     organizer organizer_;
     ////dispatcher read_dispatch_;
     ////dispatcher write_dispatch_;
     blockchain::transaction_pool transaction_pool_;
+
+    // This is protected by mutex.
     database::data_base database_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

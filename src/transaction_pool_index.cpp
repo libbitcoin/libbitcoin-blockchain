@@ -19,6 +19,8 @@
  */
 #include <bitcoin/blockchain/transaction_pool_index.hpp>
 
+#include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
@@ -33,20 +35,63 @@ namespace blockchain {
 using namespace bc::blockchain;
 using namespace bc::chain;
 using namespace bc::wallet;
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
+using namespace std::placeholders;
 
 static constexpr uint64_t genesis_height = 0;
 
 transaction_pool_index::transaction_pool_index(threadpool& pool,
     block_chain& blockchain)
-  : dispatch_(pool, NAME),
+  : stopped_(true),
+    dispatch_(pool, NAME),
     blockchain_(blockchain)
 {
 }
 
-// TODO: add stop property, method and handling - to speed shutdown.
+// Start and stop.
+// ----------------------------------------------------------------------------
+
+void transaction_pool_index::start()
+{
+    stopped_ = false;
+}
+
+void transaction_pool_index::stop()
+{
+    stopped_ = true;
+}
+
+// Utility templates.
+// ----------------------------------------------------------------------------
+
+template <typename Point, typename Multimap>
+void erase(const payment_address& key, const Point& value_point, Multimap& map)
+{
+    const auto match = [&value_point](const Multimap::value_type& entry)
+    {
+        return entry.second.point == value_point;
+    };
+
+    const auto range = map.equal_range(key);
+    const auto it = std::find_if(range.first, range.second, match);
+    
+    if (it != range.second)
+        map.erase(it);
+}
+
+template <typename InfoList, typename Multimap>
+InfoList to_info_list(const payment_address& address, Multimap& map)
+{
+    const auto convert = [](const Multimap::value_type& entry)
+    {
+        return entry.second;
+    };
+
+    InfoList out;
+    const auto range = map.equal_range(address);
+    out.resize(std::distance(range.first, range.second));
+    std::transform(range.first, range.second, out.begin(), convert);
+    return out;
+}
 
 // Add sequence.
 // ----------------------------------------------------------------------------
@@ -62,31 +107,34 @@ void transaction_pool_index::add(const transaction& tx,
 void transaction_pool_index::do_add(const transaction& tx,
     completion_handler handler)
 {
+    uint32_t index = 0;
     const auto tx_hash = tx.hash();
 
-    uint32_t index = 0;
     for (const auto& input: tx.inputs)
     {
         const auto address = payment_address::extract(input.script);
+
         if (address)
         {
             const input_point point{ tx_hash, index };
             const spend_info info{ point, input.previous_output };
-            spends_map_.emplace(address, info);
+            spends_map_.emplace(std::move(address), std::move(info));
         }
 
         ++index;
     }
 
     index = 0;
+
     for (const auto& output: tx.outputs)
     {
         const auto address = payment_address::extract(output.script);
+
         if (address)
         {
             const output_point point{ tx_hash, index };
             const output_info info{ point, output.value };
-            outputs_map_.emplace(address, info);
+            outputs_map_.emplace(std::move(address), std::move(info));
         }
 
         ++index;
@@ -107,48 +155,30 @@ void transaction_pool_index::remove(const transaction& tx,
             this, tx, handler));
 }
 
-template <typename Point, typename Multimap>
-auto find(const payment_address& key, const Point& value_point,
-    Multimap& map) -> decltype(map.begin())
-{
-    // The entry should only occur once in the multimap.
-    const auto range = map.equal_range(key);
-    for (auto it = range.first; it != range.second; ++it)
-        if (it->second.point == value_point)
-            return it;
-
-    return map.end();
-}
-
 void transaction_pool_index::do_remove(const transaction& tx,
     completion_handler handler)
 {
+    uint32_t index = 0;
     const auto tx_hash = tx.hash();
 
-    uint32_t index = 0;
     for (const auto& input: tx.inputs)
     {
         const auto address = payment_address::extract(input.script);
+
         if (address)
-        {
-            const input_point point{ tx_hash, index };
-            const auto entry = find(address, point, spends_map_);
-            spends_map_.erase(entry);
-        }
+            erase(address, input_point{ tx_hash, index }, spends_map_);
 
         ++index;
     }
 
     index = 0;
+
     for (const auto& output: tx.outputs)
     {
         const auto address = payment_address::extract(output.script);
+
         if (address)
-        {
-            const output_point point{ tx_hash, index };
-            const auto entry = find(address, point, outputs_map_);
-            outputs_map_.erase(entry);
-        }
+            erase(address, output_point{ tx_hash, index }, outputs_map_);
 
         ++index;
     }
@@ -175,7 +205,7 @@ void transaction_pool_index::blockchain_history_fetched(const code& ec,
 {
     if (ec)
     {
-        handler(ec, history);
+        handler(ec, {});
         return;
     }
 
@@ -190,20 +220,20 @@ void transaction_pool_index::index_history_fetched(const code& ec,
 {
     if (ec)
     {
-        handler(ec, history);
+        handler(ec, {});
         return;
     }
 
     // Copy the list for modification and return.
-    auto result = history;
+    auto out = history;
 
     // Race conditions raise the possiblity of seeing a spend or output more
     // than once. We collapse any duplicates here and continue.
-    add(result, spends);
-    add(result, outputs);
+    add(out, spends);
+    add(out, outputs);
 
     // This is the end of the fetch_all_history sequence.
-    handler(error::success, result);
+    handler(error::success, out);
 }
 
 // Fetch index history sequence.
@@ -218,17 +248,6 @@ void transaction_pool_index::fetch_index_history(
             this, address, handler));
 }
 
-template <typename InfoList, typename EntryMultimap>
-InfoList to_info_list(const payment_address& address, EntryMultimap& map)
-{
-    InfoList info;
-    auto pair = map.equal_range(address);
-    for (auto it = pair.first; it != pair.second; ++it)
-        info.push_back(it->second);
-
-    return info;
-}
-
 void transaction_pool_index::do_fetch(const payment_address& address,
     query_handler handler)
 {
@@ -240,29 +259,29 @@ void transaction_pool_index::do_fetch(const payment_address& address,
 
 // Static helpers
 // ----------------------------------------------------------------------------
+// Transactions may exist in the memory pool and in the blockchain,
+// although this circumstance should not persist.
 
 bool transaction_pool_index::exists(history_list& history,
     const spend_info& spend)
 {
-    // Transactions may exist in the memory pool and in the blockchain,
-    // although this circumstance should not persist.
-    for (const auto& row: history)
-        if (row.kind == point_kind::spend && row.point == spend.point)
-            return true;
+    const auto match = [&spend](const history_compact& row)
+    {
+        return row.kind == point_kind::spend && row.point == spend.point;
+    };
 
-    return false;
+    return std::any_of(history.begin(), history.end(), match);
 }
 
 bool transaction_pool_index::exists(history_list& history,
     const output_info& output)
 {
-    // Transactions may exist in the memory pool and in the blockchain,
-    // although this circumstance should not persist.
-    for (const auto& row: history)
-        if (row.kind == point_kind::output && row.point == output.point)
-            return true;
+    const auto match = [&output](const history_compact& row)
+    {
+        return row.kind == point_kind::output && row.point == output.point;
+    };
 
-    return false;
+    return std::any_of(history.begin(), history.end(), match);
 }
 
 void transaction_pool_index::add(history_list& history, const spend_info& spend)
@@ -275,7 +294,7 @@ void transaction_pool_index::add(history_list& history, const spend_info& spend)
         { spend.previous_output.checksum() }
     };
 
-    history.emplace_back(row);
+    history.emplace_back(std::move(row));
 }
 
 void transaction_pool_index::add(history_list& history, const output_info& output)
@@ -288,23 +307,31 @@ void transaction_pool_index::add(history_list& history, const output_info& outpu
         { output.value }
     };
 
-    history.emplace_back(row);
+    history.emplace_back(std::move(row));
 }
 
 void transaction_pool_index::add(history_list& history,
     const spend_info::list& spends)
 {
-    for (const auto& spend: spends)
+    const auto action = [&history](const spend_info& spend)
+    {
         if (!exists(history, spend))
             add(history, spend);
+    };
+
+    std::for_each(spends.begin(), spends.end(), action);
 }
 
 void transaction_pool_index::add(history_list& history,
     const output_info::list& outputs)
 {
-    for (const auto& output: outputs)
+    const auto action = [&history](const output_info& output)
+    {
         if (!exists(history, output))
             add(history, output);
+    };
+
+    std::for_each(outputs.begin(), outputs.end(), action);
 }
 
 } // namespace blockchain

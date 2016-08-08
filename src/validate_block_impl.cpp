@@ -103,7 +103,7 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
         const auto fetch_index = fetch_height - fork_index_ - 1;
         BITCOIN_ASSERT(fetch_index <= orphan_index_);
         BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
-        return orphan_chain_[fetch_index]->actual().header;
+        return orphan_chain_[fetch_index]->actual()->header;
     }
 
     chain::header out;
@@ -164,7 +164,7 @@ bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
 
-        for (const auto& orphan_tx: orphan_block.transactions)
+        for (const auto& orphan_tx: orphan_block->transactions)
         {
             if (orphan_tx.hash() == tx_hash)
             {
@@ -202,7 +202,7 @@ bool validate_block_impl::orphan_is_spent(
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
-        const auto& transactions = orphan_block.transactions;
+        const auto& transactions = orphan_block->transactions;
 
         BITCOIN_ASSERT(!transactions.empty());
         BITCOIN_ASSERT(transactions.front().is_coinbase());

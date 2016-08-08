@@ -102,7 +102,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_impl.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_detail.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_info.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp" />

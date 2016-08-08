@@ -28,8 +28,10 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// A interface for encapsulation of the blockchain database.
-/// These queries are immediate and assume the database is externally locked.
+/// A low level interface for encapsulation of the blockchain database.
+/// Caller must ensure the database is not otherwise in use during these calls.
+/// Implementations are NOT expected to be thread safe with the exception
+/// that the import method may itself be called concurrently.
 class BCB_API simple_chain
 {
 public:

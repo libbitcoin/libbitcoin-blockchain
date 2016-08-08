@@ -100,7 +100,7 @@ validate_block::validate_block(size_t height, const block& block, bool testnet,
     minimum_version_(0),
     current_block_(block),
     checkpoints_(checks),
-    stop_callback_(callback == nullptr ? [](){ return false; } : callback)
+    stop_callback_(callback)
 {
 }
 
@@ -553,7 +553,7 @@ code validate_block::connect_block() const
 
     const auto& coinbase = transactions.front();
     const auto reward = coinbase.total_output_value();
-    const auto value = block_mint(height_) + fees;
+    const auto value = block_subsidy(height_) + fees;
     return reward > value ? error::coinbase_too_large : error::success;
 }
 

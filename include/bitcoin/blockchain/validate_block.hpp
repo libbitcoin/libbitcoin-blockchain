@@ -31,6 +31,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 // TODO: this is not an interface, collapse with validate_block_impl.
+/// This class is not thread safe.
 class BCB_API validate_block
 {
 public:
@@ -47,7 +48,7 @@ protected:
 
     validate_block(size_t height, const chain::block& block,
         bool testnet, const config::checkpoint::list& checks,
-        stopped_callback stop_callback=nullptr);
+        stopped_callback stop_callback);
 
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;

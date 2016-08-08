@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/block_detail.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
@@ -28,66 +29,63 @@ namespace blockchain {
 
 using namespace message;
 
-block_detail::block_detail(block_message::ptr actual_block)
-  : processed_(false),
-    info_({ block_status::orphan, 0 }),
-    block_hash_(actual_block->header.hash()),
+// Use zero as orphan sentinel since this is precluded by the orphan pool.
+static constexpr auto orphan_height = 0u;
+
+block_detail::block_detail(block_ptr actual_block)
+  : code_(error::success),
+    processed_(false),
+    height_(orphan_height),
     actual_block_(actual_block)
 {
 }
 
+// Hand off ownership of a block to this wrapper.
 block_detail::block_detail(chain::block&& actual_block)
-  : block_detail(std::make_shared<message::block_message>(actual_block))
+  : block_detail(std::make_shared<block_message>(actual_block))
 {
 }
 
-block_message& block_detail::actual()
-{
-    return *actual_block_;
-}
-
-const block_message& block_detail::actual() const
-{
-    return *actual_block_;
-}
-
-block_message::ptr block_detail::actual_ptr() const
+block_detail::block_ptr block_detail::actual() const
 {
     return actual_block_;
 }
 
-void block_detail::mark_processed()
+void block_detail::set_processed()
 {
-    processed_ = true;
-}
-bool block_detail::is_processed()
-{
-    return processed_;
+    processed_.store(true);
 }
 
-const hash_digest& block_detail::hash() const
+bool block_detail::processed() const
 {
-    return block_hash_;
+    return processed_.load();
 }
 
-void block_detail::set_info(const block_info& replace_info)
+void block_detail::set_height(uint64_t height)
 {
-    info_ = replace_info;
+    BITCOIN_ASSERT(height != orphan_height);
+    height_.store(height);
 }
 
-const block_info& block_detail::info() const
+uint64_t block_detail::height() const
 {
-    return info_;
+    return height_.load();
 }
 
 void block_detail::set_error(const code& code)
 {
-    code_ = code;
+    code_.store(code);
 }
 
 const code& block_detail::error() const
 {
-    return code_;
+    return code_.load();
+}
+
+const hash_digest& block_detail::hash() const
+{
+    // This relies on the hash caching optimization.
+    return actual_block_->header.hash();
 }
 
 } // namespace blockchain

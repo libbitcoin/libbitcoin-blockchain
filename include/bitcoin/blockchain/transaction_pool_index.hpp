@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_INDEX_HPP
 #define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_POOL_INDEX_HPP
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
@@ -30,12 +31,13 @@
 namespace libbitcoin {
 namespace blockchain {
 
+/// This class is thread safe.
 class BCB_API transaction_pool_index
 {
 public:
-    typedef std::function<void(const code&)> completion_handler;
-    typedef std::function<void(const code&, const chain::spend_info::list&,
-        const chain::output_info::list&)> query_handler;
+    typedef handle0 completion_handler;
+    typedef handle2<chain::spend_info::list, chain::output_info::list>
+        query_handler;
     typedef block_chain::history_fetch_handler fetch_handler;
 
     transaction_pool_index(threadpool& pool, block_chain& blockchain);
@@ -43,6 +45,12 @@ public:
     /// This class is not copyable.
     transaction_pool_index(const transaction_pool_index&) = delete;
     void operator=(const transaction_pool_index&) = delete;
+
+    /// Start the transaction pool.
+    void start();
+
+    /// Signal stop of current work, speeds shutdown.
+    void stop();
 
     void fetch_all_history(const wallet::payment_address& address,
         size_t limit, size_t from_height, fetch_handler handler);
@@ -80,10 +88,18 @@ private:
     void do_fetch(const wallet::payment_address& payaddr,
         query_handler handler);
 
-    dispatcher dispatch_;
+    // This is protected by mutex.
     spends_map spends_map_;
+    upgrade_mutex spends_mutex_;
+
+    // This is protected by mutex.
     outputs_map outputs_map_;
+    upgrade_mutex outputs_mutex_;
+
+    // These are thread safe.
+    dispatcher dispatch_;
     block_chain& blockchain_;
+    std::atomic<bool> stopped_;
 };
 
 } // namespace blockchain

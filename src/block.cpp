@@ -27,7 +27,7 @@ namespace blockchain {
 
 using namespace chain;
 
-uint64_t block_mint(size_t height)
+uint64_t block_subsidy(size_t height)
 {
     uint64_t subsidy = coin_price(initial_block_reward);
     subsidy >>= (height / reward_interval);

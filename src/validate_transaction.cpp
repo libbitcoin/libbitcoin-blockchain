@@ -19,7 +19,6 @@
  */
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -35,8 +34,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace chain;
-using std::placeholders::_1;
-using std::placeholders::_2;
+using namespace std::placeholders;
 
 // Max transaction size is set to max block size (1,000,000).
 static constexpr uint32_t max_transaction_size = 1000000;
@@ -64,6 +62,7 @@ void validate_transaction::start(validate_handler handler)
 {
     handle_validate_ = handler;
     const auto ec = basic_checks();
+
     if (ec)
     {
         handle_validate_(ec, tx_, {});
@@ -80,6 +79,7 @@ void validate_transaction::start(validate_handler handler)
 code validate_transaction::basic_checks() const
 {
     const auto ec = check_transaction(*tx_);
+
     if (ec)
         return ec;
 
@@ -182,6 +182,7 @@ void validate_transaction::search_pool_previous_tx()
 {
     transaction previous_tx;
     const auto& current_input = tx_->inputs[current_input_];
+
     if (!pool_.find(previous_tx, current_input.previous_output.hash))
     {
         const auto list = point::indexes{ current_input_ };
@@ -249,6 +250,7 @@ void validate_transaction::check_double_spend(const code& ec,
 void validate_transaction::check_fees()
 {
     uint64_t fee = 0;
+
     if (!tally_fees(*tx_, value_in_, fee))
     {
         handle_validate_(error::fees_out_of_range, tx_, {});
@@ -271,12 +273,14 @@ code validate_transaction::check_transaction(const transaction& tx)
 
     // Check for negative or overflow output values
     uint64_t total_output_value = 0;
+
     for (const auto& output: tx.outputs)
     {
         if (output.value > max_money())
             return error::output_value_overflow;
 
         total_output_value += output.value;
+
         if (total_output_value > max_money())
             return error::output_value_overflow;
     }
@@ -352,17 +356,20 @@ bool validate_transaction::connect_input(const transaction& tx,
 {
     const auto& input = tx.inputs[current_input];
     const auto& previous_outpoint = tx.inputs[current_input].previous_output;
+
     if (previous_outpoint.index >= previous_tx.outputs.size())
         return false;
 
     const auto& previous_output = previous_tx.outputs[previous_outpoint.index];
     const auto output_value = previous_output.value;
+
     if (output_value > max_money())
         return false;
 
     if (previous_tx.is_coinbase())
     {
         const auto height_difference = last_block_height - parent_height;
+
         if (height_difference < coinbase_maturity)
             return false;
     }
