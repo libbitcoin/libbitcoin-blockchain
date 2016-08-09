@@ -80,6 +80,13 @@ bool transaction_pool::stopped()
     return stopped_;
 }
 
+void transaction_pool::inventory(message::inventory::ptr inventory)
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: populate the inventory vector from the full memory pool.
+    ///////////////////////////////////////////////////////////////////////////
+}
+
 void transaction_pool::validate(transaction_ptr tx, validate_handler handler)
 {
     dispatch_.ordered(&transaction_pool::do_validate,
@@ -148,7 +155,7 @@ void transaction_pool::store(transaction_ptr tx,
             this, _1, _2, _3, handle_confirm, handle_validate));
 }
 
-// TODO: this is overly complex due to the transaction pool and index split.
+// This is overly complex due to the transaction pool and index split.
 void transaction_pool::do_store(const code& ec, transaction_ptr tx,
     const indexes& unconfirmed, confirm_handler handle_confirm,
     validate_handler handle_validate)
@@ -163,30 +170,32 @@ void transaction_pool::do_store(const code& ec, transaction_ptr tx,
     const auto do_deindex = [this, handle_confirm](const code ec,
         transaction_ptr tx)
     {
-        const auto do_confirm = [handle_confirm, tx](const code ec)
+        const auto do_confirm = [handle_confirm, tx, ec](const code)
         {
             handle_confirm(ec, tx);
         };
 
+        // This always sets success but we have captured the confirmation code.
         index_.remove(*tx, do_confirm);
     };
 
-    // Add to pool.
+    // Add to pool, save confirmation handler.
     add(tx, do_deindex);
 
-    // Notify after indexing.
     const auto handle_indexed = [this, handle_validate, tx, unconfirmed](
         const code ec)
     {
+        // Notify subscribers that the tx has been validated and indexed.
         notify_transaction(unconfirmed, tx);
 
         log::debug(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
+        // Notify caller that the tx has been validated and indexed.
         handle_validate(ec, tx, unconfirmed);
     };
 
-    // Add to index.
+    // Add to index and invoke handler to indicate validation and indexing.
     index_.add(*tx, handle_indexed);
 }
 
@@ -333,7 +342,7 @@ void transaction_pool::add(transaction_ptr tx, confirm_handler handler)
     buffer_.push_back({ tx, handler });
 }
 
-// There has been a reorg, clear the memory pool.
+// There has been a reorg, clear the memory pool using the given reason code.
 void transaction_pool::clear(const code& ec)
 {
     for (const auto& entry: buffer_)

@@ -70,6 +70,7 @@ public:
     /// Signal stop of current work, speeds shutdown.
     void stop();
 
+    void inventory(message::inventory::ptr inventory);
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
     void fetch_history(const wallet::payment_address& address, size_t limit,
         size_t from_height, block_chain::history_fetch_handler handler);
