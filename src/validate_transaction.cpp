@@ -69,6 +69,9 @@ void validate_transaction::start(validate_handler handler)
         return;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: change to fetch_unspent_transaction, spent dups ok (BIP30).
+    ///////////////////////////////////////////////////////////////////////////
     // Check for duplicates in the blockchain.
     blockchain_.fetch_transaction(tx_hash_,
         dispatch_.unordered_delegate(
@@ -110,7 +113,9 @@ void validate_transaction::handle_duplicate_check(
 {
     if (ec != error::not_found)
     {
-        // BUGBUG: overly restrictive, dups allowed if previous spent (BIP30).
+        ///////////////////////////////////////////////////////////////////////
+        // BUGBUG: overly restrictive, spent dups ok (BIP30).
+        ///////////////////////////////////////////////////////////////////////
         handle_validate_(error::duplicate, tx_, {});
         return;
     }
