@@ -348,6 +348,10 @@ void block_chain_impl::do_store(message::block_message::ptr block,
     stop_write(handler, detail->error(), detail->height());
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: This should be ordered on channel distacher (modify channel queries).
+// This allows channels to run concurrently with internal order preservation.
+///////////////////////////////////////////////////////////////////////////////
 // This performs a query in the context of the calling thread.
 // The callback model is preserved currently in order to limit downstream changes.
 // This change allows the caller to manage worker threads.
