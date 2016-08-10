@@ -556,6 +556,32 @@ void block_chain_impl::filter_blocks(message::get_data::ptr message,
     fetch_serial(do_fetch);
 }
 
+// BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
+void block_chain_impl::filter_transactions(message::get_data::ptr message,
+    result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    const auto do_fetch = [this, message, handler](size_t slock)
+    {
+        auto& inventories = message->inventories;
+
+        for (auto it = inventories.begin(); it != inventories.end();)
+            if (it->is_transaction_type() &&
+                database_.transactions.get(it->hash))
+                it = inventories.erase(it);
+            else
+                ++it;
+
+        return finish_fetch(slock, handler, error::success);
+    };
+    fetch_serial(do_fetch);
+}
+
 /// filter out block hashes that exist in the orphan pool.
 void block_chain_impl::filter_orphans(message::get_data::ptr message,
     result_handler handler)

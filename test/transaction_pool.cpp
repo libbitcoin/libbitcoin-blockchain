@@ -157,6 +157,11 @@ public:
     {
     }
 
+    virtual void filter_transactions(message::get_data::ptr message,
+        result_handler handler)
+    {
+    }
+
     virtual void subscribe_reorganize(organizer::reorganize_handler handler)
     {
     }

@@ -196,6 +196,10 @@ public:
     virtual void filter_orphans(message::get_data::ptr message,
         result_handler handler);
 
+    /// filter out transaction hashes that exist in the store.
+    virtual void filter_transactions(message::get_data::ptr message,
+        result_handler handler);
+
     /// Subscribe to blockchain reorganizations.
     virtual void subscribe_reorganize(reorganize_handler handler);
 
