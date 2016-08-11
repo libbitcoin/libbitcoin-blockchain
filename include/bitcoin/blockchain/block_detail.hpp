@@ -60,7 +60,7 @@ public:
     const hash_digest& hash() const;
 
 private:
-    std::atomic<code> code_;
+    bc::atomic<code> code_;
     std::atomic<bool> processed_;
     std::atomic<uint64_t> height_;
     const block_ptr actual_block_;
