@@ -66,7 +66,7 @@ void transaction_pool_index::stop()
 template <typename Point, typename Multimap>
 void erase(const payment_address& key, const Point& value_point, Multimap& map)
 {
-    const auto match = [&value_point](const Multimap::value_type& entry)
+    auto match = [&value_point](const typename Multimap::value_type& entry)
     {
         return entry.second.point == value_point;
     };
@@ -81,7 +81,7 @@ void erase(const payment_address& key, const Point& value_point, Multimap& map)
 template <typename InfoList, typename Multimap>
 InfoList to_info_list(const payment_address& address, Multimap& map)
 {
-    const auto convert = [](const Multimap::value_type& entry)
+    auto convert = [](const typename Multimap::value_type& entry)
     {
         return entry.second;
     };
