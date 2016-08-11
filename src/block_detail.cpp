@@ -77,7 +77,7 @@ void block_detail::set_error(const code& code)
     code_.store(code);
 }
 
-const code& block_detail::error() const
+code block_detail::error() const
 {
     return code_.load();
 }

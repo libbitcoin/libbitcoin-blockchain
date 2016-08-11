@@ -54,7 +54,7 @@ public:
 
     /// Set the validation failure code.
     void set_error(const code& code);
-    const code& error() const;
+    code error() const;
 
     /// This method is thread safe.
     const hash_digest& hash() const;
