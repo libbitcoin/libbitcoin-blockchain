@@ -241,10 +241,9 @@ void transaction_pool::filter(get_data_ptr message, result_handler handler)
     const auto filter_transactions = [this, message, handler]()
     {
         auto& inventories = message->inventories;
-        static constexpr auto tx_type = message::inventory_type_id::transaction;
 
         for (auto it = inventories.begin(); it != inventories.end();)
-            if (it->type == tx_type && is_in_pool(it->hash))
+            if (it->is_transaction_type() && is_in_pool(it->hash))
                 it = inventories.erase(it);
             else
                 ++it;
