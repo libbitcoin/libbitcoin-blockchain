@@ -31,6 +31,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+/// This class is not thread safe.
 /// This is a utility for transaction_pool::validate and validate_block.
 class BCB_API validate_transaction
   : public enable_shared_from_base<validate_transaction>

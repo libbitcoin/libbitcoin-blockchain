@@ -33,31 +33,18 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/**
- * Before bitcoin transactions make it into a block, they go into
- * a transaction memory pool. This class encapsulates that functionality
- * performing the neccessary validation of a transaction before accepting
- * it into its internal buffer.
- *
- * The interface has been deliberately kept simple to minimise overhead.
- * This class attempts no tracking of inputs or spends and only provides
- * a store/fetch paradigm. Tracking must be performed externally and make
- * use of store's handle_store and handle_confirm to manage changes in the
- * state of memory pool transactions.
- */
+/// This class is thread safe.
 class BCB_API transaction_pool
 {
 public:
     typedef chain::point::indexes indexes;
+    typedef message::get_data::ptr get_data_ptr;
     typedef message::transaction_message::ptr transaction_ptr;
 
-    typedef std::function<void(const code&)> exists_handler;
-    typedef std::function<void(const code&, const hash_list&)>
-        missing_hashes_fetch_handler;
-    typedef std::function<void(const code&, transaction_ptr)> fetch_handler;
-    typedef std::function<void(const code&, transaction_ptr)> confirm_handler;
-    typedef std::function<void(const code&, transaction_ptr, const indexes&)>
-        validate_handler;
+    typedef handle0 result_handler;
+    typedef handle1<transaction_ptr> fetch_handler;
+    typedef handle1<transaction_ptr> confirm_handler;
+    typedef handle2<transaction_ptr, indexes> validate_handler;
     typedef std::function<bool(const code&, const indexes&, transaction_ptr)>
         transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_ptr>
@@ -77,18 +64,18 @@ public:
     transaction_pool(const transaction_pool&) = delete;
     void operator=(const transaction_pool&) = delete;
 
-    /// Start the threadpool (allow work to proceed).
+    /// Start the transaction pool.
     void start();
 
-    /// Signal stop of current work, speeds shutdown, threads must be joined.
+    /// Signal stop of current work, speeds shutdown.
     void stop();
 
+    void inventory(message::inventory::ptr inventory);
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
     void fetch_history(const wallet::payment_address& address, size_t limit,
         size_t from_height, block_chain::history_fetch_handler handler);
-    void fetch_missing_hashes(const hash_list& hashes,
-        missing_hashes_fetch_handler handler);
-    void exists(const hash_digest& tx_hash, exists_handler handler);
+    void exists(const hash_digest& tx_hash, result_handler handler);
+    void filter(get_data_ptr message, result_handler handler);
     void validate(transaction_ptr tx, validate_handler handler);
     void store(transaction_ptr tx, confirm_handler confirm_handler,
         validate_handler validate_handler);
@@ -96,16 +83,8 @@ public:
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler handler);
 
-    // TODO: these should be access-limited to validate_transaction.
-    // These are not stranded so therefore are otherwise a thread safety issue.
-    bool is_in_pool(const hash_digest& tx_hash) const;
-    bool is_spent_in_pool(transaction_ptr tx) const;
-    bool is_spent_in_pool(const chain::transaction& tx) const;
-    bool is_spent_in_pool(const chain::output_point& outpoint) const;
-    bool find(transaction_ptr& out_tx, const hash_digest& tx_hash) const;
-    bool find(chain::transaction& out_tx, const hash_digest& tx_hash) const;
-
 protected:
+    /// This is analogous to the orphan pool's block_detail.
     struct entry
     {
         transaction_ptr tx;
@@ -113,12 +92,13 @@ protected:
     };
 
     typedef boost::circular_buffer<entry> buffer;
-    typedef buffer::const_iterator iterator;
+    typedef buffer::const_iterator const_iterator;
+
     typedef std::function<bool(const chain::input&)> input_compare;
     typedef message::block_message::ptr_list block_list;
 
     bool stopped();
-    iterator find(const hash_digest& tx_hash) const;
+    const_iterator find(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
         const block_list& new_blocks, const block_list& replaced_blocks);
@@ -137,7 +117,7 @@ protected:
     void remove(const block_list& blocks);
     void clear(const code& ec);
 
-    // testable private
+    // These would be private but for test access.
     void delete_spent_in_blocks(const block_list& blocks);
     void delete_confirmed_in_blocks(const block_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
@@ -147,15 +127,28 @@ protected:
     void delete_package(transaction_ptr tx, const code& ec);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
 
+    // The buffer is protected by non-concurrent dispatch.
+    buffer buffer_;
     std::atomic<bool> stopped_;
-    const bool maintain_consistency_;
+
+private:
+    // Unsafe methods limited to friend caller.
+    friend class validate_transaction;
+
+    // These methods are NOT thread safe.
+    bool is_in_pool(const hash_digest& tx_hash) const;
+    bool is_spent_in_pool(transaction_ptr tx) const;
+    bool is_spent_in_pool(const chain::transaction& tx) const;
+    bool is_spent_in_pool(const chain::output_point& outpoint) const;
+    bool find(transaction_ptr& out_tx, const hash_digest& tx_hash) const;
+    bool find(chain::transaction& out_tx, const hash_digest& tx_hash) const;
 
     // These are thread safe.
-    buffer buffer_;
     dispatcher dispatch_;
     block_chain& blockchain_;
     transaction_pool_index index_;
     transaction_subscriber::ptr subscriber_;
+    const bool maintain_consistency_;
 };
 
 } // namespace blockchain

@@ -26,25 +26,25 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_info.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// An interface for encapsulation of the blockchain for public exposure.
+/// This intrface is thread safe.
+/// A high level interface for encapsulation of the blockchain database.
+/// Implementations are expected to be thread safe.
 class BCB_API block_chain
 {
 public:
     typedef handle0 result_handler;
     typedef handle0 block_import_handler;
-    typedef handle1<block_info> block_store_handler;
+    typedef handle1<uint64_t> block_store_handler;
     typedef handle1<chain::header> block_header_fetch_handler;
     typedef handle1<chain::block::ptr> block_fetch_handler;
     typedef handle1<message::merkle_block::ptr> merkle_block_fetch_handler;
     typedef handle1<hash_list> block_locator_fetch_handler;
     typedef handle1<hash_list> locator_block_hashes_fetch_handler;
     typedef handle1<chain::header::list> locator_block_headers_fetch_handler;
-    typedef handle1<hash_list> missing_block_hashes_fetch_handler;
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
     typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<uint64_t> last_height_fetch_handler;
@@ -53,6 +53,7 @@ public:
     typedef handle1<chain::history_compact::list> history_fetch_handler;
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
+
     typedef std::function<bool(const code&, uint64_t,
         const message::block_message::ptr_list&,
         const message::block_message::ptr_list&)> reorganize_handler;
@@ -94,9 +95,6 @@ public:
         const message::get_headers& locator, const hash_digest& threshold,
         size_t limit, locator_block_headers_fetch_handler handler) = 0;
 
-    virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler) = 0;
-
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) = 0;
 
@@ -117,6 +115,15 @@ public:
 
     virtual void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler) = 0;
+
+    virtual void filter_blocks(message::get_data::ptr message,
+        result_handler handler) = 0;
+
+    virtual void filter_orphans(message::get_data::ptr message,
+        result_handler handler) = 0;
+
+    virtual void filter_transactions(message::get_data::ptr message,
+        result_handler handler) = 0;
 
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
 };

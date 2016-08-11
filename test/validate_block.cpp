@@ -25,18 +25,20 @@ using namespace bc::blockchain;
 
 BOOST_AUTO_TEST_SUITE(validate_block_tests)
 
+static const auto no_op = [](){ return false; };
+
 class validate_block_fixture
   : public bc::blockchain::validate_block
 {
 public:
     validate_block_fixture()
-      : validate_block(0, chain::block(), false, config::checkpoint::list())
+      : validate_block(0, {}, false, {}, no_op)
     {
     }
 
     validate_block_fixture(size_t height, const chain::block& block,
         bool testnet, const config::checkpoint::list& checks)
-      : validate_block(height, block, testnet, checks)
+      : validate_block(height, block, testnet, checks, no_op)
     {
     }
 

@@ -20,43 +20,50 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_DETAIL_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_DETAIL_HPP
 
+#include <atomic>
 #include <memory>
-#include <system_error>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_info.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// Metadata + block
+/// A block with metadata.
+/// This class is thread safe though property consistency is not guaranteed.
 class BCB_API block_detail
 {
 public:
     typedef std::shared_ptr<block_detail> ptr;
     typedef std::vector<block_detail::ptr> list;
+    typedef message::block_message::ptr block_ptr;
 
+    /// Construct a block detail instance.
+    block_detail(block_ptr actual_block);
     block_detail(chain::block&& actual_block);
-    block_detail(message::block_message::ptr actual_block);
 
-    message::block_message& actual();
-    const message::block_message& actual() const;
-    message::block_message::ptr actual_ptr() const;
-    void mark_processed();
-    bool is_processed();
-    const hash_digest& hash() const;
-    void set_info(const block_info& replace_info);
-    const block_info& info() const;
+    block_ptr actual() const;
+
+    /// Set a flag indicating validation has been completed.
+    void set_processed();
+    bool processed() const;
+
+    /// Set the accepted block height (non-zero).
+    void set_height(uint64_t height);
+    uint64_t height() const;
+
+    /// Set the validation failure code.
     void set_error(const code& code);
-    const code& error() const;
+    code error() const;
+
+    /// This method is thread safe.
+    const hash_digest& hash() const;
 
 private:
-    code code_;
-    bool processed_;
-    block_info info_;
-    const hash_digest block_hash_;
-    message::block_message::ptr actual_block_;
+    bc::atomic<code> code_;
+    std::atomic<bool> processed_;
+    std::atomic<uint64_t> height_;
+    const block_ptr actual_block_;
 };
 
 } // namespace blockchain

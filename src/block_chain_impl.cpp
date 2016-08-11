@@ -70,8 +70,10 @@ block_chain_impl::~block_chain_impl()
 
 static hash_list to_hashes(const block_result& result)
 {
-    hash_list hashes;
-    for (size_t index = 0; index < result.transaction_count(); ++index)
+    const auto count = result.transaction_count();
+    hash_list hashes(count);
+
+    for (size_t index = 0; index < count; ++index)
         hashes.push_back(result.transaction_hash(index));
 
     return hashes;
@@ -100,6 +102,7 @@ bool block_chain_impl::start()
         return false;
 
     stopped_ = false;
+    organizer_.start();
     transaction_pool_.start();
     return true;
 }
@@ -257,7 +260,7 @@ bool block_chain_impl::import(block::ptr block, uint64_t height)
 
 bool block_chain_impl::push(block_detail::ptr block)
 {
-    database_.push(block->actual());
+    database_.push(*block->actual());
     return true;
 }
 
@@ -267,6 +270,9 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
     size_t top;
     if (!database_.blocks.top(top))
         return false;
+
+    BITCOIN_ASSERT(top >= height);
+    out_blocks.reserve(top - height + 1);
 
     for (uint64_t index = top; index >= height; --index)
     {
@@ -292,7 +298,7 @@ void block_chain_impl::store(message::block_message::ptr block,
 {
     if (stopped())
     {
-        handler(error::service_stopped, block_info{});
+        handler(error::service_stopped, 0);
         return;
     }
 
@@ -319,27 +325,33 @@ void block_chain_impl::do_store(message::block_message::ptr block,
 {
     start_write();
 
-    // Disallow duplicate of on-chain block.
-    auto result = database_.blocks.get(block->header.hash());
-    if (result)
+    // fail fast if the block is already stored...
+    if (database_.blocks.get(block->header.hash()))
     {
-        stop_write(handler, error::duplicate, block_info{});
+        stop_write(handler, error::duplicate, 0);
         return;
     }
 
-    // Disallow duplicate of in-pool block.
     const auto detail = std::make_shared<block_detail>(block);
+
+    // ...or if the block is already orphaned.
     if (!organizer_.add(detail))
     {
-        stop_write(handler, error::duplicate, block_info{});
+        stop_write(handler, error::duplicate, 0);
         return;
     }
 
-    // See replace_chain for block push.
+    // Otherwise organize the chain...
     organizer_.organize();
-    stop_write(handler, detail->error(), detail->info());
+
+    //...and then get the particular block's status.
+    stop_write(handler, detail->error(), detail->height());
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: This should be ordered on channel distacher (modify channel queries).
+// This allows channels to run concurrently with internal order preservation.
+///////////////////////////////////////////////////////////////////////////////
 // This performs a query in the context of the calling thread.
 // The callback model is preserved currently in order to limit downstream changes.
 // This change allows the caller to manage worker threads.
@@ -520,25 +532,62 @@ void block_chain_impl::fetch_locator_block_headers(
 }
 
 // This may execute up to 500 queries.
-void block_chain_impl::fetch_missing_block_hashes(const hash_list& hashes,
-    missing_block_hashes_fetch_handler handler)
+void block_chain_impl::filter_blocks(message::get_data::ptr message,
+    result_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped);
         return;
     }
 
-    const auto do_fetch = [this, hashes, handler](size_t slock)
+    const auto do_fetch = [this, message, handler](size_t slock)
     {
-        hash_list missing;
-        for (const auto& hash: hashes)
-            if (!database_.blocks.get(hash))
-                missing.push_back(hash);
+        auto& inventories = message->inventories;
 
-        return finish_fetch(slock, handler, error::success, missing);
+        for (auto it = inventories.begin(); it != inventories.end();)
+            if (it->is_block_type() && database_.blocks.get(it->hash))
+                it = inventories.erase(it);
+            else
+                ++it;
+
+        return finish_fetch(slock, handler, error::success);
     };
     fetch_serial(do_fetch);
+}
+
+// BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
+void block_chain_impl::filter_transactions(message::get_data::ptr message,
+    result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    const auto do_fetch = [this, message, handler](size_t slock)
+    {
+        auto& inventories = message->inventories;
+
+        for (auto it = inventories.begin(); it != inventories.end();)
+            if (it->is_transaction_type() &&
+                database_.transactions.get(it->hash))
+                it = inventories.erase(it);
+            else
+                ++it;
+
+        return finish_fetch(slock, handler, error::success);
+    };
+    fetch_serial(do_fetch);
+}
+
+/// filter out block hashes that exist in the orphan pool.
+void block_chain_impl::filter_orphans(message::get_data::ptr message,
+    result_handler handler)
+{
+    organizer_.filter_orphans(message);
+    handler(error::success);
 }
 
 // block_chain (formerly fetch_parallel)

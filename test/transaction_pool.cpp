@@ -113,11 +113,6 @@ public:
     {
     }
 
-    virtual void fetch_missing_block_hashes(const hash_list& hashes,
-        missing_block_hashes_fetch_handler handler)
-    {
-    }
-
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler)
     {
@@ -149,6 +144,21 @@ public:
 
     virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
         stealth_fetch_handler handler)
+    {
+    }
+
+    virtual void filter_blocks(message::get_data::ptr message,
+        result_handler handler)
+    {
+    }
+
+    virtual void filter_orphans(message::get_data::ptr message,
+        result_handler handler)
+    {
+    }
+
+    virtual void filter_transactions(message::get_data::ptr message,
+        result_handler handler)
     {
     }
 

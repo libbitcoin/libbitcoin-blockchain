@@ -30,6 +30,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+/// This class is not thread safe.
 class BCB_API validate_block_impl
   : public validate_block
 {
