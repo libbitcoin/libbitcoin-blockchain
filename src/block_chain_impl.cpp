@@ -539,8 +539,69 @@ void block_chain_impl::fetch_locator_block_headers(
     const message::get_headers& locator, const hash_digest& threshold,
     size_t limit, locator_block_headers_fetch_handler handler)
 {
-    // TODO:
-    handler(error::operation_failed, {});
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    // This is based on the idea that looking up by block hash to get heights
+    // will be much faster than hashing each retrieved block to test for stop.
+    const auto do_fetch = [this, locator, threshold, limit, handler](
+        size_t slock)
+    {
+        // TODO: consolidate this portion with fetch_locator_block_hashes.
+        //---------------------------------------------------------------------
+        // Find the first block height.
+        // If no start block is on our chain we start with block 0.
+        size_t start = 0;
+        for (const auto& hash: locator.start_hashes)
+        {
+            const auto result = database_.blocks.get(hash);
+            if (result)
+            {
+                start = result.height();
+                break;
+            }
+        }
+
+        // Find the stop block height.
+        // The maximum stop block is 501 blocks after start (to return 500).
+        size_t stop = start + limit + 1;
+        if (locator.stop_hash != null_hash)
+        {
+            // If the stop block is not on chain we treat it as a null stop.
+            const auto stop_result = database_.blocks.get(locator.stop_hash);
+            if (stop_result)
+                stop = std::min(stop_result.height(), stop);
+        }
+
+        // Find the threshold block height.
+        // If the threshold is above the start it becomes the new start.
+        if (threshold != null_hash)
+        {
+            const auto start_result = database_.blocks.get(threshold);
+            if (start_result)
+                start = std::max(start_result.height(), start);
+        }
+        //---------------------------------------------------------------------
+
+        // TODO: This largest portion can be parallelized.
+        // Build the hash list until we hit last or the blockchain top.
+        chain::header::list headers;
+        for (size_t index = start + 1; index < stop; ++index)
+        {
+            const auto result = database_.blocks.get(index);
+            if (!result)
+            {
+                headers.push_back(result.header());
+                break;
+            }
+        }
+
+        return finish_fetch(slock, handler, error::success, headers);
+    };
+    fetch_serial(do_fetch);
 }
 
 // This may execute up to 500 queries.
