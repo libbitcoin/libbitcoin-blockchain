@@ -149,9 +149,9 @@ BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__partialy_distinct_by_ve
 
 BOOST_AUTO_TEST_CASE(validate_block__is_distinct_tx_set__partialy_distinct_not_adjacent_by_version__false)
 {
-    const transaction_type tx1{ 1, 0 };
-    const transaction_type tx2{ 2, 0 };
-    const transaction_type tx3{ 1, 0 };
+    const chain::transaction tx1{ 1, 0, {}, {} };
+    const chain::transaction tx2{ 2, 0, {}, {} };
+    const chain::transaction tx3{ 1, 0, {}, {} };
     BOOST_REQUIRE(!validate_block_fixture::is_distinct_tx_set({ tx1, tx2, tx3 }));
 }
 
