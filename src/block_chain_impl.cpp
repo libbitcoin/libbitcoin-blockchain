@@ -268,10 +268,22 @@ bool block_chain_impl::pop_from(block_detail::list& out_blocks,
     uint64_t height)
 {
     size_t top;
+
+    // The chain has no genesis block, fail.
     if (!database_.blocks.top(top))
         return false;
 
-    BITCOIN_ASSERT(top >= height);
+    BITCOIN_ASSERT_MSG(top <= max_size_t - 1, "chain overflow");
+
+    // The fork is at the top of the chain, nothing to pop.
+    if (height == top + 1)
+        return true;
+
+    // The fork is disconnected from the chain, fail.
+    if (height > top)
+        return false;
+
+    // If the fork is at the top there is one block to pop, and so on.
     out_blocks.reserve(top - height + 1);
 
     for (uint64_t index = top; index >= height; --index)
