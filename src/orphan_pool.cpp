@@ -97,7 +97,7 @@ void orphan_pool::filter(message::get_data::ptr message) const
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    shared_lock(mutex_);
+    shared_lock lock(mutex_);
 
     for (auto it = inventories.begin(); it != inventories.end();)
         if (it->is_block_type() && exists(it->hash))
@@ -109,22 +109,19 @@ void orphan_pool::filter(message::get_data::ptr message) const
 
 block_detail::list orphan_pool::trace(block_detail::ptr end) const
 {
-    block_detail::list trace(buffer_.size());
+    block_detail::list trace;
+    trace.reserve(buffer_.size());
     trace.push_back(end);
+    auto& hash = end->actual()->header.previous_block_hash;
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
 
-    while (true)
+    for (auto it = find(hash); it != buffer_.end(); it = find(hash))
     {
-        const auto& hash = trace.back()->actual()->header.previous_block_hash;
-        const auto it = find(hash);
-
-        if (it == buffer_.end())
-            break;
-
         trace.push_back(*it);
+        hash = (*it)->actual()->header.previous_block_hash;
     }
 
     mutex_.unlock_shared();
@@ -138,19 +135,17 @@ block_detail::list orphan_pool::trace(block_detail::ptr end) const
 
 block_detail::list orphan_pool::unprocessed() const
 {
-    block_detail::list unprocessed(buffer_.size());
-
-    const auto copy = [](const block_detail::ptr& entry)
-    {
-        return !entry->processed();
-    };
+    block_detail::list unprocessed;
+    unprocessed.reserve(buffer_.size());
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
 
     // Earlier blocks enter pool first, so reversal helps avoid fragmentation.
-    std::copy_if(buffer_.rbegin(), buffer_.rend(), unprocessed.begin(), copy);
+    for (auto it = buffer_.rbegin(); it != buffer_.rend(); ++it)
+        if (!(*it)->processed())
+            unprocessed.push_back(*it);
 
     mutex_.unlock_shared();
     ///////////////////////////////////////////////////////////////////////////
