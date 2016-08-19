@@ -97,7 +97,7 @@ void orphan_pool::filter(message::get_data::ptr message) const
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    shared_lock(mutex_);
+    shared_lock lock(mutex_);
 
     for (auto it = inventories.begin(); it != inventories.end();)
         if (it->is_block_type() && exists(it->hash))
