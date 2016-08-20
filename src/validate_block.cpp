@@ -264,6 +264,7 @@ bool validate_block::is_distinct_tx_set(const transaction::list& txs)
 
     std::vector<hash_digest> hashes(txs.size());
     std::transform(txs.begin(), txs.end(), hashes.begin(), hasher);
+    std::sort(hashes.begin(), hashes.end());
     auto distinct_end = std::unique(hashes.begin(), hashes.end());
     return distinct_end == hashes.end();
 }
