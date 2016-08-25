@@ -592,7 +592,7 @@ void block_chain_impl::fetch_locator_block_headers(
         for (size_t index = start + 1; index < stop; ++index)
         {
             const auto result = database_.blocks.get(index);
-            if (!result)
+            if (result)
             {
                 headers.push_back(result.header());
                 break;
