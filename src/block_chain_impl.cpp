@@ -110,10 +110,15 @@ bool block_chain_impl::start()
 // Stop is not required, speeds work shutdown with multiple threads.
 bool block_chain_impl::stop()
 {
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section.
+    unique_lock lock(mutex_);
+
     stopped_ = true;
     organizer_.stop();
     transaction_pool_.stop();
     return database_.stop();
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // Database threads must be joined before close is called (or destruct).
@@ -308,12 +313,6 @@ void block_chain_impl::start_write()
 void block_chain_impl::store(message::block_message::ptr block,
     block_store_handler handler)
 {
-    if (stopped())
-    {
-        handler(error::service_stopped, 0);
-        return;
-    }
-
     // We moved write to the network thread using a critical section here.
     // We do not want to give the thread to any other activity at this point.
     // A flood of valid orphans from multiple peers could tie up the CPU here,
@@ -325,10 +324,18 @@ void block_chain_impl::store(message::block_message::ptr block,
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section.
-    unique_lock lock(mutex_);
+    mutex_.lock();
 
-    do_store(block, handler);
+    const auto stopped = stopped_.load();
+
+    if (!stopped)
+        do_store(block, handler);
+
+    mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
+
+    if (stopped)
+        handler(error::service_stopped, 0);
 }
 
 // This processes the block through the organizer.
