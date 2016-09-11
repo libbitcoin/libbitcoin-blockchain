@@ -45,15 +45,15 @@ static constexpr uint8_t version_3 = 3;
 static constexpr uint8_t version_2 = 2;
 static constexpr uint8_t version_1 = 1;
 
-// Mainnet activation parameters.
-static constexpr size_t mainnet_active = 51;
-static constexpr size_t mainnet_enforce = 75;
-static constexpr size_t mainnet_sample = 100;
-
 // Testnet activation parameters.
-static constexpr size_t testnet_active = 750u;
-static constexpr size_t testnet_enforce = 950u;
-static constexpr size_t testnet_sample = 1000u;
+static constexpr size_t testnet_active = 51;
+static constexpr size_t testnet_enforce = 75;
+static constexpr size_t testnet_sample = 100;
+
+// Mainnet activation parameters.
+static constexpr size_t mainnet_active = 750;
+static constexpr size_t mainnet_enforce = 950;
+static constexpr size_t mainnet_sample = 1000;
 
 // Block 173805 is the first mainnet block after date-based activation.
 // Block 514 is the first testnet block after date-based activation.
