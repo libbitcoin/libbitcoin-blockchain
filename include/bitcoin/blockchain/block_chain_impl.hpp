@@ -103,7 +103,7 @@ public:
         uint64_t& out_block_height, const hash_digest& transaction_hash) const;
 
     /// Get the block height of the transaction given its hash.
-    bool get_transaction_height(size_t& out_block_height,
+    bool get_transaction_height(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
     /// Import a block to the blockchain.

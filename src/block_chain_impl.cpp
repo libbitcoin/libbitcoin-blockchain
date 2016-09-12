@@ -252,11 +252,16 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     return true;
 }
 
-bool block_chain_impl::get_transaction_height(size_t& out_block_height,
+bool block_chain_impl::get_transaction_height(uint64_t& out_block_height,
     const hash_digest& transaction_hash) const
 {
-    return database_.transactions.get_height(out_block_height,
-        transaction_hash);
+    size_t height;
+
+    if (!database_.transactions.get_height(height, transaction_hash))
+        return false;
+
+    out_block_height = height;
+    return true;
 }
 
 // This is safe to call concurrently (but with no other methods).

@@ -68,7 +68,7 @@ public:
         const hash_digest& transaction_hash) const = 0;
 
     /// Get the block height of the transaction given its hash.
-    virtual bool get_transaction_height(size_t& out_block_height,
+    virtual bool get_transaction_height(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
     /// Import a block for the given height.
