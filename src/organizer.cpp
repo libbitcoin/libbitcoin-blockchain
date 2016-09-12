@@ -140,7 +140,7 @@ code organizer::verify(uint64_t fork_point,
     const auto ms_per_block = static_cast<float>(elapsed.count());
     const auto ms_per_input = ms_per_block / total_inputs;
     const auto seconds_per_block = ms_per_block / 1000;
-    const auto verified = error_code ? "unverified" : "verified";
+    const auto verified = error_code ? "aborted" : "accepted";
 
     log::info(LOG_BLOCKCHAIN)
         << "Block [" << height << "] " << verified << " ("
