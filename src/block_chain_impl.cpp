@@ -252,6 +252,13 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     return true;
 }
 
+bool block_chain_impl::get_transaction_height(size_t& out_block_height,
+    const hash_digest& transaction_hash) const
+{
+    return database_.transactions.get_height(out_block_height,
+        transaction_hash);
+}
+
 // This is safe to call concurrently (but with no other methods).
 bool block_chain_impl::import(block::ptr block, uint64_t height)
 {
@@ -824,7 +831,7 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
             chain::input_point();
         return spend.valid ?
             finish_fetch(slock, handler, error::success, point) :
-            finish_fetch(slock, handler, error::unspent_output, point);
+            finish_fetch(slock, handler, error::not_found, point);
     };
     fetch_serial(do_fetch);
 }

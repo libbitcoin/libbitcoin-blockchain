@@ -102,6 +102,10 @@ public:
     bool get_transaction(chain::transaction& out_transaction,
         uint64_t& out_block_height, const hash_digest& transaction_hash) const;
 
+    /// Get the block height of the transaction given its hash.
+    bool get_transaction_height(size_t& out_block_height,
+        const hash_digest& transaction_hash) const;
+
     /// Import a block to the blockchain.
     bool import(chain::block::ptr block, uint64_t height);
 

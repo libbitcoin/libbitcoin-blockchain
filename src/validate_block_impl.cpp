@@ -112,49 +112,13 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
     return out;
 }
 
-bool tx_after_fork(size_t tx_height, size_t fork_index)
-{
-    return tx_height > fork_index;
-}
-
-bool validate_block_impl::transaction_exists(const hash_digest& tx_hash) const
-{
-    uint64_t out_height;
-    chain::transaction unused;
-    const auto result = chain_.get_transaction(unused, out_height, tx_hash);
-    if (!result)
-        return false;
-    
-    BITCOIN_ASSERT(out_height <= max_size_t);
-    const auto tx_height = static_cast<size_t>(out_height);
-    return tx_height <= fork_index_;
-}
-
-bool validate_block_impl::is_output_spent(
-    const chain::output_point& outpoint) const
-{
-    hash_digest out_hash;
-    const auto result = chain_.get_outpoint_transaction(out_hash, outpoint);
-    if (!result)
-        return false;
-
-    // Lookup block height. Is the spend after the fork point?
-    return transaction_exists(out_hash);
-}
-
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    uint64_t out_height;
-    const auto result = chain_.get_transaction(tx, out_height, tx_hash);
-
-    BITCOIN_ASSERT(out_height <= max_size_t);
-    tx_height = static_cast<size_t>(out_height);
-
-    if (!result || tx_after_fork(tx_height, fork_index_))
-        return fetch_orphan_transaction(tx, tx_height, tx_hash);
-
-    return true;
+    return
+        (chain_.get_transaction(tx, tx_height, tx_hash) &&
+            tx_height <= fork_index_) ||
+        fetch_orphan_transaction(tx, tx_height, tx_hash);
 }
 
 bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
@@ -180,25 +144,35 @@ bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
 }
 
 bool validate_block_impl::is_output_spent(
+    const chain::output_point& outpoint) const
+{
+    uint64_t tx_height;
+    hash_digest tx_hash;
+    return
+        chain_.get_outpoint_transaction(tx_hash, outpoint) &&
+        chain_.get_transaction_height(tx_height, tx_hash) &&
+        tx_height <= fork_index_;
+}
+
+bool validate_block_impl::is_output_spent(
     const chain::output_point& previous_output,
     size_t index_in_parent, size_t input_index) const
 {
     // Search for double spends. This must be done in both chain AND orphan.
-    // Searching chain when this tx is an orphan is redundant but it does not
-    // happen enough to care.
     if (is_output_spent(previous_output))
         return true;
 
-    if (orphan_is_spent(previous_output, index_in_parent, input_index))
+    if (is_orphan_spent(previous_output, index_in_parent, input_index))
         return true;
 
     return false;
 }
 
-bool validate_block_impl::orphan_is_spent(
+bool validate_block_impl::is_orphan_spent(
     const chain::output_point& previous_output,
     size_t skip_tx, size_t skip_input) const
 {
+    // This gets costly as the size of the orphan pool increases.
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
