@@ -293,16 +293,16 @@ code validate_transaction::check_transaction(const transaction& tx)
 // common checks
 // Validate script consensus conformance based on flags provided.
 code validate_transaction::check_consensus(const script& prevout_script,
-    const transaction& current_tx, size_t input_index, uint32_t flags)
+    const transaction& tx, size_t input_index, uint32_t flags)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
-    BITCOIN_ASSERT(input_index < current_tx.inputs.size());
+    BITCOIN_ASSERT(input_index < tx.inputs.size());
     const auto input_index32 = static_cast<uint32_t>(input_index);
 
 #ifdef WITH_CONSENSUS
     using namespace bc::consensus;
-    const auto previous_output_script = prevout_script.to_data(false);
-    data_chunk current_transaction = current_tx.to_data();
+    const auto script_data = prevout_script.to_data(false);
+    const auto transaction_data = tx.to_data();
 
     // Convert native flags to libbitcoin-consensus flags.
     uint32_t consensus_flags = verify_flags_none;
@@ -316,14 +316,14 @@ code validate_transaction::check_consensus(const script& prevout_script,
     if ((flags & script_context::bip66_enabled) != 0)
         consensus_flags |= verify_flags_dersig;
 
-    const auto result = verify_script(current_transaction.data(),
-        current_transaction.size(), previous_output_script.data(),
-        previous_output_script.size(), input_index32, consensus_flags);
+    const auto result = verify_script(transaction_data.data(),
+        transaction_data.size(), script_data.data(), script_data.size(),
+        input_index32, consensus_flags);
 
     const auto valid = (result == verify_result::verify_result_eval_true);
 #else
-    const auto valid = script::verify(current_tx.inputs[input_index].script,
-        prevout_script, current_tx, input_index32, flags);
+    const auto valid = script::verify(tx.inputs[input_index].script,
+        prevout_script, tx, input_index32, flags);
 #endif
 
     return valid ? error::success : error::validate_inputs_failed;

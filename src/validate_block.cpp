@@ -470,7 +470,7 @@ code validate_block::check_inputs(const transaction& tx,
 code validate_block::check_input(const transaction& tx, size_t index_in_block,
     size_t input_index, uint64_t& value, size_t& sigops) const
 {
-    BITCOIN_ASSERT(input_index < current_tx.inputs.size());
+    BITCOIN_ASSERT(input_index < tx.inputs.size());
 
     size_t previous_height;
     transaction previous_tx;

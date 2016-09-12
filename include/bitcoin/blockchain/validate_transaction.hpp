@@ -65,8 +65,7 @@ public:
 
 private:
     static code check_consensus(const chain::script& prevout_script,
-        const chain::transaction& current_tx, size_t input_index,
-        uint32_t flags);
+        const chain::transaction& tx, size_t input_index, uint32_t flags);
 
     code check_for_mempool() const;
     void handle_duplicate_check(const code& ec);
