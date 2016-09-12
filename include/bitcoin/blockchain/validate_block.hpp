@@ -35,7 +35,7 @@ namespace blockchain {
 class BCB_API validate_block
 {
 public:
-    code check_block() const;
+    code check_block();
     code accept_block() const;
     code connect_block() const;
 
@@ -53,41 +53,32 @@ protected:
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;
     virtual uint64_t actual_time_span(size_t interval) const = 0;
-    virtual versions preceding_block_versions(size_t count) const = 0;
+    virtual versions preceding_block_versions(size_t maximum) const = 0;
     virtual chain::header fetch_block(size_t fetch_height) const = 0;
-    virtual bool transaction_exists(const hash_digest& tx_hash) const = 0;
     virtual bool fetch_transaction(chain::transaction& tx, size_t& tx_height,
         const hash_digest& tx_hash) const = 0;
     virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;
     virtual bool is_output_spent(const chain::output_point& previous_output,
-        size_t index_in_parent, size_t input_index) const = 0;
+        size_t index_in_block, size_t input_index) const = 0;
 
-    // These have default implementations that can be overriden.
-    virtual bool connect_input(size_t index_in_parent,
-        const chain::transaction& current_tx, size_t input_index,
-        uint64_t& value_in, size_t& total_sigops) const;
-    virtual bool validate_inputs(const chain::transaction& tx,
-        size_t index_in_parent, uint64_t& value_in,
-        size_t& total_sigops) const;
+    virtual code check_inputs(const chain::transaction& tx,
+        size_t index_in_block, uint64_t& value, size_t& sigops) const;
 
-    // These are protected virtual for testability.
+    virtual code check_input(const chain::transaction& tx,
+        size_t index_in_block, size_t input_index, uint64_t& value,
+        size_t& sigops) const;
+
     bool stopped() const;
-    virtual bool is_valid_version() const;
-    virtual bool is_active(chain::script_context flag) const;
-    bool is_spent_duplicate(const chain::transaction& tx) const;
-    bool is_valid_time_stamp(uint32_t timestamp) const;
+    bool is_valid_version() const;
+    bool is_active(chain::script_context flag) const;
+    bool is_unspent(const chain::transaction& tx) const;
+    bool contains_unspent_duplicates() const;
     uint32_t work_required(bool is_testnet) const;
-
-    static bool is_distinct_tx_set(const chain::transaction::list& txs);
-    static bool is_valid_proof_of_work(hash_digest hash, uint32_t bits);
-    static bool is_valid_coinbase_height(size_t height,
-        const chain::block& block);
-    static size_t legacy_sigops_count(const chain::transaction& tx);
-    static size_t legacy_sigops_count(const chain::transaction::list& txs);
 
 private:
     bool testnet_;
     const size_t height_;
+    size_t legacy_sigops_;
     uint32_t activations_;
     uint32_t minimum_version_;
     const chain::block& current_block_;
