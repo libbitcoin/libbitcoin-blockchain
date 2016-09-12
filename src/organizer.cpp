@@ -117,16 +117,17 @@ code organizer::verify(uint64_t fork_point,
     if (error_code)
         return error_code;
 
-    // Start strict validation if past last checkpoint.
-    if (!strict(fork_point))
-        return error::success;
-
     const auto total_inputs = count_inputs(*current_block);
     const auto total_transactions = current_block->transactions.size();
 
-    log::debug(LOG_BLOCKCHAIN)
-        << "Block [" << height << "] verify (" << total_transactions
-        << ") txs and (" << total_inputs << ") inputs";
+    // Start strict validation if past last checkpoint.
+    if (!strict(fork_point))
+    {
+        log::info(LOG_BLOCKCHAIN)
+            << "Block [" << height << "] accepted (" << total_transactions
+            << ") txs and (" << total_inputs << ") inputs under checkpoint.";
+        return error::success;
+    }
 
     // Time this for logging.
     const auto timed = [&error_code, &validate]()
