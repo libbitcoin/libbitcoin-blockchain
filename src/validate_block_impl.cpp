@@ -115,10 +115,17 @@ chain::header validate_block_impl::fetch_block(size_t fetch_height) const
 bool validate_block_impl::fetch_transaction(chain::transaction& tx,
     size_t& tx_height, const hash_digest& tx_hash) const
 {
-    return
-        (chain_.get_transaction(tx, tx_height, tx_hash) &&
-            tx_height <= fork_index_) ||
-        fetch_orphan_transaction(tx, tx_height, tx_hash);
+    uint64_t out_tx_height;
+    const auto result = chain_.get_transaction(tx, out_tx_height, tx_hash);
+
+    if (result && out_tx_height <= fork_index_)
+    {
+        BITCOIN_ASSERT(out_tx_height <= max_size_t);
+        tx_height = static_cast<size_t>(out_tx_height);
+        return true;
+    }
+
+    return fetch_orphan_transaction(tx, tx_height, tx_hash);
 }
 
 bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
