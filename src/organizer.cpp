@@ -96,34 +96,30 @@ code organizer::verify(uint64_t fork_point,
     const auto& current_block = orphan_chain[orphan_index]->actual();
     const auto height = fork_point + orphan_index + 1;
     BITCOIN_ASSERT(height != 0);
-
-    const auto callback = [this]()
-    {
-        return stopped();
-    };
+    const auto callback = [this]() { return stopped(); };
 
     // Validates current_block
     validate_block_impl validate(chain_, fork_point, orphan_chain,
         orphan_index, height, *current_block, use_testnet_rules_, checkpoints_,
-            callback);
+        callback);
 
     // Checks that are independent of the chain.
-    auto ec = validate.check_block();
+    auto error_code = validate.check_block();
 
-    if (ec)
-        return ec;
+    if (error_code)
+        return error_code;
 
     validate.initialize_context();
 
     // Checks that are dependent on height and preceding blocks.
-    ec = validate.accept_block();
+    error_code = validate.accept_block();
 
-    if (ec)
-        return ec;
+    if (error_code)
+        return error_code;
 
     // Start strict validation if past last checkpoint.
     if (!strict(fork_point))
-        return ec;
+        return error::success;
 
     const auto total_inputs = count_inputs(*current_block);
     const auto total_transactions = current_block->transactions.size();
@@ -133,10 +129,10 @@ code organizer::verify(uint64_t fork_point,
         << ") txs and (" << total_inputs << ") inputs";
 
     // Time this for logging.
-    const auto timed = [&ec, &validate]()
+    const auto timed = [&error_code, &validate]()
     {
         // Checks that include input->output traversal.
-        ec = validate.connect_block();
+        error_code = validate.connect_block();
     };
 
     // Execute the timed validation.
@@ -144,7 +140,7 @@ code organizer::verify(uint64_t fork_point,
     const auto ms_per_block = static_cast<float>(elapsed.count());
     const auto ms_per_input = ms_per_block / total_inputs;
     const auto seconds_per_block = ms_per_block / 1000;
-    const auto verified = ec ? "unverified" : "verified";
+    const auto verified = error_code ? "unverified" : "verified";
 
     log::info(LOG_BLOCKCHAIN)
         << "Block [" << height << "] " << verified << " ("
@@ -152,7 +148,7 @@ code organizer::verify(uint64_t fork_point,
         << seconds_per_block << ") secs or ("
         << ms_per_input << ") ms/input";
 
-    return ec;
+    return error_code;
 }
 
 // This is called on every block_chain_impl::do_store() call.
@@ -206,22 +202,23 @@ void organizer::replace_chain(uint64_t fork_index,
     for (uint64_t orphan = 0; orphan < orphan_chain.size(); ++orphan)
     {
         // This verifies the block at orphan_chain[orphan]->actual()
-        const auto ec = verify(fork_index, orphan_chain, orphan);
+        const auto error_code = verify(fork_index, orphan_chain, orphan);
 
-        if (ec)
+        if (error_code)
         {
             // If invalid block info is also set for the block.
-            if (ec != error::service_stopped)
+            if (error_code != error::service_stopped)
             {
                 const auto& header = orphan_chain[orphan]->actual()->header;
                 const auto block_hash = encode_hash(header.hash());
 
                 log::warning(LOG_BLOCKCHAIN)
-                    << "Invalid block [" << block_hash << "] " << ec.message();
+                    << "Invalid block [" << block_hash << "] "
+                    << error_code.message();
             }
 
             // Block is invalid, clip the orphans.
-            clip_orphans(orphan_chain, orphan, ec);
+            clip_orphans(orphan_chain, orphan, error_code);
 
             // Stop summing work once we discover an invalid block
             break;
