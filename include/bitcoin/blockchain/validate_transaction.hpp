@@ -42,6 +42,19 @@ public:
     typedef std::function<void(const code&, transaction_ptr,
         chain::point::indexes)> validate_handler;
 
+    // Used for tx and block validation (stateless).
+    //-------------------------------------------------------------------------
+
+    static code check_transaction(const chain::transaction& tx);
+
+    static code check_input(const chain::transaction& tx,
+        size_t input_index, const chain::transaction& previous_tx,
+        size_t parent_height, size_t previous_height, uint64_t& value,
+        uint32_t flags);
+
+    // Used for memory pool transaction validation (stateful).
+    //-------------------------------------------------------------------------
+
     validate_transaction(block_chain& chain, transaction_ptr tx,
         const transaction_pool& pool, dispatcher& dispatch);
 
@@ -50,42 +63,20 @@ public:
 
     void start(validate_handler handler);
 
-    static bool check_consensus(const chain::script& prevout_script,
+private:
+    static code check_consensus(const chain::script& prevout_script,
         const chain::transaction& current_tx, size_t input_index,
         uint32_t flags);
 
-    static code check_transaction(const chain::transaction& tx);
-
-    static bool connect_input(const chain::transaction& tx,
-        size_t current_input, const chain::transaction& previous_tx,
-        size_t parent_height, size_t last_block_height, uint64_t& value_in,
-        uint32_t flags);
-
-    static bool tally_fees(const chain::transaction& tx, uint64_t value_in,
-        uint64_t& fees);
-
-private:
-    code basic_checks() const;
-    bool is_standard() const;
+    code check_for_mempool() const;
     void handle_duplicate_check(const code& ec);
-
-    // Last height used for checking coinbase maturity.
     void set_last_height(const code& ec, size_t last_height);
-
-    // Begin looping through the inputs, fetching the previous tx
     void next_previous_transaction();
     void previous_tx_index(const code& ec, size_t parent_height);
-
-    // If previous_tx_index didn't find it then check in pool instead
     void search_pool_previous_tx();
     void handle_previous_tx(const code& ec,
         const chain::transaction& previous_tx, size_t parent_height);
-
-    // After running connect_input, we check whether this validated previous
-    // output was not already spent by another input in the blockchain.
-    // is_spent() earlier already checked in the pool.
-    void check_double_spend(const code& ec, const chain::input_point& point);
-    void check_fees();
+    void handle_spend(const code& ec, const chain::input_point& point);
 
     block_chain& blockchain_;
     const transaction_ptr tx_;

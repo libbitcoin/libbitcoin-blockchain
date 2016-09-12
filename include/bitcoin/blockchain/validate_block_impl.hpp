@@ -51,13 +51,12 @@ protected:
         const hash_digest& tx_hash) const;
     bool is_output_spent(const chain::output_point& outpoint) const;
     bool is_output_spent(const chain::output_point& previous_output,
-        size_t index_in_parent, size_t input_index) const;
-    bool transaction_exists(const hash_digest& tx_hash) const;
+        size_t index_in_block, size_t input_index) const;
 
 private:
     bool fetch_orphan_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const;
-    bool orphan_is_spent(const chain::output_point& previous_output,
+    bool is_orphan_spent(const chain::output_point& previous_output,
         size_t skip_tx, size_t skip_input) const;
 
     simple_chain& chain_;

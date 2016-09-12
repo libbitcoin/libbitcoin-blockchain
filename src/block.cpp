@@ -27,13 +27,15 @@ namespace blockchain {
 
 using namespace chain;
 
+// TODO: consider moving into chain::block.
 uint64_t block_subsidy(size_t height)
 {
-    uint64_t subsidy = coin_price(initial_block_reward);
+    auto subsidy = bitcoin_to_satoshi(initial_block_reward);
     subsidy >>= (height / reward_interval);
     return subsidy;
 }
 
+// TODO: consider moving into chain::block.
 hash_number block_work(uint32_t bits)
 {
     hash_number target;

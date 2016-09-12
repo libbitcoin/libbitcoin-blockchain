@@ -252,6 +252,18 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     return true;
 }
 
+bool block_chain_impl::get_transaction_height(uint64_t& out_block_height,
+    const hash_digest& transaction_hash) const
+{
+    size_t height;
+
+    if (!database_.transactions.get_height(height, transaction_hash))
+        return false;
+
+    out_block_height = height;
+    return true;
+}
+
 // This is safe to call concurrently (but with no other methods).
 bool block_chain_impl::import(block::ptr block, uint64_t height)
 {
@@ -367,13 +379,9 @@ void block_chain_impl::do_store(message::block_message::ptr block,
     stop_write(handler, detail->error(), detail->height());
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: This should be ordered on channel distacher (modify channel queries).
-// This allows channels to run concurrently with internal order preservation.
-///////////////////////////////////////////////////////////////////////////////
 // This performs a query in the context of the calling thread.
+// This allows channels to run concurrently with internal order preservation.
 // The callback model is preserved currently in order to limit downstream changes.
-// This change allows the caller to manage worker threads.
 void block_chain_impl::fetch_serial(perform_read_functor perform_read)
 {
     // Post IBD writes are ordered on the strand, so never concurrent.
@@ -394,49 +402,6 @@ void block_chain_impl::fetch_serial(perform_read_functor perform_read)
     // Initiate serial read operation.
     do_read();
 }
-
-////void block_chain_impl::fetch_parallel(perform_read_functor perform_read)
-////{
-////    // Post IBD writes are ordered on the strand, so never concurrent.
-////    // Reads are unordered and concurrent, but effectively blocked by writes.
-////    const auto try_read = [this, perform_read]()
-////    {
-////        const auto handle = database_.begin_read();
-////        return (!database_.is_write_locked(handle) && perform_read(handle));
-////    };
-////
-////    const auto do_read = [this, try_read]()
-////    {
-////        // Sleep while waiting for write to complete.
-////        while (!try_read())
-////            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-////    };
-////
-////    // Initiate async read operation.
-////    read_dispatch_.concurrent(do_read);
-////}
-
-////// TODO: This should be ordered on the channel's strand, not across channels.
-////void block_chain_impl::fetch_ordered(perform_read_functor perform_read)
-////{
-////    // Writes are ordered on the strand, so never concurrent.
-////    // Reads are unordered and concurrent, but effectively blocked by writes.
-////    const auto try_read = [this, perform_read]() -> bool
-////    {
-////        const auto handle = database_.begin_read();
-////        return (!database_.is_write_locked(handle) && perform_read(handle));
-////    };
-////
-////    const auto do_read = [this, try_read]()
-////    {
-////        // Sleep while waiting for write to complete.
-////        while (!try_read())
-////            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-////    };
-////
-////    // Initiate async read operation.
-////    read_dispatch_.ordered(do_read);
-////}
 
 // block_chain (formerly fetch_ordered)
 // ----------------------------------------------------------------------------
@@ -726,7 +691,7 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
 void block_chain_impl::fetch_merkle_block(uint64_t height,
     merkle_block_fetch_handler handler)
 {
-    // TODO:
+    // TODO: implement.
     ////blockchain::fetch_merkle_block(*this, height, handler);
     handler(error::operation_failed, {});
 }
@@ -734,7 +699,7 @@ void block_chain_impl::fetch_merkle_block(uint64_t height,
 void block_chain_impl::fetch_merkle_block(const hash_digest& hash,
     merkle_block_fetch_handler handler)
 {
-    // TODO:
+    // TODO: implement.
     ////blockchain::fetch_merkle_block(*this, hash, handler);
     handler(error::operation_failed, {});
 }
@@ -871,7 +836,7 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
             chain::input_point();
         return spend.valid ?
             finish_fetch(slock, handler, error::success, point) :
-            finish_fetch(slock, handler, error::unspent_output, point);
+            finish_fetch(slock, handler, error::not_found, point);
     };
     fetch_serial(do_fetch);
 }

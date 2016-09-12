@@ -36,8 +36,11 @@ namespace blockchain {
 using namespace chain;
 using namespace std::placeholders;
 
-// Max transaction size is set to max block size (1,000,000).
+// Maximum transaction size is set to max block size (1,000,000).
 static constexpr uint32_t max_transaction_size = 1000000;
+
+// Maximum signature operations is set to block limit (20000).
+static constexpr uint32_t max_block_script_sigops = max_transaction_size / 50;
 
 validate_transaction::validate_transaction(block_chain& chain,
     transaction_ptr tx, const transaction_pool& pool,
@@ -58,10 +61,11 @@ validate_transaction::validate_transaction(block_chain& chain,
 {
 }
 
+// mempool check
 void validate_transaction::start(validate_handler handler)
 {
     handle_validate_ = handler;
-    const auto ec = basic_checks();
+    const auto ec = check_for_mempool();
 
     if (ec)
     {
@@ -79,37 +83,29 @@ void validate_transaction::start(validate_handler handler)
                 shared_from_this(), _1));
 }
 
-code validate_transaction::basic_checks() const
+// mempool check
+code validate_transaction::check_for_mempool() const
 {
+    if (tx_->is_coinbase())
+        return error::coinbase_transaction;
+
+    // Basic checks that are independent of the mempool.
     const auto ec = check_transaction(*tx_);
 
     if (ec)
         return ec;
 
-    // This should probably preceed check_transaction.
-    if (tx_->is_coinbase())
-        return error::coinbase_transaction;
+    // This wasn't done in version 2.x.
+    ////// check_block counts sigops once for all transactions so check_transaction
+    ////// excludes this check as optimization and we handle here independently.
+    ////if (tx_->signature_operations(false) > max_block_script_sigops)
+    ////    return error::too_many_sigs;
 
-    // Ummm...
-    //if ((int64)nLockTime > INT_MAX)
-
-    if (!is_standard())
-        return error::is_not_standard;
-
-    if (pool_.is_in_pool(tx_hash_))
-        return error::duplicate;
-
-    // Check for blockchain duplicates in start (after this returns).
-    return error::success;
+    return pool_.is_in_pool(tx_hash_) ? error::duplicate : error::success;
 }
 
-bool validate_transaction::is_standard() const
-{
-    return true;
-}
-
-void validate_transaction::handle_duplicate_check(
-    const code& ec)
+// mempool check
+void validate_transaction::handle_duplicate_check(const code& ec)
 {
     if (ec != error::not_found)
     {
@@ -133,6 +129,7 @@ void validate_transaction::handle_duplicate_check(
             shared_from_this(), _1, _2));
 }
 
+// mempool check
 void validate_transaction::set_last_height(const code& ec,
     size_t last_height)
 {
@@ -147,11 +144,12 @@ void validate_transaction::set_last_height(const code& ec,
     current_input_ = 0;
     value_in_ = 0;
 
-    // Begin looping through the inputs, fetching the previous tx.
+    // Begin looping through the inputs, fetching each previous tx.
     if (!tx_->inputs.empty())
         next_previous_transaction();
 }
 
+// mempool check
 void validate_transaction::next_previous_transaction()
 {
     BITCOIN_ASSERT(current_input_ < tx_->inputs.size());
@@ -165,6 +163,7 @@ void validate_transaction::next_previous_transaction()
                     shared_from_this(), _1, _2));
 }
 
+// mempool check
 void validate_transaction::previous_tx_index(const code& ec,
     size_t parent_height)
 {
@@ -174,15 +173,15 @@ void validate_transaction::previous_tx_index(const code& ec,
         return;
     }
 
-    BITCOIN_ASSERT(current_input_ < tx_->inputs.size());
     const auto& prev_tx_hash = tx_->inputs[current_input_].previous_output.hash;
-    
-    // Now fetch actual transaction body
+
+    // Now fetch actual previous transaction body.
     blockchain_.fetch_transaction(prev_tx_hash,
         dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
             shared_from_this(), _1, _2, parent_height));
 }
 
+// mempool check
 void validate_transaction::search_pool_previous_tx()
 {
     transaction previous_tx;
@@ -195,13 +194,15 @@ void validate_transaction::search_pool_previous_tx()
         return;
     }
 
-    // parent_height ignored here as mempool transactions cannot be coinbase.
     BITCOIN_ASSERT(!previous_tx.is_coinbase());
+
+    // parent_height ignored here as mempool transactions cannot be coinbase.
     static constexpr size_t parent_height = 0;
     handle_previous_tx(error::success, previous_tx, parent_height);
     unconfirmed_.push_back(current_input_);
 }
 
+// mempool check
 void validate_transaction::handle_previous_tx(const code& ec,
     const transaction& previous_tx, size_t parent_height)
 {
@@ -216,49 +217,49 @@ void validate_transaction::handle_previous_tx(const code& ec,
     // HACK: this assumes that the mempool is operating at min block version 4.
     ///////////////////////////////////////////////////////////////////////////
 
-    // Should check if inputs are standard here...
-    if (!connect_input(*tx_, current_input_, previous_tx, parent_height,
-        last_block_height_, value_in_, script_context::all_enabled))
+    const auto error_code = check_input(*tx_, current_input_, previous_tx,
+        parent_height, last_block_height_, value_in_,
+        script_context::all_enabled);
+
+    if (error_code)
     {
         const auto list = point::indexes{ current_input_ };
-        handle_validate_(error::validate_inputs_failed, tx_, list);
+        handle_validate_(error_code, tx_, list);
         return;
     }
 
-    // Search for double spends...
-    blockchain_.fetch_spend(tx_->inputs[current_input_].previous_output,
-        dispatch_.unordered_delegate(&validate_transaction::check_double_spend,
+    const auto& output = tx_->inputs[current_input_].previous_output;
+
+    // Search for double spends in blockchain store...
+    blockchain_.fetch_spend(output,
+        dispatch_.unordered_delegate(&validate_transaction::handle_spend,
             shared_from_this(), _1, _2));
 }
 
-void validate_transaction::check_double_spend(const code& ec, 
+// mempool check
+void validate_transaction::handle_spend(const code& ec,
     const chain::input_point&)
 {
-    if (ec != error::unspent_output)
+    if (ec != error::not_found)
     {
         handle_validate_(error::double_spend, tx_, {});
         return;
     }
 
-    // End of connect_input checks.
     ++current_input_;
+
+    // current_input_ becomes invalid on last pass.
     if (current_input_ < tx_->inputs.size())
     {
         next_previous_transaction();
         return;
     }
 
-    // current_input_ will be invalid on last pass.
-    check_fees();
-}
+    // End of mempool checks loop.
 
-void validate_transaction::check_fees()
-{
-    uint64_t fee = 0;
-
-    if (!tally_fees(*tx_, value_in_, fee))
+    if (tx_->total_output_value() > value_in_)
     {
-        handle_validate_(error::fees_out_of_range, tx_, {});
+        handle_validate_(error::spend_exceeds_value, tx_, {});
         return;
     }
 
@@ -268,6 +269,7 @@ void validate_transaction::check_fees()
     handle_validate_(error::success, tx_, unconfirmed_);
 }
 
+// common inexpensive checks
 code validate_transaction::check_transaction(const transaction& tx)
 {
     if (tx.inputs.empty() || tx.outputs.empty())
@@ -276,39 +278,21 @@ code validate_transaction::check_transaction(const transaction& tx)
     if (tx.serialized_size() > max_transaction_size)
         return error::size_limits;
 
-    // Check for negative or overflow output values
-    uint64_t total_output_value = 0;
+    if (tx.total_output_value() > max_money())
+        return error::output_value_overflow;
 
-    for (const auto& output: tx.outputs)
-    {
-        if (output.value > max_money())
-            return error::output_value_overflow;
+    if (tx.is_invalid_coinbase())
+        return error::invalid_coinbase_script_size;
 
-        total_output_value += output.value;
-
-        if (total_output_value > max_money())
-            return error::output_value_overflow;
-    }
-
-    if (tx.is_coinbase())
-    {
-        const auto& coinbase_script = tx.inputs[0].script;
-        const auto coinbase_size = coinbase_script.serialized_size(false);
-        if (coinbase_size < 2 || coinbase_size > 100)
-            return error::invalid_coinbase_script_size;
-    }
-    else
-    {
-        for (const auto& input: tx.inputs)
-            if (input.previous_output.is_null())
-                return error::previous_output_null;
-    }
+    if (tx.is_invalid_non_coinbase())
+        return error::previous_output_null;
 
     return error::success;
 }
 
+// common checks
 // Validate script consensus conformance based on flags provided.
-bool validate_transaction::check_consensus(const script& prevout_script,
+code validate_transaction::check_consensus(const script& prevout_script,
     const transaction& current_tx, size_t input_index, uint32_t flags)
 {
     BITCOIN_ASSERT(input_index <= max_uint32);
@@ -338,65 +322,48 @@ bool validate_transaction::check_consensus(const script& prevout_script,
 
     const auto valid = (result == verify_result::verify_result_eval_true);
 #else
-    // Copy the const prevout script so it can be run.
-    auto previous_output_script = prevout_script;
-    const auto& current_input_script = current_tx.inputs[input_index].script;
-
-    const auto valid = script::verify(current_input_script,
-        previous_output_script, current_tx, input_index32, flags);
+    const auto valid = script::verify(current_tx.inputs[input_index].script,
+        prevout_script, current_tx, input_index32, flags);
 #endif
 
-    if (!valid)
-        log::warning(LOG_BLOCKCHAIN)
-            << "Invalid transaction ["
-            << encode_hash(current_tx.hash()) << "]";
-
-    return valid;
+    return valid ? error::success : error::validate_inputs_failed;
 }
 
-bool validate_transaction::connect_input(const transaction& tx,
-    size_t current_input, const transaction& previous_tx,
-    size_t parent_height, size_t last_block_height, uint64_t& value_in,
+// common checks
+code validate_transaction::check_input(const transaction& tx,
+    size_t input_index, const transaction& previous_tx,
+    size_t parent_height, size_t previous_height, uint64_t& value,
     uint32_t flags)
 {
-    const auto& input = tx.inputs[current_input];
-    const auto& previous_outpoint = tx.inputs[current_input].previous_output;
+    const auto& input = tx.inputs[input_index];
+    const auto& previous_output = input.previous_output;
 
-    if (previous_outpoint.index >= previous_tx.outputs.size())
-        return false;
+    if (previous_output.index >= previous_tx.outputs.size())
+        return error::input_not_found;
 
-    const auto& previous_output = previous_tx.outputs[previous_outpoint.index];
-    const auto output_value = previous_output.value;
+    const auto& previous_tx_out = previous_tx.outputs[previous_output.index];
+    const auto output_value = previous_tx_out.value;
+
+    BITCOIN_ASSERT(previous_height <= parent_height);
+
+    if (previous_tx.is_coinbase() &&
+        (previous_height - parent_height < coinbase_maturity))
+        return error::coinbase_maturity;
 
     if (output_value > max_money())
-        return false;
+        return error::spend_exceeds_value;
 
-    if (previous_tx.is_coinbase())
-    {
-        const auto height_difference = last_block_height - parent_height;
+    if (value > max_uint64 - output_value)
+        return error::spend_exceeds_value;
 
-        if (height_difference < coinbase_maturity)
-            return false;
-    }
+    // This function accumulates and value_in as a side effect.
+    // This is an optimization due to the cost if previous tx lookup.
+    value += output_value;
 
-    if (!check_consensus(previous_output.script, tx, current_input, flags))
-        return false;
+    if (value > max_money())
+        return error::output_value_overflow;
 
-    value_in += output_value;
-    return value_in <= max_money();
-}
-
-bool validate_transaction::tally_fees(const transaction& tx, uint64_t value_in,
-    uint64_t& total_fees)
-{
-    const auto value_out = tx.total_output_value();
-
-    if (value_in < value_out)
-        return false;
-
-    const auto fee = value_in - value_out;
-    total_fees += fee;
-    return total_fees <= max_money();
+    return check_consensus(previous_tx_out.script, tx, input_index, flags);
 }
 
 } // namespace blockchain

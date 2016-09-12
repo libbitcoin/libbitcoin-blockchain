@@ -102,6 +102,10 @@ public:
     bool get_transaction(chain::transaction& out_transaction,
         uint64_t& out_block_height, const hash_digest& transaction_hash) const;
 
+    /// Get the block height of the transaction given its hash.
+    bool get_transaction_height(uint64_t& out_block_height,
+        const hash_digest& transaction_hash) const;
+
     /// Import a block to the blockchain.
     bool import(chain::block::ptr block, uint64_t height);
 
@@ -228,8 +232,6 @@ private:
     void do_store(message::block_message::ptr block,
         block_store_handler handler);
 
-    ////void fetch_ordered(perform_read_functor perform_read);
-    ////void fetch_parallel(perform_read_functor perform_read);
     void fetch_serial(perform_read_functor perform_read);
     bool stopped() const;
 
