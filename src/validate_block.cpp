@@ -374,40 +374,19 @@ code validate_block::connect_block() const
         contains_unspent_duplicates())
         return error::unspent_duplicate;
 
-    RETURN_IF_STOPPED();
-
     uint64_t block_fees = 0;
     size_t sigops = legacy_sigops_;
+    code error_code(error::success);
     const auto& txs = current_block_.transactions;
 
-    ////////////// TODO: parallelize. /////////////////////////////////////////
+    //////////////////////////// TODO: parallelize. ///////////////////////////
     // Start at index 1 to skip coinbase.
-    for (size_t index = 1; index < txs.size(); ++index)
-    {
-        uint64_t value = 0;
-        const auto& tx = txs[index];
-
-        // Consensus checks here, with value summation side effect.
-        const auto error_code = check_inputs(tx, index, value, sigops);
-
-        if (error_code)
-            return error_code;
-
-        RETURN_IF_STOPPED();
-
-        const auto spent = tx.total_output_value();
-
-        if (spent > value)
-            return error::spend_exceeds_value;
-
-        // Fees cannot overflow because they are less than value_out which
-        // cannnot exceed value_in, which is validated against max_money as it
-        // is accumulated in check_inputs, and fees + subsidy cannot overflow.
-        block_fees += (value - spent);
-
-        RETURN_IF_STOPPED();
-    }
+    for (size_t index = 1; !error_code && index < txs.size(); ++index)
+        error_code = check_transaction(txs[index], index, block_fees, sigops);
     ///////////////////////////////////////////////////////////////////////////
+
+    if (error_code)
+        return error_code;
 
     // Check for excess reward claim.
     const auto earned_subsidy = block_subsidy(height_);
@@ -421,30 +400,55 @@ bool validate_block::contains_unspent_duplicates() const
 {
     size_t height;
     transaction other;
+    auto unspent = false;
+    const auto& txs = current_block_.transactions;
 
-    ////////////// TODO: parallelize. /////////////////////////////////////////
-    for (const auto& tx: current_block_.transactions)
-        if (fetch_transaction(other, height, tx.hash()) && is_unspent(other))
-            return true;
+    //////////////////////////// TODO: parallelize. ///////////////////////////
+    for (auto tx = txs.begin(); !unspent && tx != txs.end(); ++tx)
+        unspent = fetch_transaction(other, height, tx->hash()) &&
+            is_unspent(other);
     ///////////////////////////////////////////////////////////////////////////
 
-    return false;
+    return unspent;
 }
 
 bool validate_block::is_unspent(const transaction& tx) const
 {
-    ////////////// TODO: parallelize. /////////////////////////////////////////
-    for (uint32_t index = 0; index < tx.outputs.size(); ++index)
-        if (!is_output_spent({ tx.hash(), index }))
-            return true;
+    auto unspent = false;
+
+    //////////////////////////// TODO: parallelize. ///////////////////////////
+    for (uint32_t index = 0; !unspent && index < tx.outputs.size(); ++index)
+        unspent = !is_output_spent({ tx.hash(), index });
     ///////////////////////////////////////////////////////////////////////////
 
     // BUGBUG: We cannot currently index (spent) duplicates.
-    log::error(LOG_BLOCKCHAIN)
-        << "Duplicate of spent transaction [" << encode_hash(tx.hash())
-        << "] valid but not supported.";
+    if (!unspent)
+        log::error(LOG_BLOCKCHAIN)
+            << "Duplicate of spent transaction [" << encode_hash(tx.hash())
+            << "] valid but not supported.";
 
-    return false;
+    return unspent;
+}
+
+code validate_block::check_transaction(const transaction& tx, size_t index,
+    size_t& fees, size_t& sigops) const
+{
+    uint64_t value = 0;
+    const auto error_code = check_inputs(tx, index, value, sigops);
+
+    if (error_code)
+        return error_code;
+
+    const auto spent = tx.total_output_value();
+
+    if (spent > value)
+        return error::spend_exceeds_value;
+
+    // Fees cannot overflow because they are less than value_out which
+    // cannnot exceed value_in, which is validated against max_money as it
+    // is accumulated in check_inputs, and fees + subsidy cannot overflow.
+    fees += (value - spent);
+    return error::success;
 }
 
 code validate_block::check_inputs(const transaction& tx,
@@ -454,7 +458,7 @@ code validate_block::check_inputs(const transaction& tx,
     code error_code(error::success);
     size_t index = 0;
 
-    ////////////// TODO: parallelize. /////////////////////////////////////////
+    //////////////////////////// TODO: parallelize. ///////////////////////////
     for (; !error_code && index < tx.inputs.size(); ++index)
         error_code = check_input(tx, index_in_block, index, value, sigops);
     ///////////////////////////////////////////////////////////////////////////
@@ -490,23 +494,15 @@ code validate_block::check_input(const transaction& tx, size_t index_in_block,
 
     RETURN_IF_STOPPED();
 
-    const auto& previous_tx_output = previous_tx.outputs[previous_point.index];
-    const auto previous_tx_output_script_sigops = previous_tx_output.script.
-        pay_to_script_hash_signature_operations(input.script);
+    const auto& script = previous_tx.outputs[previous_point.index].script;
+    auto error_code = check_sigops(script, input.script, sigops);
 
-    // Guard against overflow.
-    if (sigops > max_size_t - previous_tx_output_script_sigops)
-        return error::too_many_sigs;
-
-    // Add sigops from pay_to_script_hash payments now that we have the inputs.
-    sigops += previous_tx_output_script_sigops;
-
-    if (sigops > max_block_script_sigops)
-        return error::too_many_sigs;
+    if (error_code)
+        return error_code;
 
     RETURN_IF_STOPPED();
 
-    const auto error_code = validate_transaction::check_input(tx, input_index,
+    error_code = validate_transaction::check_input(tx, input_index,
         previous_tx, height_, previous_height, value, activations_);
 
     if (error_code)
@@ -514,10 +510,24 @@ code validate_block::check_input(const transaction& tx, size_t index_in_block,
 
     RETURN_IF_STOPPED();
 
-    if (is_output_spent(previous_point, index_in_block, input_index))
-        return error::double_spend;
+    return is_output_spent(previous_point, index_in_block, input_index) ?
+        error::double_spend : error::success;
+}
 
-    return error::success;
+code validate_block::check_sigops(const script& output, const script& input,
+    size_t& sigops) const
+{
+    const auto more = output.pay_to_script_hash_signature_operations(input);
+
+    // Guard against overflow.
+    if (sigops > max_size_t - more)
+        return error::too_many_sigs;
+
+    // Add sigops from p2sh payments.
+    sigops += more;
+
+    return sigops > max_block_script_sigops ? error::too_many_sigs :
+        error::success;
 }
 
 #undef RETURN_IF_STOPPED
