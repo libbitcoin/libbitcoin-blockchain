@@ -489,7 +489,7 @@ void block_chain_impl::fetch_locator_block_hashes(
                 start = std::max(start_result.height(), start);
         }
 
-        // TODO: This largest portion can be parallelized.
+        ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
         hash_list hashes;
         for (size_t index = start + 1; index < stop; ++index)
@@ -501,6 +501,7 @@ void block_chain_impl::fetch_locator_block_hashes(
                 break;
             }
         }
+        ///////////////////////////////////////////////////////////////////////
 
         return finish_fetch(slock, handler, error::success, hashes);
     };
@@ -558,7 +559,7 @@ void block_chain_impl::fetch_locator_block_headers(
         }
         //---------------------------------------------------------------------
 
-        // TODO: This largest portion can be parallelized.
+        ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
         chain::header::list headers;
         for (size_t index = start + 1; index < stop; ++index)
@@ -570,6 +571,7 @@ void block_chain_impl::fetch_locator_block_headers(
                 break;
             }
         }
+        ///////////////////////////////////////////////////////////////////////
 
         return finish_fetch(slock, handler, error::success, headers);
     };

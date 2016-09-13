@@ -191,7 +191,7 @@ bool validate_block_impl::is_orphan_spent(
         for (size_t tx_index = 0; tx_index < transactions.size();
             ++tx_index)
         {
-            // TODO: too deep, move this section to subfunction.
+            // TODO: too visually deep, move this section to subfunction.
             const auto& orphan_tx = transactions[tx_index];
 
             for (size_t input_index = 0; input_index < orphan_tx.inputs.size();
