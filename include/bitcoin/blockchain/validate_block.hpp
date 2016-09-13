@@ -61,19 +61,21 @@ protected:
     virtual bool is_output_spent(const chain::output_point& previous_output,
         size_t index_in_block, size_t input_index) const = 0;
 
-    virtual code check_inputs(const chain::transaction& tx,
-        size_t index_in_block, uint64_t& value, size_t& sigops) const;
-
-    virtual code check_input(const chain::transaction& tx,
-        size_t index_in_block, size_t input_index, uint64_t& value,
-        size_t& sigops) const;
-
     bool stopped() const;
     bool is_valid_version() const;
     bool is_active(chain::script_context flag) const;
     bool is_unspent(const chain::transaction& tx) const;
     bool contains_unspent_duplicates() const;
     uint32_t work_required(bool is_testnet) const;
+
+    code check_transaction(const chain::transaction& tx,
+        size_t index_in_block, uint64_t& fees, size_t& sigops) const;
+    code check_inputs(const chain::transaction& tx, size_t index_in_block,
+        uint64_t& value, size_t& sigops) const;
+    code check_input(const chain::transaction& tx, size_t index_in_block,
+        size_t input_index, uint64_t& value, size_t& sigops) const;
+    code check_sigops(const  chain::script& output,
+        const  chain::script& input, size_t& sigops) const;
 
 private:
     bool testnet_;

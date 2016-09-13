@@ -55,10 +55,10 @@ bool orphan_pool::add(block_detail::ptr block)
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    log::debug(LOG_BLOCKCHAIN)
-        << "Orphan pool added block [" << encode_hash(block->hash())
-        << "] previous [" << encode_hash(header.previous_block_hash)
-        << "] old size (" << old_size << ").";
+    ////log::debug(LOG_BLOCKCHAIN)
+    ////    << "Orphan pool added block [" << encode_hash(block->hash())
+    ////    << "] previous [" << encode_hash(header.previous_block_hash)
+    ////    << "] old size (" << old_size << ").";
 
     return true;
 }
@@ -85,9 +85,9 @@ void orphan_pool::remove(block_detail::ptr block)
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    log::debug(LOG_BLOCKCHAIN)
-        << "Orphan pool removed block [" << encode_hash(block->hash())
-        << "] old size (" << old_size << ").";
+    ////log::debug(LOG_BLOCKCHAIN)
+    ////    << "Orphan pool removed block [" << encode_hash(block->hash())
+    ////    << "] old size (" << old_size << ").";
 }
 
 // TODO: use hash table pool to eliminate this O(n^2) search.
