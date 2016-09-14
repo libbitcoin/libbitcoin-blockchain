@@ -40,42 +40,50 @@ public:
     code connect_block() const;
 
     /// Required to call before calling accept_block or connect_block.
-    void initialize_context();
+    code initialize_context();
 
 protected:
     typedef std::vector<uint8_t> versions;
     typedef std::function<bool()> stopped_callback;
 
-    validate_block(size_t height, const chain::block& block,
+    validate_block(const chain::block& block, size_t height,
         bool testnet, const config::checkpoint::list& checks,
         stopped_callback stop_callback);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: deprecated as unsafe, use of fetch_block ignores error code.
+    // Okay as long as the database is 
     virtual uint64_t median_time_past() const = 0;
     virtual uint32_t previous_block_bits() const = 0;
     virtual uint64_t actual_time_span(size_t interval) const = 0;
     virtual versions preceding_block_versions(size_t maximum) const = 0;
-    virtual chain::header fetch_block(size_t fetch_height) const = 0;
-    virtual bool fetch_transaction(chain::transaction& tx, size_t& tx_height,
+    virtual uint32_t work_required(const chain::block& block,
+        bool is_testnet) const = 0;
+    virtual chain::header fetch_block(size_t height) const = 0;
+    ///////////////////////////////////////////////////////////////////////////
+
+    virtual bool fetch_header(chain::header& header, size_t height) const = 0;
+    virtual bool fetch_transaction(chain::transaction& tx, size_t& height,
         const hash_digest& tx_hash) const = 0;
+
     virtual bool is_output_spent(const chain::output_point& outpoint) const = 0;
     virtual bool is_output_spent(const chain::output_point& previous_output,
-        size_t index_in_block, size_t input_index) const = 0;
+        size_t position, uint32_t input_index) const = 0;
 
     bool stopped() const;
     bool is_valid_version() const;
     bool is_active(chain::script_context flag) const;
     bool is_unspent(const chain::transaction& tx) const;
-    bool contains_unspent_duplicates() const;
-    uint32_t work_required(bool is_testnet) const;
+    bool contains_unspent_duplicates(const chain::block& block) const;
 
-    code check_transaction(const chain::transaction& tx,
-        size_t index_in_block, uint64_t& fees, size_t& sigops) const;
-    code check_inputs(const chain::transaction& tx, size_t index_in_block,
+    code check_transaction(const chain::transaction& tx, size_t position,
+        uint64_t& fees, size_t& sigops) const;
+
+    code check_inputs(const chain::transaction& tx, size_t position,
         uint64_t& value, size_t& sigops) const;
-    code check_input(const chain::transaction& tx, size_t index_in_block,
-        size_t input_index, uint64_t& value, size_t& sigops) const;
-    code check_sigops(const  chain::script& output,
-        const  chain::script& input, size_t& sigops) const;
+
+    code check_input(const chain::transaction& tx, size_t position,
+        uint32_t input_index, uint64_t& value, size_t& sigops) const;
 
 private:
     bool testnet_;

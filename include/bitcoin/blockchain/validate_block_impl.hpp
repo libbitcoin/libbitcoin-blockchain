@@ -35,34 +35,42 @@ class BCB_API validate_block_impl
   : public validate_block
 {
 public:
-    validate_block_impl(simple_chain& chain, size_t fork_index,
-        const block_detail::list& orphan_chain, size_t orphan_index,
-        size_t height, const chain::block& block, bool testnet,
+    validate_block_impl(simple_chain& chain, size_t fork_height,
+        const block_detail::list& orphan_chain, size_t orphan_height,
+        const chain::block& block, size_t height, bool testnet,
         const config::checkpoint::list& checkpoints,
         stopped_callback stopped);
 
 protected:
+
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: deprecated as unsafe, use of fetch_block ignores error code.
     uint64_t median_time_past() const;
     uint32_t previous_block_bits() const;
     uint64_t actual_time_span(size_t interval) const;
+    uint32_t work_required(const chain::block& block, bool is_testnet) const;
     versions preceding_block_versions(size_t maximum) const;
-    chain::header fetch_block(size_t fetch_height) const;
-    bool fetch_transaction(chain::transaction& tx, size_t& tx_height,
+    virtual chain::header fetch_block(size_t height) const;
+    ///////////////////////////////////////////////////////////////////////////
+
+    bool fetch_header(chain::header& header, size_t height) const;
+    bool fetch_transaction(chain::transaction& tx, size_t& height,
         const hash_digest& tx_hash) const;
+
     bool is_output_spent(const chain::output_point& outpoint) const;
     bool is_output_spent(const chain::output_point& previous_output,
-        size_t index_in_block, size_t input_index) const;
+        size_t position, uint32_t input_index) const;
 
 private:
     bool fetch_orphan_transaction(chain::transaction& tx,
         size_t& previous_height, const hash_digest& tx_hash) const;
     bool is_orphan_spent(const chain::output_point& previous_output,
-        size_t skip_tx, size_t skip_input) const;
+        size_t skip_position, uint32_t skip_input_index) const;
 
     simple_chain& chain_;
-    size_t height_;
-    size_t fork_index_;
-    size_t orphan_index_;
+    const size_t height_;
+    const size_t fork_height_;
+    const size_t orphan_index_;
     const block_detail::list& orphan_chain_;
 };
 

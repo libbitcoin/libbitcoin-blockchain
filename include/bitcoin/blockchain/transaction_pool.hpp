@@ -44,7 +44,7 @@ public:
     typedef handle0 result_handler;
     typedef handle1<transaction_ptr> fetch_handler;
     typedef handle1<transaction_ptr> confirm_handler;
-    typedef handle2<transaction_ptr, indexes> validate_handler;
+    typedef handle2<indexes, uint64_t> validate_handler;
     typedef std::function<bool(const code&, const indexes&, transaction_ptr)>
         transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_ptr>
@@ -102,12 +102,12 @@ protected:
 
     bool handle_reorganized(const code& ec, size_t fork_point,
         const block_list& new_blocks, const block_list& replaced_blocks);
-    void handle_validated(const code& ec, transaction_ptr tx,
-        const indexes& unconfirmed, validate_handler handler);
+    void handle_validated(const code& ec, const indexes& unconfirmed,
+        transaction_ptr tx, validate_handler handler);
 
     void do_validate(transaction_ptr tx, validate_handler handler);
-    void do_store(const code& ec, transaction_ptr tx,
-        const indexes& unconfirmed, confirm_handler handle_confirm,
+    void do_store(const code& ec, const indexes& unconfirmed, uint64_t value,
+        transaction_ptr tx, confirm_handler handle_confirm,
         validate_handler handle_validate);
 
     void notify_transaction(const chain::point::indexes& unconfirmed,

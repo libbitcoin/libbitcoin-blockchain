@@ -255,12 +255,11 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
 bool block_chain_impl::get_transaction_height(uint64_t& out_block_height,
     const hash_digest& transaction_hash) const
 {
-    size_t height;
-
-    if (!database_.transactions.get_height(height, transaction_hash))
+    const auto result = database_.transactions.get(transaction_hash);
+    if (!result)
         return false;
 
-    out_block_height = height;
+    out_block_height = result.height();
     return true;
 }
 

@@ -27,7 +27,7 @@ namespace blockchain {
 
 using namespace chain;
 
-// TODO: consider moving into chain::block.
+// TODO: consider moving into chain::block or validate_block.
 uint64_t block_subsidy(size_t height)
 {
     auto subsidy = bitcoin_to_satoshi(initial_block_reward);
@@ -35,7 +35,7 @@ uint64_t block_subsidy(size_t height)
     return subsidy;
 }
 
-// TODO: consider moving into chain::block.
+// TODO: consider moving into chain::block or validate_block.
 hash_number block_work(uint32_t bits)
 {
     hash_number target;
@@ -53,6 +53,7 @@ hash_number block_work(uint32_t bits)
     return (~target / (target + 1)) + 1;
 }
 
+// TODO: consider moving into chain::block.
 block::indexes block_locator_indexes(size_t top_height)
 {
     BITCOIN_ASSERT(top_height <= bc::max_int64);
