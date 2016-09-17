@@ -27,32 +27,6 @@ namespace blockchain {
 
 using namespace chain;
 
-// TODO: consider moving into chain::block or validate_block.
-uint64_t block_subsidy(size_t height)
-{
-    auto subsidy = bitcoin_to_satoshi(initial_block_reward);
-    subsidy >>= (height / reward_interval);
-    return subsidy;
-}
-
-// TODO: consider moving into chain::block or validate_block.
-hash_number block_work(uint32_t bits)
-{
-    hash_number target;
-
-    if (!target.set_compact(bits))
-        return 0;
-
-    if (target == 0)
-        return 0;
-
-    // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
-    // as it's too large for a uint256. However, as 2**256 is at least as large
-    // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
-    // or ~bnTarget / (nTarget+1) + 1.
-    return (~target / (target + 1)) + 1;
-}
-
 // TODO: consider moving into chain::block.
 block::indexes block_locator_indexes(size_t top_height)
 {

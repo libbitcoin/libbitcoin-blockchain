@@ -98,38 +98,45 @@ void transaction_pool::do_validate(transaction_ptr tx,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {}, 0);
+        handler(error::service_stopped, {});
         return;
     }
 
-    const auto validator = std::make_shared<validate_transaction>(
-        blockchain_, *this, dispatch_);
+    // TODO: reenable once implemented.
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    handler(error::validate_inputs_failed, {});
+    return;
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    const auto validator = std::make_shared<validate_transaction>(blockchain_,
+        *this, dispatch_);
 
     validator->validate(tx,
         dispatch_.ordered_delegate(&transaction_pool::handle_validated,
-            this, _1, _2, tx, handler));
+            this, _1, _2, tx, validator, handler));
 }
 
 void transaction_pool::handle_validated(const code& ec,
-    const indexes& unconfirmed, transaction_ptr tx, validate_handler handler)
+    const indexes& unconfirmed, transaction_ptr tx,
+    validate_transaction::ptr, validate_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, {}, 0);
+        handler(error::service_stopped, {});
         return;
     }
 
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
-        handler(ec, unconfirmed, 0);
+        handler(ec, unconfirmed);
         return;
     }
 
     if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handler(ec, {}, 0);
+        handler(ec, {});
         return;
     }
 
@@ -140,7 +147,7 @@ void transaction_pool::handle_validated(const code& ec,
     ////    return;
     ////}
 
-    handler(error::success, unconfirmed, 0);
+    handler(error::success, unconfirmed);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
@@ -149,23 +156,23 @@ void transaction_pool::store(transaction_ptr tx,
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, {}, 0);
+        handle_validate(error::service_stopped, {});
         return;
     }
 
     validate(tx,
         std::bind(&transaction_pool::do_store,
-            this, _1, _2, _3, tx, handle_confirm, handle_validate));
+            this, _1, _2, tx, handle_confirm, handle_validate));
 }
 
 // This is overly complex due to the transaction pool and index split.
 void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
-    uint64_t value, transaction_ptr tx, confirm_handler handle_confirm,
+    transaction_ptr tx, confirm_handler handle_confirm,
     validate_handler handle_validate)
 {
     if (ec)
     {
-        handle_validate(ec, {}, 0);
+        handle_validate(ec, {});
         return;
     }
 
@@ -195,7 +202,7 @@ void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
         // Notify caller that the tx has been validated and indexed.
-        handle_validate(ec, unconfirmed, 0);
+        handle_validate(ec, unconfirmed);
     };
 
     // Add to index and invoke handler to indicate validation and indexing.

@@ -33,18 +33,30 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace chain;
+using namespace bc::chain;
 using namespace std::placeholders;
 
 #define NAME "validate_transaction"
 
-// Maximum transaction size is set to max block size (1,000,000).
-static constexpr uint32_t max_transaction_size = 1000000;
+#ifdef WITH_CONSENSUS
+static uint32_t convert_flags(uint32_t native_flags)
+{
+    using namespace bc::consensus;
+    uint32_t consensus_flags = verify_flags_none;
 
-// Maximum transaction signature operations is set to block limit (20000).
-static constexpr uint32_t max_transaction_sigops = max_transaction_size / 50;
+    if (script::is_enabled(native_flags, rule_fork::bip16_rule))
+        consensus_flags |= verify_flags_p2sh;
 
-// mempool check
+    if (script::is_enabled(native_flags, rule_fork::bip65_rule))
+        consensus_flags |= verify_flags_checklocktimeverify;
+
+    if (script::is_enabled(native_flags, rule_fork::bip66_rule))
+        consensus_flags |= verify_flags_dersig;
+
+    return consensus_flags;
+}
+#endif
+
 validate_transaction::validate_transaction(block_chain& chain,
     const transaction_pool& pool, dispatcher& dispatch)
   : blockchain_(chain),
@@ -53,60 +65,33 @@ validate_transaction::validate_transaction(block_chain& chain,
 {
 }
 
-// Validate sequence.
-//-----------------------------------------------------------------------------
-
-void validate_transaction::validate(const chain::transaction& tx,
-    validate_handler handler)
-{
-    validate(std::make_shared<message::transaction_message>(tx), handler);
-}
-
 void validate_transaction::validate(transaction_ptr tx,
     validate_handler handler)
 {
-    if (tx->is_coinbase())
+    if (auto error_code = tx->check())
     {
-        // No coinbase in mempool.
-        handler(error::coinbase_transaction, {}, 0);
+        handler(error_code, {});
         return;
     }
 
-    // Basic checks that are independent of the mempool and the database.
-    const auto error_code = check_transaction(tx);
-
-    if (error_code)
-    {
-        handler(error_code, {}, 0);
-        return;
-    }
-
-    // Check for a duplicate transaction identifier (hash).
-    blockchain_.fetch_transaction(tx->hash(),
-        dispatch_.unordered_delegate(&validate_transaction::handle_duplicate,
-            shared_from_this(), _1, _2, tx, handler));
+    // BIP30 is presumed here to be always active WRT mempool transactions.
+    // Check for a duplicate transaction identifier (hash) existence.
+    blockchain_.fetch_transaction_index(tx->hash(),
+        std::bind(&validate_transaction::handle_duplicate,
+            shared_from_this(), _1, _2, _3, tx, handler));
 }
 
-void validate_transaction::handle_duplicate(const code& ec,
-    const transaction&, transaction_ptr tx, validate_handler handler)
+void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
+    transaction_ptr tx, validate_handler handler)
 {
-    if (!ec)
-    {
-        // BUGBUG: overly restrictive, spent dups ok (BIP30).
-        handler(error::duplicate, {}, 0);
-        return;
-    }
-
-    if (ec != error::not_found)
-    {
-        handler(ec, {}, 0);
-        return;
-    }
+    ////if (auto error_code = tx->connect(state))
+    ////{
+    ////    handler(error_code, {});
+    ////    return;
+    ////}
 
     if (pool_.is_in_pool(tx->hash()))
     {
-        // Without pool consistency this is impossible to enforce.
-        handler(error::duplicate, {}, 0);
         return;
     }
 
@@ -119,26 +104,20 @@ void validate_transaction::handle_duplicate(const code& ec,
 void validate_transaction::handle_last_height(const code& ec,
     size_t last_height, transaction_ptr tx, validate_handler handler)
 {
-    if (ec)
-    {
-        handler(ec, {}, 0);
-        return;
-    }
-
     const validate_handler rejoin =
         std::bind(&validate_transaction::handle_join,
-            shared_from_this(), _1, _2, _3, tx, handler);
+            shared_from_this(), _1, _2, tx, handler);
 
     const validate_handler complete =
         synchronize(rejoin, tx->inputs.size(), NAME);
 
-    // Asynchronously loop all inputs in transaction.
+    // Asynchronously loop all inputs.
     for (uint32_t index = 0; index < tx->inputs.size(); ++index)
-        dispatch_.concurrent(&validate_transaction::handle_input,
+        dispatch_.concurrent(&validate_transaction::validate_input,
             shared_from_this(), tx, index, last_height, complete);
 }
 
-void validate_transaction::handle_input(transaction_ptr tx,
+void validate_transaction::validate_input(transaction_ptr tx,
     uint32_t input_index, size_t last_height, validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
@@ -146,8 +125,7 @@ void validate_transaction::handle_input(transaction_ptr tx,
     // Search for a spend of this output in the blockchain.
     blockchain_.fetch_spend(outpoint,
         dispatch_.unordered_delegate(&validate_transaction::handle_double_spend,
-            shared_from_this(), _1, _2, tx, input_index, last_height,
-                handler));
+            shared_from_this(), _1, _2, tx, input_index, last_height, handler));
 }
 
 // This just determines if the output is spent (or a utxo).
@@ -157,51 +135,23 @@ void validate_transaction::handle_double_spend(const code& ec,
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
 
-    if (!ec)
-    {
-        handler(error::double_spend, { input_index }, 0);
-        return;
-    }
-
-    if (ec != error::not_found)
-    {
-        handler(ec, { input_index }, 0);
-        return;
-    }
-
     if (pool_.is_spent_in_pool(outpoint))
     {
-        // TODO: we may want to allow spent-in-pool.
-        // This is very costly given the lack of pool indexing,
-        // we may want to skip this check until uniform indexing in v4.
-        handler(error::double_spend, {}, 0);
         return;
     }
-
-    // TODO: combine query to get height with fetch_transaction.
-    const size_t todo_3 = 42;
-
-    // TODO: we just need the output and block height, not full tx,
-    // but our tx-based encoding requires we decode the full transaction.
-    // We only want the height when it's an output of a coinbase tx.
 
     // Locate the previous transaction for the input.
     blockchain_.fetch_transaction(outpoint.hash,
-        std::bind(&validate_transaction::handle_previous_tx,
-            shared_from_this(), _1, _2, todo_3, tx, input_index, last_height,
+        dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
+            shared_from_this(), _1, _2, _3, tx, input_index, last_height,
                 handler));
 }
 
 void validate_transaction::handle_previous_tx(const code& ec,
-    const transaction& previous_tx, size_t previous_tx_height,
+    const transaction& previous_tx, uint64_t previous_tx_height,
     transaction_ptr tx, uint32_t input_index, size_t last_height,
     validate_handler handler)
 {
-    // This assumes that the mempool is always operating at max block version.
-    static constexpr auto script_flags = script_context::all_enabled;
-
-    uint64_t value = 0;
-    point::indexes unconfirmed;
     const auto& outpoint = tx->inputs[input_index].previous_output;
 
     if (ec == error::input_not_found)
@@ -212,103 +162,38 @@ void validate_transaction::handle_previous_tx(const code& ec,
         if (!pool_.find(pool_tx, outpoint.hash) ||
             outpoint.index >= pool_tx.outputs.size())
         {
-            handler(ec, { input_index }, 0);
-            return;
-        }
-
-        const auto error_code = check_input(tx, input_index, pool_tx, 0,
-            last_height, script_flags, value);
-
-        if (error_code)
-        {
-            handler(error_code, { input_index }, 0);
-            return;
-        }
-
-        unconfirmed.push_back(input_index);
-    }
-    else if (ec)
-    {
-        handler(ec, { input_index }, 0);
-        return;
-    }
-    else if (outpoint.index >= previous_tx.outputs.size())
-    {
-        handler(error::input_not_found, { input_index }, 0);
-        return;
-    }
-    else
-    {
-        const auto error_code = check_input(tx, input_index, previous_tx,
-            previous_tx_height, last_height, script_flags, value);
-
-        if (error_code)
-        {
-            handler(error_code, { input_index }, 0);
             return;
         }
     }
+
+    const auto previous_height = static_cast<size_t>(previous_tx_height);
+
+    ////const auto error_code = check_input(tx, input_index, previous_tx,
+    ////    previous_height, last_height, script_flags, value);
 
     // Input validation sequence end, triggers handle_complete when full.
-    handler(error::success, unconfirmed, value);
+    handler(error::success, {});
 }
 
 //-----------------------------------------------------------------------------
 
 // TODO: summarize values in custom stateful synchronizer.
 void validate_transaction::handle_join(const code& ec,
-    point::indexes unconfirmed, uint64_t total_input_value,
-    transaction_ptr tx, validate_handler handler)
+    point::indexes unconfirmed, transaction_ptr tx, validate_handler handler)
 {
-    if (ec)
-    {
-        // Forward the failing parameters to the main handler.
-        handler(ec, unconfirmed, 0);
-        return;
-    }
-
-    if (tx->total_output_value() > total_input_value)
-    {
-        handler(error::spend_exceeds_value, {}, 0);
-        return;
-    }
 
     // Who cares?
     // Fuck the police
     // Every tx equal!
 
     // This is the end of the validate sequence.
-    handler(error::success, unconfirmed, total_input_value);
+    handler(error::success, unconfirmed);
 }
 
 // Static utilities used for tx and block validation.
 //-----------------------------------------------------------------------------
 
 // pointers (mempool)
-
-// common inexpensive checks
-code validate_transaction::check_transaction(const transaction& tx)
-{
-    if (tx.inputs.empty() || tx.outputs.empty())
-        return error::empty_transaction;
-
-    if (tx.serialized_size() > max_transaction_size)
-        return error::size_limits;
-
-    if (tx.total_output_value() > max_money())
-        return error::output_value_overflow;
-
-    if (tx.is_invalid_coinbase())
-        return error::invalid_coinbase_script_size;
-
-    if (tx.is_invalid_non_coinbase())
-        return error::previous_output_null;
-
-    if (tx.signature_operations(false) > max_transaction_sigops)
-        return error::too_many_sigs;
-
-    return error::success;
-}
 
 // TODO: this only needs the specific utxo (output), coinbase testable.
 // common expensive checks
@@ -319,30 +204,16 @@ code validate_transaction::check_input(const transaction& tx,
 {
     const auto& input = tx.inputs[input_index];
     const auto& previous_outpoint = input.previous_output;
-
-    if (previous_outpoint.index >= previous_tx.outputs.size())
-        return error::input_not_found;
-
     const auto& previous_output = previous_tx.outputs[previous_outpoint.index];
-    output_value = previous_output.value;
-
-    BITCOIN_ASSERT(previous_height <= parent_height);
-
-    if (previous_tx.is_coinbase() &&
-        (last_height - previous_tx_height < coinbase_maturity))
-        return error::coinbase_maturity;
-
-    if (output_value > max_money())
-        return error::output_value_overflow;
-
-    // TODO: Summarize in aggregator.
-    // TODO: validate total_output_value() <= value_accumulator.
-    ////if (value_accumulator > max_money() - output_value)
-    ////    return error::output_value_overflow;
-    ////
-    ////value_accumulator += output_value;
-
     return check_script(tx, input_index, previous_output.script, flags);
+}
+
+// references (block)
+
+code validate_transaction::check_script(transaction_ptr tx,
+    uint32_t input_index, const script& prevout_script, uint32_t flags)
+{
+    return check_script(*tx, input_index, prevout_script, flags);
 }
 
 code validate_transaction::check_script(const transaction& tx,
@@ -352,69 +223,24 @@ code validate_transaction::check_script(const transaction& tx,
         return error::input_not_found;
 
 #ifdef WITH_CONSENSUS
-    using namespace bc::consensus;
+    // Convert native flags to libbitcoin-consensus flags.
+    uint32_t consensus_flags = convert_flags(flags);
+
+    // Serialize objects.
     const auto script_data = prevout_script.to_data(false);
     const auto transaction_data = tx.to_data();
 
-    // Convert native flags to libbitcoin-consensus flags.
-    uint32_t consensus_flags = verify_flags_none;
-
-    if ((flags & script_context::bip16_enabled) != 0)
-        consensus_flags |= verify_flags_p2sh;
-
-    if ((flags & script_context::bip65_enabled) != 0)
-        consensus_flags |= verify_flags_checklocktimeverify;
-
-    if ((flags & script_context::bip66_enabled) != 0)
-        consensus_flags |= verify_flags_dersig;
-
+    using namespace bc::consensus;
     const auto result = verify_script(transaction_data.data(),
         transaction_data.size(), script_data.data(), script_data.size(),
         input_index, consensus_flags);
 
     const auto valid = (result == verify_result::verify_result_eval_true);
 #else
-    const auto valid = script::verify(tx.inputs[input_index].script,
-        prevout_script, tx, input_index, flags);
+    const auto valid = script::verify(tx, input_index, flags);
 #endif
 
     return valid ? error::success : error::validate_inputs_failed;
-}
-
-// references (block)
-
-// common inexpensive checks
-code validate_transaction::check_transactions(const block& block)
-{
-    for (const auto& tx: block.transactions)
-    {
-        const auto error_code = check_transaction(tx);
-
-        if (error_code)
-            return error_code;
-    }
-
-    return error::success;
-}
-
-code validate_transaction::check_transaction(transaction_ptr tx)
-{
-    return check_transaction(*tx);
-}
-
-code validate_transaction::check_input(transaction_ptr tx,
-    uint32_t input_index, const transaction& previous_tx,
-    size_t previous_tx_height, size_t last_height, uint32_t flags,
-    uint64_t& output_value)
-{
-    return check_input(*tx, input_index, previous_tx, previous_tx_height,
-        last_height, flags, output_value);
-}
-
-code validate_transaction::check_script(transaction_ptr tx,
-    uint32_t input_index, const script& prevout_script, uint32_t flags)
-{
-    return check_script(*tx, input_index, prevout_script, flags);
 }
 
 } // namespace blockchain

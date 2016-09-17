@@ -29,14 +29,13 @@
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-// TODO: This is not an interface, collapse with organizer_impl.
-
-/// This class is thread safe, with the exception of organize().
-/// Structure which organises the blocks from the orphan pool to the blockchain.
+/// This class is not thread safe.
+/// Organises blocks via the orphan pool to the blockchain.
 class BCB_API organizer
 {
 public:
@@ -61,13 +60,12 @@ public:
     virtual void filter_orphans(message::get_data::ptr message);
 
 protected:
-    virtual bool stopped();
+    virtual bool stopped() const;
 
 private:
     typedef block_detail::ptr detail_ptr;
     typedef block_detail::list detail_list;
 
-    static size_t count_inputs(const chain::block& block);
     static size_t compute_height(size_t fork_height, size_t orphan_index);
 
     virtual code verify(size_t fork_height, const detail_list& new_chain,
@@ -92,6 +90,7 @@ private:
     // These are protected by the caller protecting organize().
     simple_chain& chain_;
     detail_list process_queue_;
+    validate_block validator_;
 
     // These are thread safe.
     orphan_pool orphan_pool_;

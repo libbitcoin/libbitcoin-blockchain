@@ -48,11 +48,11 @@ public:
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
     typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<uint64_t> last_height_fetch_handler;
-    typedef handle1<chain::transaction> transaction_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::history_compact::list> history_fetch_handler;
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
+    typedef handle2<chain::transaction, uint64_t> transaction_fetch_handler;
 
     typedef std::function<bool(const code&, uint64_t,
         const message::block_message::ptr_list&,

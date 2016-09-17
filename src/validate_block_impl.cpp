@@ -27,34 +27,20 @@
 
 namespace libbitcoin {
 namespace blockchain {
-    
-// Value used to define median time past.
-static constexpr size_t median_time_past_blocks = 11;
-
-// Value used to define retargeting range constraint.
-static constexpr uint64_t retargeting_factor = 4;
-
-// Aim for blocks every 10 mins (600 seconds).
-static constexpr uint64_t target_spacing_seconds = 10 * 60;
-
-// Target readjustment every 2 weeks (1209600 seconds).
-static constexpr uint64_t target_timespan_seconds = 2 * 7 * 24 * 60 * 60;
 
 // The target number of blocks for 2 weeks of work (2016 blocks).
 static constexpr uint64_t retargeting_interval = target_timespan_seconds /
     target_spacing_seconds;
 
-validate_block_impl::validate_block_impl(simple_chain& chain,
-    size_t fork_height, const block_detail::list& orphan_chain,
-    size_t orphan_index, const chain::block& block, size_t height,
-    bool testnet, const config::checkpoint::list& checks,
-    stopped_callback stopped)
-  : validate_block(block, height, testnet, checks, stopped),
-    chain_(chain),
-    height_(height),
+validate_block_impl::validate_block_impl(size_t fork_height,
+    const block_detail::list& orphan_chain, size_t orphan_index,
+    const block_ptr block, size_t height, bool testnet,
+    const checkpoints& checks, const simple_chain& chain)
+  : height_(height),
     fork_height_(fork_height),
     orphan_index_(orphan_index),
-    orphan_chain_(orphan_chain)
+    orphan_chain_(orphan_chain),
+    chain_(chain)
 {
     BITCOIN_ASSERT(height_ != 0);
     BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
@@ -121,7 +107,7 @@ uint64_t validate_block_impl::median_time_past() const
 }
 
 // TODO: deprecated as unsafe, ignores error code.
-uint32_t validate_block_impl::work_required(const chain::block& block, 
+uint32_t validate_block_impl::work_required(uint32_t timestamp,
     bool is_testnet) const
 {
     if (height_ == 0)
@@ -166,7 +152,7 @@ uint32_t validate_block_impl::work_required(const chain::block& block,
     const auto max_time_gap = fetch_block(height_ - 1).timestamp + 2 * 
         target_spacing_seconds;
 
-    if (block.header.timestamp > max_time_gap)
+    if (timestamp > max_time_gap)
         return max_work_bits;
 
     chain::header previous_block;
@@ -277,25 +263,11 @@ bool validate_block_impl::is_output_spent(
         tx_height <= fork_height_;
 }
 
-bool validate_block_impl::is_output_spent(
-    const chain::output_point& previous_output, size_t position,
-    uint32_t input_index) const
-{
-    // Search for double spends. This must be done in both chain AND orphan.
-    if (is_output_spent(previous_output))
-        return true;
-
-    if (is_orphan_spent(previous_output, position, input_index))
-        return true;
-
-    return false;
-}
-
 bool validate_block_impl::is_orphan_spent(
     const chain::output_point& previous_output,
-    size_t skip_position, uint32_t skip_input_index) const
+    const chain::transaction& skip_tx, uint32_t skip_input_index) const
 {
-    // This gets costly as the size of the orphan pool increases.
+    // For each orphan...
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
         const auto& orphan_block = orphan_chain_[orphan]->actual();
@@ -303,19 +275,22 @@ bool validate_block_impl::is_orphan_spent(
         BITCOIN_ASSERT(!transactions.empty());
         BITCOIN_ASSERT(transactions.front().is_coinbase());
 
+        // For each tx...
         for (size_t position = 0; position < transactions.size(); ++position)
         {
-            // TODO: too visually deep, move this section to subfunction.
             const auto& orphan_tx = transactions[position];
             const auto inputs = orphan_tx.inputs.size();
             BITCOIN_ASSERT(inputs <= max_uint32);
 
+            // For each input...
             for (uint32_t input_index = 0; input_index < inputs; ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
 
-                if (orphan == orphan_index_ && position == skip_position &&
-                    input_index == skip_input_index)
+                // Avoid the orphan spend that we are testing.
+                if (orphan == orphan_index_ &&
+                    input_index == skip_input_index &&
+                    skip_tx.hash() == orphan_tx.hash())
                     continue;
 
                 if (orphan_input.previous_output == previous_output)
