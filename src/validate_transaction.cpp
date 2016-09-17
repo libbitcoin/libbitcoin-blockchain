@@ -68,9 +68,11 @@ validate_transaction::validate_transaction(block_chain& chain,
 void validate_transaction::validate(transaction_ptr tx,
     validate_handler handler)
 {
-    if (auto error_code = tx->check())
+    auto ec = tx->check();
+
+    if (ec)
     {
-        handler(error_code, {});
+        handler(ec, {});
         return;
     }
 
@@ -84,9 +86,11 @@ void validate_transaction::validate(transaction_ptr tx,
 void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
     transaction_ptr tx, validate_handler handler)
 {
-    ////if (auto error_code = tx->connect(state))
+    ////const auto ec = tx->connect(state);
+
+    ////if (ec)
     ////{
-    ////    handler(error_code, {});
+    ////    handler(ec, {});
     ////    return;
     ////}
 
