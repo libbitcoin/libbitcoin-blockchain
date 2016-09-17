@@ -82,10 +82,9 @@ code block_detail::error() const
     return code_.load();
 }
 
-const hash_digest& block_detail::hash() const
+hash_digest block_detail::hash() const
 {
-    // This relies on the hash caching optimization.
-    return actual_block_->header.hash();
+    return actual_block_->hash();
 }
 
 } // namespace blockchain

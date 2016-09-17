@@ -64,11 +64,9 @@ private:
             return;
         }
 
-        // Set the block header.
         block->header = header;
-        const auto hash = header.hash();
 
-        blockchain_.fetch_block_transaction_hashes(hash,
+        blockchain_.fetch_block_transaction_hashes(block->hash(),
             std::bind(&block_fetcher::fetch_transactions,
                 shared_from_this(), _1, _2, block, handler));
     }
@@ -100,12 +98,12 @@ private:
         for (const auto& hash: hashes)
             blockchain_.fetch_transaction(hash,
                 std::bind(&block_fetcher::handle_fetch_transaction,
-                    shared_from_this(), _1, _2, index++, block, complete));
+                    shared_from_this(), _1, _2, _3, index++, block, complete));
     }
 
     void handle_fetch_transaction(const code& ec,
-        const transaction& transaction, size_t index, block::ptr block,
-        block_chain::block_fetch_handler handler)
+        const transaction& transaction, uint64_t, size_t index,
+        block::ptr block, block_chain::block_fetch_handler handler)
     {
         if (ec)
         {

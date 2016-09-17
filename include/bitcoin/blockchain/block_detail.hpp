@@ -56,8 +56,8 @@ public:
     void set_error(const code& code);
     code error() const;
 
-    /// This method is thread safe.
-    const hash_digest& hash() const;
+    /// The hash is cached via the underlying block.
+    hash_digest hash() const;
 
 private:
     bc::atomic<code> code_;

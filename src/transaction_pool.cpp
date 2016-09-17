@@ -98,46 +98,56 @@ void transaction_pool::do_validate(transaction_ptr tx,
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, {});
+        handler(error::service_stopped, {});
         return;
     }
 
-    const auto validate = std::make_shared<validate_transaction>(
-        blockchain_, *tx, *this, dispatch_);
+    // TODO: reenable once implemented.
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    handler(error::validate_inputs_failed, {});
+    return;
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    validate->start(
+    const auto validator = std::make_shared<validate_transaction>(blockchain_,
+        *this, dispatch_);
+
+    validator->validate(tx,
         dispatch_.ordered_delegate(&transaction_pool::handle_validated,
-            this, _1, _2, _3, handler));
+            this, _1, _2, tx, validator, handler));
 }
 
-void transaction_pool::handle_validated(const code& ec, transaction_ptr tx,
-    const indexes& unconfirmed, validate_handler handler)
+void transaction_pool::handle_validated(const code& ec,
+    const indexes& unconfirmed, transaction_ptr tx,
+    validate_transaction::ptr, validate_handler handler)
 {
     if (stopped())
     {
-        handler(error::service_stopped, tx, {});
+        handler(error::service_stopped, {});
         return;
     }
 
     if (ec == error::input_not_found || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
-        handler(ec, tx, unconfirmed);
+        handler(ec, unconfirmed);
         return;
     }
 
     if (ec)
     {
         BITCOIN_ASSERT(unconfirmed.empty());
-        handler(ec, tx, {});
+        handler(ec, {});
         return;
     }
 
-    // Recheck the memory pool, as a duplicate may have been added.
-    if (is_in_pool(tx->hash()))
-        handler(error::duplicate, tx, {});
-    else
-        handler(error::success, tx, unconfirmed);
+    ////// Recheck the memory pool, as a duplicate may have been added.
+    ////if (is_in_pool(tx->hash()))
+    ////{
+    ////    handler(error::duplicate, {});
+    ////    return;
+    ////}
+
+    handler(error::success, unconfirmed);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
@@ -146,23 +156,23 @@ void transaction_pool::store(transaction_ptr tx,
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, tx, {});
+        handle_validate(error::service_stopped, {});
         return;
     }
 
     validate(tx,
         std::bind(&transaction_pool::do_store,
-            this, _1, _2, _3, handle_confirm, handle_validate));
+            this, _1, _2, tx, handle_confirm, handle_validate));
 }
 
 // This is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec, transaction_ptr tx,
-    const indexes& unconfirmed, confirm_handler handle_confirm,
+void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
+    transaction_ptr tx, confirm_handler handle_confirm,
     validate_handler handle_validate)
 {
     if (ec)
     {
-        handle_validate(ec, tx, {});
+        handle_validate(ec, {});
         return;
     }
 
@@ -192,7 +202,7 @@ void transaction_pool::do_store(const code& ec, transaction_ptr tx,
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
         // Notify caller that the tx has been validated and indexed.
-        handle_validate(ec, tx, unconfirmed);
+        handle_validate(ec, unconfirmed);
     };
 
     // Add to index and invoke handler to indicate validation and indexing.
@@ -243,10 +253,12 @@ void transaction_pool::filter(get_data_ptr message, result_handler handler)
         auto& inventories = message->inventories;
 
         for (auto it = inventories.begin(); it != inventories.end();)
+        {
             if (it->is_transaction_type() && is_in_pool(it->hash))
                 it = inventories.erase(it);
             else
                 ++it;
+        }
 
         handler(error::success);
     };

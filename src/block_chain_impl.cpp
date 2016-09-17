@@ -166,17 +166,15 @@ bool block_chain_impl::get_next_gap(uint64_t& out_height,
     if (stopped())
         return false;
 
-    BITCOIN_ASSERT(start_height <= bc::max_size_t);
+    BITCOIN_ASSERT(start_height <= max_size_t);
     const auto start = static_cast<size_t>(start_height);
     size_t out;
 
-    if (database_.blocks.next_gap(out, start))
-    {
-        out_height = static_cast<uint64_t>(out);
-        return true;
-    }
+    if (!database_.blocks.next_gap(out, start))
+        return false;
 
-    return false;
+    out_height = static_cast<uint64_t>(out);
+    return true;
 }
 
 bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
@@ -190,7 +188,7 @@ bool block_chain_impl::get_difficulty(hash_number& out_difficulty,
     for (uint64_t index = height; index <= top; ++index)
     {
         const auto bits = database_.blocks.get(index).header().bits;
-        out_difficulty += block_work(bits);
+        out_difficulty += bc::chain::block::work(bits);
     }
 
     return true;
@@ -202,7 +200,7 @@ bool block_chain_impl::get_header(header& out_header, uint64_t height) const
     if (!result)
         return false;
 
-    out_header = result.header();
+    out_header = std::move(result.header());
     return true;
 }
 
@@ -236,7 +234,7 @@ bool block_chain_impl::get_outpoint_transaction(hash_digest& out_transaction,
     if (!spend.valid)
         return false;
 
-    out_transaction = spend.hash;
+    out_transaction = std::move(spend.hash);
     return true;
 }
 
@@ -247,7 +245,7 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
     if (!result)
         return false;
 
-    out_transaction = result.transaction();
+    out_transaction = std::move(result.transaction());
     out_block_height = result.height();
     return true;
 }
@@ -255,12 +253,11 @@ bool block_chain_impl::get_transaction(transaction& out_transaction,
 bool block_chain_impl::get_transaction_height(uint64_t& out_block_height,
     const hash_digest& transaction_hash) const
 {
-    size_t height;
-
-    if (!database_.transactions.get_height(height, transaction_hash))
+    const auto result = database_.transactions.get(transaction_hash);
+    if (!result)
         return false;
 
-    out_block_height = height;
+    out_block_height = result.height();
     return true;
 }
 
@@ -357,7 +354,7 @@ void block_chain_impl::do_store(message::block_message::ptr block,
     start_write();
 
     // fail fast if the block is already stored...
-    if (database_.blocks.get(block->header.hash()))
+    if (database_.blocks.get(block->hash()))
     {
         stop_write(handler, error::duplicate, 0);
         return;
@@ -418,12 +415,12 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
 
     const auto do_fetch = [this, handler](size_t slock)
     {
-        hash_list locator;
         size_t top_height;
         if (!database_.blocks.top(top_height))
             return finish_fetch(slock, handler, error::operation_failed,
-                locator);
+                hash_list{});
 
+        hash_list locator;
         const auto indexes = block_locator_indexes(top_height);
         for (const auto index: indexes)
         {
@@ -434,7 +431,8 @@ void block_chain_impl::fetch_block_locator(block_locator_fetch_handler handler)
             locator.push_back(result.header().hash());
         }
 
-        return finish_fetch(slock, handler, error::success, locator);
+        return finish_fetch(slock, handler, error::success,
+            std::move(locator));
     };
     fetch_serial(do_fetch);
 }
@@ -591,9 +589,10 @@ void block_chain_impl::filter_blocks(message::get_data::ptr message,
     const auto do_fetch = [this, message, handler](size_t slock)
     {
         auto& inventories = message->inventories;
+        const auto& blocks = database_.blocks;
 
         for (auto it = inventories.begin(); it != inventories.end();)
-            if (it->is_block_type() && database_.blocks.get(it->hash))
+            if (it->is_block_type() && blocks.get(it->hash))
                 it = inventories.erase(it);
             else
                 ++it;
@@ -616,13 +615,15 @@ void block_chain_impl::filter_transactions(message::get_data::ptr message,
     const auto do_fetch = [this, message, handler](size_t slock)
     {
         auto& inventories = message->inventories;
+        const auto& transactions = database_.transactions;
 
         for (auto it = inventories.begin(); it != inventories.end();)
-            if (it->is_transaction_type() &&
-                database_.transactions.get(it->hash))
+        {
+            if (it->is_transaction_type() && transactions.get(it->hash))
                 it = inventories.erase(it);
             else
                 ++it;
+        }
 
         return finish_fetch(slock, handler, error::success);
     };
@@ -666,7 +667,7 @@ void block_chain_impl::fetch_block_header(uint64_t height,
         const auto result = database_.blocks.get(height);
         return result ?
             finish_fetch(slock, handler, error::success, result.header()) :
-            finish_fetch(slock, handler, error::not_found, chain::header());
+            finish_fetch(slock, handler, error::not_found, chain::header{});
     };
     fetch_serial(do_fetch);
 }
@@ -685,7 +686,7 @@ void block_chain_impl::fetch_block_header(const hash_digest& hash,
         const auto result = database_.blocks.get(hash);
         return result ?
             finish_fetch(slock, handler, error::success, result.header()) :
-            finish_fetch(slock, handler, error::not_found, chain::header());
+            finish_fetch(slock, handler, error::not_found, chain::header{});
     };
     fetch_serial(do_fetch);
 }
@@ -720,7 +721,7 @@ void block_chain_impl::fetch_block_transaction_hashes(uint64_t height,
         const auto result = database_.blocks.get(height);
         return result ?
             finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list());
+            finish_fetch(slock, handler, error::not_found, hash_list{});
     };
     fetch_serial(do_fetch);
 }
@@ -739,7 +740,7 @@ void block_chain_impl::fetch_block_transaction_hashes(const hash_digest& hash,
         const auto result = database_.blocks.get(hash);
         return result ?
             finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list());
+            finish_fetch(slock, handler, error::not_found, hash_list{});
     };
     fetch_serial(do_fetch);
 }
@@ -786,17 +787,18 @@ void block_chain_impl::fetch_transaction(const hash_digest& hash,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, {}, 0);
         return;
     }
 
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.transactions.get(hash);
-        const auto tx = result ? result.transaction() : chain::transaction();
         return result ?
-            finish_fetch(slock, handler, error::success, tx) :
-            finish_fetch(slock, handler, error::not_found, tx);
+            finish_fetch(slock, handler, error::success, result.transaction(),
+                result.height()) :
+            finish_fetch(slock, handler, error::not_found,
+                chain::transaction{}, 0);
     };
     fetch_serial(do_fetch);
 }
@@ -833,12 +835,11 @@ void block_chain_impl::fetch_spend(const chain::output_point& outpoint,
     const auto do_fetch = [this, outpoint, handler](size_t slock)
     {
         const auto spend = database_.spends.get(outpoint);
-        const auto point = spend.valid ?
-            chain::input_point{ spend.hash, spend.index } :
-            chain::input_point();
         return spend.valid ?
-            finish_fetch(slock, handler, error::success, point) :
-            finish_fetch(slock, handler, error::not_found, point);
+            finish_fetch(slock, handler, error::success,
+                chain::input_point{ std::move(spend.hash), spend.index }) :
+            finish_fetch(slock, handler, error::not_found,
+                chain::input_point{});
     };
     fetch_serial(do_fetch);
 }
@@ -855,9 +856,8 @@ void block_chain_impl::fetch_history(const wallet::payment_address& address,
     const auto do_fetch = [this, address, handler, limit, from_height](
         size_t slock)
     {
-        const auto history = database_.history.get(address.hash(), limit,
-            from_height);
-        return finish_fetch(slock, handler, error::success, history);
+        return finish_fetch(slock, handler, error::success,
+            database_.history.get(address.hash(), limit, from_height));
     };
     fetch_serial(do_fetch);
 }
@@ -871,11 +871,10 @@ void block_chain_impl::fetch_stealth(const binary& filter, uint64_t from_height,
         return;
     }
 
-    const auto do_fetch = [this, filter, handler, from_height](
-        size_t slock)
+    const auto do_fetch = [this, filter, handler, from_height](size_t slock)
     {
-        const auto stealth = database_.stealth.scan(filter, from_height);
-        return finish_fetch(slock, handler, error::success, stealth);
+        return finish_fetch(slock, handler, error::success,
+            database_.stealth.scan(filter, from_height));
     };
     fetch_serial(do_fetch);
 }

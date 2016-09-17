@@ -22,14 +22,15 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <functional>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+class transaction_pool;
 
 /// This class is not thread safe.
 /// This is a utility for transaction_pool::validate and validate_block.
@@ -39,55 +40,75 @@ class BCB_API validate_transaction
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
     typedef message::transaction_message::ptr transaction_ptr;
-    typedef std::function<void(const code&, transaction_ptr,
-        chain::point::indexes)> validate_handler;
+    typedef chain::point::indexes indexes;
+    typedef handle0 result_handler;
+    typedef handle1<indexes> validate_handler;
 
-    // Used for tx and block validation (stateless).
+    // Used for tx and block validation.
     //-------------------------------------------------------------------------
 
-    static code check_transaction(const chain::transaction& tx);
+    // pointers (mempool)
 
-    static code check_input(const chain::transaction& tx,
-        size_t input_index, const chain::transaction& previous_tx,
-        size_t parent_height, size_t previous_height, uint64_t& value,
+    /// Expensive/final checks for both block and mempool transactions.
+    static code check_input(transaction_ptr tx, uint32_t input_index,
+        const chain::transaction& previous_tx, size_t previous_tx_height,
+        size_t last_height, uint32_t flags, uint64_t& out_value);
+
+    /// Expensive/final checks for both block and mempool transactions.
+    static code check_script(transaction_ptr tx, uint32_t input_index,
+        const chain::script& prevout_script, uint32_t flags);
+
+    // references (block)
+
+    /// Expensive/final checks for both block and mempool transactions.
+    static code check_input(const chain::transaction& tx, uint32_t input_index,
+        const chain::transaction& previous_tx, size_t previous_tx_height,
+        size_t last_height, uint32_t flags, uint64_t& out_value);
+
+    /// Expensive/final checks for both block and mempool transactions.
+    static code check_script(const chain::transaction& tx,
+        uint32_t input_index, const chain::script& prevout_script,
         uint32_t flags);
 
-    // Used for memory pool transaction validation (stateful).
+    // Used for memory pool transaction validation.
     //-------------------------------------------------------------------------
 
-    validate_transaction(block_chain& chain, transaction_ptr tx,
-        const transaction_pool& pool, dispatcher& dispatch);
+    validate_transaction(block_chain& chain, const transaction_pool& pool,
+        dispatcher& dispatch);
 
-    validate_transaction(block_chain& chain, const chain::transaction& tx,
-        const transaction_pool& pool, dispatcher& dispatch);
-
-    void start(validate_handler handler);
+    void validate(transaction_ptr tx, validate_handler handler);
 
 private:
-    static code check_consensus(const chain::script& prevout_script,
-        const chain::transaction& tx, size_t input_index, uint32_t flags);
+    // Determine if there is another transaction with the same id.
+    void handle_duplicate(const code& ec, uint64_t height,
+        uint64_t index, transaction_ptr tx, validate_handler handler);
 
-    code check_for_mempool() const;
-    void handle_duplicate_check(const code& ec);
-    void set_last_height(const code& ec, size_t last_height);
-    void next_previous_transaction();
-    void previous_tx_index(const code& ec, size_t parent_height);
-    void search_pool_previous_tx();
+    // Get last height for potential use in coinbase output maturity test.
+    void handle_last_height(const code& ec, size_t last_height,
+        transaction_ptr tx, validate_handler handler);
+
+    // Start of input->output sequence.
+    void validate_input(transaction_ptr tx, uint32_t input_index,
+        size_t last_height, validate_handler handler);
+
+    // Determine if output is spent.
+    void handle_double_spend(const code& ec, const chain::input_point&,
+        transaction_ptr tx, uint32_t input_index, size_t last_height,
+        validate_handler handler);
+
+    // Find output (spent or otherwise) and save block height for maturity test.
     void handle_previous_tx(const code& ec,
-        const chain::transaction& previous_tx, size_t parent_height);
-    void handle_spend(const code& ec, const chain::input_point& point);
+        const chain::transaction& previous_tx, uint64_t previous_tx_height,
+        transaction_ptr tx, uint32_t input_index, size_t last_height,
+        validate_handler handler);
+
+    // Join input threads.
+    void handle_join(const code& ec, chain::point::indexes unconfirmed,
+        transaction_ptr tx, validate_handler handler);
 
     block_chain& blockchain_;
-    const transaction_ptr tx_;
     const transaction_pool& pool_;
     dispatcher& dispatch_;
-
-    const hash_digest tx_hash_;
-    size_t last_block_height_;
-    uint64_t value_in_;
-    uint32_t current_input_;
-    chain::point::indexes unconfirmed_;
-    validate_handler handle_validate_;
 };
 
 } // namespace blockchain
