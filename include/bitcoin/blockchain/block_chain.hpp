@@ -54,9 +54,9 @@ public:
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
     typedef handle2<chain::transaction, uint64_t> transaction_fetch_handler;
 
-    typedef std::function<bool(const code&, uint64_t,
-        const message::block_message::ptr_list&,
-        const message::block_message::ptr_list&)> reorganize_handler;
+    typedef message::block_message::ptr_list list;
+    typedef std::function<bool(const code&, size_t, const list&, const list&)>
+        reorganize_handler;
 
     virtual bool start() = 0;
     virtual bool stop() = 0;
