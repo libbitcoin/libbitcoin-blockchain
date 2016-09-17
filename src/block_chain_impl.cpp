@@ -354,7 +354,7 @@ void block_chain_impl::do_store(message::block_message::ptr block,
     start_write();
 
     // fail fast if the block is already stored...
-    if (database_.blocks.get(block->header.hash()))
+    if (database_.blocks.get(block->hash()))
     {
         stop_write(handler, error::duplicate, 0);
         return;

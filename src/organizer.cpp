@@ -186,7 +186,7 @@ hash_number organizer::chain_work(size_t fork_height, detail_list& new_chain)
             {
                 log::warning(LOG_BLOCKCHAIN)
                     << "Invalid block ["
-                    << encode_hash(new_chain[index]->actual()->header.hash())
+                    << encode_hash(new_chain[index]->actual()->hash())
                     << "] " << error_code.message();
             }
 

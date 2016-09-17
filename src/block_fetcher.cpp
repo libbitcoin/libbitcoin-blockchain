@@ -64,11 +64,9 @@ private:
             return;
         }
 
-        // Set the block header.
         block->header = header;
-        const auto hash = header.hash();
 
-        blockchain_.fetch_block_transaction_hashes(hash,
+        blockchain_.fetch_block_transaction_hashes(block->hash(),
             std::bind(&block_fetcher::fetch_transactions,
                 shared_from_this(), _1, _2, block, handler));
     }

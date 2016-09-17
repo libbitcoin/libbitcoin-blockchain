@@ -84,7 +84,7 @@ code block_detail::error() const
 
 hash_digest block_detail::hash() const
 {
-    return actual_block_->header.hash();
+    return actual_block_->hash();
 }
 
 } // namespace blockchain
