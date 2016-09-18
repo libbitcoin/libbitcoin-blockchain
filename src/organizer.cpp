@@ -289,11 +289,7 @@ void organizer::clip_orphans(detail_list& new_chain, size_t orphan_index,
     // Remove from orphans pool and process queue.
     for (auto it = start; it != new_chain.end(); ++it)
     {
-        if (it == start)
-            (*it)->set_error(reason);
-        else
-            (*it)->set_error(error::previous_block_invalid);
-
+        (*it)->set_error(it == start ? reason : error::previous_block_invalid);
         (*it)->set_processed();
         remove_processed(*it);
         orphan_pool_.remove(*it);

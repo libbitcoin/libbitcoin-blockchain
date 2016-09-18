@@ -160,14 +160,11 @@ void validate_transaction::handle_previous_tx(const code& ec,
 
     if (ec == error::input_not_found)
     {
-        transaction pool_tx;
+        const auto pool_tx = pool_.find(outpoint.hash);
 
         // Try locating it as unconfirmed in the memory pool.
-        if (!pool_.find(pool_tx, outpoint.hash) ||
-            outpoint.index >= pool_tx.outputs.size())
-        {
+        if (!pool_tx || outpoint.index >= pool_tx->outputs.size())
             return;
-        }
     }
 
     const auto previous_height = static_cast<size_t>(previous_tx_height);

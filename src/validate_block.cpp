@@ -117,7 +117,7 @@ void validate_block::connect(block_ptr block, result_handler handler) const
         synchronize(complete_handler, block->total_inputs(), NAME "_sync");
 
     // Skip the first transaction in order to avoid the coinbase.
-    for (const auto tx: block->transactions)
+    for (const auto& tx: block->transactions)
         for (uint32_t index = 0; index < tx.inputs.size(); ++index)
             ////dispatch_.concurrent(&validate_block::connect_input,
             ////    this, std::ref(tx), index, join_handler);

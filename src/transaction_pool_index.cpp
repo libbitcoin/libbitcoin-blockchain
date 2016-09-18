@@ -96,7 +96,7 @@ InfoList to_info_list(const payment_address& address, Multimap& map)
 // Add sequence.
 // ----------------------------------------------------------------------------
 
-void transaction_pool_index::add(const transaction& tx,
+void transaction_pool_index::add(transaction_ptr tx,
     completion_handler handler)
 {
     dispatch_.ordered(
@@ -104,13 +104,13 @@ void transaction_pool_index::add(const transaction& tx,
             this, tx, handler));
 }
 
-void transaction_pool_index::do_add(const transaction& tx,
+void transaction_pool_index::do_add(transaction_ptr tx,
     completion_handler handler)
 {
     uint32_t index = 0;
-    const auto tx_hash = tx.hash();
+    const auto tx_hash = tx->hash();
 
-    for (const auto& input: tx.inputs)
+    for (const auto& input: tx->inputs)
     {
         const auto address = payment_address::extract(input.script);
 
@@ -126,7 +126,7 @@ void transaction_pool_index::do_add(const transaction& tx,
 
     index = 0;
 
-    for (const auto& output: tx.outputs)
+    for (const auto& output: tx->outputs)
     {
         const auto address = payment_address::extract(output.script);
 
@@ -147,7 +147,7 @@ void transaction_pool_index::do_add(const transaction& tx,
 // Remove sequence.
 // ----------------------------------------------------------------------------
 
-void transaction_pool_index::remove(const transaction& tx,
+void transaction_pool_index::remove(transaction_ptr tx,
     completion_handler handler)
 {
     dispatch_.ordered(
@@ -155,13 +155,13 @@ void transaction_pool_index::remove(const transaction& tx,
             this, tx, handler));
 }
 
-void transaction_pool_index::do_remove(const transaction& tx,
+void transaction_pool_index::do_remove(transaction_ptr tx,
     completion_handler handler)
 {
     uint32_t index = 0;
-    const auto tx_hash = tx.hash();
+    const auto tx_hash = tx->hash();
 
-    for (const auto& input: tx.inputs)
+    for (const auto& input: tx->inputs)
     {
         const auto address = payment_address::extract(input.script);
 
@@ -173,7 +173,7 @@ void transaction_pool_index::do_remove(const transaction& tx,
 
     index = 0;
 
-    for (const auto& output: tx.outputs)
+    for (const auto& output: tx->outputs)
     {
         const auto address = payment_address::extract(output.script);
 

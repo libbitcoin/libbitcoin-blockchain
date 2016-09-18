@@ -45,7 +45,6 @@ public:
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
     typedef handle1<transaction_ptr> fetch_handler;
-    typedef handle1<transaction_ptr> confirm_handler;
     typedef std::function<bool(const code&, const indexes&, transaction_ptr)>
         transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_ptr>
@@ -78,28 +77,22 @@ public:
     void exists(const hash_digest& tx_hash, result_handler handler);
     void filter(get_data_ptr message, result_handler handler);
     void validate(transaction_ptr tx, validate_handler handler);
-    void store(transaction_ptr tx, confirm_handler confirm_handler,
+    void store(transaction_ptr tx, result_handler confirm_handler,
         validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler handler);
 
 protected:
-    /// This is analogous to the orphan pool's block_detail.
-    struct entry
-    {
-        transaction_ptr tx;
-        confirm_handler handle_confirm;
-    };
-
-    typedef boost::circular_buffer<entry> buffer;
+    typedef message::block_message::ptr_list block_list;
+    typedef message::transaction_message::ptr transaction_ptr;
+    typedef boost::circular_buffer<transaction_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
 
     typedef std::function<bool(const chain::input&)> input_compare;
-    typedef message::block_message::ptr_list block_list;
 
     bool stopped();
-    const_iterator find(const hash_digest& tx_hash) const;
+    const_iterator find_iterator(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
         const block_list& new_blocks, const block_list& replaced_blocks);
@@ -109,13 +102,13 @@ protected:
 
     void do_validate(transaction_ptr tx, validate_handler handler);
     void do_store(const code& ec, const indexes& unconfirmed,
-        transaction_ptr tx, confirm_handler handle_confirm,
+        transaction_ptr tx, result_handler handle_confirm,
         validate_handler handle_validate);
 
     void notify_transaction(const chain::point::indexes& unconfirmed,
         transaction_ptr tx);
 
-    void add(transaction_ptr tx, confirm_handler handler);
+    void add(transaction_ptr tx, result_handler handler);
     void remove(const block_list& blocks);
     void clear(const code& ec);
 
@@ -140,10 +133,8 @@ private:
     // These methods are NOT thread safe.
     bool is_in_pool(const hash_digest& tx_hash) const;
     bool is_spent_in_pool(transaction_ptr tx) const;
-    bool is_spent_in_pool(const chain::transaction& tx) const;
     bool is_spent_in_pool(const chain::output_point& outpoint) const;
-    bool find(transaction_ptr& out_tx, const hash_digest& tx_hash) const;
-    bool find(chain::transaction& out_tx, const hash_digest& tx_hash) const;
+    transaction_ptr find(const hash_digest& tx_hash) const;
 
     // These are thread safe.
     dispatcher dispatch_;

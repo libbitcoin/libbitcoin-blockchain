@@ -39,6 +39,7 @@ public:
     typedef handle2<chain::spend_info::list, chain::output_info::list>
         query_handler;
     typedef block_chain::history_fetch_handler fetch_handler;
+    typedef message::transaction_message::ptr transaction_ptr;
 
     transaction_pool_index(threadpool& pool, block_chain& blockchain);
 
@@ -58,8 +59,8 @@ public:
     void fetch_index_history(const wallet::payment_address& address,
         query_handler handler);
 
-    void add(const chain::transaction& tx, completion_handler handler);
-    void remove(const chain::transaction& tx, completion_handler handler);
+    void add(transaction_ptr, completion_handler handler);
+    void remove(transaction_ptr, completion_handler handler);
 
 private:
     typedef chain::spend_info spend_info;
@@ -83,8 +84,8 @@ private:
         const history_list& history, const wallet::payment_address& address,
         fetch_handler handler);
 
-    void do_add(const chain::transaction& tx, completion_handler handler);
-    void do_remove(const chain::transaction& tx, completion_handler handler);
+    void do_add(transaction_ptr tx, completion_handler handler);
+    void do_remove(transaction_ptr, completion_handler handler);
     void do_fetch(const wallet::payment_address& payaddr,
         query_handler handler);
 
