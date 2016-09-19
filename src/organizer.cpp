@@ -41,7 +41,7 @@ using namespace bc::config;
 organizer::organizer(threadpool& pool, simple_chain& chain,
     const settings& settings)
   : chain_(chain),
-    validator_(pool, testnet_rules_, checkpoints_, chain_),
+    validator_(pool, settings.use_testnet_rules, checkpoints_, chain_),
     testnet_rules_(settings.use_testnet_rules),
     checkpoints_(checkpoint::sort(settings.checkpoints)),
     stopped_(true),
