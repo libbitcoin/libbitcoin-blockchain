@@ -65,7 +65,7 @@ validate_transaction::validate_transaction(block_chain& chain,
 {
 }
 
-void validate_transaction::validate(transaction_ptr tx,
+void validate_transaction::validate(transaction_const_ptr tx,
     validate_handler handler)
 {
     auto ec = tx->check();
@@ -84,7 +84,7 @@ void validate_transaction::validate(transaction_ptr tx,
 }
 
 void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
-    transaction_ptr tx, validate_handler handler)
+    transaction_const_ptr tx, validate_handler handler)
 {
     ////const auto ec = tx->connect(state);
 
@@ -106,7 +106,7 @@ void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
 }
 
 void validate_transaction::handle_last_height(const code& ec,
-    size_t last_height, transaction_ptr tx, validate_handler handler)
+    size_t last_height, transaction_const_ptr tx, validate_handler handler)
 {
     const validate_handler rejoin =
         std::bind(&validate_transaction::handle_join,
@@ -121,7 +121,7 @@ void validate_transaction::handle_last_height(const code& ec,
             shared_from_this(), tx, index, last_height, complete);
 }
 
-void validate_transaction::validate_input(transaction_ptr tx,
+void validate_transaction::validate_input(transaction_const_ptr tx,
     uint32_t input_index, size_t last_height, validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
@@ -134,7 +134,7 @@ void validate_transaction::validate_input(transaction_ptr tx,
 
 // This just determines if the output is spent (or a utxo).
 void validate_transaction::handle_double_spend(const code& ec,
-    const chain::input_point&, transaction_ptr tx, uint32_t input_index,
+    const chain::input_point&, transaction_const_ptr tx, uint32_t input_index,
     size_t last_height, validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
@@ -153,7 +153,7 @@ void validate_transaction::handle_double_spend(const code& ec,
 
 void validate_transaction::handle_previous_tx(const code& ec,
     const transaction& previous_tx, uint64_t previous_tx_height,
-    transaction_ptr tx, uint32_t input_index, size_t last_height,
+    transaction_const_ptr tx, uint32_t input_index, size_t last_height,
     validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
@@ -180,7 +180,8 @@ void validate_transaction::handle_previous_tx(const code& ec,
 
 // TODO: summarize values in custom stateful synchronizer.
 void validate_transaction::handle_join(const code& ec,
-    point::indexes unconfirmed, transaction_ptr tx, validate_handler handler)
+    const indexes& unconfirmed, transaction_const_ptr tx,
+    validate_handler handler)
 {
 
     // Who cares?
@@ -211,7 +212,7 @@ code validate_transaction::check_input(const transaction& tx,
 
 // references (block)
 
-code validate_transaction::check_script(transaction_ptr tx,
+code validate_transaction::check_script(transaction_const_ptr tx,
     uint32_t input_index, const script& prevout_script, uint32_t flags)
 {
     return check_script(*tx, input_index, prevout_script, flags);

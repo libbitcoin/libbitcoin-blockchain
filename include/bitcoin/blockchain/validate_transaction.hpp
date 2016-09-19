@@ -39,7 +39,6 @@ class BCB_API validate_transaction
 {
 public:
     typedef std::shared_ptr<validate_transaction> ptr;
-    typedef message::transaction_message::ptr transaction_ptr;
     typedef chain::point::indexes indexes;
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
@@ -50,12 +49,12 @@ public:
     // pointers (mempool)
 
     /// Expensive/final checks for both block and mempool transactions.
-    static code check_input(transaction_ptr tx, uint32_t input_index,
+    static code check_input(transaction_const_ptr tx, uint32_t input_index,
         const chain::transaction& previous_tx, size_t previous_tx_height,
         size_t last_height, uint32_t flags, uint64_t& out_value);
 
     /// Expensive/final checks for both block and mempool transactions.
-    static code check_script(transaction_ptr tx, uint32_t input_index,
+    static code check_script(transaction_const_ptr tx, uint32_t input_index,
         const chain::script& prevout_script, uint32_t flags);
 
     // references (block)
@@ -76,35 +75,35 @@ public:
     validate_transaction(block_chain& chain, const transaction_pool& pool,
         dispatcher& dispatch);
 
-    void validate(transaction_ptr tx, validate_handler handler);
+    void validate(transaction_const_ptr tx, validate_handler handler);
 
 private:
     // Determine if there is another transaction with the same id.
     void handle_duplicate(const code& ec, uint64_t height,
-        uint64_t index, transaction_ptr tx, validate_handler handler);
+        uint64_t index, transaction_const_ptr tx, validate_handler handler);
 
     // Get last height for potential use in coinbase output maturity test.
     void handle_last_height(const code& ec, size_t last_height,
-        transaction_ptr tx, validate_handler handler);
+        transaction_const_ptr tx, validate_handler handler);
 
     // Start of input->output sequence.
-    void validate_input(transaction_ptr tx, uint32_t input_index,
+    void validate_input(transaction_const_ptr tx, uint32_t input_index,
         size_t last_height, validate_handler handler);
 
     // Determine if output is spent.
     void handle_double_spend(const code& ec, const chain::input_point&,
-        transaction_ptr tx, uint32_t input_index, size_t last_height,
+        transaction_const_ptr tx, uint32_t input_index, size_t last_height,
         validate_handler handler);
 
-    // Find output (spent or otherwise) and save block height for maturity test.
+    // Find output (spent or otherwise), save block height for maturity test.
     void handle_previous_tx(const code& ec,
         const chain::transaction& previous_tx, uint64_t previous_tx_height,
-        transaction_ptr tx, uint32_t input_index, size_t last_height,
+        transaction_const_ptr tx, uint32_t input_index, size_t last_height,
         validate_handler handler);
 
     // Join input threads.
-    void handle_join(const code& ec, chain::point::indexes unconfirmed,
-        transaction_ptr tx, validate_handler handler);
+    void handle_join(const code& ec, const indexes& unconfirmed,
+        transaction_const_ptr tx, validate_handler handler);
 
     block_chain& blockchain_;
     const transaction_pool& pool_;

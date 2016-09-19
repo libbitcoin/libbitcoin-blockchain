@@ -43,10 +43,10 @@ transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
   : stopped_(true),
     maintain_consistency_(settings.transaction_pool_consistency),
     buffer_(settings.transaction_pool_capacity),
-    dispatch_(pool, NAME),
     blockchain_(chain),
     index_(pool, chain),
-    subscriber_(std::make_shared<transaction_subscriber>(pool, NAME))
+    subscriber_(std::make_shared<transaction_subscriber>(pool, NAME)),
+    dispatch_(pool, NAME)
 {
 }
 
@@ -81,20 +81,22 @@ bool transaction_pool::stopped()
     return stopped_;
 }
 
-void transaction_pool::inventory(message::inventory::ptr inventory)
+inventory_ptr transaction_pool::fetch_inventory()
 {
     ///////////////////////////////////////////////////////////////////////////
     // TODO: populate the inventory vector from the full memory pool.
     ///////////////////////////////////////////////////////////////////////////
+    return nullptr;
 }
 
-void transaction_pool::validate(transaction_ptr tx, validate_handler handler)
+void transaction_pool::validate(transaction_const_ptr tx,
+    validate_handler handler)
 {
     dispatch_.ordered(&transaction_pool::do_validate,
         this, tx, handler);
 }
 
-void transaction_pool::do_validate(transaction_ptr tx,
+void transaction_pool::do_validate(transaction_const_ptr tx,
     validate_handler handler)
 {
     if (stopped())
@@ -118,7 +120,7 @@ void transaction_pool::do_validate(transaction_ptr tx,
 }
 
 void transaction_pool::handle_validated(const code& ec,
-    const indexes& unconfirmed, transaction_ptr tx,
+    const indexes& unconfirmed, transaction_const_ptr tx,
     validate_transaction::ptr, validate_handler handler)
 {
     if (stopped())
@@ -152,8 +154,8 @@ void transaction_pool::handle_validated(const code& ec,
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(transaction_ptr tx, result_handler handle_confirm,
-    validate_handler handle_validate)
+void transaction_pool::store(transaction_const_ptr tx,
+    result_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
     {
@@ -168,7 +170,7 @@ void transaction_pool::store(transaction_ptr tx, result_handler handle_confirm,
 
 // This is overly complex due to the transaction pool and index split.
 void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
-    transaction_ptr tx, result_handler handle_confirm,
+    transaction_const_ptr tx, result_handler handle_confirm,
     validate_handler handle_validate)
 {
     if (ec)
@@ -337,7 +339,7 @@ void transaction_pool::subscribe_transaction(
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
-    transaction_ptr tx)
+    transaction_const_ptr tx)
 {
     subscriber_->relay(error::success, unconfirmed, tx);
 }
@@ -346,7 +348,7 @@ void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
 // ----------------------------------------------------------------------------
 
 // A new transaction has been received, add it to the memory pool.
-void transaction_pool::add(transaction_ptr tx, result_handler handler)
+void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
     if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
@@ -436,7 +438,7 @@ void transaction_pool::delete_dependencies(const hash_digest& tx_hash,
 void transaction_pool::delete_dependencies(input_compare is_dependency,
     const code& ec)
 {
-    std::vector<transaction_ptr> dependencies;
+    transaction_const_ptr_list dependencies;
 
     for (const auto tx: buffer_)
         for (const auto& input: tx->inputs)
@@ -465,7 +467,7 @@ void transaction_pool::delete_package(const code& ec)
     delete_package(oldest_tx, ec);
 }
 
-void transaction_pool::delete_package(transaction_ptr tx, const code& ec)
+void transaction_pool::delete_package(transaction_const_ptr tx, const code& ec)
 {
     if (delete_single(tx->hash(), ec))
         delete_dependencies(tx->hash(), ec);
@@ -476,7 +478,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     if (stopped())
         return false;
 
-    const auto matched = [&tx_hash](const transaction_ptr& tx)
+    const auto matched = [&tx_hash](const transaction_const_ptr& tx)
     {
         return tx->hash() == tx_hash;
     };
@@ -493,7 +495,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     return true;
 }
 
-transaction_ptr transaction_pool::find(const hash_digest& tx_hash) const
+transaction_const_ptr transaction_pool::find(const hash_digest& tx_hash) const
 {
     const auto it = find_iterator(tx_hash);
     const auto found = it != buffer_.end();
@@ -503,7 +505,7 @@ transaction_ptr transaction_pool::find(const hash_digest& tx_hash) const
 transaction_pool::const_iterator transaction_pool::find_iterator(
     const hash_digest& tx_hash) const
 {
-    const auto found = [&tx_hash](const transaction_ptr& tx)
+    const auto found = [&tx_hash](const transaction_const_ptr& tx)
     {
         return tx->hash() == tx_hash;
     };
@@ -516,7 +518,7 @@ bool transaction_pool::is_in_pool(const hash_digest& tx_hash) const
     return find_iterator(tx_hash) != buffer_.end();
 }
 
-bool transaction_pool::is_spent_in_pool(transaction_ptr tx) const
+bool transaction_pool::is_spent_in_pool(transaction_const_ptr tx) const
 {
     const auto found = [this](const input& input)
     {
@@ -529,7 +531,7 @@ bool transaction_pool::is_spent_in_pool(transaction_ptr tx) const
 
 bool transaction_pool::is_spent_in_pool(const output_point& outpoint) const
 {
-    const auto found = [this, &outpoint](const transaction_ptr& tx)
+    const auto found = [this, &outpoint](const transaction_const_ptr& tx)
     {
         return is_spent_by_tx(outpoint, tx);
     };
@@ -538,7 +540,7 @@ bool transaction_pool::is_spent_in_pool(const output_point& outpoint) const
 }
 
 bool transaction_pool::is_spent_by_tx(const output_point& outpoint,
-    transaction_ptr tx)
+    transaction_const_ptr tx)
 {
     const auto found = [&outpoint](const input& input)
     {

@@ -42,14 +42,17 @@ public:
 
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
-    typedef std::function<void(const code&, transaction_ptr)> fetch_handler;
-    typedef std::function<bool(const code&, const indexes&, transaction_ptr)>
-        transaction_handler;
-    typedef resubscriber<const code&, const indexes&, transaction_ptr>
+
+    // Don'ut use const reference for smart pointer parameters.
+    typedef std::function<void(const code&, transaction_const_ptr)>
+        fetch_handler;
+    typedef std::function<bool(const code&, const indexes&,
+        transaction_const_ptr)> transaction_handler;
+    typedef resubscriber<const code&, const indexes&, transaction_const_ptr>
         transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
-        const transaction_ptr tx);
+        transaction_const_ptr tx);
 
     /// Construct a transaction memory pool.
     transaction_pool(threadpool& pool, block_chain& chain,
@@ -68,21 +71,21 @@ public:
     /// Signal stop of current work, speeds shutdown.
     void stop();
 
-    void inventory(inventory_ptr inventory);
+    inventory_ptr fetch_inventory();
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
     void fetch_history(const wallet::payment_address& address, size_t limit,
         size_t from_height, block_chain::history_fetch_handler handler);
     void exists(const hash_digest& tx_hash, result_handler handler);
     void filter(get_data_ptr message, result_handler handler);
-    void validate(transaction_ptr tx, validate_handler handler);
-    void store(transaction_ptr tx, result_handler confirm_handler,
+    void validate(transaction_const_ptr tx, validate_handler handler);
+    void store(transaction_const_ptr tx, result_handler confirm_handler,
         validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler handler);
 
 protected:
-    typedef boost::circular_buffer<transaction_ptr> buffer;
+    typedef boost::circular_buffer<transaction_const_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
 
     typedef std::function<bool(const chain::input&)> input_compare;
@@ -94,17 +97,18 @@ protected:
         const block_const_ptr_list& new_blocks,
         const block_const_ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
-        transaction_ptr tx, validate_transaction::ptr self,
+        transaction_const_ptr tx, validate_transaction::ptr self,
         validate_handler handler);
 
-    void do_validate(transaction_ptr tx, validate_handler handler);
+    void do_validate(transaction_const_ptr tx, validate_handler handler);
     void do_store(const code& ec, const indexes& unconfirmed,
-        transaction_ptr tx, result_handler handle_confirm,
+        transaction_const_ptr tx, result_handler handle_confirm,
         validate_handler handle_validate);
 
-    void notify_transaction(const indexes& unconfirmed, transaction_ptr tx);
+    void notify_transaction(const indexes& unconfirmed,
+        transaction_const_ptr tx);
 
-    void add(transaction_ptr tx, result_handler handler);
+    void add(transaction_const_ptr tx, result_handler handler);
     void remove(const block_const_ptr_list& blocks);
     void clear(const code& ec);
 
@@ -115,7 +119,7 @@ protected:
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);
     void delete_package(const code& ec);
-    void delete_package(transaction_ptr tx, const code& ec);
+    void delete_package(transaction_const_ptr tx, const code& ec);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
 
     // The buffer is protected by non-concurrent dispatch.
@@ -128,15 +132,15 @@ private:
 
     // These methods are NOT thread safe.
     bool is_in_pool(const hash_digest& tx_hash) const;
-    bool is_spent_in_pool(transaction_ptr tx) const;
+    bool is_spent_in_pool(transaction_const_ptr tx) const;
     bool is_spent_in_pool(const chain::output_point& outpoint) const;
-    transaction_ptr find(const hash_digest& tx_hash) const;
+    transaction_const_ptr find(const hash_digest& tx_hash) const;
 
     // These are thread safe.
-    dispatcher dispatch_;
     block_chain& blockchain_;
     transaction_pool_index index_;
     transaction_subscriber::ptr subscriber_;
+    mutable dispatcher dispatch_;
     const bool maintain_consistency_;
 };
 

@@ -41,8 +41,8 @@ static constexpr uint64_t genesis_height = 0;
 transaction_pool_index::transaction_pool_index(threadpool& pool,
     block_chain& blockchain)
   : stopped_(true),
-    dispatch_(pool, NAME),
-    blockchain_(blockchain)
+    blockchain_(blockchain),
+    dispatch_(pool, NAME)
 {
 }
 
@@ -95,7 +95,7 @@ InfoList to_info_list(const payment_address& address, Multimap& map)
 // Add sequence.
 // ----------------------------------------------------------------------------
 
-void transaction_pool_index::add(transaction_ptr tx,
+void transaction_pool_index::add(transaction_const_ptr tx,
     completion_handler handler)
 {
     dispatch_.ordered(
@@ -103,7 +103,7 @@ void transaction_pool_index::add(transaction_ptr tx,
             this, tx, handler));
 }
 
-void transaction_pool_index::do_add(transaction_ptr tx,
+void transaction_pool_index::do_add(transaction_const_ptr tx,
     completion_handler handler)
 {
     uint32_t index = 0;
@@ -146,7 +146,7 @@ void transaction_pool_index::do_add(transaction_ptr tx,
 // Remove sequence.
 // ----------------------------------------------------------------------------
 
-void transaction_pool_index::remove(transaction_ptr tx,
+void transaction_pool_index::remove(transaction_const_ptr tx,
     completion_handler handler)
 {
     dispatch_.ordered(
@@ -154,7 +154,7 @@ void transaction_pool_index::remove(transaction_ptr tx,
             this, tx, handler));
 }
 
-void transaction_pool_index::do_remove(transaction_ptr tx,
+void transaction_pool_index::do_remove(transaction_const_ptr tx,
     completion_handler handler)
 {
     uint32_t index = 0;

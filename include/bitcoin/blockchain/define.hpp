@@ -73,9 +73,6 @@ typedef bc::message::inventory::const_ptr inventory_const_ptr;
 typedef bc::message::header_message::ptr header_ptr;
 typedef bc::message::header_message::const_ptr header_const_ptr;
 
-typedef bc::message::merkle_block::ptr merkle_block_ptr;
-typedef bc::message::merkle_block::const_ptr merkle_block_const_ptr;
-
 typedef bc::message::get_data::ptr get_data_ptr;
 typedef bc::message::get_data::const_ptr get_data_const_ptr;
 

@@ -189,7 +189,7 @@ public:
 
     // Test accesors.
 
-    void add(transaction_ptr tx, result_handler handler)
+    void add(transaction_const_ptr tx, result_handler handler)
     {
         transaction_pool::add(tx, handler);
     }
@@ -234,7 +234,7 @@ public:
         transaction_pool::delete_package(ec);
     }
 
-    void delete_package(transaction_ptr tx, const code& ec)
+    void delete_package(transaction_const_ptr tx, const code& ec)
     {
         transaction_pool::delete_package(tx, ec);
     }
