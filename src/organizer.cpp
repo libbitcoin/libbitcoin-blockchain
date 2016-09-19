@@ -118,7 +118,7 @@ size_t organizer::compute_height(size_t fork_height, size_t orphan_index)
 // Organize.
 //-----------------------------------------------------------------------------
 
-// This is called on every block_chain_impl::do_store() call.
+// This is called on every full_chain_impl::do_store() call.
 code organizer::reorganize(block_const_ptr block)
 {
     if (!orphan_pool_.add(block))

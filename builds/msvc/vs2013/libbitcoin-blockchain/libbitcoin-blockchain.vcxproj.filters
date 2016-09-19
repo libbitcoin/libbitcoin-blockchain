@@ -42,9 +42,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -54,13 +51,16 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_impl.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block_impl.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_validator.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\full_chain.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,10 +89,10 @@
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\validate_block_impl.cpp">
+    <ClCompile Include="..\..\..\..\src\block_validator.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\block_chain_impl.cpp">
+    <ClCompile Include="..\..\..\..\src\block_chain.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

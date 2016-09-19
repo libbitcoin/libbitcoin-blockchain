@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/validate_block_impl.hpp>
+#include <bitcoin/blockchain/block_validator.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -31,7 +31,7 @@ namespace blockchain {
 static constexpr uint64_t retargeting_interval = target_timespan_seconds /
     target_spacing_seconds;
 
-validate_block_impl::validate_block_impl(size_t fork_height,
+block_validator::block_validator(size_t fork_height,
     const block_const_ptr_list& orphan_chain, size_t orphan_index,
     const block_const_ptr block, size_t height, bool testnet,
     const checkpoints& checks, const simple_chain& chain)
@@ -49,7 +49,7 @@ validate_block_impl::validate_block_impl(size_t fork_height,
 // ----------------------------------------------------------------------------
 
 // TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint32_t validate_block_impl::previous_block_bits() const
+uint32_t block_validator::previous_block_bits() const
 {
     // Read block header (top - 1) and return bits
     return fetch_block(height_ - 1).bits;
@@ -57,7 +57,7 @@ uint32_t validate_block_impl::previous_block_bits() const
 
 // TODO: cache the result so that only one value must be read per block.
 // TODO: deprecated as unsafe, use of fetch_block ignores error code.
-validate_block::versions validate_block_impl::preceding_block_versions(
+validate_block::versions block_validator::preceding_block_versions(
     size_t maximum) const
 {
     // 1000 previous versions maximum sample.
@@ -81,7 +81,7 @@ validate_block::versions validate_block_impl::preceding_block_versions(
 }
 
 // TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint64_t validate_block_impl::actual_time_span(size_t interval) const
+uint64_t block_validator::actual_time_span(size_t interval) const
 {
     BITCOIN_ASSERT(height_ > 0 && height_ >= interval);
 
@@ -91,7 +91,7 @@ uint64_t validate_block_impl::actual_time_span(size_t interval) const
 }
 
 // TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint64_t validate_block_impl::median_time_past() const
+uint64_t block_validator::median_time_past() const
 {
     // Read last 11 (or height if height < 11) block times into array.
     const auto count = std::min(height_, median_time_past_blocks);
@@ -106,7 +106,7 @@ uint64_t validate_block_impl::median_time_past() const
 }
 
 // TODO: deprecated as unsafe, ignores error code.
-uint32_t validate_block_impl::work_required(uint32_t timestamp,
+uint32_t block_validator::work_required(uint32_t timestamp,
     bool is_testnet) const
 {
     if (height_ == 0)
@@ -173,7 +173,7 @@ uint32_t validate_block_impl::work_required(uint32_t timestamp,
 }
 
 // TODO: deprecated as unsafe, ignores error code.
-chain::header validate_block_impl::fetch_block(size_t height) const
+chain::header block_validator::fetch_block(size_t height) const
 {
     if (height > fork_height_)
     {
@@ -196,7 +196,7 @@ chain::header validate_block_impl::fetch_block(size_t height) const
 // ----------------------------------------------------------------------------
 
 // Safe replacement for fetch_block.
-bool validate_block_impl::fetch_header(chain::header& header,
+bool block_validator::fetch_header(chain::header& header,
     size_t fetch_height) const
 {
     if (fetch_height <= fork_height_)
@@ -215,7 +215,7 @@ bool validate_block_impl::fetch_header(chain::header& header,
     return true;
 }
 
-transaction_ptr validate_block_impl::fetch_transaction(size_t& tx_height,
+transaction_ptr block_validator::fetch_transaction(size_t& tx_height,
     const hash_digest& tx_hash) const
 {
     uint64_t out_tx_height;
@@ -231,7 +231,7 @@ transaction_ptr validate_block_impl::fetch_transaction(size_t& tx_height,
     return fetch_orphan_transaction(tx_height, tx_hash);
 }
 
-transaction_ptr validate_block_impl::fetch_orphan_transaction(
+transaction_ptr block_validator::fetch_orphan_transaction(
     size_t& tx_height, const hash_digest& tx_hash) const
 {
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
@@ -254,7 +254,7 @@ transaction_ptr validate_block_impl::fetch_orphan_transaction(
     return nullptr;
 }
 
-bool validate_block_impl::is_output_spent(
+bool block_validator::is_output_spent(
     const chain::output_point& outpoint) const
 {
     uint64_t tx_height;
@@ -265,7 +265,7 @@ bool validate_block_impl::is_output_spent(
         tx_height <= fork_height_;
 }
 
-bool validate_block_impl::is_orphan_spent(
+bool block_validator::is_orphan_spent(
     const chain::output_point& previous_output,
     const chain::transaction& skip_tx, uint32_t skip_input_index) const
 {

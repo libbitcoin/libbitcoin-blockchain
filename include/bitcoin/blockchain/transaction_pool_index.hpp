@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -38,9 +38,9 @@ public:
     typedef handle0 completion_handler;
     typedef handle2<chain::spend_info::list, chain::output_info::list>
         query_handler;
-    typedef block_chain::history_fetch_handler fetch_handler;
+    typedef full_chain::history_fetch_handler fetch_handler;
 
-    transaction_pool_index(threadpool& pool, block_chain& blockchain);
+    transaction_pool_index(threadpool& pool, full_chain& blockchain);
 
     /// This class is not copyable.
     transaction_pool_index(const transaction_pool_index&) = delete;
@@ -97,7 +97,7 @@ private:
     upgrade_mutex outputs_mutex_;
 
     // These are thread safe.
-    block_chain& blockchain_;
+    full_chain& blockchain_;
     std::atomic<bool> stopped_;
     mutable dispatcher dispatch_;
 };

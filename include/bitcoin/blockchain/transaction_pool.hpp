@@ -26,7 +26,7 @@
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
@@ -55,7 +55,7 @@ public:
         transaction_const_ptr tx);
 
     /// Construct a transaction memory pool.
-    transaction_pool(threadpool& pool, block_chain& chain,
+    transaction_pool(threadpool& pool, full_chain& chain,
         const settings& settings);
 
     /// Clear the pool, threads must be joined.
@@ -74,7 +74,7 @@ public:
     inventory_ptr fetch_inventory();
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
     void fetch_history(const wallet::payment_address& address, size_t limit,
-        size_t from_height, block_chain::history_fetch_handler handler);
+        size_t from_height, full_chain::history_fetch_handler handler);
     void exists(const hash_digest& tx_hash, result_handler handler);
     void filter(get_data_ptr message, result_handler handler);
     void validate(transaction_const_ptr tx, validate_handler handler);
@@ -137,7 +137,7 @@ private:
     transaction_const_ptr find(const hash_digest& tx_hash) const;
 
     // These are thread safe.
-    block_chain& blockchain_;
+    full_chain& blockchain_;
     transaction_pool_index index_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;

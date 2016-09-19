@@ -24,7 +24,7 @@
 #include <cstddef>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -72,7 +72,7 @@ public:
     // Used for memory pool transaction validation.
     //-------------------------------------------------------------------------
 
-    validate_transaction(block_chain& chain, const transaction_pool& pool,
+    validate_transaction(full_chain& chain, const transaction_pool& pool,
         dispatcher& dispatch);
 
     void validate(transaction_const_ptr tx, validate_handler handler);
@@ -105,7 +105,7 @@ private:
     void handle_join(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, validate_handler handler);
 
-    block_chain& blockchain_;
+    full_chain& blockchain_;
     const transaction_pool& pool_;
     dispatcher& dispatch_;
 };

@@ -33,7 +33,7 @@ class threadpool_fixture
 };
 
 class blockchain_fixture
-  : public block_chain
+  : public full_chain
 {
 public:
     virtual bool start()
@@ -172,13 +172,13 @@ public:
         return value;
     }
 
-    transaction_pool_fixture(threadpool& pool, block_chain& chain,
+    transaction_pool_fixture(threadpool& pool, full_chain& chain,
         const blockchain::settings& settings)
       : transaction_pool(pool, chain, settings)
     {
     }
 
-    transaction_pool_fixture(threadpool& pool, block_chain& chain, buffer& txs)
+    transaction_pool_fixture(threadpool& pool, full_chain& chain, buffer& txs)
       : transaction_pool(pool, chain, settings_factory(txs.capacity(), true))
     {
         // Start by default, fill with our test buffer data.
@@ -258,8 +258,8 @@ public:
 
 #define DECLARE_TRANSACTION_POOL(pool, txs) \
     threadpool_fixture memory_pool_; \
-    blockchain_fixture block_chain_; \
-    transaction_pool_fixture pool(memory_pool_, block_chain_, txs)
+    blockchain_fixture full_chain_; \
+    transaction_pool_fixture pool(memory_pool_, full_chain_, txs)
 
 #define DECLARE_TRANSACTION(number, code_) \
     auto tx##number = std::make_shared<message::transaction_message>(); \

@@ -57,7 +57,7 @@ static uint32_t convert_flags(uint32_t native_flags)
 }
 #endif
 
-validate_transaction::validate_transaction(block_chain& chain,
+validate_transaction::validate_transaction(full_chain& chain,
     const transaction_pool& pool, dispatcher& dispatch)
   : blockchain_(chain),
     pool_(pool),

@@ -24,7 +24,7 @@
 #include <memory>
 #include <utility>
 #include <system_error>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -38,14 +38,14 @@ class block_fetcher
   : public std::enable_shared_from_this<block_fetcher>
 {
 public:
-    block_fetcher(const block_chain& chain)
+    block_fetcher(const full_chain& chain)
       : blockchain_(chain)
     {
     }
 
     template <typename BlockIndex>
     void start(const BlockIndex& index,
-        block_chain::block_fetch_handler handler)
+        full_chain::block_fetch_handler handler)
     {
         // block_ptr must be non-const.
         blockchain_.fetch_block_header(index,
@@ -57,7 +57,7 @@ private:
 
     // header_ptr must be non-const.
     void handle_fetch_header(const code& ec, header_ptr header,
-        uint64_t height, block_chain::block_fetch_handler handler)
+        uint64_t height, full_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -79,7 +79,7 @@ private:
     // block_ptr must be non-const.
     void fetch_transactions(const code& ec, const hash_list& hashes,
         block_ptr block, uint64_t height,
-        block_chain::block_fetch_handler handler)
+        full_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -117,7 +117,7 @@ private:
     // block_ptr and transaction_ptr must be non-const.
     void handle_fetch_transaction(const code& ec, transaction_ptr transaction,
         uint64_t DEBUG_ONLY(tx_height), size_t index, block_ptr block,
-        uint64_t block_height, block_chain::block_fetch_handler handler)
+        uint64_t block_height, full_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -139,7 +139,7 @@ private:
 
     // If ec success then there is no possibility that block is being written.
     void handle_complete(const code& ec, block_ptr block, uint64_t height,
-        block_chain::block_fetch_handler handler)
+        full_chain::block_fetch_handler handler)
     {
         if (ec)
         {
@@ -151,19 +151,19 @@ private:
     }
 
     mutable shared_mutex mutex_;
-    const block_chain& blockchain_;
+    const full_chain& blockchain_;
 };
 
-void fetch_block(const block_chain& chain, uint64_t height,
-    block_chain::block_fetch_handler handle_fetch)
+void fetch_block(const full_chain& chain, uint64_t height,
+    full_chain::block_fetch_handler handle_fetch)
 {
     // TODO: If concurrent then handler would need to capture fetcher.
     const auto fetcher = std::make_shared<block_fetcher>(chain);
     fetcher->start(height, handle_fetch);
 }
 
-void fetch_block(const block_chain& chain, const hash_digest& hash,
-    block_chain::block_fetch_handler handle_fetch)
+void fetch_block(const full_chain& chain, const hash_digest& hash,
+    full_chain::block_fetch_handler handle_fetch)
 {
     // TODO: If concurrent then handler would need to capture fetcher.
     const auto fetcher = std::make_shared<block_fetcher>(chain);

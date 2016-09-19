@@ -25,7 +25,7 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
@@ -41,7 +41,7 @@ class BCB_API organizer
 public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<organizer> ptr;
-    typedef block_chain::reorganize_handler reorganize_handler;
+    typedef full_chain::reorganize_handler reorganize_handler;
 
     typedef resubscriber<const code&, size_t, const block_const_ptr_list&,
         const block_const_ptr_list&> reorganize_subscriber;

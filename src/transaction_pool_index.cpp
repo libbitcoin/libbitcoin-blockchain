@@ -24,7 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,7 +39,7 @@ using namespace std::placeholders;
 static constexpr uint64_t genesis_height = 0;
 
 transaction_pool_index::transaction_pool_index(threadpool& pool,
-    block_chain& blockchain)
+    full_chain& blockchain)
   : stopped_(true),
     blockchain_(blockchain),
     dispatch_(pool, NAME)

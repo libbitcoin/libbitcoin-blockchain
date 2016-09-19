@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
-#define LIBBITCOIN_BLOCKCHAIN_IMPL_VALIDATE_BLOCK_H
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_VALIDATOR_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_VALIDATOR_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -31,13 +31,13 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is not thread safe.
-class BCB_API validate_block_impl
+class BCB_API block_validator
 {
 public:
     typedef config::checkpoint::list checkpoints;
     typedef chain::chain_state::versions versions;
 
-    validate_block_impl(size_t fork_height,
+    block_validator(size_t fork_height,
         const block_const_ptr_list& orphan_chain, size_t orphan_index,
         block_const_ptr block, size_t height, bool testnet,
         const checkpoints& checkpoints, const simple_chain& chain);

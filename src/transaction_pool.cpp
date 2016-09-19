@@ -24,7 +24,7 @@
 #include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
@@ -38,7 +38,7 @@ using namespace chain;
 using namespace wallet;
 using namespace std::placeholders;
 
-transaction_pool::transaction_pool(threadpool& pool, block_chain& chain,
+transaction_pool::transaction_pool(threadpool& pool, full_chain& chain,
     const settings& settings)
   : stopped_(true),
     maintain_consistency_(settings.transaction_pool_consistency),
@@ -235,7 +235,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 
 void transaction_pool::fetch_history(const payment_address& address,
     size_t limit, size_t from_height,
-    block_chain::history_fetch_handler handler)
+    full_chain::history_fetch_handler handler)
 {
     // This passes through to blockchain to build combined history.
     index_.fetch_all_history(address, limit, from_height, handler);
