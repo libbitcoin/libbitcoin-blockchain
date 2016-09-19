@@ -195,7 +195,7 @@ bool block_chain::get_header(header& out_header, uint64_t height) const
     if (!result)
         return false;
 
-    out_header = std::move(result.header());
+    out_header = result.header();
     return true;
 }
 
