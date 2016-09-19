@@ -64,33 +64,30 @@
 namespace libbitcoin {
 namespace blockchain {
 
-typedef uint32_t index_type;
-typedef uint64_t position_type;
+typedef message::get_data::ptr get_data_ptr;
+typedef message::get_data::const_ptr get_data_const_ptr;
 
-typedef bc::message::inventory::ptr inventory_ptr;
-typedef bc::message::inventory::const_ptr inventory_const_ptr;
+typedef message::get_blocks::ptr get_blocks_ptr;
+typedef message::get_blocks::const_ptr get_blocks_const_ptr;
 
-typedef bc::message::header_message::ptr header_ptr;
-typedef bc::message::header_message::const_ptr header_const_ptr;
+typedef message::get_headers::ptr get_headers_ptr;
+typedef message::get_headers::const_ptr get_headers_const_ptr;
 
-typedef bc::message::get_data::ptr get_data_ptr;
-typedef bc::message::get_data::const_ptr get_data_const_ptr;
+typedef message::inventory::ptr inventory_ptr;
+typedef message::inventory::const_ptr inventory_const_ptr;
 
-typedef bc::message::get_blocks::ptr get_blocks_ptr;
-typedef bc::message::get_blocks::const_ptr get_blocks_const_ptr;
+typedef message::header_message::ptr header_ptr;
+typedef message::header_message::const_ptr header_const_ptr;
 
-typedef bc::message::get_headers::ptr get_headers_ptr;
-typedef bc::message::get_headers::const_ptr get_headers_const_ptr;
+typedef message::block_message::ptr block_ptr;
+typedef message::block_message::const_ptr block_const_ptr;
+typedef message::block_message::ptr_list block_ptr_list;
+typedef message::block_message::const_ptr_list block_const_ptr_list;
 
-typedef bc::message::block_message::ptr block_ptr;
-typedef bc::message::block_message::const_ptr block_const_ptr;
-typedef bc::message::block_message::ptr_list block_ptr_list;
-typedef bc::message::block_message::const_ptr_list block_const_ptr_list;
-
-typedef bc::message::transaction_message::ptr transaction_ptr;
-typedef bc::message::transaction_message::const_ptr transaction_const_ptr;
-typedef bc::message::transaction_message::ptr_list transaction_ptr_list;
-typedef bc::message::transaction_message::const_ptr_list
+typedef message::transaction_message::ptr transaction_ptr;
+typedef message::transaction_message::const_ptr transaction_const_ptr;
+typedef message::transaction_message::ptr_list transaction_ptr_list;
+typedef message::transaction_message::const_ptr_list
     transaction_const_ptr_list;
 
 } // namespace blockchain
