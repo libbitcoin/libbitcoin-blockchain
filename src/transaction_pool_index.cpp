@@ -24,7 +24,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {

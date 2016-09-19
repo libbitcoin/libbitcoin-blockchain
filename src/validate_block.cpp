@@ -84,20 +84,22 @@ void validate_block::reset(size_t height, result_handler handler)
 //-----------------------------------------------------------------------------
 
 // These checks are context free (no reset).
-void validate_block::check(block_ptr block, result_handler handler) const
+void validate_block::check(block_const_ptr block, result_handler handler) const
 {
     handler(block->check());
 }
 
 // These checks require height or other chain context (reset).
-void validate_block::accept(block_ptr block, result_handler handler) const
+void validate_block::accept(block_const_ptr block,
+    result_handler handler) const
 {
     handler(block->accept(chain_state_));
 }
 
 // These checks require output traversal and validation (reset).
 // We do not use block/tx.connect here because we want to fan out by input.
-void validate_block::connect(block_ptr block, result_handler handler) const
+void validate_block::connect(block_const_ptr block,
+    result_handler handler) const
 {
     if (!chain_state_.use_full_validation())
     {
@@ -136,7 +138,7 @@ void validate_block::connect_input(const transaction& tx, uint32_t input_index,
     handler(tx.connect_input(chain_state_, input_index));
 }
 
-void validate_block::handle_connect(const code& ec, block_ptr block,
+void validate_block::handle_connect(const code& ec, block_const_ptr block,
     asio::time_point start_time, result_handler handler) const
 {
     const auto delta = asio::steady_clock::now() - start_time;
@@ -158,7 +160,7 @@ void validate_block::handle_connect(const code& ec, block_ptr block,
 } // namespace blockchain
 } // namespace libbitcoin
 
-////bool validate_block::contains_duplicates(const block& block) const
+////bool validate_block::contains_duplicates(block_const_ptr block) const
 ////{
 ////    size_t height;
 ////    transaction other;

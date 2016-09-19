@@ -51,114 +51,104 @@ public:
         return false;
     }
 
-    virtual void store(message::block_message::ptr block,
-        block_store_handler handler)
+    virtual void store(block_const_ptr block, block_store_handler handler)
     {
     }
 
     virtual void fetch_block(uint64_t height,
-        block_fetch_handler handler)
+        block_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block(const hash_digest& hash,
-        block_fetch_handler handler)
+        block_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block_header(uint64_t height,
-        block_header_fetch_handler handler)
+        block_header_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block_header(const hash_digest& hash,
-        block_header_fetch_handler handler)
-    {
-    }
-
-
-    virtual void fetch_merkle_block(uint64_t height,
-        merkle_block_fetch_handler handler)
-    {
-    }
-
-    virtual void fetch_merkle_block(const hash_digest& hash,
-        merkle_block_fetch_handler handler)
+        block_header_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block_transaction_hashes(uint64_t height,
-        transaction_hashes_fetch_handler handler)
+        transaction_hashes_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
-        transaction_hashes_fetch_handler handler)
+        transaction_hashes_fetch_handler handler) const
     {
     }
 
-    virtual void fetch_block_locator(block_locator_fetch_handler handle_fetch)
+    virtual void fetch_block_locator(
+        block_locator_fetch_handler handle_fetch) const
     {
     }
 
-    virtual void fetch_locator_block_hashes(const message::get_blocks& locator,
+    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
         const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler)
+        locator_block_hashes_fetch_handler handler) const
     {
     }
 
-    virtual void fetch_locator_block_headers(
-        const message::get_headers& locator, const hash_digest& threshold,
-        size_t limit, locator_block_headers_fetch_handler handler)
+    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const
     {
     }
 
     virtual void fetch_block_height(const hash_digest& hash,
-        block_height_fetch_handler handler)
+        block_height_fetch_handler handler) const
     {
     }
 
-    virtual void fetch_last_height(last_height_fetch_handler handler)
+    virtual void fetch_last_height(last_height_fetch_handler handler) const
     {
     }
 
     virtual void fetch_transaction(const hash_digest& hash,
-        transaction_fetch_handler handler)
+        transaction_fetch_handler handler) const
     {
     }
 
     virtual void fetch_transaction_index(const hash_digest& hash,
-        transaction_index_fetch_handler handler)
+        transaction_index_fetch_handler handler) const
     {
     }
 
     virtual void fetch_spend(const output_point& outpoint,
-        spend_fetch_handler handler)
+        spend_fetch_handler handler) const
     {
     }
 
     virtual void fetch_history(const wallet::payment_address& address,
-        uint64_t limit, uint64_t from_height, history_fetch_handler handler)
+        uint64_t limit, uint64_t from_height,
+        history_fetch_handler handler) const
     {
     }
 
     virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
-        stealth_fetch_handler handler)
+        stealth_fetch_handler handler) const
     {
     }
 
     virtual void filter_blocks(message::get_data::ptr message,
-        result_handler handler)
+        result_handler handler) const
     {
     }
 
     virtual void filter_orphans(message::get_data::ptr message,
-        result_handler handler)
+        result_handler handler) const
     {
     }
 
     virtual void filter_transactions(message::get_data::ptr message,
-        result_handler handler)
+        result_handler handler) const
     {
     }
 
@@ -204,7 +194,7 @@ public:
         transaction_pool::add(tx, handler);
     }
 
-    void remove(const block_list& blocks)
+    void remove(const block_const_ptr_list& blocks)
     {
         transaction_pool::remove(blocks);
     }
@@ -214,12 +204,12 @@ public:
         transaction_pool::clear(ec);
     }
 
-    void delete_spent_in_blocks(const block_list& blocks)
+    void delete_spent_in_blocks(const block_const_ptr_list& blocks)
     {
         transaction_pool::delete_spent_in_blocks(blocks);
     }
 
-    void delete_confirmed_in_blocks(const block_list& blocks)
+    void delete_confirmed_in_blocks(const block_const_ptr_list& blocks)
     {
         transaction_pool::delete_confirmed_in_blocks(blocks);
     }
@@ -259,6 +249,7 @@ public:
         return buffer_;
     }
 
+    // Test access.
     void stopped(bool stop)
     {
         stopped_ = stop;
@@ -957,9 +948,9 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_confirmed_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__expected)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(1);
     DECLARE_TRANSACTION(0, error::service_stopped);
     buffer.push_back(tx0);
@@ -970,7 +961,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_dependencies__expected)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -980,7 +971,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
     block1.transactions.push_back(*tx1);
     block1.transactions.push_back(*tx2);
     block1.transactions.push_back(*tx3);
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
     buffer.push_back(tx2);
@@ -996,7 +987,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_dependencies__expected)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     block block2;
     DECLARE_TRANSACTION(0, error::service_stopped);
@@ -1005,8 +996,8 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_de
     block1.transactions.push_back(*tx0);
     block2.transactions.push_back(*tx1);
     block2.transactions.push_back(*tx2);
-    blocks.push_back(std::make_shared<message::block_message>(block1));
-    blocks.push_back(std::make_shared<message::block_message>(block2));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block2));
     transaction_pool_fixture::buffer buffer(8);
     DECLARE_TRANSACTION(3, error::service_stopped);
     DECLARE_TRANSACTION(4, error::service_stopped);
@@ -1041,7 +1032,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__delete_spent_in_blocks)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expected)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     blocks.push_back(std::make_shared<message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(1);
@@ -1054,7 +1045,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expe
 
 BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_duplicates_or_dependencies__expected)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);
@@ -1074,7 +1065,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_dup
     block1.transactions.push_back(*tx1);
     block1.transactions.push_back(*tx2);
     block1.transactions.push_back(*tx3);
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);
     DECLARE_TRANSACTION(5, error::service_stopped);
@@ -1102,7 +1093,7 @@ BOOST_AUTO_TEST_SUITE(transaction_pool__remove)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__removed_as_succeeded)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
@@ -1112,7 +1103,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
     block1.transactions.push_back(*tx1);
     block1.transactions.push_back(*tx2);
     block1.transactions.push_back(*tx3);
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
     DECLARE_TRANSACTION(5, error::service_stopped);
@@ -1134,7 +1125,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
 
 BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__removed_as_spent)
 {
-    message::block_message::ptr_list blocks;
+    block_const_ptr_list blocks;
     block block1;
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);
@@ -1154,7 +1145,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__
     block1.transactions.push_back(*tx1);
     block1.transactions.push_back(*tx2);
     block1.transactions.push_back(*tx3);
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);
     DECLARE_TRANSACTION(5, error::double_spend);

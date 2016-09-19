@@ -20,10 +20,8 @@
 #include <bitcoin/consensus.hpp>
 #endif
 
-#include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
 #include <bitcoin/blockchain/block_chain_impl.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_fetcher.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/organizer.hpp>

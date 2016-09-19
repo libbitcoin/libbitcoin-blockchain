@@ -39,12 +39,10 @@ class BCB_API transaction_pool
 {
 public:
     typedef chain::point::indexes indexes;
-    typedef message::get_data::ptr get_data_ptr;
-    typedef message::transaction_message::ptr transaction_ptr;
 
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
-    typedef handle1<transaction_ptr> fetch_handler;
+    typedef std::function<void(const code&, transaction_ptr)> fetch_handler;
     typedef std::function<bool(const code&, const indexes&, transaction_ptr)>
         transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_ptr>
@@ -70,7 +68,7 @@ public:
     /// Signal stop of current work, speeds shutdown.
     void stop();
 
-    void inventory(message::inventory::ptr inventory);
+    void inventory(inventory_ptr inventory);
     void fetch(const hash_digest& tx_hash, fetch_handler handler);
     void fetch_history(const wallet::payment_address& address, size_t limit,
         size_t from_height, block_chain::history_fetch_handler handler);
@@ -84,8 +82,6 @@ public:
     void subscribe_transaction(transaction_handler handler);
 
 protected:
-    typedef message::block_message::ptr_list block_list;
-    typedef message::transaction_message::ptr transaction_ptr;
     typedef boost::circular_buffer<transaction_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
 
@@ -95,7 +91,8 @@ protected:
     const_iterator find_iterator(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
-        const block_list& new_blocks, const block_list& replaced_blocks);
+        const block_const_ptr_list& new_blocks,
+        const block_const_ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
         transaction_ptr tx, validate_transaction::ptr self,
         validate_handler handler);
@@ -105,16 +102,15 @@ protected:
         transaction_ptr tx, result_handler handle_confirm,
         validate_handler handle_validate);
 
-    void notify_transaction(const chain::point::indexes& unconfirmed,
-        transaction_ptr tx);
+    void notify_transaction(const indexes& unconfirmed, transaction_ptr tx);
 
     void add(transaction_ptr tx, result_handler handler);
-    void remove(const block_list& blocks);
+    void remove(const block_const_ptr_list& blocks);
     void clear(const code& ec);
 
     // These would be private but for test access.
-    void delete_spent_in_blocks(const block_list& blocks);
-    void delete_confirmed_in_blocks(const block_list& blocks);
+    void delete_spent_in_blocks(const block_const_ptr_list& blocks);
+    void delete_confirmed_in_blocks(const block_const_ptr_list& blocks);
     void delete_dependencies(const hash_digest& tx_hash, const code& ec);
     void delete_dependencies(const chain::output_point& point, const code& ec);
     void delete_dependencies(input_compare is_dependency, const code& ec);

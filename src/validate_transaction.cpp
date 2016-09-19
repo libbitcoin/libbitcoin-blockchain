@@ -144,11 +144,11 @@ void validate_transaction::handle_double_spend(const code& ec,
         return;
     }
 
-    // Locate the previous transaction for the input.
-    blockchain_.fetch_transaction(outpoint.hash,
-        dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
-            shared_from_this(), _1, _2, _3, tx, input_index, last_height,
-                handler));
+    ////// Locate the previous transaction for the input.
+    ////blockchain_.fetch_transaction(outpoint.hash,
+    ////    dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
+    ////        shared_from_this(), _1, _2, _3, tx, input_index, last_height,
+    ////            handler));
 }
 
 void validate_transaction::handle_previous_tx(const code& ec,

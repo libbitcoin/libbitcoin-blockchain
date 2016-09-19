@@ -35,9 +35,7 @@ class BCB_API validate_block
 {
 public:
     typedef handle0 result_handler;
-    typedef chain::point::indexes indexes;
     typedef config::checkpoint::list checkpoints;
-    typedef message::block_message::ptr block_ptr;
     typedef chain::chain_state::versions versions;
     typedef std::function<bool()> stopped_callback;
 
@@ -47,9 +45,9 @@ public:
     void stop();
 
     /// These are thread safe as long as reset is not called concurrently.
-    void check(block_ptr block, result_handler handler) const;
-    void accept(block_ptr block, result_handler handler) const;
-    void connect(block_ptr block, result_handler handler) const;
+    void check(block_const_ptr block, result_handler handler) const;
+    void accept(block_const_ptr block, result_handler handler) const;
+    void connect(block_const_ptr block, result_handler handler) const;
 
     /// Call once only before invoking accept/connect.
     void reset(size_t height, result_handler handler);
@@ -59,7 +57,7 @@ protected:
 
     void connect_input(const chain::transaction& tx,
         uint32_t input_index, result_handler handler) const;
-    void handle_connect(const code& ec, block_ptr block,
+    void handle_connect(const code& ec, block_const_ptr block,
         asio::time_point start_time, result_handler handler) const;
 
 private:

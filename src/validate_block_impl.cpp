@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 
 namespace libbitcoin {
@@ -33,8 +32,8 @@ static constexpr uint64_t retargeting_interval = target_timespan_seconds /
     target_spacing_seconds;
 
 validate_block_impl::validate_block_impl(size_t fork_height,
-    const block_detail::list& orphan_chain, size_t orphan_index,
-    const block_ptr block, size_t height, bool testnet,
+    const block_const_ptr_list& orphan_chain, size_t orphan_index,
+    const block_const_ptr block, size_t height, bool testnet,
     const checkpoints& checks, const simple_chain& chain)
   : height_(height),
     fork_height_(fork_height),
@@ -183,7 +182,7 @@ chain::header validate_block_impl::fetch_block(size_t height) const
         // BUGBUG: unsafe suppression of failure condition.
         BITCOIN_ASSERT(fetch_index <= orphan_index_);
 
-        return orphan_chain_[fetch_index]->actual()->header;
+        return orphan_chain_[fetch_index]->header;
     }
 
     chain::header out;
@@ -200,56 +199,59 @@ chain::header validate_block_impl::fetch_block(size_t height) const
 bool validate_block_impl::fetch_header(chain::header& header,
     size_t fetch_height) const
 {
-    if (fetch_height > fork_height_)
-    {
-        const auto fetch_index = fetch_height - fork_height_ - 1;
+    if (fetch_height <= fork_height_)
+        return chain_.get_header(header, fetch_height);
 
-        if (fetch_index > orphan_index_)
-            return false;
+    const auto fetch_index = fetch_height - fork_height_ - 1;
 
-        header = orphan_chain_[fetch_index]->actual()->header;
-        return true;
-    }
+    if (fetch_index > orphan_index_)
+        return false;
 
-    return chain_.get_header(header, fetch_height);
+    // TODO: if the header is not required we can return value and avoid.
+    //=====================================================================
+    // HEADER COPY
+    header = chain::header(orphan_chain_[fetch_index]->header);
+    //=====================================================================
+    return true;
 }
 
-bool validate_block_impl::fetch_transaction(chain::transaction& tx,
-    size_t& tx_height, const hash_digest& tx_hash) const
+transaction_ptr validate_block_impl::fetch_transaction(size_t& tx_height,
+    const hash_digest& tx_hash) const
 {
     uint64_t out_tx_height;
-    const auto result = chain_.get_transaction(tx, out_tx_height, tx_hash);
+    const auto tx = chain_.get_transaction(out_tx_height, tx_hash);
 
-    if (result && out_tx_height <= fork_height_)
+    if (tx && out_tx_height <= fork_height_)
     {
         BITCOIN_ASSERT(out_tx_height <= max_size_t);
         tx_height = static_cast<size_t>(out_tx_height);
-        return true;
+        return tx;
     }
 
-    return fetch_orphan_transaction(tx, tx_height, tx_hash);
+    return fetch_orphan_transaction(tx_height, tx_hash);
 }
 
-bool validate_block_impl::fetch_orphan_transaction(chain::transaction& tx,
+transaction_ptr validate_block_impl::fetch_orphan_transaction(
     size_t& tx_height, const hash_digest& tx_hash) const
 {
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
-        const auto& orphan_block = orphan_chain_[orphan]->actual();
+        const auto& orphan_block = orphan_chain_[orphan];
 
-        for (const auto& orphan_tx: orphan_block->transactions)
+        for (const auto& tx: orphan_block->transactions)
         {
-            if (orphan_tx.hash() == tx_hash)
+            if (tx.hash() == tx_hash)
             {
-                // TRANSACTION COPY
-                tx = orphan_tx;
                 tx_height = fork_height_ + orphan + 1;
-                return true;
+                //=============================================================
+                // TRANSACTION COPY
+                return std::make_shared<message::transaction_message>(tx);
+                //=============================================================
             }
         }
     }
 
-    return false;
+    return nullptr;
 }
 
 bool validate_block_impl::is_output_spent(
@@ -270,7 +272,7 @@ bool validate_block_impl::is_orphan_spent(
     // For each orphan...
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)
     {
-        const auto& orphan_block = orphan_chain_[orphan]->actual();
+        const auto orphan_block = orphan_chain_[orphan];
         const auto& transactions = orphan_block->transactions;
         BITCOIN_ASSERT(!transactions.empty());
         BITCOIN_ASSERT(transactions.front().is_coinbase());
@@ -280,10 +282,9 @@ bool validate_block_impl::is_orphan_spent(
         {
             const auto& orphan_tx = transactions[position];
             const auto inputs = orphan_tx.inputs.size();
-            BITCOIN_ASSERT(inputs <= max_uint32);
 
             // For each input...
-            for (uint32_t input_index = 0; input_index < inputs; ++input_index)
+            for (size_t input_index = 0; input_index < inputs; ++input_index)
             {
                 const auto& orphan_input = orphan_tx.inputs[input_index];
 

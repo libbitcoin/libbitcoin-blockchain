@@ -25,8 +25,8 @@
 #include <cstdint>
 #include <unordered_map>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

@@ -18,14 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <bitcoin/blockchain/organizer.hpp>
-#include <bitcoin/blockchain/block.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <numeric>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -42,11 +40,11 @@ using namespace bc::config;
 
 organizer::organizer(threadpool& pool, simple_chain& chain,
     const settings& settings)
-  : stopped_(true),
+  : chain_(chain),
+    validator_(pool, testnet_rules_, checkpoints_, chain_),
     testnet_rules_(settings.use_testnet_rules),
     checkpoints_(checkpoint::sort(settings.checkpoints)),
-    chain_(chain),
-    validator_(pool, testnet_rules_, checkpoints_, chain_),
+    stopped_(true),
     orphan_pool_(settings.block_pool_capacity),
     subscriber_(std::make_shared<reorganize_subscriber>(pool, NAME))
 {
@@ -74,15 +72,12 @@ bool organizer::stopped() const
     return stopped_;
 }
 
-////validate_block_impl validator(fork_height, new_chain, orphan_index,
-////    block, height, testnet_rules_, checkpoints_, chain_);
-
 // Verify (invoked from chain_work) sequence.
 //-----------------------------------------------------------------------------
 
-// This verifies the block at new_chain[orphan_index]->actual()
-code organizer::verify(size_t fork_height, const detail_list& new_chain,
-    size_t orphan_index)
+// This verifies the block at new_chain[orphan_index]
+code organizer::verify(size_t fork_height,
+    const block_const_ptr_list& new_chain, size_t orphan_index) const
 {
     if (stopped())
         return error::service_stopped;
@@ -94,7 +89,7 @@ code organizer::verify(size_t fork_height, const detail_list& new_chain,
 
     BITCOIN_ASSERT(orphan_index < new_chain.size());
     const auto height = compute_height(fork_height, orphan_index);
-    const auto block = new_chain[orphan_index]->actual();
+    const auto block = new_chain[orphan_index];
 
     // Checks that are independent of the chain.
     validator_.check(block, nullptr);
@@ -120,18 +115,15 @@ size_t organizer::compute_height(size_t fork_height, size_t orphan_index)
     return ++height;
 }
 
-// Add and organize.
+// Organize.
 //-----------------------------------------------------------------------------
 
 // This is called on every block_chain_impl::do_store() call.
-bool organizer::add(block_detail::ptr block)
+code organizer::reorganize(block_const_ptr block)
 {
-    return orphan_pool_.add(block);
-}
+    if (!orphan_pool_.add(block))
+        return error::duplicate;
 
-// This is called on every block_chain_impl::do_store() call.
-void organizer::organize()
-{
     process_queue_ = orphan_pool_.unprocessed();
 
     while (!process_queue_.empty() && !stopped())
@@ -140,43 +132,41 @@ void organizer::organize()
         process_queue_.pop_back();
         process(process_block);
     }
+
+    return error::success;
 }
 
-void organizer::filter_orphans(message::get_data::ptr message)
-{
-    orphan_pool_.filter(message);
-}
-
-void organizer::process(detail_ptr block)
+void organizer::process(block_const_ptr block)
 {
     // Trace the chain in the orphan pool
     auto new_chain = orphan_pool_.trace(block);
-    BITCOIN_ASSERT(new_chain.size() >= 1);
+    BITCOIN_ASSERT(!new_chain.empty());
 
     uint64_t fork_height64;
-    const auto& hash = new_chain.front()->actual()->header.previous_block_hash;
+    const auto& previous_hash = new_chain.front()->header.previous_block_hash;
 
     // Verify the blocks in the orphan chain.
-    if (chain_.get_height(fork_height64, hash))
+    if (chain_.get_height(fork_height64, previous_hash))
     {
         BITCOIN_ASSERT(fork_height64 <= max_size_t);
         const auto fork_height = static_cast<size_t>(fork_height64);
-        replace_chain(fork_height, new_chain);
+        replace_chain(new_chain, fork_height);
     }
 
     // Don't mark all new_chain as processed here because there might be
     // a winning fork from an earlier block.
-    block->set_processed();
+    block->metadata.processed_orphan = true;
 }
 
-hash_number organizer::chain_work(size_t fork_height, detail_list& new_chain)
+void organizer::chain_work(hash_number& work, block_const_ptr_list& new_chain,
+    size_t fork_height)
 {
-    hash_number work;
+    work = 0;
 
     // Verify the new chain before allowing the reorg.
     for (size_t index = 0; index < new_chain.size(); ++index)
     {
-        // This verifies the block at new_chain[index]->actual()
+        // This verifies the block at new_chain[index]
         const auto error_code = verify(fork_height, new_chain, index);
 
         if (error_code)
@@ -186,7 +176,7 @@ hash_number organizer::chain_work(size_t fork_height, detail_list& new_chain)
             {
                 log::warning(LOG_BLOCKCHAIN)
                     << "Invalid block ["
-                    << encode_hash(new_chain[index]->actual()->hash())
+                    << encode_hash(new_chain[index]->hash())
                     << "] " << error_code.message();
             }
 
@@ -197,18 +187,17 @@ hash_number organizer::chain_work(size_t fork_height, detail_list& new_chain)
             break;
         }
 
-        const auto bits = new_chain[index]->actual()->header.bits;
-        work += bc::chain::block::work(bits);
+        const auto bits = new_chain[index]->header.bits;
+        work += chain::block::work(bits);
     }
-
-    // Return no error, just a trimmed chain.
-    return work;
 }
 
-void organizer::replace_chain(size_t fork_height, detail_list& new_chain)
+void organizer::replace_chain(block_const_ptr_list& new_chain,
+    size_t fork_height)
 {
     // Any invalid blocks are removed from new_chain, remaining work returned.
-    const auto new_work = chain_work(fork_height, new_chain);
+    hash_number new_work;
+    chain_work(new_work, new_chain, fork_height);
 
     // For work comparison each branch starts one block above the fork height.
     auto height = fork_height + 1;
@@ -230,7 +219,7 @@ void organizer::replace_chain(size_t fork_height, detail_list& new_chain)
         return;
     }
 
-    detail_list old_chain;
+    block_const_ptr_list old_chain;
 
     if (!chain_.pop_from(old_chain, height))
     {
@@ -256,7 +245,7 @@ void organizer::replace_chain(size_t fork_height, detail_list& new_chain)
         orphan_pool_.remove(block);
 
         // Indicates the block is not an orphan.
-        block->set_height(height);
+        block->metadata.validation_height = height;
 
         // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
         if (!chain_.push(block))
@@ -273,15 +262,15 @@ void organizer::replace_chain(size_t fork_height, detail_list& new_chain)
     // Add old_chain to the orphan pool (as processed with orphan height).
     for (const auto block: old_chain)
     {
-        block->set_processed();
+        block->metadata.processed_orphan = true;
         orphan_pool_.add(block);
     }
 
     notify_reorganize(fork_height, new_chain, old_chain);
 }
 
-void organizer::clip_orphans(detail_list& new_chain, size_t orphan_index,
-    const code& reason)
+void organizer::clip_orphans(block_const_ptr_list& new_chain,
+    size_t orphan_index, const code& reason) 
 {
     BITCOIN_ASSERT(orphan_index < new_chain.size());
     const auto start = new_chain.begin() + orphan_index;
@@ -289,8 +278,9 @@ void organizer::clip_orphans(detail_list& new_chain, size_t orphan_index,
     // Remove from orphans pool and process queue.
     for (auto it = start; it != new_chain.end(); ++it)
     {
-        (*it)->set_error(it == start ? reason : error::previous_block_invalid);
-        (*it)->set_processed();
+        const auto ec = it == start ? reason : error::previous_block_invalid;
+        (*it)->metadata.validation_result = ec;
+        (*it)->metadata.processed_orphan = true;
         remove_processed(*it);
         orphan_pool_.remove(*it);
     }
@@ -298,7 +288,7 @@ void organizer::clip_orphans(detail_list& new_chain, size_t orphan_index,
     new_chain.erase(start, new_chain.end());
 }
 
-void organizer::remove_processed(detail_ptr block)
+void organizer::remove_processed(block_const_ptr block)
 {
     auto it = std::find(process_queue_.begin(), process_queue_.end(), block);
 
@@ -306,26 +296,24 @@ void organizer::remove_processed(detail_ptr block)
         process_queue_.erase(it);
 }
 
+void organizer::notify_reorganize(size_t fork_height,
+    const block_const_ptr_list& new_chain,
+    const block_const_ptr_list& old_chain)
+{
+    subscriber_->relay(error::success, fork_height, new_chain, old_chain);
+}
+
+// Utilities.
+//-----------------------------------------------------------------------------
+
+void organizer::filter_orphans(get_data_ptr message) const
+{
+    orphan_pool_.filter(message);
+}
+
 void organizer::subscribe_reorganize(reorganize_handler handler)
 {
     subscriber_->subscribe(handler, error::service_stopped, 0, {}, {});
-}
-
-void organizer::notify_reorganize(size_t fork_height,
-    const detail_list& new_chain, const detail_list& old_chain)
-{
-    typedef message::block_message::ptr_list list;
-
-    const auto map = [](const detail_ptr& detail)
-    {
-        return detail->actual();
-    };
-
-    list arrivals(new_chain.size());
-    list removals(old_chain.size());
-    std::transform(new_chain.begin(), new_chain.end(), arrivals.begin(), map);
-    std::transform(old_chain.begin(), old_chain.end(), removals.begin(), map);
-    subscriber_->relay(error::success, fork_height, arrivals, removals);
 }
 
 } // namespace blockchain

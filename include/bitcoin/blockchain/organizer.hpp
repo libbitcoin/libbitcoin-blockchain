@@ -26,7 +26,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
@@ -43,55 +42,55 @@ public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<organizer> ptr;
     typedef block_chain::reorganize_handler reorganize_handler;
-    typedef resubscriber<const code&, size_t, const block_chain::list&,
-        const block_chain::list&> reorganize_subscriber;
+
+    typedef resubscriber<const code&, size_t, const block_const_ptr_list&,
+        const block_const_ptr_list&> reorganize_subscriber;
 
     /// Construct an instance.
     organizer(threadpool& pool, simple_chain& chain, const settings& settings);
 
-    /// This method is NOT thread safe.
-    virtual void organize();
-
     virtual void start();
     virtual void stop();
-    virtual bool add(block_detail::ptr block);
+
+    virtual code reorganize(block_const_ptr block);
+    virtual void filter_orphans(get_data_ptr message) const;
     virtual void subscribe_reorganize(reorganize_handler handler);
-    virtual void filter_orphans(message::get_data::ptr message);
 
 protected:
     virtual bool stopped() const;
 
 private:
-    typedef block_detail::ptr detail_ptr;
-    typedef block_detail::list detail_list;
-
     static size_t compute_height(size_t fork_height, size_t orphan_index);
 
-    virtual code verify(size_t fork_height, const detail_list& new_chain,
-        size_t orphan_index);
-
-    hash_number chain_work(size_t fork_height, detail_list& new_chain);
+    // const
+    code verify(size_t fork_height, const block_const_ptr_list& new_chain,
+        size_t orphan_index) const;
     bool strict(size_t fork_height) const;
-    void process(detail_ptr block);
-    void replace_chain(size_t fork_height, detail_list& new_chain);
-    void remove_processed(detail_ptr block);
-    void clip_orphans(detail_list& new_chain, size_t orphan_index,
+
+    // non-const
+    void process(block_const_ptr block);
+    void chain_work(hash_number& work, block_const_ptr_list& new_chain,
+        size_t fork_height);
+    void replace_chain(block_const_ptr_list& new_chain, size_t fork_height);
+    void clip_orphans(block_const_ptr_list& new_chain, size_t orphan_index,
         const code& reason);
+    void remove_processed(block_const_ptr block);
 
     /// This method is thread safe.
-    void notify_reorganize(size_t fork_height, const detail_list& new_chain,
-        const detail_list& old_chain);
+    void notify_reorganize(size_t fork_height,
+        const block_const_ptr_list& new_chain,
+        const block_const_ptr_list& old_chain);
 
-    std::atomic<bool> stopped_;
-    const bool testnet_rules_;
-    const config::checkpoint::list checkpoints_;
 
     // These are protected by the caller protecting organize().
     simple_chain& chain_;
-    detail_list process_queue_;
+    block_const_ptr_list process_queue_;
     validate_block validator_;
 
     // These are thread safe.
+    const bool testnet_rules_;
+    const config::checkpoint::list checkpoints_;
+    std::atomic<bool> stopped_;
     orphan_pool orphan_pool_;
     reorganize_subscriber::ptr subscriber_;
 };

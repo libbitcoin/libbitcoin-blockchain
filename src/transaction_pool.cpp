@@ -25,6 +25,7 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
@@ -222,7 +223,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
         const auto it = find_iterator(transaction_hash);
 
         if (it == buffer_.end())
-            handler(error::not_found, {});
+            handler(error::not_found, nullptr);
         else
             handler(error::success, *it);
     };
@@ -285,7 +286,8 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
 bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
-    const block_list& new_blocks, const block_list& replaced_blocks)
+    const block_const_ptr_list& new_blocks,
+    const block_const_ptr_list& replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -330,7 +332,8 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 void transaction_pool::subscribe_transaction(
     transaction_handler handle_transaction)
 {
-    subscriber_->subscribe(handle_transaction, error::service_stopped, {}, {});
+    subscriber_->subscribe(handle_transaction, error::service_stopped, {},
+        nullptr);
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
@@ -364,7 +367,7 @@ void transaction_pool::clear(const code& ec)
 }
 
 // Delete memory pool txs that are obsoleted by a new block acceptance.
-void transaction_pool::remove(const block_list& blocks)
+void transaction_pool::remove(const block_const_ptr_list& blocks)
 {
     // Delete by hash sets a success code.
     delete_confirmed_in_blocks(blocks);
@@ -378,7 +381,8 @@ void transaction_pool::remove(const block_list& blocks)
 // ----------------------------------------------------------------------------
 
 // Delete mempool txs that are duplicated in the new blocks.
-void transaction_pool::delete_confirmed_in_blocks(const block_list& blocks)
+void transaction_pool::delete_confirmed_in_blocks(
+    const block_const_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -389,7 +393,8 @@ void transaction_pool::delete_confirmed_in_blocks(const block_list& blocks)
 }
 
 // Delete all txs that spend a previous output of any tx in the new blocks.
-void transaction_pool::delete_spent_in_blocks(const block_list& blocks)
+void transaction_pool::delete_spent_in_blocks(
+    const block_const_ptr_list& blocks)
 {
     if (stopped() || buffer_.empty())
         return;
@@ -488,8 +493,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     return true;
 }
 
-transaction_pool::transaction_ptr transaction_pool::find(
-    const hash_digest& tx_hash) const
+transaction_ptr transaction_pool::find(const hash_digest& tx_hash) const
 {
     const auto it = find_iterator(tx_hash);
     const auto found = it != buffer_.end();

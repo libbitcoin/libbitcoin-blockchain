@@ -35,9 +35,7 @@ lib_LTLIBRARIES = src/libbitcoin-blockchain.la
 src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
-    src/block.cpp \
     src/block_chain_impl.cpp \
-    src/block_detail.cpp \
     src/block_fetcher.cpp \
     src/organizer.cpp \
     src/orphan_pool.cpp \
@@ -84,10 +82,8 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
-    include/bitcoin/blockchain/block.hpp \
     include/bitcoin/blockchain/block_chain.hpp \
     include/bitcoin/blockchain/block_chain_impl.hpp \
-    include/bitcoin/blockchain/block_detail.hpp \
     include/bitcoin/blockchain/block_fetcher.hpp \
     include/bitcoin/blockchain/define.hpp \
     include/bitcoin/blockchain/organizer.hpp \
