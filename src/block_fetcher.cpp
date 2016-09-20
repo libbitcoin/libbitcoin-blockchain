@@ -47,16 +47,13 @@ public:
     void start(const BlockIndex& index,
         full_chain::block_fetch_handler handler)
     {
-        // block_ptr must be non-const.
-        blockchain_.fetch_block_header(index,
-            std::bind(&block_fetcher::handle_fetch_header,
+        blockchain_.fetch_merkle_block(index,
+            std::bind(&block_fetcher::fetch_transactions,
                 shared_from_this(), _1, _2, _3, handler));
     }
 
 private:
-
-    // header_ptr must be non-const.
-    void handle_fetch_header(const code& ec, header_ptr header,
+    void fetch_transactions(const code& ec, merkle_block_ptr merkle,
         uint64_t height, full_chain::block_fetch_handler handler)
     {
         if (ec)
@@ -65,30 +62,12 @@ private:
             return;
         }
 
-        const auto txs = chain::transaction::list(header->transaction_count);
+        const auto size = merkle->hashes.size();
+        BITCOIN_ASSERT(size == merkle->header.transaction_count);
 
-        // Create the block using the header and emplty transactions.
-        const auto block = std::make_shared<message::block_message>(
-            std::move(*header), std::move(txs));
-
-        blockchain_.fetch_block_transaction_hashes(block->hash(),
-            std::bind(&block_fetcher::fetch_transactions,
-                shared_from_this(), _1, _2, block, height, handler));
-    }
-
-    // block_ptr must be non-const.
-    void fetch_transactions(const code& ec, const hash_list& hashes,
-        block_ptr block, uint64_t height,
-        full_chain::block_fetch_handler handler)
-    {
-        if (ec)
-        {
-            handler(ec, nullptr, 0);
-            return;
-        }
-
-        BITCOIN_ASSERT(hashes.size() == block->transactions.size());
-        BITCOIN_ASSERT(hashes.size() == block->header.transaction_count);
+        auto block = std::make_shared<message::block_message>(
+            message::block_message{ std::move(merkle->header), {} });
+        block->transactions.reserve(size);
 
         // This will be called exactly once by the synchronizer.
         const auto completion_handler =
@@ -96,12 +75,12 @@ private:
                 shared_from_this(), _1, _2, _3, handler);
 
         // Synchronize transaction fetch calls to one completion call.
-        const auto complete = synchronize(completion_handler, hashes.size(),
+        const auto complete = synchronize(completion_handler, size,
             "block_fetcher");
 
         // blockchain::fetch_transaction is thread safe.
         size_t index = 0;
-        for (const auto& hash: hashes)
+        for (const auto& hash: merkle->hashes)
             blockchain_.fetch_transaction(hash,
                 std::bind(&block_fetcher::handle_fetch_transaction,
                     shared_from_this(), _1, _2, _3, index++, block, height,
@@ -114,7 +93,6 @@ private:
         std::swap(left, right);
     }
 
-    // block_ptr and transaction_ptr must be non-const.
     void handle_fetch_transaction(const code& ec, transaction_ptr transaction,
         uint64_t DEBUG_ONLY(tx_height), size_t index, block_ptr block,
         uint64_t block_height, full_chain::block_fetch_handler handler)
@@ -137,7 +115,6 @@ private:
         handler(error::success, block, block_height);
     }
 
-    // If ec success then there is no possibility that block is being written.
     void handle_complete(const code& ec, block_ptr block, uint64_t height,
         full_chain::block_fetch_handler handler)
     {
@@ -147,6 +124,7 @@ private:
             return;
         }
 
+        // If ec success then there is no possibility that block is being written.
         handler(error::success, block, height);
     }
 

@@ -297,7 +297,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, nullptr);
         return;
     }
 
@@ -308,10 +308,11 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         code ec(error::operation_failed);
 
         if (!database_.blocks.top(top))
-            return finish_fetch(slock, handler, ec, hash_list{});
+            return finish_fetch(slock, handler, ec, nullptr);
 
-        hash_list locator;
-        locator.reserve(heights.size());
+        auto get_blocks = std::make_shared<message::get_blocks>();
+        auto& hashes = get_blocks->start_hashes;
+        hashes.reserve(heights.size());
         ec = error::success;
 
         for (const auto height: heights)
@@ -321,13 +322,15 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
             if (!result)
             {
                 ec = error::not_found;
+                hashes.clear();
                 break;
             }
 
-            locator.push_back(result.header().hash());
+            hashes.push_back(result.header().hash());
         }
 
-        return finish_fetch(slock, handler, ec, std::move(locator));
+        hashes.shrink_to_fit();
+        return finish_fetch(slock, handler, ec, get_blocks);
     };
     fetch_serial(do_fetch);
 }
@@ -339,7 +342,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, nullptr);
         return;
     }
 
@@ -382,6 +385,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
 
         auto hashes = std::make_shared<message::inventory>();
+        hashes->inventories.reserve(stop);
 
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
@@ -397,6 +401,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
         ///////////////////////////////////////////////////////////////////////
 
+        hashes->inventories.shrink_to_fit();
         return finish_fetch(slock, handler, error::success, hashes);
     };
     fetch_serial(do_fetch);
@@ -455,6 +460,7 @@ void block_chain::fetch_locator_block_headers(
         //---------------------------------------------------------------------
 
         const auto headers = std::make_shared<message::headers>();
+        headers->elements.reserve(stop);
 
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
@@ -469,6 +475,7 @@ void block_chain::fetch_locator_block_headers(
         }
         ///////////////////////////////////////////////////////////////////////
 
+        headers->elements.shrink_to_fit();
         return finish_fetch(slock, handler, error::success, headers);
     };
     fetch_serial(do_fetch);
@@ -545,40 +552,54 @@ void block_chain::fetch_block_header(const hash_digest& hash,
     fetch_serial(do_fetch);
 }
 
-void block_chain::fetch_block_transaction_hashes(uint64_t height,
+void block_chain::fetch_merkle_block(uint64_t height,
     transaction_hashes_fetch_handler handler) const
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, nullptr, 0);
         return;
     }
 
     const auto do_fetch = [this, height, handler](size_t slock)
     {
         const auto result = database_.blocks.get(height);
-        return result ?
-            finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list{});
+
+        if (!result)
+            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        auto merkle = std::make_shared<message::merkle_block>(
+            message::merkle_block{ result.header(), to_hashes(result), {} });
+
+        // Asign the optional tx count to the merkle header.
+        merkle->header.transaction_count = result.transaction_count();
+        return finish_fetch(slock, handler, error::success, merkle,
+            result.height());
     };
     fetch_serial(do_fetch);
 }
 
-void block_chain::fetch_block_transaction_hashes(const hash_digest& hash,
+void block_chain::fetch_merkle_block(const hash_digest& hash,
     transaction_hashes_fetch_handler handler) const
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, nullptr, 0);
         return;
     }
 
     const auto do_fetch = [this, hash, handler](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
-        return result ?
-            finish_fetch(slock, handler, error::success, to_hashes(result)) :
-            finish_fetch(slock, handler, error::not_found, hash_list{});
+
+        if (!result)
+            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        auto merkle = std::make_shared<message::merkle_block>(
+            message::merkle_block{ result.header(), to_hashes(result), {} });
+
+        return finish_fetch(slock, handler, error::success, merkle,
+            result.height());
     };
     fetch_serial(do_fetch);
 }
@@ -651,7 +672,7 @@ void block_chain::fetch_transaction_index(const hash_digest& hash,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {}, {});
+        handler(error::service_stopped, 0, 0);
         return;
     }
 

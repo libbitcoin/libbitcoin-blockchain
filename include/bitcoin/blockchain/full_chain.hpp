@@ -40,10 +40,8 @@ public:
     typedef handle0 result_handler;
 
     /// Object fetch handlers.
-    typedef handle1<hash_list> block_locator_fetch_handler;
-    typedef handle1<hash_list> transaction_hashes_fetch_handler;
-    typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<uint64_t> last_height_fetch_handler;
+    typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::history_compact::list> history_fetch_handler;
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
@@ -52,6 +50,8 @@ public:
     // Smart pointer fetch handlers.
     // Return non-const so that values can be safely swapped/moved.
     // Smart pointer parameters must not be passed by reference.
+    typedef std::function<void(const code&, merkle_block_ptr, uint64_t)>
+        transaction_hashes_fetch_handler;
     typedef std::function<void(const code&, block_ptr, uint64_t)>
         block_fetch_handler;
     typedef std::function<void(const code&, header_ptr, uint64_t)>
@@ -62,6 +62,8 @@ public:
         locator_block_hashes_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
+    typedef std::function<void(const code&, get_blocks_ptr)>
+        block_locator_fetch_handler;
 
     /// Subscription handlers.
     typedef std::function<bool(const code&, size_t,
@@ -96,10 +98,10 @@ public:
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_transaction_hashes(uint64_t height,
+    virtual void fetch_merkle_block(uint64_t height,
         transaction_hashes_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_transaction_hashes(const hash_digest& hash,
+    virtual void fetch_merkle_block(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const = 0;
 
     virtual void fetch_block_locator(const chain::block::indexes& heights,

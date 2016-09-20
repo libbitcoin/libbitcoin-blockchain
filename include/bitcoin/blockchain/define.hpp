@@ -82,6 +82,9 @@ typedef message::headers::const_ptr headers_const_ptr;
 typedef message::header_message::ptr header_ptr;
 typedef message::header_message::const_ptr header_const_ptr;
 
+typedef message::merkle_block::ptr merkle_block_ptr;
+typedef message::merkle_block::const_ptr merkle_block_const_ptr;
+
 typedef message::block_message::ptr block_ptr;
 typedef message::block_message::const_ptr block_const_ptr;
 typedef message::block_message::ptr_list block_ptr_list;

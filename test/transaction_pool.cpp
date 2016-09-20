@@ -78,12 +78,12 @@ public:
     {
     }
 
-    virtual void fetch_block_transaction_hashes(uint64_t height,
+    virtual void fetch_merkle_block(uint64_t height,
         transaction_hashes_fetch_handler handler) const
     {
     }
 
-    virtual void fetch_block_transaction_hashes(const hash_digest& hash,
+    virtual void fetch_merkle_block(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const
     {
     }
