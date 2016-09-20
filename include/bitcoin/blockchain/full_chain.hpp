@@ -41,8 +41,6 @@ public:
 
     /// Object fetch handlers.
     typedef handle1<hash_list> block_locator_fetch_handler;
-    typedef handle1<hash_list> locator_block_hashes_fetch_handler;
-    typedef handle1<chain::header::list> locator_block_headers_fetch_handler;
     typedef handle1<hash_list> transaction_hashes_fetch_handler;
     typedef handle1<uint64_t> block_height_fetch_handler;
     typedef handle1<uint64_t> last_height_fetch_handler;
@@ -60,6 +58,10 @@ public:
         block_header_fetch_handler;
     typedef std::function<void(const code&, transaction_ptr, uint64_t)>
         transaction_fetch_handler;
+    typedef std::function<void(const code&, inventory_ptr)>
+        locator_block_hashes_fetch_handler;
+    typedef std::function<void(const code&, headers_ptr)>
+        locator_block_headers_fetch_handler;
 
     /// Subscription handlers.
     typedef std::function<bool(const code&, size_t,

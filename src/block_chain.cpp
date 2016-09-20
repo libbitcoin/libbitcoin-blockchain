@@ -381,15 +381,17 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
                 start = std::max(start_result.height(), start);
         }
 
+        auto hashes = std::make_shared<message::inventory>();
+
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
-        hash_list hashes;
         for (size_t index = start + 1; index < stop; ++index)
         {
             const auto result = database_.blocks.get(index);
             if (result)
             {
-                hashes.push_back(result.header().hash());
+                static const auto id = message::inventory::type_id::block;
+                hashes->inventories.push_back({ id, result.header().hash() });
                 break;
             }
         }
@@ -452,15 +454,16 @@ void block_chain::fetch_locator_block_headers(
         }
         //---------------------------------------------------------------------
 
+        const auto headers = std::make_shared<message::headers>();
+
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
-        chain::header::list headers;
         for (size_t index = start + 1; index < stop; ++index)
         {
             const auto result = database_.blocks.get(index);
             if (result)
             {
-                headers.push_back(result.header());
+                headers->elements.push_back(result.header());
                 break;
             }
         }
