@@ -199,7 +199,6 @@ public:
     virtual void filter_orphans(get_data_ptr message,
         result_handler handler) const;
 
-    // TODO:
     /// filter out transaction hashes that exist in the store.
     virtual void filter_floaters(get_data_ptr message,
         result_handler handler) const;
@@ -210,7 +209,6 @@ public:
     /// Subscribe to blockchain reorganizations, get forks/height.
     virtual void subscribe_reorganize(reorganize_handler handler);
 
-    // TODO:
     /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
     virtual void subscribe_transaction(transaction_handler handler);
 
@@ -220,7 +218,6 @@ public:
     /// Store a block to the block chain (via orphan pool).
     virtual void store(block_const_ptr block, block_store_handler handler);
 
-    // TODO:
     /// Store a transaction to the memory pool.
     virtual void store(transaction_const_ptr transaction,
         transaction_store_handler handler);
