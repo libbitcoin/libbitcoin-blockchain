@@ -20,10 +20,9 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
 #define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
 
-#include <cstddef>
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -35,6 +34,9 @@ namespace blockchain {
 class BCB_API simple_chain
 {
 public:
+    // Getters.
+    // ------------------------------------------------------------------------
+
     /// Return the first and last gaps in the blockchain, or false if none.
     virtual bool get_gap_range(uint64_t& out_first,
         uint64_t& out_last) const = 0;
@@ -59,26 +61,28 @@ public:
     virtual bool get_last_height(uint64_t& out_height) const = 0;
 
     /// Get the hash digest of the transaction of the outpoint.
-    virtual bool get_outpoint_transaction(hash_digest& out_transaction,
+    virtual bool get_outpoint_transaction(hash_digest& out_hash,
         const chain::output_point& outpoint) const = 0;
 
     /// Get the transaction of the given hash and its block height.
-    virtual bool get_transaction(chain::transaction& out_transaction,
-        uint64_t& out_block_height,
+    virtual transaction_ptr get_transaction(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
     /// Get the block height of the transaction given its hash.
     virtual bool get_transaction_height(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
+    // Setters.
+    // ------------------------------------------------------------------------
+
     /// Import a block for the given height.
-    virtual bool import(chain::block::ptr block, uint64_t height) = 0;
+    virtual bool import(block_const_ptr block, uint64_t height) = 0;
 
     /// Append the block to the top of the chain.
-    virtual bool push(block_detail::ptr block) = 0;
+    virtual bool push(block_const_ptr block) = 0;
 
     /// Remove blocks at or above the given height, returning them in order.
-    virtual bool pop_from(block_detail::list& out_blocks,
+    virtual bool pop_from(block_const_ptr_list& out_blocks,
         uint64_t height) = 0;
 };
 

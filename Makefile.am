@@ -35,17 +35,15 @@ lib_LTLIBRARIES = src/libbitcoin-blockchain.la
 src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
-    src/block.cpp \
-    src/block_chain_impl.cpp \
-    src/block_detail.cpp \
+    src/block_chain.cpp \
     src/block_fetcher.cpp \
+    src/block_validator.cpp \
     src/organizer.cpp \
     src/orphan_pool.cpp \
     src/settings.cpp \
     src/transaction_pool.cpp \
     src/transaction_pool_index.cpp \
     src/validate_block.cpp \
-    src/validate_block_impl.cpp \
     src/validate_transaction.cpp
 
 # local: test/libbitcoin_blockchain_test
@@ -84,12 +82,11 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
-    include/bitcoin/blockchain/block.hpp \
     include/bitcoin/blockchain/block_chain.hpp \
-    include/bitcoin/blockchain/block_chain_impl.hpp \
-    include/bitcoin/blockchain/block_detail.hpp \
     include/bitcoin/blockchain/block_fetcher.hpp \
+    include/bitcoin/blockchain/block_validator.hpp \
     include/bitcoin/blockchain/define.hpp \
+    include/bitcoin/blockchain/full_chain.hpp \
     include/bitcoin/blockchain/organizer.hpp \
     include/bitcoin/blockchain/orphan_pool.hpp \
     include/bitcoin/blockchain/settings.hpp \
@@ -97,7 +94,6 @@ include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/transaction_pool.hpp \
     include/bitcoin/blockchain/transaction_pool_index.hpp \
     include/bitcoin/blockchain/validate_block.hpp \
-    include/bitcoin/blockchain/validate_block_impl.hpp \
     include/bitcoin/blockchain/validate_transaction.hpp \
     include/bitcoin/blockchain/version.hpp
 

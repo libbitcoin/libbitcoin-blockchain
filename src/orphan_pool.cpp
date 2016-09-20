@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -32,9 +31,9 @@ orphan_pool::orphan_pool(size_t capacity)
 }
 
 // There is no validation whatsoever of the block up to this pont.
-bool orphan_pool::add(block_detail::ptr block)
+bool orphan_pool::add(block_const_ptr block)
 {
-    const auto& header = block->actual()->header;
+    const auto& header = block->header;
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -63,7 +62,7 @@ bool orphan_pool::add(block_detail::ptr block)
     return true;
 }
 
-void orphan_pool::remove(block_detail::ptr block)
+void orphan_pool::remove(block_const_ptr block)
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -91,7 +90,7 @@ void orphan_pool::remove(block_detail::ptr block)
 }
 
 // TODO: use hash table pool to eliminate this O(n^2) search.
-void orphan_pool::filter(message::get_data::ptr message) const
+void orphan_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories;
 
@@ -107,35 +106,40 @@ void orphan_pool::filter(message::get_data::ptr message) const
     ///////////////////////////////////////////////////////////////////////////
 }
 
-block_detail::list orphan_pool::trace(block_detail::ptr end) const
+inline const hash_digest& pre(block_const_ptr_list& list)
 {
-    block_detail::list trace;
+    return list.front()->header.previous_block_hash;
+}
+
+
+inline void enqueue(block_const_ptr_list& list, block_const_ptr block)
+{
+    list.insert(list.begin(), block);
+}
+
+block_const_ptr_list orphan_pool::trace(block_const_ptr end) const
+{
+    block_const_ptr_list trace;
     trace.reserve(buffer_.size());
-    trace.push_back(end);
-    auto& hash = end->actual()->header.previous_block_hash;
+    enqueue(trace, end);
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
 
-    for (auto it = find(hash); it != buffer_.end(); it = find(hash))
-    {
-        trace.push_back(*it);
-        hash = (*it)->actual()->header.previous_block_hash;
-    }
+    for (auto it = find(pre(trace)); it != buffer_.end(); it = find(pre(trace)))
+        enqueue(trace, *it);
 
     mutex_.unlock_shared();
     ///////////////////////////////////////////////////////////////////////////
 
-    BITCOIN_ASSERT(!trace.empty());
-    std::reverse(trace.begin(), trace.end());
     trace.shrink_to_fit();
     return trace;
 }
 
-block_detail::list orphan_pool::unprocessed() const
+block_const_ptr_list orphan_pool::unprocessed() const
 {
-    block_detail::list unprocessed;
+    block_const_ptr_list unprocessed;
     unprocessed.reserve(buffer_.size());
 
     ///////////////////////////////////////////////////////////////////////////
@@ -144,7 +148,7 @@ block_detail::list orphan_pool::unprocessed() const
 
     // Earlier blocks enter pool first, so reversal helps avoid fragmentation.
     for (auto it = buffer_.rbegin(); it != buffer_.rend(); ++it)
-        if (!(*it)->processed())
+        if (!(*it)->metadata.processed_orphan)
             unprocessed.push_back(*it);
 
     mutex_.unlock_shared();
@@ -159,7 +163,7 @@ block_detail::list orphan_pool::unprocessed() const
 
 bool orphan_pool::exists(const hash_digest& hash) const
 {
-    const auto match = [&hash](const block_detail::ptr& entry)
+    const auto match = [&hash](const block_const_ptr& entry)
     {
         return hash == entry->hash();
     };
@@ -169,9 +173,9 @@ bool orphan_pool::exists(const hash_digest& hash) const
 
 bool orphan_pool::exists(const chain::header& header) const
 {
-    const auto match = [&header](const block_detail::ptr& entry)
+    const auto match = [&header](const block_const_ptr& entry)
     {
-        return header == entry->actual()->header;
+        return header == entry->header;
     };
 
     return std::any_of(buffer_.begin(), buffer_.end(), match);
@@ -179,7 +183,7 @@ bool orphan_pool::exists(const chain::header& header) const
 
 orphan_pool::const_iterator orphan_pool::find(const hash_digest& hash) const
 {
-    const auto match = [&hash](const block_detail::ptr& entry)
+    const auto match = [&hash](const block_const_ptr& entry)
     {
         return hash == entry->hash();
     };

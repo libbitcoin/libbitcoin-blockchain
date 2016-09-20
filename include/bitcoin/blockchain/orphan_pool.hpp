@@ -17,15 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
-#define LIBBITCOIN_BLOCKCHAIN_orphan_pool_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_ORPHAN_POOL_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ORPHAN_POOL_HPP
 
 #include <cstddef>
 #include <memory>
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -40,22 +39,22 @@ public:
     orphan_pool(size_t capacity);
 
     /// Add a block to the pool.
-    bool add(block_detail::ptr block);
+    bool add(block_const_ptr block);
 
     /// Remove a block from the pool.
-    void remove(block_detail::ptr block);
+    void remove(block_const_ptr block);
 
     /// Remove from the message all vectors that match orphans.
-    void filter(message::get_data::ptr message) const;
+    void filter(get_data_ptr message) const;
 
     /// Get the longest connected chain of orphans after 'end'.
-    block_detail::list trace(block_detail::ptr end) const;
+    block_const_ptr_list trace(block_const_ptr end) const;
 
     /// Get the set of unprocessed orphans.
-    block_detail::list unprocessed() const;
+    block_const_ptr_list unprocessed() const;
 
 private:
-    typedef boost::circular_buffer<block_detail::ptr> buffer;
+    typedef boost::circular_buffer<block_const_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
 
     bool exists(const hash_digest& hash) const;

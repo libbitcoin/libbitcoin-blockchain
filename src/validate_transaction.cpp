@@ -57,7 +57,7 @@ static uint32_t convert_flags(uint32_t native_flags)
 }
 #endif
 
-validate_transaction::validate_transaction(block_chain& chain,
+validate_transaction::validate_transaction(full_chain& chain,
     const transaction_pool& pool, dispatcher& dispatch)
   : blockchain_(chain),
     pool_(pool),
@@ -65,7 +65,7 @@ validate_transaction::validate_transaction(block_chain& chain,
 {
 }
 
-void validate_transaction::validate(transaction_ptr tx,
+void validate_transaction::validate(transaction_const_ptr tx,
     validate_handler handler)
 {
     auto ec = tx->check();
@@ -84,7 +84,7 @@ void validate_transaction::validate(transaction_ptr tx,
 }
 
 void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
-    transaction_ptr tx, validate_handler handler)
+    transaction_const_ptr tx, validate_handler handler)
 {
     ////const auto ec = tx->connect(state);
 
@@ -94,10 +94,8 @@ void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
     ////    return;
     ////}
 
-    if (pool_.is_in_pool(tx->hash()))
-    {
-        return;
-    }
+    ////if (pool_.is_in_pool(tx->hash()))
+    ////    return;
 
     // Get chain height for determining coinbase maturity.
     blockchain_.fetch_last_height(
@@ -106,7 +104,7 @@ void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
 }
 
 void validate_transaction::handle_last_height(const code& ec,
-    size_t last_height, transaction_ptr tx, validate_handler handler)
+    size_t last_height, transaction_const_ptr tx, validate_handler handler)
 {
     const validate_handler rejoin =
         std::bind(&validate_transaction::handle_join,
@@ -121,7 +119,7 @@ void validate_transaction::handle_last_height(const code& ec,
             shared_from_this(), tx, index, last_height, complete);
 }
 
-void validate_transaction::validate_input(transaction_ptr tx,
+void validate_transaction::validate_input(transaction_const_ptr tx,
     uint32_t input_index, size_t last_height, validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
@@ -134,40 +132,35 @@ void validate_transaction::validate_input(transaction_ptr tx,
 
 // This just determines if the output is spent (or a utxo).
 void validate_transaction::handle_double_spend(const code& ec,
-    const chain::input_point&, transaction_ptr tx, uint32_t input_index,
+    const chain::input_point&, transaction_const_ptr tx, uint32_t input_index,
     size_t last_height, validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
 
-    if (pool_.is_spent_in_pool(outpoint))
-    {
-        return;
-    }
+    ////if (pool_.is_spent_in_pool(outpoint))
+    ////    return;
 
-    // Locate the previous transaction for the input.
-    blockchain_.fetch_transaction(outpoint.hash,
-        dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
-            shared_from_this(), _1, _2, _3, tx, input_index, last_height,
-                handler));
+    ////// Locate the previous transaction for the input.
+    ////blockchain_.fetch_transaction(outpoint.hash,
+    ////    dispatch_.unordered_delegate(&validate_transaction::handle_previous_tx,
+    ////        shared_from_this(), _1, _2, _3, tx, input_index, last_height,
+    ////            handler));
 }
 
 void validate_transaction::handle_previous_tx(const code& ec,
     const transaction& previous_tx, uint64_t previous_tx_height,
-    transaction_ptr tx, uint32_t input_index, size_t last_height,
+    transaction_const_ptr tx, uint32_t input_index, size_t last_height,
     validate_handler handler)
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
 
     if (ec == error::input_not_found)
     {
-        transaction pool_tx;
+        ////const auto pool_tx = pool_.find(outpoint.hash);
 
-        // Try locating it as unconfirmed in the memory pool.
-        if (!pool_.find(pool_tx, outpoint.hash) ||
-            outpoint.index >= pool_tx.outputs.size())
-        {
-            return;
-        }
+        ////// Try locating it as unconfirmed in the memory pool.
+        ////if (!pool_tx || outpoint.index >= pool_tx->outputs.size())
+        ////    return;
     }
 
     const auto previous_height = static_cast<size_t>(previous_tx_height);
@@ -183,7 +176,8 @@ void validate_transaction::handle_previous_tx(const code& ec,
 
 // TODO: summarize values in custom stateful synchronizer.
 void validate_transaction::handle_join(const code& ec,
-    point::indexes unconfirmed, transaction_ptr tx, validate_handler handler)
+    const indexes& unconfirmed, transaction_const_ptr tx,
+    validate_handler handler)
 {
 
     // Who cares?
@@ -214,7 +208,7 @@ code validate_transaction::check_input(const transaction& tx,
 
 // references (block)
 
-code validate_transaction::check_script(transaction_ptr tx,
+code validate_transaction::check_script(transaction_const_ptr tx,
     uint32_t input_index, const script& prevout_script, uint32_t flags)
 {
     return check_script(*tx, input_index, prevout_script, flags);

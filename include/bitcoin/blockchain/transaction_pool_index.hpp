@@ -25,8 +25,8 @@
 #include <cstdint>
 #include <unordered_map>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/block_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -38,9 +38,9 @@ public:
     typedef handle0 completion_handler;
     typedef handle2<chain::spend_info::list, chain::output_info::list>
         query_handler;
-    typedef block_chain::history_fetch_handler fetch_handler;
+    typedef full_chain::history_fetch_handler fetch_handler;
 
-    transaction_pool_index(threadpool& pool, block_chain& blockchain);
+    transaction_pool_index(threadpool& pool, full_chain& blockchain);
 
     /// This class is not copyable.
     transaction_pool_index(const transaction_pool_index&) = delete;
@@ -53,13 +53,13 @@ public:
     void stop();
 
     void fetch_all_history(const wallet::payment_address& address,
-        size_t limit, size_t from_height, fetch_handler handler);
+        size_t limit, size_t from_height, fetch_handler handler) const;
 
     void fetch_index_history(const wallet::payment_address& address,
-        query_handler handler);
+        query_handler handler) const;
 
-    void add(const chain::transaction& tx, completion_handler handler);
-    void remove(const chain::transaction& tx, completion_handler handler);
+    void add(transaction_const_ptr, completion_handler handler);
+    void remove(transaction_const_ptr, completion_handler handler);
 
 private:
     typedef chain::spend_info spend_info;
@@ -81,12 +81,12 @@ private:
 
     void blockchain_history_fetched(const code& ec,
         const history_list& history, const wallet::payment_address& address,
-        fetch_handler handler);
+        fetch_handler handler) const;
 
-    void do_add(const chain::transaction& tx, completion_handler handler);
-    void do_remove(const chain::transaction& tx, completion_handler handler);
-    void do_fetch(const wallet::payment_address& payaddr,
-        query_handler handler);
+    void do_add(transaction_const_ptr tx, completion_handler handler);
+    void do_remove(transaction_const_ptr, completion_handler handler);
+    void do_fetch(const wallet::payment_address& address,
+        query_handler handler) const;
 
     // This is protected by mutex.
     spends_map spends_map_;
@@ -97,9 +97,9 @@ private:
     upgrade_mutex outputs_mutex_;
 
     // These are thread safe.
-    dispatcher dispatch_;
-    block_chain& blockchain_;
+    full_chain& blockchain_;
     std::atomic<bool> stopped_;
+    mutable dispatcher dispatch_;
 };
 
 } // namespace blockchain

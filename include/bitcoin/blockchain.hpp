@@ -20,12 +20,11 @@
 #include <bitcoin/consensus.hpp>
 #endif
 
-#include <bitcoin/blockchain/block.hpp>
 #include <bitcoin/blockchain/block_chain.hpp>
-#include <bitcoin/blockchain/block_chain_impl.hpp>
-#include <bitcoin/blockchain/block_detail.hpp>
 #include <bitcoin/blockchain/block_fetcher.hpp>
+#include <bitcoin/blockchain/block_validator.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -33,7 +32,6 @@
 #include <bitcoin/blockchain/transaction_pool.hpp>
 #include <bitcoin/blockchain/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
-#include <bitcoin/blockchain/validate_block_impl.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>
 
