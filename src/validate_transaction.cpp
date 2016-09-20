@@ -94,10 +94,8 @@ void validate_transaction::handle_duplicate(const code& ec, uint64_t, uint64_t,
     ////    return;
     ////}
 
-    if (pool_.is_in_pool(tx->hash()))
-    {
-        return;
-    }
+    ////if (pool_.is_in_pool(tx->hash()))
+    ////    return;
 
     // Get chain height for determining coinbase maturity.
     blockchain_.fetch_last_height(
@@ -139,10 +137,8 @@ void validate_transaction::handle_double_spend(const code& ec,
 {
     const auto& outpoint = tx->inputs[input_index].previous_output;
 
-    if (pool_.is_spent_in_pool(outpoint))
-    {
-        return;
-    }
+    ////if (pool_.is_spent_in_pool(outpoint))
+    ////    return;
 
     ////// Locate the previous transaction for the input.
     ////blockchain_.fetch_transaction(outpoint.hash,
@@ -160,11 +156,11 @@ void validate_transaction::handle_previous_tx(const code& ec,
 
     if (ec == error::input_not_found)
     {
-        const auto pool_tx = pool_.find(outpoint.hash);
+        ////const auto pool_tx = pool_.find(outpoint.hash);
 
-        // Try locating it as unconfirmed in the memory pool.
-        if (!pool_tx || outpoint.index >= pool_tx->outputs.size())
-            return;
+        ////// Try locating it as unconfirmed in the memory pool.
+        ////if (!pool_tx || outpoint.index >= pool_tx->outputs.size())
+        ////    return;
     }
 
     const auto previous_height = static_cast<size_t>(previous_tx_height);

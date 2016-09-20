@@ -71,13 +71,13 @@ public:
     /// Signal stop of current work, speeds shutdown.
     void stop();
 
-    inventory_ptr fetch_inventory();
-    void fetch(const hash_digest& tx_hash, fetch_handler handler);
+    inventory_ptr fetch_inventory() const;
+    void fetch(const hash_digest& tx_hash, fetch_handler handler) const;
     void fetch_history(const wallet::payment_address& address, size_t limit,
-        size_t from_height, full_chain::history_fetch_handler handler);
-    void exists(const hash_digest& tx_hash, result_handler handler);
-    void filter(get_data_ptr message, result_handler handler);
-    void validate(transaction_const_ptr tx, validate_handler handler);
+        size_t from_height, full_chain::history_fetch_handler handler) const;
+    void exists(const hash_digest& tx_hash, result_handler handler) const;
+    void filter(get_data_ptr message, result_handler handler) const;
+    void validate(transaction_const_ptr tx, validate_handler handler) const;
     void store(transaction_const_ptr tx, result_handler confirm_handler,
         validate_handler validate_handler);
 
@@ -90,7 +90,7 @@ protected:
 
     typedef std::function<bool(const chain::input&)> input_compare;
 
-    bool stopped();
+    bool stopped() const;
     const_iterator find_iterator(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
@@ -98,9 +98,9 @@ protected:
         const block_const_ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, validate_transaction::ptr self,
-        validate_handler handler);
+        validate_handler handler) const;
 
-    void do_validate(transaction_const_ptr tx, validate_handler handler);
+    void do_validate(transaction_const_ptr tx, validate_handler handler) const;
     void do_store(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, result_handler handle_confirm,
         validate_handler handle_validate);
@@ -127,8 +127,8 @@ protected:
     std::atomic<bool> stopped_;
 
 private:
-    // Unsafe methods limited to friend caller.
-    friend class validate_transaction;
+    ////// Unsafe methods limited to friend caller.
+    ////friend class validate_transaction;
 
     // These methods are NOT thread safe.
     bool is_in_pool(const hash_digest& tx_hash) const;

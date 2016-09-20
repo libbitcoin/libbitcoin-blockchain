@@ -34,8 +34,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-////#define NAME "blockchain"
-
 using namespace bc::chain;
 using namespace bc::database;
 using namespace std::placeholders;
@@ -46,8 +44,6 @@ block_chain::block_chain(threadpool& pool,
   : stopped_(true),
     settings_(chain_settings),
     organizer_(pool, *this, chain_settings),
-    ////read_dispatch_(pool, NAME),
-    ////write_dispatch_(pool, NAME),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -76,11 +72,6 @@ static hash_list to_hashes(const block_result& result)
 
 // Properties.
 // ----------------------------------------------------------------------------
-
-transaction_pool& block_chain::pool()
-{
-    return transaction_pool_;
-}
 
 const settings& block_chain::chain_settings() const
 {
@@ -129,16 +120,7 @@ bool block_chain::stopped() const
     return stopped_;
 }
 
-// Subscriber
-// ------------------------------------------------------------------------
-
-void block_chain::subscribe_reorganize(reorganize_handler handler)
-{
-    // Pass this through to the organizer, which issues the notifications.
-    organizer_.subscribe_reorganize(handler);
-}
-
-// simple_chain (no locks, not thread safe).
+// simple_chain getters (no locks, not thread safe).
 // ----------------------------------------------------------------------------
 
 bool block_chain::get_gap_range(uint64_t& out_first,
@@ -256,6 +238,9 @@ bool block_chain::get_transaction_height(uint64_t& out_block_height,
     return true;
 }
 
+// simple_chain setters (no locks, not thread safe).
+// ----------------------------------------------------------------------------
+
 // This is safe to call concurrently (but with no other methods).
 bool block_chain::import(block_const_ptr block, uint64_t height)
 {
@@ -302,93 +287,7 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
     return true;
 }
 
-// full_chain (internal locks).
-// ----------------------------------------------------------------------------
-
-void block_chain::start_write()
-{
-    DEBUG_ONLY(const auto result =) database_.begin_write();
-    BITCOIN_ASSERT(result);
-}
-
-// This call is sequential, but we are preserving the callback model for now.
-void block_chain::store(block_const_ptr block,
-    block_store_handler handler)
-{
-    // We moved write to the network thread using a critical section here.
-    // We do not want to give the thread to any other activity at this point.
-    // A flood of valid orphans from multiple peers could tie up the CPU here,
-    // but resolving that cleanly requires removing the orphan pool.
-
-    ////write_dispatch_.ordered(
-    ////    std::bind(&block_chain::do_store,
-    ////        this, block, handler));
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section.
-    mutex_.lock();
-
-    const auto stopped = stopped_.load();
-
-    if (!stopped)
-        do_store(block, handler);
-
-    mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    if (stopped)
-        handler(error::service_stopped, 0);
-}
-
-// This processes the block through the organizer.
-void block_chain::do_store(block_const_ptr block,
-    block_store_handler handler)
-{
-    code ec;
-    start_write();
-
-    if (database_.blocks.get(block->hash()))
-    {
-        stop_write(handler, error::duplicate, 0);
-        return;
-    }
-
-    if ((ec = organizer_.reorganize(block)))
-    {
-        stop_write(handler, ec, 0);
-        return;
-    }
-
-    // Get the particular block's status.
-    stop_write(handler, block->metadata.validation_result,
-        block->metadata.validation_height);
-}
-
-// This performs a query in the context of the calling thread.
-// This allows channels to run concurrently with internal order preservation.
-// The callback model is preserved currently in order to limit downstream changes.
-void block_chain::fetch_serial(perform_read_functor perform_read) const
-{
-    // Post IBD writes are ordered on the strand, so never concurrent.
-    // Reads are unordered and concurrent, but effectively blocked by writes.
-    const auto try_read = [this, perform_read]()
-    {
-        const auto handle = database_.begin_read();
-        return (!database_.is_write_locked(handle) && perform_read(handle));
-    };
-
-    const auto do_read = [this, try_read]()
-    {
-        // Sleep while waiting for write to complete.
-        while (!try_read())
-            std::this_thread::sleep_for(asio::milliseconds(10));
-    };
-
-    // Initiate serial read operation.
-    do_read();
-}
-
-// full_chain (formerly fetch_ordered)
+// full_chain queries (internal locks).
 // ----------------------------------------------------------------------------
 
 // This may generally execute 29+ queries.
@@ -571,68 +470,6 @@ void block_chain::fetch_locator_block_headers(
         return finish_fetch(slock, handler, error::success, headers);
     };
     fetch_serial(do_fetch);
-}
-
-// This may execute up to 500 queries.
-void block_chain::filter_blocks(get_data_ptr message,
-    result_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    const auto do_fetch = [this, message, handler](size_t slock)
-    {
-        auto& inventories = message->inventories;
-        const auto& blocks = database_.blocks;
-
-        for (auto it = inventories.begin(); it != inventories.end();)
-            if (it->is_block_type() && blocks.get(it->hash))
-                it = inventories.erase(it);
-            else
-                ++it;
-
-        return finish_fetch(slock, handler, error::success);
-    };
-    fetch_serial(do_fetch);
-}
-
-// BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
-void block_chain::filter_transactions(get_data_ptr message,
-    result_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    const auto do_fetch = [this, message, handler](size_t slock)
-    {
-        auto& inventories = message->inventories;
-        const auto& transactions = database_.transactions;
-
-        for (auto it = inventories.begin(); it != inventories.end();)
-        {
-            if (it->is_transaction_type() && transactions.get(it->hash))
-                it = inventories.erase(it);
-            else
-                ++it;
-        }
-
-        return finish_fetch(slock, handler, error::success);
-    };
-    fetch_serial(do_fetch);
-}
-
-/// filter out block hashes that exist in the orphan pool.
-void block_chain::filter_orphans(get_data_ptr message,
-    result_handler handler) const
-{
-    organizer_.filter_orphans(message);
-    handler(error::success);
 }
 
 // full_chain (formerly fetch_parallel)
@@ -881,6 +718,172 @@ void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
             database_.stealth.scan(filter, from_height));
     };
     fetch_serial(do_fetch);
+}
+
+// Filters.
+//-------------------------------------------------------------------------
+
+// This may execute up to 500 queries.
+void block_chain::filter_blocks(get_data_ptr message,
+    result_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    const auto do_fetch = [this, message, handler](size_t slock)
+    {
+        auto& inventories = message->inventories;
+        const auto& blocks = database_.blocks;
+
+        for (auto it = inventories.begin(); it != inventories.end();)
+            if (it->is_block_type() && blocks.get(it->hash))
+                it = inventories.erase(it);
+            else
+                ++it;
+
+        return finish_fetch(slock, handler, error::success);
+    };
+    fetch_serial(do_fetch);
+}
+
+// BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
+void block_chain::filter_transactions(get_data_ptr message,
+    result_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    const auto do_fetch = [this, message, handler](size_t slock)
+    {
+        auto& inventories = message->inventories;
+        const auto& transactions = database_.transactions;
+
+        for (auto it = inventories.begin(); it != inventories.end();)
+        {
+            if (it->is_transaction_type() && transactions.get(it->hash))
+                it = inventories.erase(it);
+            else
+                ++it;
+        }
+
+        return finish_fetch(slock, handler, error::success);
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::filter_orphans(get_data_ptr message,
+    result_handler handler) const
+{
+    organizer_.filter_orphans(message);
+    handler(error::success);
+}
+
+void block_chain::filter_floaters(get_data_ptr message,
+    result_handler handler) const
+{
+    transaction_pool_.filter(message, handler);
+}
+
+// Subscribers.
+//-------------------------------------------------------------------------
+
+void block_chain::subscribe_reorganize(reorganize_handler handler)
+{
+    // Pass this through to the organizer, which issues the notifications.
+    organizer_.subscribe_reorganize(handler);
+}
+
+void block_chain::subscribe_transaction(transaction_handler handler)
+{
+    // Pass this through to the tx pool, which issues the notifications.
+    transaction_pool_.subscribe_transaction(handler);
+}
+
+// Stores.
+//-------------------------------------------------------------------------
+
+
+// This call is sequential, but we are preserving the callback model for now.
+void block_chain::store(block_const_ptr block, block_store_handler handler)
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section.
+    mutex_.lock();
+
+    const auto stopped = stopped_.load();
+
+    if (!stopped)
+        do_store(block, handler);
+
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    if (stopped)
+        handler(error::service_stopped, 0);
+}
+
+// This processes the block through the organizer.
+void block_chain::do_store(block_const_ptr block, block_store_handler handler)
+{
+    code ec;
+
+    // End write is always called regardless of begin write success.
+
+    if (!database_.begin_write())
+        handler(database_.end_write() ? error::operation_failed :
+            error::operation_failed, 0);
+
+    else if (database_.blocks.get(block->hash()))
+        handler(database_.end_write() ? error::duplicate :
+            error::operation_failed, 0);
+
+    else if ((ec = organizer_.reorganize(block)))
+        handler(database_.end_write() ? ec : error::operation_failed, 0);
+
+    else
+        handler(database_.end_write() ? block->metadata.validation_result :
+            error::operation_failed, block->metadata.validation_height);
+}
+
+void block_chain::store(transaction_const_ptr transaction,
+    transaction_store_handler handler)
+{
+    // This is a simplification for the blockchain interface.
+    const auto unhandled = [](code) {};
+
+    // Notify only on completion of validation and accept/reject in pool.
+    transaction_pool_.store(transaction, unhandled, handler);
+}
+
+// Utility.
+//-----------------------------------------------------------------------------
+
+// This callback model is preserved currently to limit downstream changes.
+void block_chain::fetch_serial(perform_read_functor perform_read) const
+{
+    // Post IBD writes are ordered on the strand, so never concurrent.
+    // Reads are unordered and concurrent, but effectively blocked by writes.
+    const auto try_read = [this, perform_read]()
+    {
+        const auto handle = database_.begin_read();
+        return (!database_.is_write_locked(handle) && perform_read(handle));
+    };
+
+    const auto do_read = [this, try_read]()
+    {
+        // Sleep while waiting for write to complete.
+        while (!try_read())
+            std::this_thread::sleep_for(asio::milliseconds(10));
+    };
+
+    // Initiate serial read operation.
+    do_read();
 }
 
 } // namespace blockchain

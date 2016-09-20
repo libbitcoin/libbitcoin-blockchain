@@ -76,12 +76,12 @@ void transaction_pool::stop()
     subscriber_->invoke(error::service_stopped, {}, {});
 }
 
-bool transaction_pool::stopped()
+bool transaction_pool::stopped() const
 {
     return stopped_;
 }
 
-inventory_ptr transaction_pool::fetch_inventory()
+inventory_ptr transaction_pool::fetch_inventory() const
 {
     ///////////////////////////////////////////////////////////////////////////
     // TODO: populate the inventory vector from the full memory pool.
@@ -90,14 +90,14 @@ inventory_ptr transaction_pool::fetch_inventory()
 }
 
 void transaction_pool::validate(transaction_const_ptr tx,
-    validate_handler handler)
+    validate_handler handler) const
 {
     dispatch_.ordered(&transaction_pool::do_validate,
         this, tx, handler);
 }
 
 void transaction_pool::do_validate(transaction_const_ptr tx,
-    validate_handler handler)
+    validate_handler handler) const
 {
     if (stopped())
     {
@@ -121,7 +121,7 @@ void transaction_pool::do_validate(transaction_const_ptr tx,
 
 void transaction_pool::handle_validated(const code& ec,
     const indexes& unconfirmed, transaction_const_ptr tx,
-    validate_transaction::ptr, validate_handler handler)
+    validate_transaction::ptr, validate_handler handler) const
 {
     if (stopped())
     {
@@ -212,7 +212,7 @@ void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
 }
 
 void transaction_pool::fetch(const hash_digest& transaction_hash,
-    fetch_handler handler)
+    fetch_handler handler) const
 {
     if (stopped())
     {
@@ -235,14 +235,15 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 
 void transaction_pool::fetch_history(const payment_address& address,
     size_t limit, size_t from_height,
-    full_chain::history_fetch_handler handler)
+    full_chain::history_fetch_handler handler) const
 {
     // This passes through to blockchain to build combined history.
     index_.fetch_all_history(address, limit, from_height, handler);
 }
 
 // TODO: use hash table pool to eliminate this O(n^2) search.
-void transaction_pool::filter(get_data_ptr message, result_handler handler)
+void transaction_pool::filter(get_data_ptr message,
+    result_handler handler) const
 {
     if (stopped())
     {
@@ -269,7 +270,7 @@ void transaction_pool::filter(get_data_ptr message, result_handler handler)
 }
 
 void transaction_pool::exists(const hash_digest& tx_hash,
-    result_handler handler)
+    result_handler handler) const
 {
     if (stopped())
     {
@@ -320,7 +321,7 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
     }
     else
     {
-        // See http://www.jwz.org/doc/worse-is-better.html
+        // See www.jwz.org/doc/worse-is-better.html
         // for why we take this approach. We return with an error_code.
         // An alternative would be resubmit all tx from the cleared blocks.
         dispatch_.ordered(
@@ -341,6 +342,7 @@ void transaction_pool::subscribe_transaction(
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
     transaction_const_ptr tx)
 {
+    // TODO: make const?
     subscriber_->relay(error::success, unconfirmed, tx);
 }
 
@@ -539,6 +541,7 @@ bool transaction_pool::is_spent_in_pool(const output_point& outpoint) const
     return std::any_of(buffer_.begin(), buffer_.end(), found);
 }
 
+// static
 bool transaction_pool::is_spent_by_tx(const output_point& outpoint,
     transaction_const_ptr tx)
 {

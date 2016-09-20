@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
 #define LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -37,8 +38,8 @@ class BCB_API full_chain
 {
 public:
     typedef handle0 result_handler;
-    typedef handle0 block_import_handler;
-    typedef handle1<uint64_t> block_store_handler;
+
+    /// Object fetch handlers.
     typedef handle1<hash_list> block_locator_fetch_handler;
     typedef handle1<hash_list> locator_block_hashes_fetch_handler;
     typedef handle1<chain::header::list> locator_block_headers_fetch_handler;
@@ -50,7 +51,8 @@ public:
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
 
-    // Fetch non-const so that values can be safely swapped/moved.
+    // Smart pointer fetch handlers.
+    // Return non-const so that values can be safely swapped/moved.
     // Smart pointer parameters must not be passed by reference.
     typedef std::function<void(const code&, block_ptr, uint64_t)>
         block_fetch_handler;
@@ -59,28 +61,42 @@ public:
     typedef std::function<void(const code&, transaction_ptr, uint64_t)>
         transaction_fetch_handler;
 
+    /// Subscription handlers.
     typedef std::function<bool(const code&, size_t,
         const block_const_ptr_list&, const block_const_ptr_list&)>
         reorganize_handler;
+    typedef std::function<bool(const code&, const chain::point::indexes&,
+        transaction_const_ptr)> transaction_handler;
+
+    /// Store handlers.
+    typedef handle1<uint64_t> block_store_handler;
+    typedef handle1<const chain::point::indexes&> transaction_store_handler;
+
+    // Startup and shutdown.
+    // ------------------------------------------------------------------------
 
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    virtual void store(block_const_ptr block, block_store_handler handler) = 0;
+    // Fetch.
+    // ------------------------------------------------------------------------
 
     virtual void fetch_block(uint64_t height,
         block_fetch_handler handler) const = 0;
+
     virtual void fetch_block(const hash_digest& hash,
         block_fetch_handler handler) const = 0;
 
     virtual void fetch_block_header(uint64_t height,
         block_header_fetch_handler handler) const = 0;
+
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
     virtual void fetch_block_transaction_hashes(uint64_t height,
         transaction_hashes_fetch_handler handler) const = 0;
+
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const = 0;
 
@@ -117,6 +133,9 @@ public:
     virtual void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler) const = 0;
 
+    // Filters.
+    //-------------------------------------------------------------------------
+
     virtual void filter_blocks(get_data_ptr message,
         result_handler handler) const = 0;
 
@@ -126,7 +145,21 @@ public:
     virtual void filter_transactions(get_data_ptr message,
         result_handler handler) const = 0;
 
+    virtual void filter_floaters(get_data_ptr message,
+        result_handler handler) const = 0;
+
+    // Subscribers.
+    //-------------------------------------------------------------------------
+
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
+    virtual void subscribe_transaction(transaction_handler handler) = 0;
+
+    // Stores.
+    //-------------------------------------------------------------------------
+
+    virtual void store(block_const_ptr block, block_store_handler handler) = 0;
+    virtual void store(transaction_const_ptr transaction,
+        transaction_store_handler handler) = 0;
 };
 
 } // namespace blockchain

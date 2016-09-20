@@ -55,9 +55,6 @@ public:
     // Properties (thread safe).
     // ------------------------------------------------------------------------
 
-    // Get a reference to the transaction pool.
-    transaction_pool& pool();
-
     // Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
@@ -73,7 +70,7 @@ public:
     /// Close the blockchain, threads must first be joined, can be restarted.
     virtual bool close();
 
-    // simple_chain (NOT THREAD SAFE).
+    // simple_chain getters (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
@@ -106,6 +103,9 @@ public:
     bool get_transaction_height(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
+    // simple_chain setters (NOT THREAD SAFE).
+    // ------------------------------------------------------------------------
+
     /// Import a block to the blockchain.
     bool import(block_const_ptr block, uint64_t height);
 
@@ -118,9 +118,6 @@ public:
     // full_chain queries (thread safe).
     // ------------------------------------------------------------------------
 
-    /// Store a block to the blockchain, with indexing and validation.
-    virtual void store(block_const_ptr block, block_store_handler handler);
-    
     /// fetch a block by height.
     virtual void fetch_block(uint64_t height,
         block_fetch_handler handler) const;
@@ -187,20 +184,46 @@ public:
     virtual void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler) const;
 
+    // Filters.
+    //-------------------------------------------------------------------------
+
     /// filter out block hashes that exist in the store.
     virtual void filter_blocks(get_data_ptr message,
-        result_handler handler) const;
-
-    /// filter out block hashes that exist in the orphan pool.
-    virtual void filter_orphans(get_data_ptr message,
         result_handler handler) const;
 
     /// filter out transaction hashes that exist in the store.
     virtual void filter_transactions(get_data_ptr message,
         result_handler handler) const;
 
-    /// Subscribe to blockchain reorganizations.
+    /// filter out block hashes that exist in the orphan pool.
+    virtual void filter_orphans(get_data_ptr message,
+        result_handler handler) const;
+
+    // TODO:
+    /// filter out transaction hashes that exist in the store.
+    virtual void filter_floaters(get_data_ptr message,
+        result_handler handler) const;
+
+    // Subscribers.
+    //-------------------------------------------------------------------------
+
+    /// Subscribe to blockchain reorganizations, get forks/height.
     virtual void subscribe_reorganize(reorganize_handler handler);
+
+    // TODO:
+    /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
+    virtual void subscribe_transaction(transaction_handler handler);
+
+    // Stores.
+    //-------------------------------------------------------------------------
+
+    /// Store a block to the block chain (via orphan pool).
+    virtual void store(block_const_ptr block, block_store_handler handler);
+
+    // TODO:
+    /// Store a transaction to the memory pool.
+    virtual void store(transaction_const_ptr transaction,
+        transaction_store_handler handler);
 
 private:
     typedef std::function<bool(database::handle)> perform_read_functor;
@@ -216,27 +239,15 @@ private:
         return true;
     }
 
-    template <typename Handler, typename... Args>
-    void stop_write(Handler handler, Args&&... args)
-    {
-        const auto result = database_.end_write();
-        BITCOIN_ASSERT(result);
-        handler(std::forward<Args>(args)...);
-    }
-
-    void start_write();
     void do_store(block_const_ptr block, block_store_handler handler);
 
     void fetch_serial(perform_read_functor perform_read) const;
     bool stopped() const;
 
+    // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-
-    // These are thread safe.
     organizer organizer_;
-    ////mutable dispatcher read_dispatch_;
-    ////mutable dispatcher write_dispatch_;
     blockchain::transaction_pool transaction_pool_;
 
     // This is protected by mutex.

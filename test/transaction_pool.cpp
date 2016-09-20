@@ -36,6 +36,10 @@ class blockchain_fixture
   : public full_chain
 {
 public:
+
+    // Start/Stop.
+    //-------------------------------------------------------------------------
+
     virtual bool start()
     {
         return false;
@@ -51,9 +55,8 @@ public:
         return false;
     }
 
-    virtual void store(block_const_ptr block, block_store_handler handler)
-    {
-    }
+    // Fetch.
+    //-------------------------------------------------------------------------
 
     virtual void fetch_block(uint64_t height,
         block_fetch_handler handler) const
@@ -132,27 +135,54 @@ public:
     {
     }
 
+    // Filters.
+    //-------------------------------------------------------------------------
+
     virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
         stealth_fetch_handler handler) const
     {
     }
 
-    virtual void filter_blocks(message::get_data::ptr message,
+    virtual void filter_blocks(get_data_ptr message,
         result_handler handler) const
     {
     }
 
-    virtual void filter_orphans(message::get_data::ptr message,
+    virtual void filter_transactions(get_data_ptr message,
         result_handler handler) const
     {
     }
 
-    virtual void filter_transactions(message::get_data::ptr message,
+    virtual void filter_orphans(get_data_ptr message,
         result_handler handler) const
     {
     }
+
+    virtual void filter_floaters(get_data_ptr message,
+        result_handler handler) const
+    {
+    }
+
+    // Subscribers.
+    //-------------------------------------------------------------------------
 
     virtual void subscribe_reorganize(organizer::reorganize_handler handler)
+    {
+    }
+
+    virtual void subscribe_transaction(transaction_handler handler)
+    {
+    }
+
+    // Stores.
+    //-------------------------------------------------------------------------
+
+    virtual void store(block_const_ptr block, block_store_handler handler)
+    {
+    }
+
+    virtual void store(transaction_const_ptr block,
+        transaction_store_handler handler)
     {
     }
 };
@@ -188,6 +218,7 @@ public:
     }
 
     // Test accesors.
+    //-------------------------------------------------------------------------
 
     void add(transaction_const_ptr tx, result_handler handler)
     {
@@ -244,12 +275,14 @@ public:
         transaction_pool::delete_single(tx_hash, ec);
     }
 
+    // Test
+    //-------------------------------------------------------------------------
+
     const buffer& transactions()
     {
         return buffer_;
     }
 
-    // Test access.
     void stopped(bool stop)
     {
         stopped_ = stop;

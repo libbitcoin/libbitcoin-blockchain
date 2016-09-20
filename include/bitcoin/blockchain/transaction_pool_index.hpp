@@ -53,10 +53,10 @@ public:
     void stop();
 
     void fetch_all_history(const wallet::payment_address& address,
-        size_t limit, size_t from_height, fetch_handler handler);
+        size_t limit, size_t from_height, fetch_handler handler) const;
 
     void fetch_index_history(const wallet::payment_address& address,
-        query_handler handler);
+        query_handler handler) const;
 
     void add(transaction_const_ptr, completion_handler handler);
     void remove(transaction_const_ptr, completion_handler handler);
@@ -81,12 +81,12 @@ private:
 
     void blockchain_history_fetched(const code& ec,
         const history_list& history, const wallet::payment_address& address,
-        fetch_handler handler);
+        fetch_handler handler) const;
 
     void do_add(transaction_const_ptr tx, completion_handler handler);
     void do_remove(transaction_const_ptr, completion_handler handler);
     void do_fetch(const wallet::payment_address& address,
-        query_handler handler);
+        query_handler handler) const;
 
     // This is protected by mutex.
     spends_map spends_map_;

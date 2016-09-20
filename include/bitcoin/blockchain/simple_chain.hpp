@@ -20,7 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
 #define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
 
-#include <cstddef>
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -34,6 +34,9 @@ namespace blockchain {
 class BCB_API simple_chain
 {
 public:
+    // Getters.
+    // ------------------------------------------------------------------------
+
     /// Return the first and last gaps in the blockchain, or false if none.
     virtual bool get_gap_range(uint64_t& out_first,
         uint64_t& out_last) const = 0;
@@ -68,6 +71,9 @@ public:
     /// Get the block height of the transaction given its hash.
     virtual bool get_transaction_height(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
+
+    // Setters.
+    // ------------------------------------------------------------------------
 
     /// Import a block for the given height.
     virtual bool import(block_const_ptr block, uint64_t height) = 0;

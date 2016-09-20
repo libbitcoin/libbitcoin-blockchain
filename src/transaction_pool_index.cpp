@@ -191,7 +191,7 @@ void transaction_pool_index::do_remove(transaction_const_ptr tx,
 
 // Fetch the history first from the blockchain and then from the tx pool index.
 void transaction_pool_index::fetch_all_history(const payment_address& address,
-    size_t limit, size_t from_height, fetch_handler handler)
+    size_t limit, size_t from_height, fetch_handler handler) const
 {
     blockchain_.fetch_history(address, limit, from_height,
         std::bind(&transaction_pool_index::blockchain_history_fetched,
@@ -200,7 +200,7 @@ void transaction_pool_index::fetch_all_history(const payment_address& address,
 
 void transaction_pool_index::blockchain_history_fetched(const code& ec,
     const history_list& history, const payment_address& address,
-    fetch_handler handler)
+    fetch_handler handler) const
 {
     if (ec)
     {
@@ -240,7 +240,7 @@ void transaction_pool_index::index_history_fetched(const code& ec,
 
 // Fetch history from the transaction pool index only.
 void transaction_pool_index::fetch_index_history(
-    const payment_address& address, query_handler handler)
+    const payment_address& address, query_handler handler) const
 {
     dispatch_.ordered(
         std::bind(&transaction_pool_index::do_fetch,
@@ -248,7 +248,7 @@ void transaction_pool_index::fetch_index_history(
 }
 
 void transaction_pool_index::do_fetch(const payment_address& address,
-    query_handler handler)
+    query_handler handler) const
 {
     // This is the end of the fetch_index_history sequence.
     handler(error::success,
