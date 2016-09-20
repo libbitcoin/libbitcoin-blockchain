@@ -100,7 +100,7 @@ public:
     virtual void fetch_block_transaction_hashes(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_locator(
+    virtual void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const = 0;
 
     virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,

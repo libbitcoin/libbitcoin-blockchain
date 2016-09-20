@@ -88,7 +88,7 @@ public:
     {
     }
 
-    virtual void fetch_block_locator(
+    virtual void fetch_block_locator(const block::indexes& heights,
         block_locator_fetch_handler handle_fetch) const
     {
     }

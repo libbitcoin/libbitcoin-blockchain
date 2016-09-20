@@ -292,7 +292,7 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
 
 // This may generally execute 29+ queries.
 // TODO: collect asynchronous calls in a function invoked directly by caller.
-void block_chain::fetch_block_locator(
+void block_chain::fetch_block_locator(const block::indexes& heights,
     block_locator_fetch_handler handler) const
 {
     if (stopped())
@@ -301,7 +301,8 @@ void block_chain::fetch_block_locator(
         return;
     }
 
-    const auto do_fetch = [this, handler](size_t slock)
+    // TODO: use of &heights ref is invalid if this is not serial execution.
+    const auto do_fetch = [this, &heights, handler](size_t slock)
     {
         size_t top;
         code ec(error::operation_failed);
@@ -309,11 +310,9 @@ void block_chain::fetch_block_locator(
         if (!database_.blocks.top(top))
             return finish_fetch(slock, handler, ec, hash_list{});
 
-        ec = error::success;
-        const auto heights = block::locator_heights(top);
-
         hash_list locator;
         locator.reserve(heights.size());
+        ec = error::success;
 
         for (const auto height: heights)
         {

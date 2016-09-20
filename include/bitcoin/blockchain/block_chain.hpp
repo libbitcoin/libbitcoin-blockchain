@@ -143,7 +143,7 @@ public:
         transaction_hashes_fetch_handler handler) const;
 
     /// fetch a block locator relative to the current top and threshold.
-    virtual void fetch_block_locator(
+    virtual void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const;
 
     /// fetch the set of block hashes indicated by the block locator.
