@@ -87,11 +87,11 @@ public:
     // Setters.
     // ------------------------------------------------------------------------
 
-    /// Import a block for the given height.
-    virtual bool import(block_const_ptr block, uint64_t height) = 0;
+    /// Insert a block to the blockchain, height is checked for existence.
+    virtual bool insert(block_const_ptr block, uint64_t height) = 0;
 
-    /// Append the block to the top of the chain.
-    virtual bool push(block_const_ptr block) = 0;
+    /// Append the block to the top of the chain, height is validated.
+    virtual bool push(block_const_ptr block, uint64_t height) = 0;
 
     /// Remove blocks at or above the given height, returning them in order.
     virtual bool pop_from(block_const_ptr_list& out_blocks,

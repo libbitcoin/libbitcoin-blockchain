@@ -115,11 +115,11 @@ public:
     // simple_chain setters (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
-    /// Import a block to the blockchain.
-    bool import(block_const_ptr block, uint64_t height);
+    /// Insert a block to the blockchain, height is checked for existence.
+    bool insert(block_const_ptr block, uint64_t height);
 
-    /// Append the block to the top of the chain.
-    bool push(block_const_ptr block);
+    /// Append the block to the top of the chain, height is validated.
+    bool push(block_const_ptr block, uint64_t height);
 
     /// Remove blocks at or above the given height, returning them in order.
     bool pop_from(block_const_ptr_list& out_blocks, uint64_t height);

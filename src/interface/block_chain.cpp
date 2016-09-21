@@ -275,7 +275,7 @@ transaction_ptr block_chain::get_transaction(uint64_t& out_block_height,
 // ----------------------------------------------------------------------------
 
 // This is safe to call concurrently (but with no other methods).
-bool block_chain::import(block_const_ptr block, uint64_t height)
+bool block_chain::insert(block_const_ptr block, uint64_t height)
 {
     if (stopped())
         return false;
@@ -285,10 +285,10 @@ bool block_chain::import(block_const_ptr block, uint64_t height)
     return true;
 }
 
-bool block_chain::push(block_const_ptr block)
+// Append the block to the top of the chain, height is validated.
+bool block_chain::push(block_const_ptr block, size_t height)
 {
-    database_.push(*block);
-    return true;
+    return database_.push(*block, height);
 }
 
 bool block_chain::pop_from(block_const_ptr_list& out_blocks,

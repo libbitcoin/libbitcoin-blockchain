@@ -246,19 +246,16 @@ void orphan_pool_manager::replace_chain(block_const_ptr_list& new_chain,
     {
         orphan_pool_.remove(block);
 
-        // Indicates the block is not an orphan.
-        block->metadata.validation_height = from_height;
-
         // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-        if (!chain_.push(block))
+        if (!chain_.push(block, from_height))
         {
             log::error(LOG_BLOCKCHAIN)
                 << "Failure storing block [" << from_height << "]";
             return;
         }
 
-        // Move to next height.
-        ++from_height;
+        // Provides height parameter for blockchain.store() handler to return.
+        block->metadata.validation_height = from_height++;
     }
 
     // Add old_chain to the orphan pool (as processed with orphan height).
