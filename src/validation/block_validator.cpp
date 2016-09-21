@@ -27,10 +27,9 @@
 namespace libbitcoin {
 namespace blockchain {
 
-// The target number of blocks for 2 weeks of work (2016 blocks).
-static constexpr uint64_t retargeting_interval = target_timespan_seconds /
-    target_spacing_seconds;
+using namespace bc::chain;
 
+// The height parameter is the new block (top + 1).
 block_validator::block_validator(size_t fork_height,
     const block_const_ptr_list& orphan_chain, size_t orphan_index,
     const block_const_ptr block, size_t height, bool testnet,
@@ -41,179 +40,220 @@ block_validator::block_validator(size_t fork_height,
     orphan_chain_(orphan_chain),
     chain_(chain)
 {
+    // Next block can never be genesis.
     BITCOIN_ASSERT(height_ != 0);
+
+    // Orphan index can never euqual or exceed chain size.
     BITCOIN_ASSERT(orphan_index_ < orphan_chain_.size());
 }
 
-// Unsafe Interface
+// TODO: populate required data into chain state and move logic to block.
+// Chain state will need to be populated using height and current fork state.
+// fork_state: orphan_chain_/orphan_index_/fork_height_
+// But once populated all validation will require only chain_state for context.
+
+// get_block_versions
 // ----------------------------------------------------------------------------
 
-// TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint32_t block_validator::previous_block_bits() const
-{
-    // Read block header (top - 1) and return bits
-    return fetch_block(height_ - 1).bits;
-}
-
-// TODO: cache the result so that only one value must be read per block.
-// TODO: deprecated as unsafe, use of fetch_block ignores error code.
-validate_block::versions block_validator::preceding_block_versions(
+// Requires [top 100|1000].versions.
+bool block_validator::get_block_versions(versions& out_history, size_t height,
     size_t maximum) const
 {
     // 1000 previous versions maximum sample.
     // 950 previous versions minimum required for enforcement.
     // 750 previous versions minimum required for activation.
-    const auto size = std::min(maximum, height_);
+    const auto size = std::min(maximum, height);
+    out_history.reserve(size);
+    out_history.clear();
 
-    // Read block (top - 1) through (top - 1000) and return version vector.
-    versions result;
+    // Read block (top) through (top - 99|999) and return versions.
     for (size_t index = 0; index < size; ++index)
     {
-        const auto version = fetch_block(height_ - index - 1).version;
+        uint32_t version;
+        if (!fetch_version(version, height - index - 1))
+            return false;
 
+        // TODO: review BIP9 (version bits).
         // Some blocks have high versions, see block #390777.
         static const auto maximum = static_cast<uint32_t>(max_uint8);
         const auto normal = std::min(version, maximum);
-        result.push_back(static_cast<uint8_t>(normal));
+        out_history.push_back(static_cast<uint8_t>(normal));
     }
 
-    return result;
+    return true;
 }
 
-// TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint64_t block_validator::actual_time_span(size_t interval) const
-{
-    BITCOIN_ASSERT(height_ > 0 && height_ >= interval);
+// median_time_past
+// ----------------------------------------------------------------------------
 
-    // height - interval and height - 1, return time difference
-    return fetch_block(height_ - 1).timestamp -
-        fetch_block(height_ - interval).timestamp;
-}
-
-// TODO: deprecated as unsafe, use of fetch_block ignores error code.
-uint64_t block_validator::median_time_past() const
+// Requires [top 11].timestamp.
+bool block_validator::median_time_past(uint64_t out_time_past,
+    size_t height) const
 {
     // Read last 11 (or height if height < 11) block times into array.
-    const auto count = std::min(height_, median_time_past_blocks);
+    const auto count = std::min(height, median_time_past_blocks);
+    std::vector<uint64_t> times(count);
 
-    std::vector<uint64_t> times;
-    for (size_t i = 0; i < count; ++i)
-        times.push_back(fetch_block(height_ - i - 1).timestamp);
+    for (size_t index = 0; index < count; ++index)
+    {
+        uint32_t timestamp;
+        if (!fetch_timestamp(timestamp, height - index - 1))
+            return false;
+
+        times[index] = timestamp;
+    }
 
     // Sort and select middle (median) value from the array.
     std::sort(times.begin(), times.end());
-    return times.empty() ? 0 : times[times.size() / 2];
+    out_time_past = times.empty() ? 0 : times[times.size() / 2];
+    return true;
 }
 
-// TODO: deprecated as unsafe, ignores error code.
-uint32_t block_validator::work_required(uint32_t timestamp,
-    bool is_testnet) const
+// work_required
+//-----------------------------------------------------------------------------
+
+// Requires [top].bits (mainnet).
+bool block_validator::work_required(uint32_t out_work, size_t height,
+    uint32_t timestamp, bool is_testnet) const
 {
-    if (height_ == 0)
+    if (height == 0)
         return max_work_bits;
 
-    const auto is_retarget_height = [](size_t height)
+    if (block::is_retarget_height(height))
     {
-        return height % retargeting_interval == 0;
-    };
+        // Get the total time spanning the last 2016 blocks.
+        uint64_t time_span;
+        if (!retarget_time_span(time_span, height))
+            return false;
 
-    if (is_retarget_height(height_))
-    {
-        // This is the total time it took for the last 2016 blocks.
-        const auto actual = actual_time_span(retargeting_interval);
-
-        // Now constrain the time between an upper and lower bound.
-        const auto constrained = bc::range_constrain(actual,
+        // Constrain the time between an upper and lower bound.
+        const auto constrained = bc::range_constrain(time_span,
             target_timespan_seconds / retargeting_factor,
             target_timespan_seconds * retargeting_factor);
 
-        // TODO: technically this set_compact can fail.
+        uint32_t bits;
+        if (!fetch_bits(bits, height - 1))
+            return false;
+
+        hash_number maximum;
         hash_number retarget;
-        retarget.set_compact(previous_block_bits());
+        if (!retarget.set_compact(bits) || !maximum.set_compact(max_work_bits))
+            return false;
+
         retarget *= constrained;
         retarget /= target_timespan_seconds;
-
-        // TODO: This should be statically-initialized.
-        hash_number maximum;
-        maximum.set_compact(max_work_bits);
-
         if (retarget > maximum)
             retarget = maximum;
 
-        return retarget.compact();
+        out_work = retarget.compact();
+        return true;
     }
 
-    if (!is_testnet)
-        return previous_block_bits();
+    return is_testnet ? work_required_testnet(out_work, height, timestamp) :
+        fetch_bits(out_work, height - 1);
+}
 
-    // TESTNET ONLY
+// Requires [top].timestamp and [top].bits through up to [top - 2014].bits.
+bool block_validator::work_required_testnet(uint32_t out_work, size_t height,
+    uint32_t timestamp) const
+{
+    uint32_t time;
+    if (!fetch_timestamp(time, height - 1))
+        return false;
 
-    const auto max_time_gap = fetch_block(height_ - 1).timestamp + 2 * 
-        target_spacing_seconds;
+    const auto max_time_gap = time + 2 * target_spacing_seconds;
 
     if (timestamp > max_time_gap)
-        return max_work_bits;
-
-    chain::header previous_block;
-    auto previous_height = height_;
-
-    // TODO: this is very suboptimal, cache the set of change points.
-    // Loop backwards until we find a difficulty change point,
-    // or we find a block which does not have max_bits (is not special).
-    while (!is_retarget_height(previous_height))
     {
-        previous_block = fetch_block(--previous_height);
-
-        // Test for non-special block.
-        if (previous_block.bits != max_work_bits)
-            break;
+        out_work = max_work_bits;
+        return true;
     }
 
-    return previous_block.bits;
+    auto found = false;
+    uint32_t previous_bits;
+    auto previous_height = height;
+
+    // Loop backwards until we find a retarget point, or we find a block which
+    // does not have max_bits (is not special). Zero is a retarget height.
+    while (!found)
+    {
+        if (!fetch_bits(previous_bits, --previous_height))
+            return false;
+
+        found = (previous_bits != max_work_bits) ||
+            block::is_retarget_height(previous_height);
+    }
+
+    out_work = previous_bits;
+    return true;
 }
 
-// TODO: deprecated as unsafe, ignores error code.
-chain::header block_validator::fetch_block(size_t height) const
+// Requires [top].timestamp AND [top - 2015].timestamp.
+bool block_validator::retarget_time_span(uint64_t& out_time_span,
+    size_t height) const
 {
-    if (height > fork_height_)
-    {
-        const auto fetch_index = height - fork_height_ - 1;
+    // Zero is precluded and the first retarget height above zero is 2016.
+    BITCOIN_ASSERT(height > 0 && height >= retargeting_interval);
 
-        // BUGBUG: unsafe suppression of failure condition.
-        BITCOIN_ASSERT(fetch_index <= orphan_index_);
+    uint32_t time_hi;
+    uint32_t time_lo;
 
-        return orphan_chain_[fetch_index]->header;
-    }
+    if (!fetch_timestamp(time_hi, height - 1) ||
+        !fetch_timestamp(time_lo, height - retargeting_interval))
+        return false;
 
-    chain::header out;
-
-    // BUGBUG: unsafe suppression of failure condition.
-    DEBUG_ONLY(const auto result =) chain_.get_header(out, height);
-    BITCOIN_ASSERT(result);
-    return out;
+    out_time_span = time_hi - time_lo;
+    return true;
 }
 
-// ----------------------------------------------------------------------------
+// TODO: move hybrid queries to blockchain.
+//-----------------------------------------------------------------------------
 
-// Safe replacement for fetch_block.
-bool block_validator::fetch_header(chain::header& header,
-    size_t fetch_height) const
+bool block_validator::fetch_bits(uint32_t& out_bits, size_t fetch_height) const
 {
     if (fetch_height <= fork_height_)
-        return chain_.get_header(header, fetch_height);
+        return chain_.get_bits(out_bits, fetch_height);
 
     const auto fetch_index = fetch_height - fork_height_ - 1;
 
     if (fetch_index > orphan_index_)
         return false;
 
-    // TODO: if the header is not required we can return value and avoid.
-    //=====================================================================
-    // HEADER COPY
-    header = chain::header(orphan_chain_[fetch_index]->header);
-    //=====================================================================
+    out_bits = orphan_chain_[fetch_index]->header.bits;
     return true;
 }
+
+bool block_validator::fetch_timestamp(uint32_t& out_timestamp,
+    size_t fetch_height) const
+{
+    if (fetch_height <= fork_height_)
+        return chain_.get_timestamp(out_timestamp, fetch_height);
+
+    const auto fetch_index = fetch_height - fork_height_ - 1;
+
+    if (fetch_index > orphan_index_)
+        return false;
+
+    out_timestamp = orphan_chain_[fetch_index]->header.timestamp;
+    return true;
+}
+
+bool block_validator::fetch_version(uint32_t& out_version,
+    size_t fetch_height) const
+{
+    if (fetch_height <= fork_height_)
+        return chain_.get_version(out_version, fetch_height);
+
+    const auto fetch_index = fetch_height - fork_height_ - 1;
+
+    if (fetch_index > orphan_index_)
+        return false;
+
+    out_version = orphan_chain_[fetch_index]->header.version;
+    return true;
+}
+
+// ----------------------------------------------------------------------------
 
 transaction_ptr block_validator::fetch_transaction(size_t& tx_height,
     const hash_digest& tx_hash) const
@@ -254,20 +294,18 @@ transaction_ptr block_validator::fetch_orphan_transaction(
     return nullptr;
 }
 
-bool block_validator::is_output_spent(
-    const chain::output_point& outpoint) const
+bool block_validator::is_output_spent(const output_point& outpoint) const
 {
     uint64_t tx_height;
     hash_digest tx_hash;
     return
-        chain_.get_outpoint_transaction(tx_hash, outpoint) &&
+        chain_.get_transaction_hash(tx_hash, outpoint) &&
         chain_.get_transaction_height(tx_height, tx_hash) &&
         tx_height <= fork_height_;
 }
 
-bool block_validator::is_orphan_spent(
-    const chain::output_point& previous_output,
-    const chain::transaction& skip_tx, uint32_t skip_input_index) const
+bool block_validator::is_orphan_spent(const output_point& previous_output,
+    const transaction& skip_tx, uint32_t skip_input_index) const
 {
     // For each orphan...
     for (size_t orphan = 0; orphan <= orphan_index_; ++orphan)

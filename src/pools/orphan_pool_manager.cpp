@@ -181,7 +181,7 @@ void orphan_pool_manager::chain_work(hash_number& work,
                     << "] " << error_code.message();
             }
 
-            // Index block is invalid, remoev it and all after.
+            // Index block is invalid, remove it and all after.
             clip_orphans(new_chain, index, error_code);
 
             // Stop summing work once we discover an invalid block.
@@ -201,38 +201,39 @@ void orphan_pool_manager::replace_chain(block_const_ptr_list& new_chain,
     chain_work(new_work, new_chain, fork_height);
 
     // For work comparison each branch starts one block above the fork height.
-    auto height = fork_height + 1;
+    auto from_height = fork_height + 1;
 
     hash_number old_work;
-    auto result = chain_.get_difficulty(old_work, height);
+    const auto result = chain_.get_difficulty(old_work, from_height);
 
     if (!result)
     {
         log::error(LOG_BLOCKCHAIN)
-            << "Failure getting difficulty for [" << height << "]";
+            << "Failure getting difficulty from [" << from_height << "]";
         return;
     }
 
     if (new_work <= old_work)
     {
         log::debug(LOG_BLOCKCHAIN)
-            << "Insufficient work to reorganize at [" << height << "]";
+            << "Insufficient work to reorganize from [" << from_height << "]";
         return;
     }
 
     block_const_ptr_list old_chain;
 
-    if (!chain_.pop_from(old_chain, height))
+    if (!chain_.pop_from(old_chain, from_height))
     {
         log::error(LOG_BLOCKCHAIN)
-            << "Failure reorganizing from [" << height << "]";
+            << "Failure reorganizing from [" << from_height << "]";
         return;
     }
 
     if (!old_chain.empty())
     {
         log::info(LOG_BLOCKCHAIN)
-            << "Reorganizing [" << height << ", " << old_chain.size() << "]";
+            << "Reorganizing from block " << from_height << " to "
+            << from_height + old_chain.size() << "]";
     }
 
     // Push the new_chain to the blockchain first because if the old is pushed
@@ -246,18 +247,18 @@ void orphan_pool_manager::replace_chain(block_const_ptr_list& new_chain,
         orphan_pool_.remove(block);
 
         // Indicates the block is not an orphan.
-        block->metadata.validation_height = height;
+        block->metadata.validation_height = from_height;
 
         // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
         if (!chain_.push(block))
         {
             log::error(LOG_BLOCKCHAIN)
-                << "Failure storing block [" << height << "]";
+                << "Failure storing block [" << from_height << "]";
             return;
         }
 
         // Move to next height.
-        ++height;
+        ++from_height;
     }
 
     // Add old_chain to the orphan pool (as processed with orphan height).

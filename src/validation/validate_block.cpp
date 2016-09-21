@@ -64,14 +64,11 @@ bool validate_block::stopped() const
 // There is no need to call a second time for connect after accept.
 void validate_block::reset(size_t height, result_handler handler)
 {
-    // OPTIMIZATION:
-    // Maintain history as member on this class, and this class on manager.
-    // Pass in list by reference and height of list, modify query to augment.
-    ////history_ = preceding_block_versions(chain_state_.sample_size);
+    //// get_block_versions(history_, height, chain_state_.sample_size)
 
     // TODO: populate chain state and block state.
-    //// median_time_past = median_time_past();
-    //// work_required = work_required(current_block_.header.timestamp, testnet_);
+    //// median_time_past(median_time_past, height);
+    //// work_required(work_required, height, current_block_.header.timestamp, testnet_);
 
     // This has a side effect on subsequent calls!
     chain_state_.set_context(height, history_);

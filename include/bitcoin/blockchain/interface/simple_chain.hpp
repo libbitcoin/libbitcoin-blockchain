@@ -45,9 +45,9 @@ public:
     virtual bool get_next_gap(uint64_t& out_height,
         uint64_t start_height) const = 0;
 
-    /// Get the dificulty of a block at the given height.
+    /// Get the difficulty of the branch starting at the given height.
     virtual bool get_difficulty(hash_number& out_difficulty,
-        uint64_t height) const = 0;
+        uint64_t from_height) const = 0;
 
     /// Get the header of the block at the given height.
     virtual bool get_header(chain::header& out_header,
@@ -57,19 +57,30 @@ public:
     virtual bool get_height(uint64_t& out_height,
         const hash_digest& block_hash) const = 0;
 
+    /// Get the bits of the block with the given height.
+    virtual bool get_bits(uint32_t& out_bits, const uint64_t& height) const;
+
+    /// Get the timestamp of the block with the given height.
+    virtual bool get_timestamp(uint32_t& out_timestamp,
+        const uint64_t& height) const;
+
+    /// Get the version of the block with the given height.
+    virtual bool get_version(uint32_t& out_version,
+        const uint64_t& height) const;
+
     /// Get height of latest block.
     virtual bool get_last_height(uint64_t& out_height) const = 0;
 
     /// Get the hash digest of the transaction of the outpoint.
-    virtual bool get_outpoint_transaction(hash_digest& out_hash,
+    virtual bool get_transaction_hash(hash_digest& out_hash,
         const chain::output_point& outpoint) const = 0;
-
-    /// Get the transaction of the given hash and its block height.
-    virtual transaction_ptr get_transaction(uint64_t& out_block_height,
-        const hash_digest& transaction_hash) const = 0;
 
     /// Get the block height of the transaction given its hash.
     virtual bool get_transaction_height(uint64_t& out_block_height,
+        const hash_digest& transaction_hash) const = 0;
+
+    /// Get the transaction of the given hash and its block height.
+    virtual transaction_ptr get_transaction(uint64_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
     // Setters.

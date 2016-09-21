@@ -43,21 +43,22 @@ public:
         const checkpoints& checkpoints, const simple_chain& chain);
 
 protected:
+    bool median_time_past(uint64_t out_time_past, size_t height) const;
+    bool retarget_time_span(uint64_t& out_time_span, size_t height) const;
+    bool work_required(uint32_t out_work_required, size_t height,
+        uint32_t timestamp, bool is_testnet) const;
+    bool work_required_testnet(uint32_t out_work_required, size_t height,
+        uint32_t timestamp) const;
+    bool get_block_versions(versions& out_history, size_t height,
+        size_t maximum) const;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: deprecated as unsafe, use of fetch_block ignores error code.
-    uint64_t median_time_past() const;
-    uint32_t previous_block_bits() const;
-    uint64_t actual_time_span(size_t interval) const;
-    uint32_t work_required(uint32_t timestamp, bool is_testnet) const;
-    versions preceding_block_versions(size_t maximum) const;
-    virtual chain::header fetch_block(size_t height) const;
-    ///////////////////////////////////////////////////////////////////////////
+    bool fetch_bits(uint32_t& out_bits, size_t fetch_height) const;
+    bool fetch_timestamp(uint32_t& out_timestamp, size_t fetch_height) const;
+    bool fetch_version(uint32_t& out_version, size_t fetch_height) const;
 
-    bool fetch_header(chain::header& header, size_t height) const;
+    // TODO: move to blockchain.
     transaction_ptr fetch_transaction(size_t& height,
         const hash_digest& tx_hash) const;
-
     bool is_output_spent(const chain::output_point& outpoint) const;
     bool is_orphan_spent(const chain::output_point& previous_output,
         const chain::transaction& skip_tx, uint32_t skip_input_index) const;
