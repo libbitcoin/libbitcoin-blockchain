@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -31,13 +32,20 @@
 namespace libbitcoin {
 namespace blockchain {
 
+struct BCB_API spend_info
+{
+    typedef std::vector<spend_info> list;
+
+    chain::input_point point;
+    chain::output_point previous_output;
+};
+
 /// This class is thread safe.
 class BCB_API transaction_pool_index
 {
 public:
     typedef handle0 completion_handler;
-    typedef handle2<chain::spend_info::list, chain::output_info::list>
-        query_handler;
+    typedef handle2<spend_info::list, chain::output_info::list> query_handler;
     typedef full_chain::history_fetch_handler fetch_handler;
 
     transaction_pool_index(threadpool& pool, full_chain& blockchain);
@@ -62,7 +70,6 @@ public:
     void remove(transaction_const_ptr, completion_handler handler);
 
 private:
-    typedef chain::spend_info spend_info;
     typedef chain::output_info output_info;
     typedef chain::history_compact::list history_list;
     typedef wallet::payment_address payment_address;
