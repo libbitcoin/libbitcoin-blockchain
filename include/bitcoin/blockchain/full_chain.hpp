@@ -104,17 +104,6 @@ public:
     virtual void fetch_merkle_block(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const = 0;
-
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) const = 0;
 
@@ -124,7 +113,7 @@ public:
     virtual void fetch_transaction(const hash_digest& hash,
         transaction_fetch_handler handler) const = 0;
 
-    virtual void fetch_transaction_index(const hash_digest& hash,
+    virtual void fetch_transaction_position(const hash_digest& hash,
         transaction_index_fetch_handler handler) const = 0;
 
     virtual void fetch_spend(const chain::output_point& outpoint,
@@ -136,6 +125,17 @@ public:
 
     virtual void fetch_stealth(const binary& filter, uint64_t from_height,
         stealth_fetch_handler handler) const = 0;
+
+    virtual void fetch_block_locator(const chain::block::indexes& heights,
+        block_locator_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_hashes_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const = 0;
 
     // Filters.
     //-------------------------------------------------------------------------

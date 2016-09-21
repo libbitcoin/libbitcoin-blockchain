@@ -290,8 +290,266 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
 // full_chain queries (internal locks).
 // ----------------------------------------------------------------------------
 
+void block_chain::fetch_block(uint64_t height,
+    block_fetch_handler handler) const
+{
+    // This is big so it is implemented in a helper class.
+    blockchain::fetch_block(*this, height, handler);
+}
+
+void block_chain::fetch_block(const hash_digest& hash,
+    block_fetch_handler handler) const
+{
+    // This is big so it is implemented in a helper class.
+    blockchain::fetch_block(*this, hash, handler);
+}
+
+void block_chain::fetch_block_header(uint64_t height,
+    block_header_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, height, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(height);
+
+        if (!result)
+            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        const auto header = std::make_shared<message::header_message>(
+            result.header());
+
+        // Asign the optional tx count to the header.
+        header->transaction_count = result.transaction_count();
+        return finish_fetch(slock, handler, error::success, header,
+            result.height());
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_block_header(const hash_digest& hash,
+    block_header_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, hash, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(hash);
+
+        if (!result)
+            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        const auto header = std::make_shared<message::header_message>(
+            result.header());
+
+        // Asign the optional tx count to the header.
+        header->transaction_count = result.transaction_count();
+        return finish_fetch(slock, handler, error::success, header,
+            result.height());
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_merkle_block(uint64_t height,
+    transaction_hashes_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, height, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(height);
+
+        if (!result)
+            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        auto merkle = std::make_shared<message::merkle_block>(
+            message::merkle_block{ result.header(), to_hashes(result), {} });
+
+        // Asign the optional tx count to the merkle header.
+        merkle->header.transaction_count = result.transaction_count();
+        return finish_fetch(slock, handler, error::success, merkle,
+            result.height());
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_merkle_block(const hash_digest& hash,
+    transaction_hashes_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, hash, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(hash);
+
+        if (!result)
+            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        auto merkle = std::make_shared<message::merkle_block>(
+            message::merkle_block{ result.header(), to_hashes(result), {} });
+
+        return finish_fetch(slock, handler, error::success, merkle,
+            result.height());
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_block_height(const hash_digest& hash,
+    block_height_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    const auto do_fetch = [this, hash, handler](size_t slock)
+    {
+        const auto result = database_.blocks.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.height()) :
+            finish_fetch(slock, handler, error::not_found, 0);
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_last_height(
+    last_height_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    const auto do_fetch = [this, handler](size_t slock)
+    {
+        size_t last_height;
+        return database_.blocks.top(last_height) ?
+            finish_fetch(slock, handler, error::success, last_height) :
+            finish_fetch(slock, handler, error::not_found, 0);
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_transaction(const hash_digest& hash,
+    transaction_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, hash, handler](size_t slock)
+    {
+        const auto result = database_.transactions.get(hash);
+
+        if (!result)
+            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+
+        const auto tx = std::make_shared<message::transaction_message>(
+            result.transaction());
+
+        return finish_fetch(slock, handler, error::success, tx,
+            result.height());
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_transaction_position(const hash_digest& hash,
+    transaction_index_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, 0, 0);
+        return;
+    }
+
+    const auto do_fetch = [this, hash, handler](size_t slock)
+    {
+        const auto result = database_.transactions.get(hash);
+        return result ?
+            finish_fetch(slock, handler, error::success, result.position(),
+                result.height()) :
+            finish_fetch(slock, handler, error::not_found, 0, 0);
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_spend(const chain::output_point& outpoint,
+    spend_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    const auto do_fetch = [this, outpoint, handler](size_t slock)
+    {
+        const auto spend = database_.spends.get(outpoint);
+        return spend.valid ?
+            finish_fetch(slock, handler, error::success,
+                chain::input_point{ std::move(spend.hash), spend.index }) :
+            finish_fetch(slock, handler, error::not_found,
+                chain::input_point{});
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_history(const wallet::payment_address& address,
+    uint64_t limit, uint64_t from_height, history_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    const auto do_fetch = [this, address, handler, limit, from_height](
+        size_t slock)
+    {
+        return finish_fetch(slock, handler, error::success,
+            database_.history.get(address.hash(), limit, from_height));
+    };
+    fetch_serial(do_fetch);
+}
+
+void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
+    stealth_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    const auto do_fetch = [this, filter, handler, from_height](size_t slock)
+    {
+        return finish_fetch(slock, handler, error::success,
+            database_.stealth.scan(filter, from_height));
+    };
+    fetch_serial(do_fetch);
+}
+
 // This may generally execute 29+ queries.
-// TODO: collect asynchronous calls in a function invoked directly by caller.
 void block_chain::fetch_block_locator(const block::indexes& heights,
     block_locator_fetch_handler handler) const
 {
@@ -477,268 +735,6 @@ void block_chain::fetch_locator_block_headers(
 
         headers->elements.shrink_to_fit();
         return finish_fetch(slock, handler, error::success, headers);
-    };
-    fetch_serial(do_fetch);
-}
-
-// full_chain (formerly fetch_parallel)
-// ------------------------------------------------------------------------
-
-void block_chain::fetch_block(uint64_t height,
-    block_fetch_handler handler) const
-{
-    // This is big so it is implemented in a helper class.
-    blockchain::fetch_block(*this, height, handler);
-}
-
-void block_chain::fetch_block(const hash_digest& hash,
-    block_fetch_handler handler) const
-{
-    // This is big so it is implemented in a helper class.
-    blockchain::fetch_block(*this, hash, handler);
-}
-
-void block_chain::fetch_block_header(uint64_t height,
-    block_header_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, height, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(height);
-
-        if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
-
-        const auto header = std::make_shared<message::header_message>(
-            result.header());
-
-        // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
-        return finish_fetch(slock, handler, error::success, header,
-            result.height());
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_block_header(const hash_digest& hash,
-    block_header_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(hash);
-
-        if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
-
-        const auto header = std::make_shared<message::header_message>(
-            result.header());
-
-        // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
-        return finish_fetch(slock, handler, error::success, header,
-            result.height());
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_merkle_block(uint64_t height,
-    transaction_hashes_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, height, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(height);
-
-        if (!result)
-            finish_fetch(slock, handler, error::not_found, nullptr, 0);
-
-        auto merkle = std::make_shared<message::merkle_block>(
-            message::merkle_block{ result.header(), to_hashes(result), {} });
-
-        // Asign the optional tx count to the merkle header.
-        merkle->header.transaction_count = result.transaction_count();
-        return finish_fetch(slock, handler, error::success, merkle,
-            result.height());
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_merkle_block(const hash_digest& hash,
-    transaction_hashes_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(hash);
-
-        if (!result)
-            finish_fetch(slock, handler, error::not_found, nullptr, 0);
-
-        auto merkle = std::make_shared<message::merkle_block>(
-            message::merkle_block{ result.header(), to_hashes(result), {} });
-
-        return finish_fetch(slock, handler, error::success, merkle,
-            result.height());
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_block_height(const hash_digest& hash,
-    block_height_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.blocks.get(hash);
-        return result ?
-            finish_fetch(slock, handler, error::success, result.height()) :
-            finish_fetch(slock, handler, error::not_found, 0);
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_last_height(
-    last_height_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    const auto do_fetch = [this, handler](size_t slock)
-    {
-        size_t last_height;
-        return database_.blocks.top(last_height) ?
-            finish_fetch(slock, handler, error::success, last_height) :
-            finish_fetch(slock, handler, error::not_found, 0);
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_transaction(const hash_digest& hash,
-    transaction_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.transactions.get(hash);
-
-        if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
-
-        const auto tx = std::make_shared<message::transaction_message>(
-            result.transaction());
-
-        return finish_fetch(slock, handler, error::success, tx,
-            result.height());
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_transaction_index(const hash_digest& hash,
-    transaction_index_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, 0, 0);
-        return;
-    }
-
-    const auto do_fetch = [this, hash, handler](size_t slock)
-    {
-        const auto result = database_.transactions.get(hash);
-        return result ?
-            finish_fetch(slock, handler, error::success, result.height(),
-                result.index()) :
-            finish_fetch(slock, handler, error::not_found, 0, 0);
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_spend(const chain::output_point& outpoint,
-    spend_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    const auto do_fetch = [this, outpoint, handler](size_t slock)
-    {
-        const auto spend = database_.spends.get(outpoint);
-        return spend.valid ?
-            finish_fetch(slock, handler, error::success,
-                chain::input_point{ std::move(spend.hash), spend.index }) :
-            finish_fetch(slock, handler, error::not_found,
-                chain::input_point{});
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_history(const wallet::payment_address& address,
-    uint64_t limit, uint64_t from_height, history_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    const auto do_fetch = [this, address, handler, limit, from_height](
-        size_t slock)
-    {
-        return finish_fetch(slock, handler, error::success,
-            database_.history.get(address.hash(), limit, from_height));
-    };
-    fetch_serial(do_fetch);
-}
-
-void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
-    stealth_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    const auto do_fetch = [this, filter, handler, from_height](size_t slock)
-    {
-        return finish_fetch(slock, handler, error::success,
-            database_.stealth.scan(filter, from_height));
     };
     fetch_serial(do_fetch);
 }

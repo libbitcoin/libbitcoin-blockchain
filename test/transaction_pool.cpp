@@ -88,23 +88,6 @@ public:
     {
     }
 
-    virtual void fetch_block_locator(const block::indexes& heights,
-        block_locator_fetch_handler handle_fetch) const
-    {
-    }
-
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const
-    {
-    }
-
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) const
     {
@@ -119,7 +102,7 @@ public:
     {
     }
 
-    virtual void fetch_transaction_index(const hash_digest& hash,
+    virtual void fetch_transaction_position(const hash_digest& hash,
         transaction_index_fetch_handler handler) const
     {
     }
@@ -132,6 +115,23 @@ public:
     virtual void fetch_history(const wallet::payment_address& address,
         uint64_t limit, uint64_t from_height,
         history_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_block_locator(const block::indexes& heights,
+        block_locator_fetch_handler handle_fetch) const
+    {
+    }
+
+    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_hashes_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const
     {
     }
 
