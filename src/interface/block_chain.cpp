@@ -17,19 +17,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/block_chain.hpp>
+#include <bitcoin/blockchain/interface/block_chain.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
-#include <bitcoin/blockchain/block_fetcher.hpp>
+#include <bitcoin/blockchain/interface/block_fetcher.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/transaction_pool.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -43,7 +43,7 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
-    organizer_(pool, *this, chain_settings),
+    orphan_pool_manager_(pool, *this, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -88,7 +88,7 @@ bool block_chain::start()
         return false;
 
     stopped_ = false;
-    organizer_.start();
+    orphan_pool_manager_.start();
     transaction_pool_.start();
     return true;
 }
@@ -101,7 +101,7 @@ bool block_chain::stop()
     unique_lock lock(mutex_);
 
     stopped_ = true;
-    organizer_.stop();
+    orphan_pool_manager_.stop();
     transaction_pool_.stop();
     return database_.stop();
     ///////////////////////////////////////////////////////////////////////////
@@ -823,7 +823,7 @@ void block_chain::filter_transactions(get_data_ptr message,
 void block_chain::filter_orphans(get_data_ptr message,
     result_handler handler) const
 {
-    organizer_.filter_orphans(message);
+    orphan_pool_manager_.filter_orphans(message);
     handler(error::success);
 }
 
@@ -838,8 +838,8 @@ void block_chain::filter_floaters(get_data_ptr message,
 
 void block_chain::subscribe_reorganize(reorganize_handler handler)
 {
-    // Pass this through to the organizer, which issues the notifications.
-    organizer_.subscribe_reorganize(handler);
+    // Pass this through to the manager, which issues the notifications.
+    orphan_pool_manager_.subscribe_reorganize(handler);
 }
 
 void block_chain::subscribe_transaction(transaction_handler handler)
@@ -871,7 +871,7 @@ void block_chain::store(block_const_ptr block, block_store_handler handler)
         handler(error::service_stopped, 0);
 }
 
-// This processes the block through the organizer.
+// This processes the block through the orphan_pool_manager.
 void block_chain::do_store(block_const_ptr block, block_store_handler handler)
 {
     code ec;
@@ -886,7 +886,7 @@ void block_chain::do_store(block_const_ptr block, block_store_handler handler)
         handler(database_.end_write() ? error::duplicate :
             error::operation_failed, 0);
 
-    else if ((ec = organizer_.reorganize(block)))
+    else if ((ec = orphan_pool_manager_.reorganize(block)))
         handler(database_.end_write() ? ec : error::operation_failed, 0);
 
     else

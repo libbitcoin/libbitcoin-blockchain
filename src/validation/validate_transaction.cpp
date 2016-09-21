@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/validate_transaction.hpp>
+#include <bitcoin/blockchain/validation/validate_transaction.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/transaction_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>

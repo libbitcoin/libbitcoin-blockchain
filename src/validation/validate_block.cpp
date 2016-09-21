@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/validate_block.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 #include <chrono>
 #include <cstddef>
@@ -65,7 +65,7 @@ bool validate_block::stopped() const
 void validate_block::reset(size_t height, result_handler handler)
 {
     // OPTIMIZATION:
-    // Maintain history as member on this class, and this class on organizer.
+    // Maintain history as member on this class, and this class on manager.
     // Pass in list by reference and height of list, modify query to augment.
     ////history_ = preceding_block_versions(chain_state_.sample_size);
 

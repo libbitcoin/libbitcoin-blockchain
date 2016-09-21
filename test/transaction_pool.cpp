@@ -171,7 +171,8 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    virtual void subscribe_reorganize(organizer::reorganize_handler handler)
+    virtual void subscribe_reorganize(
+        orphan_pool_manager::reorganize_handler handler)
     {
     }
 

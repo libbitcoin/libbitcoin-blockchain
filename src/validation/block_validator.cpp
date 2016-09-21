@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/block_validator.hpp>
+#include <bitcoin/blockchain/validation/block_validator.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

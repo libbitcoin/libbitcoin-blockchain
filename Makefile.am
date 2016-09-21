@@ -35,16 +35,16 @@ lib_LTLIBRARIES = src/libbitcoin-blockchain.la
 src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
-    src/block_chain.cpp \
-    src/block_fetcher.cpp \
-    src/block_validator.cpp \
-    src/organizer.cpp \
-    src/orphan_pool.cpp \
     src/settings.cpp \
-    src/transaction_pool.cpp \
-    src/transaction_pool_index.cpp \
-    src/validate_block.cpp \
-    src/validate_transaction.cpp
+    src/interface/block_chain.cpp \
+    src/interface/block_fetcher.cpp \
+    src/pools/orphan_pool.cpp \
+    src/pools/orphan_pool_manager.cpp \
+    src/pools/transaction_pool.cpp \
+    src/pools/transaction_pool_index.cpp \
+    src/validation/block_validator.cpp \
+    src/validation/validate_block.cpp \
+    src/validation/validate_transaction.cpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -82,20 +82,29 @@ include_bitcoin_HEADERS = \
 
 include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
-    include/bitcoin/blockchain/block_chain.hpp \
-    include/bitcoin/blockchain/block_fetcher.hpp \
-    include/bitcoin/blockchain/block_validator.hpp \
     include/bitcoin/blockchain/define.hpp \
-    include/bitcoin/blockchain/full_chain.hpp \
-    include/bitcoin/blockchain/organizer.hpp \
-    include/bitcoin/blockchain/orphan_pool.hpp \
     include/bitcoin/blockchain/settings.hpp \
-    include/bitcoin/blockchain/simple_chain.hpp \
-    include/bitcoin/blockchain/transaction_pool.hpp \
-    include/bitcoin/blockchain/transaction_pool_index.hpp \
-    include/bitcoin/blockchain/validate_block.hpp \
-    include/bitcoin/blockchain/validate_transaction.hpp \
     include/bitcoin/blockchain/version.hpp
+
+include_bitcoin_blockchain_interfacedir = ${includedir}/bitcoin/blockchain/interface
+include_bitcoin_blockchain_interface_HEADERS = \
+    include/bitcoin/blockchain/interface/block_chain.hpp \
+    include/bitcoin/blockchain/interface/block_fetcher.hpp \
+    include/bitcoin/blockchain/interface/full_chain.hpp \
+    include/bitcoin/blockchain/interface/simple_chain.hpp
+
+include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
+include_bitcoin_blockchain_pools_HEADERS = \
+    include/bitcoin/blockchain/pools/orphan_pool.hpp \
+    include/bitcoin/blockchain/pools/orphan_pool_manager.hpp \
+    include/bitcoin/blockchain/pools/transaction_pool.hpp \
+    include/bitcoin/blockchain/pools/transaction_pool_index.hpp
+
+include_bitcoin_blockchain_validationdir = ${includedir}/bitcoin/blockchain/validation
+include_bitcoin_blockchain_validation_HEADERS = \
+    include/bitcoin/blockchain/validation/block_validator.hpp \
+    include/bitcoin/blockchain/validation/validate_block.hpp \
+    include/bitcoin/blockchain/validation/validate_transaction.hpp
 
 
 # Custom make targets.
