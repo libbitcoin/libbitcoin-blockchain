@@ -157,7 +157,11 @@ public:
     virtual void fetch_transaction_position(const hash_digest& hash,
         transaction_index_fetch_handler handler) const;
 
-    /// fetch spend of an output point.
+    /// fetch the output of an outpoint (spent or otherwise).
+    virtual void fetch_output(const chain::output_point& outpoint,
+        output_fetch_handler handler) const;
+
+    /// fetch the inpoint (spender) of an outpoint.
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const;
 

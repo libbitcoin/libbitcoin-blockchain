@@ -208,7 +208,7 @@ bool block_chain::get_outpoint_transaction(hash_digest& out_hash,
     const output_point& outpoint) const
 {
     const auto spend = database_.spends.get(outpoint);
-    if (!spend.valid)
+    if (!spend.is_valid())
         return false;
 
     out_hash = std::move(spend.hash);
@@ -493,6 +493,31 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     fetch_serial(do_fetch);
 }
 
+void block_chain::fetch_output(const chain::output_point& outpoint,
+    output_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, {});
+        return;
+    }
+
+    // TODO: use of &outpoint ref is invalid if this is not serial execution.
+    const auto do_fetch = [this, &outpoint, handler](size_t slock)
+    {
+        const auto result = database_.transactions.get(outpoint.hash);
+
+        if (!result)
+            return finish_fetch(slock, handler, error::not_found,
+                chain::output{});
+
+        const auto output = result.output(outpoint.index);
+        const auto ec = output.is_valid() ? error::success : error::not_found;
+        return finish_fetch(slock, handler, ec, std::move(output));
+    };
+    fetch_serial(do_fetch);
+}
+
 void block_chain::fetch_spend(const chain::output_point& outpoint,
     spend_fetch_handler handler) const
 {
@@ -502,14 +527,13 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
         return;
     }
 
-    const auto do_fetch = [this, outpoint, handler](size_t slock)
+    // TODO: use of &outpoint ref is invalid if this is not serial execution.
+    const auto do_fetch = [this, &outpoint, handler](size_t slock)
     {
-        const auto spend = database_.spends.get(outpoint);
-        return spend.valid ?
-            finish_fetch(slock, handler, error::success,
-                chain::input_point{ std::move(spend.hash), spend.index }) :
-            finish_fetch(slock, handler, error::not_found,
-                chain::input_point{});
+        const auto point = database_.spends.get(outpoint);
+        return point.hash != null_hash ?
+            finish_fetch(slock, handler, error::success, point) :
+            finish_fetch(slock, handler, error::not_found, point);
     };
     fetch_serial(do_fetch);
 }

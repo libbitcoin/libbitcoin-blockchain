@@ -42,6 +42,7 @@ public:
     /// Object fetch handlers.
     typedef handle1<uint64_t> last_height_fetch_handler;
     typedef handle1<uint64_t> block_height_fetch_handler;
+    typedef handle1<chain::output> output_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::history_compact::list> history_fetch_handler;
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
@@ -115,6 +116,9 @@ public:
 
     virtual void fetch_transaction_position(const hash_digest& hash,
         transaction_index_fetch_handler handler) const = 0;
+
+    virtual void fetch_output(const chain::output_point& outpoint,
+        output_fetch_handler handler) const = 0;
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
