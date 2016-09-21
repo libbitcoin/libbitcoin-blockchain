@@ -78,7 +78,7 @@ void validate_transaction::validate(transaction_const_ptr tx,
 
     // BIP30 is presumed here to be always active WRT mempool transactions.
     // Check for a duplicate transaction identifier (hash) existence.
-    blockchain_.fetch_transaction_index(tx->hash(),
+    blockchain_.fetch_transaction_position(tx->hash(),
         std::bind(&validate_transaction::handle_duplicate,
             shared_from_this(), _1, _2, _3, tx, handler));
 }

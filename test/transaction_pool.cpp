@@ -88,6 +88,46 @@ public:
     {
     }
 
+    virtual void fetch_block_height(const hash_digest& hash,
+        block_height_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_last_height(last_height_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_transaction(const hash_digest& hash,
+        transaction_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_transaction_position(const hash_digest& hash,
+        transaction_index_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_output(const output_point& outpoint,
+        output_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_spend(const output_point& outpoint,
+        spend_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_history(const wallet::payment_address& address,
+        uint64_t limit, uint64_t from_height,
+        history_fetch_handler handler) const
+    {
+    }
+
+    virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
+        stealth_fetch_handler handler) const
+    {
+    }
+
     virtual void fetch_block_locator(const block::indexes& heights,
         block_locator_fetch_handler handle_fetch) const
     {
@@ -105,43 +145,8 @@ public:
     {
     }
 
-    virtual void fetch_block_height(const hash_digest& hash,
-        block_height_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_last_height(last_height_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_transaction(const hash_digest& hash,
-        transaction_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_transaction_index(const hash_digest& hash,
-        transaction_index_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_spend(const output_point& outpoint,
-        spend_fetch_handler handler) const
-    {
-    }
-
-    virtual void fetch_history(const wallet::payment_address& address,
-        uint64_t limit, uint64_t from_height,
-        history_fetch_handler handler) const
-    {
-    }
-
     // Filters.
     //-------------------------------------------------------------------------
-
-    virtual void fetch_stealth(const binary& prefix, uint64_t from_height,
-        stealth_fetch_handler handler) const
-    {
-    }
 
     virtual void filter_blocks(get_data_ptr message,
         result_handler handler) const

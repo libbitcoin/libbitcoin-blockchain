@@ -122,7 +122,7 @@ public:
     virtual void fetch_block(uint64_t height,
         block_fetch_handler handler) const;
 
-    /// fetch a block by height.
+    /// fetch a block by hash.
     virtual void fetch_block(const hash_digest& hash,
         block_fetch_handler handler) const;
 
@@ -142,6 +142,38 @@ public:
     virtual void fetch_merkle_block(const hash_digest& hash,
         transaction_hashes_fetch_handler handler) const;
 
+    /// fetch height of block by hash.
+    virtual void fetch_block_height(const hash_digest& hash,
+        block_height_fetch_handler handler) const;
+
+    /// fetch height of latest block.
+    virtual void fetch_last_height(last_height_fetch_handler handler) const;
+
+    /// fetch transaction by hash.
+    virtual void fetch_transaction(const hash_digest& hash,
+        transaction_fetch_handler handler) const;
+
+    /// fetch position and height within block of transaction by hash.
+    virtual void fetch_transaction_position(const hash_digest& hash,
+        transaction_index_fetch_handler handler) const;
+
+    /// fetch the output of an outpoint (spent or otherwise).
+    virtual void fetch_output(const chain::output_point& outpoint,
+        output_fetch_handler handler) const;
+
+    /// fetch the inpoint (spender) of an outpoint.
+    virtual void fetch_spend(const chain::output_point& outpoint,
+        spend_fetch_handler handler) const;
+
+    /// fetch outputs, values and spends for an address.
+    virtual void fetch_history(const wallet::payment_address& address,
+        uint64_t limit, uint64_t from_height,
+        history_fetch_handler handler) const;
+
+    /// fetch stealth results.
+    virtual void fetch_stealth(const binary& filter, uint64_t from_height,
+        stealth_fetch_handler handler) const;
+
     /// fetch a block locator relative to the current top and threshold.
     virtual void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const;
@@ -155,34 +187,6 @@ public:
     virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const;
-
-    /// fetch height of block by hash.
-    virtual void fetch_block_height(const hash_digest& hash,
-        block_height_fetch_handler handler) const;
-
-    /// fetch height of latest block.
-    virtual void fetch_last_height(last_height_fetch_handler handler) const;
-
-    /// fetch transaction by hash.
-    virtual void fetch_transaction(const hash_digest& hash,
-        transaction_fetch_handler handler) const;
-
-    /// fetch height and offset within block of transaction by hash.
-    virtual void fetch_transaction_index(const hash_digest& hash,
-        transaction_index_fetch_handler handler) const;
-
-    /// fetch spend of an output point.
-    virtual void fetch_spend(const chain::output_point& outpoint,
-        spend_fetch_handler handler) const;
-
-    /// fetch outputs, values and spends for an address.
-    virtual void fetch_history(const wallet::payment_address& address,
-        uint64_t limit, uint64_t from_height,
-        history_fetch_handler handler) const;
-
-    /// fetch stealth results.
-    virtual void fetch_stealth(const binary& filter, uint64_t from_height,
-        stealth_fetch_handler handler) const;
 
     // Filters.
     //-------------------------------------------------------------------------
