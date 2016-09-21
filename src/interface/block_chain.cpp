@@ -155,17 +155,20 @@ bool block_chain::get_next_gap(uint64_t& out_height,
 }
 
 bool block_chain::get_difficulty(hash_number& out_difficulty,
-    uint64_t height) const
+    uint64_t from_height) const
 {
     size_t top;
     if (!database_.blocks.top(top))
         return false;
 
     out_difficulty = 0;
-    for (uint64_t index = height; index <= top; ++index)
+    for (uint64_t height = from_height; height <= top; ++height)
     {
-        const auto bits = database_.blocks.get(index).header().bits;
-        out_difficulty += bc::chain::block::work(bits);
+        const auto result = database_.blocks.get(height);
+        if (!result)
+            return false;
+
+        out_difficulty += block::work(result.bits());
     }
 
     return true;
@@ -192,19 +195,49 @@ bool block_chain::get_height(uint64_t& out_height,
     return true;
 }
 
+bool block_chain::get_bits(uint32_t& out_bits, const uint64_t& height) const
+{
+    auto result = database_.blocks.get(height);
+    if (!result)
+        return false;
+
+    out_bits = result.bits();
+    return true;
+}
+
+bool block_chain::get_timestamp(uint32_t& out_timestamp,
+    const uint64_t& height) const
+{
+    auto result = database_.blocks.get(height);
+    if (!result)
+        return false;
+
+    out_timestamp = result.timestamp();
+    return true;
+}
+
+bool block_chain::get_version(uint32_t& out_version,
+    const uint64_t& height) const
+{
+    auto result = database_.blocks.get(height);
+    if (!result)
+        return false;
+
+    out_version = result.version();
+    return true;
+}
+
 bool block_chain::get_last_height(uint64_t& out_height) const
 {
     size_t top;
-    if (database_.blocks.top(top))
-    {
-        out_height = static_cast<uint64_t>(top);
-        return true;
-    }
+    if (!database_.blocks.top(top))
+        return false;
 
-    return false;
+    out_height = static_cast<uint64_t>(top);
+    return true;
 }
 
-bool block_chain::get_outpoint_transaction(hash_digest& out_hash,
+bool block_chain::get_transaction_hash(hash_digest& out_hash,
     const output_point& outpoint) const
 {
     const auto spend = database_.spends.get(outpoint);
@@ -212,6 +245,17 @@ bool block_chain::get_outpoint_transaction(hash_digest& out_hash,
         return false;
 
     out_hash = std::move(spend.hash);
+    return true;
+}
+
+bool block_chain::get_transaction_height(uint64_t& out_block_height,
+    const hash_digest& transaction_hash) const
+{
+    const auto result = database_.transactions.get(transaction_hash);
+    if (!result)
+        return false;
+
+    out_block_height = result.height();
     return true;
 }
 
@@ -225,17 +269,6 @@ transaction_ptr block_chain::get_transaction(uint64_t& out_block_height,
     out_block_height = result.height();
     return std::make_shared<message::transaction_message>(
         result.transaction());
-}
-
-bool block_chain::get_transaction_height(uint64_t& out_block_height,
-    const hash_digest& transaction_hash) const
-{
-    const auto result = database_.transactions.get(transaction_hash);
-    if (!result)
-        return false;
-
-    out_block_height = result.height();
-    return true;
 }
 
 // simple_chain setters (no locks, not thread safe).
