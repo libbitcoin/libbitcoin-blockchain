@@ -24,8 +24,8 @@
 #include <cstdint>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/validate_block.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

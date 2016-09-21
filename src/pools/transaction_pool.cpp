@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/transaction_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -25,9 +25,9 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate_transaction.hpp>
+#include <bitcoin/blockchain/validation/validate_transaction.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

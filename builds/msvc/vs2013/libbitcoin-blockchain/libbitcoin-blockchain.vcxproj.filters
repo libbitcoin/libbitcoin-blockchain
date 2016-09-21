@@ -16,84 +16,102 @@
     <Filter Include="src">
       <UniqueIdentifier>{df47e8ff-c5fb-45eb-bca4-9b7b04cd0637}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\bitcoin\blockchain\pools">
+      <UniqueIdentifier>{e94d7928-14b8-4577-b706-5653e1c1e4c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\interface">
+      <UniqueIdentifier>{1fa70dae-be90-4e08-9dc9-856a263f6f7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\interface">
+      <UniqueIdentifier>{0a8d30df-d14a-4167-976a-6ad58ce5c4f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\pools">
+      <UniqueIdentifier>{f7591f62-8682-4e2d-b096-79e4687a8d4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\validation">
+      <UniqueIdentifier>{b4b99886-2fa4-457c-aa14-53d02ce9fe33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\validation">
+      <UniqueIdentifier>{55b5a249-537b-47da-a345-a4e49c4e1ea2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\simple_chain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_transaction.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate_block.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_fetcher.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool_manager.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool_index.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_index.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp">
+      <Filter>include\bitcoin\blockchain\validation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_transaction.hpp">
+      <Filter>include\bitcoin\blockchain\validation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\block_validator.hpp">
+      <Filter>include\bitcoin\blockchain\validation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\full_chain.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\simple_chain.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_fetcher.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_validator.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\full_chain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool_manager.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
+      <Filter>include\bitcoin</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\transaction_pool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\validate_transaction.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\validate_block.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\block_fetcher.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\orphan_pool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\transaction_pool_index.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\block_validator.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp">
+      <Filter>src\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\block_chain.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\src\interface\block_fetcher.cpp">
+      <Filter>src\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\orphan_pool_manager.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\src\pools\transaction_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\transaction_pool_index.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\orphan_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\orphan_pool_manager.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp">
+      <Filter>src\validation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validation\validate_transaction.cpp">
+      <Filter>src\validation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validation\block_validator.cpp">
+      <Filter>src\validation</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

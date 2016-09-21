@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/transaction_pool_index.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
 
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

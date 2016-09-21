@@ -25,11 +25,11 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
-#include <bitcoin/blockchain/orphan_pool.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
-#include <bitcoin/blockchain/validate_block.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

@@ -26,10 +26,10 @@
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/transaction_pool_index.hpp>
-#include <bitcoin/blockchain/validate_transaction.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
+#include <bitcoin/blockchain/validation/validate_transaction.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

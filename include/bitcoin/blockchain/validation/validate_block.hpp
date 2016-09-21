@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

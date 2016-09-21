@@ -27,7 +27,7 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

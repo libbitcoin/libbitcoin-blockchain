@@ -20,19 +20,19 @@
 #include <bitcoin/consensus.hpp>
 #endif
 
-#include <bitcoin/blockchain/block_chain.hpp>
-#include <bitcoin/blockchain/block_fetcher.hpp>
-#include <bitcoin/blockchain/block_validator.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
-#include <bitcoin/blockchain/orphan_pool.hpp>
-#include <bitcoin/blockchain/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
-#include <bitcoin/blockchain/transaction_pool.hpp>
-#include <bitcoin/blockchain/transaction_pool_index.hpp>
-#include <bitcoin/blockchain/validate_block.hpp>
-#include <bitcoin/blockchain/validate_transaction.hpp>
 #include <bitcoin/blockchain/version.hpp>
+#include <bitcoin/blockchain/interface/block_chain.hpp>
+#include <bitcoin/blockchain/interface/block_fetcher.hpp>
+#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
+#include <bitcoin/blockchain/validation/block_validator.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validation/validate_transaction.hpp>
 
 #endif

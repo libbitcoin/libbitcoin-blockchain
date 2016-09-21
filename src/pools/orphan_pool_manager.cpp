@@ -17,18 +17,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/orphan_pool_manager.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <numeric>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/orphan_pool.hpp>
-#include <bitcoin/blockchain/orphan_pool_manager.hpp>
+#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/simple_chain.hpp>
-#include <bitcoin/blockchain/validate_block.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
