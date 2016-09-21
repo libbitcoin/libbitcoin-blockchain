@@ -64,11 +64,10 @@ bool validate_block::stopped() const
 // There is no need to call a second time for connect after accept.
 void validate_block::reset(size_t height, result_handler handler)
 {
-    //// get_block_versions(history_, height, chain_state_.sample_size)
-
-    // TODO: populate chain state and block state.
-    //// median_time_past(median_time_past, height);
-    //// work_required(work_required, height, current_block_.header.timestamp, testnet_);
+    //// get_block_versions(height, chain_state_.sample_size)
+    //// median_time_past(time, height);
+    //// work_required(work, height);
+    //// work_required_testnet(work, height, candidate_block.timestamp);
 
     // This has a side effect on subsequent calls!
     chain_state_.set_context(height, history_);
