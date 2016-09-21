@@ -20,8 +20,6 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 #define LIBBITCOIN_BLOCKCHAIN_DEFINE_HPP
 
-#include <cstdint>
-#include <vector>
 #include <bitcoin/bitcoin.hpp>
 
 // Now we use the generic helper definitions in libbitcoin to

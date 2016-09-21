@@ -25,8 +25,8 @@
 #include <bitcoin/blockchain/block_validator.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/full_chain.hpp>
-#include <bitcoin/blockchain/organizer.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
+#include <bitcoin/blockchain/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>

@@ -21,9 +21,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizer.hpp">
-      <Filter>include\bitcoin\blockchain</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\transaction_pool.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -63,11 +60,11 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\orphan_pool_manager.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\organizer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\transaction_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -93,6 +90,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\block_chain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\orphan_pool_manager.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

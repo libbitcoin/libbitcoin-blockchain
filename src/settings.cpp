@@ -19,12 +19,8 @@
  */
 #include <bitcoin/blockchain/settings.hpp>
 
-#include <boost/filesystem.hpp>
-
 namespace libbitcoin {
 namespace blockchain {
-
-using namespace boost::filesystem;
 
 settings::settings()
   : block_pool_capacity(50),

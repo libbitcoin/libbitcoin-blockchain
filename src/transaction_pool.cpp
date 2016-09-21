@@ -24,8 +24,8 @@
 #include <memory>
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate_transaction.hpp>
 
@@ -61,7 +61,7 @@ void transaction_pool::start()
     index_.start();
     subscriber_->start();
 
-    // Subscribe to blockchain (organizer) reorg notifications.
+    // Subscribe to blockchain (orphan_pool_manager) reorg notifications.
     blockchain_.subscribe_reorganize(
         std::bind(&transaction_pool::handle_reorganized,
             this, _1, _2, _3, _4));

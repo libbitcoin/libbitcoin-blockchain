@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/orphan_pool_manager.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -25,7 +25,7 @@
 #include <numeric>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/orphan_pool.hpp>
-#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/validate_block.hpp>
@@ -36,9 +36,9 @@ namespace blockchain {
 using namespace bc::chain;
 using namespace bc::config;
 
-#define NAME "organizer"
+#define NAME "orphan_pool_manager"
 
-organizer::organizer(threadpool& pool, simple_chain& chain,
+orphan_pool_manager::orphan_pool_manager(threadpool& pool, simple_chain& chain,
     const settings& settings)
   : chain_(chain),
     validator_(pool, settings.use_testnet_rules, checkpoints_, chain_),
@@ -53,13 +53,13 @@ organizer::organizer(threadpool& pool, simple_chain& chain,
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-void organizer::start()
+void orphan_pool_manager::start()
 {
     stopped_ = false;
     subscriber_->start();
 }
 
-void organizer::stop()
+void orphan_pool_manager::stop()
 {
     stopped_ = true;
     validator_.stop();
@@ -67,7 +67,7 @@ void organizer::stop()
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 }
 
-bool organizer::stopped() const
+bool orphan_pool_manager::stopped() const
 {
     return stopped_;
 }
@@ -76,7 +76,7 @@ bool organizer::stopped() const
 //-----------------------------------------------------------------------------
 
 // This verifies the block at new_chain[orphan_index]
-code organizer::verify(size_t fork_height,
+code orphan_pool_manager::verify(size_t fork_height,
     const block_const_ptr_list& new_chain, size_t orphan_index) const
 {
     if (stopped())
@@ -104,7 +104,8 @@ code organizer::verify(size_t fork_height,
 }
 
 // Get the blockchain height of the next block (bottom of orphan chain).
-size_t organizer::compute_height(size_t fork_height, size_t orphan_index)
+size_t orphan_pool_manager::compute_height(size_t fork_height,
+    size_t orphan_index)
 {
     // The height of the blockchain fork point plus zero-based orphan index.
     BITCOIN_ASSERT(fork_height <= max_size_t - orphan_index);
@@ -119,7 +120,7 @@ size_t organizer::compute_height(size_t fork_height, size_t orphan_index)
 //-----------------------------------------------------------------------------
 
 // This is called on every full_chain_impl::do_store() call.
-code organizer::reorganize(block_const_ptr block)
+code orphan_pool_manager::reorganize(block_const_ptr block)
 {
     if (!orphan_pool_.add(block))
         return error::duplicate;
@@ -136,7 +137,7 @@ code organizer::reorganize(block_const_ptr block)
     return error::success;
 }
 
-void organizer::process(block_const_ptr block)
+void orphan_pool_manager::process(block_const_ptr block)
 {
     // Trace the chain in the orphan pool
     auto new_chain = orphan_pool_.trace(block);
@@ -158,8 +159,8 @@ void organizer::process(block_const_ptr block)
     block->metadata.processed_orphan = true;
 }
 
-void organizer::chain_work(hash_number& work, block_const_ptr_list& new_chain,
-    size_t fork_height)
+void orphan_pool_manager::chain_work(hash_number& work,
+    block_const_ptr_list& new_chain, size_t fork_height)
 {
     work = 0;
 
@@ -192,7 +193,7 @@ void organizer::chain_work(hash_number& work, block_const_ptr_list& new_chain,
     }
 }
 
-void organizer::replace_chain(block_const_ptr_list& new_chain,
+void orphan_pool_manager::replace_chain(block_const_ptr_list& new_chain,
     size_t fork_height)
 {
     // Any invalid blocks are removed from new_chain, remaining work returned.
@@ -269,7 +270,7 @@ void organizer::replace_chain(block_const_ptr_list& new_chain,
     notify_reorganize(fork_height, new_chain, old_chain);
 }
 
-void organizer::clip_orphans(block_const_ptr_list& new_chain,
+void orphan_pool_manager::clip_orphans(block_const_ptr_list& new_chain,
     size_t orphan_index, const code& reason) 
 {
     BITCOIN_ASSERT(orphan_index < new_chain.size());
@@ -288,7 +289,7 @@ void organizer::clip_orphans(block_const_ptr_list& new_chain,
     new_chain.erase(start, new_chain.end());
 }
 
-void organizer::remove_processed(block_const_ptr block)
+void orphan_pool_manager::remove_processed(block_const_ptr block)
 {
     auto it = std::find(process_queue_.begin(), process_queue_.end(), block);
 
@@ -296,7 +297,7 @@ void organizer::remove_processed(block_const_ptr block)
         process_queue_.erase(it);
 }
 
-void organizer::notify_reorganize(size_t fork_height,
+void orphan_pool_manager::notify_reorganize(size_t fork_height,
     const block_const_ptr_list& new_chain,
     const block_const_ptr_list& old_chain)
 {
@@ -306,12 +307,12 @@ void organizer::notify_reorganize(size_t fork_height,
 // Utilities.
 //-----------------------------------------------------------------------------
 
-void organizer::filter_orphans(get_data_ptr message) const
+void orphan_pool_manager::filter_orphans(get_data_ptr message) const
 {
     orphan_pool_.filter(message);
 }
 
-void organizer::subscribe_reorganize(reorganize_handler handler)
+void orphan_pool_manager::subscribe_reorganize(reorganize_handler handler)
 {
     subscriber_->subscribe(handler, error::service_stopped, 0, {}, {});
 }

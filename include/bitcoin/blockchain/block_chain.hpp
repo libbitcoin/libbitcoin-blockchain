@@ -26,9 +26,9 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
-#include <bitcoin/blockchain/full_chain.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/organizer.hpp>
+#include <bitcoin/blockchain/full_chain.hpp>
+#include <bitcoin/blockchain/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/simple_chain.hpp>
 #include <bitcoin/blockchain/transaction_pool.hpp>
@@ -248,7 +248,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-    organizer organizer_;
+    orphan_pool_manager orphan_pool_manager_;
     blockchain::transaction_pool transaction_pool_;
 
     // This is protected by mutex.
