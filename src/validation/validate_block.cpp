@@ -34,6 +34,8 @@ using namespace std::placeholders;
 
 #define NAME "validate_block"
 
+static constexpr size_t ms_per_second = 1000;
+
 validate_block::validate_block(threadpool& pool, bool testnet,
     const checkpoints& checkpoints, const simple_chain& chain)
   : chain_state_(testnet, checkpoints),
@@ -119,7 +121,6 @@ void validate_block::connect(block_const_ptr block,
         for (uint32_t index = 0; index < tx.inputs.size(); ++index)
             dispatch_.concurrent(&validate_block::connect_input,
                 this, std::ref(tx), index, join_handler);
-            ////connect_input(tx, index, join_handler);
 }
 
 void validate_block::connect_input(const transaction& tx, uint32_t input_index,
@@ -131,6 +132,9 @@ void validate_block::connect_input(const transaction& tx, uint32_t input_index,
         return;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: incorporate libbitcoin-consensus option here.
+    ///////////////////////////////////////////////////////////////////////////
     handler(tx.connect_input(chain_state_, input_index));
 }
 
@@ -141,11 +145,11 @@ void validate_block::handle_connect(const code& ec, block_const_ptr block,
     const auto elapsed = std::chrono::duration_cast<asio::milliseconds>(delta);
     const auto ms_per_block = static_cast<float>(elapsed.count());
     const auto ms_per_input = ms_per_block / block->total_inputs();
-    const auto seconds_per_block = ms_per_block / 1000;
-    const auto accepted = ec ? "aborted" : "accepted";
+    const auto seconds_per_block = ms_per_block / ms_per_second;
 
     log::info(LOG_BLOCKCHAIN)
-        << "Block [" << chain_state_.next_height() << "] " << accepted << " ("
+        << "Block [" << chain_state_.next_height() << "] "
+        << (ec ? "aborted" : "accepted") << " ("
         << block->transactions.size() << ") txs in ("
         << seconds_per_block << ") secs or ("
         << ms_per_input << ") ms/input";
