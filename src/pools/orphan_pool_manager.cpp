@@ -189,7 +189,7 @@ void orphan_pool_manager::chain_work(hash_number& work,
         }
 
         const auto bits = new_chain[index]->header.bits;
-        work += chain::block::work(bits);
+        work += block::difficulty(bits);
     }
 }
 

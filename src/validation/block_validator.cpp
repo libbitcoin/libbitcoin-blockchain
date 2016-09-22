@@ -109,10 +109,13 @@ bool block_validator::median_time_past(uint64_t out_time_past,
     return true;
 }
 
+
+
 // work_required
 //-----------------------------------------------------------------------------
 
 // Requires [top].bits (mainnet).
+// Requires [top].timestamp AND [top - 2015].timestamp.
 bool block_validator::work_required(uint32_t out_work, size_t height,
     uint32_t timestamp, bool is_testnet) const
 {
@@ -122,30 +125,16 @@ bool block_validator::work_required(uint32_t out_work, size_t height,
     if (block::is_retarget_height(height))
     {
         // Get the total time spanning the last 2016 blocks.
-        uint64_t time_span;
-        if (!retarget_time_span(time_span, height))
+        uint64_t timespan;
+        if (!retarget_timespan(timespan, height))
             return false;
 
-        // Constrain the time between an upper and lower bound.
-        const auto constrained = bc::range_constrain(time_span,
-            target_timespan_seconds / retargeting_factor,
-            target_timespan_seconds * retargeting_factor);
-
+        // Get the preceeding block's bits.
         uint32_t bits;
         if (!fetch_bits(bits, height - 1))
             return false;
 
-        hash_number maximum;
-        hash_number retarget;
-        if (!retarget.set_compact(bits) || !maximum.set_compact(max_work_bits))
-            return false;
-
-        retarget *= constrained;
-        retarget /= target_timespan_seconds;
-        if (retarget > maximum)
-            retarget = maximum;
-
-        out_work = retarget.compact();
+        out_work = block::work_required(timespan, bits);
         return true;
     }
 
@@ -189,7 +178,7 @@ bool block_validator::work_required_testnet(uint32_t out_work, size_t height,
 }
 
 // Requires [top].timestamp AND [top - 2015].timestamp.
-bool block_validator::retarget_time_span(uint64_t& out_time_span,
+bool block_validator::retarget_timespan(uint64_t& out_timespan,
     size_t height) const
 {
     // Zero is precluded and the first retarget height above zero is 2016.
@@ -202,7 +191,7 @@ bool block_validator::retarget_time_span(uint64_t& out_time_span,
         !fetch_timestamp(time_lo, height - retargeting_interval))
         return false;
 
-    out_time_span = time_hi - time_lo;
+    out_timespan = time_hi - time_lo;
     return true;
 }
 

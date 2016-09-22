@@ -168,7 +168,7 @@ bool block_chain::get_difficulty(hash_number& out_difficulty,
         if (!result)
             return false;
 
-        out_difficulty += block::work(result.bits());
+        out_difficulty += block::difficulty(result.bits());
     }
 
     return true;

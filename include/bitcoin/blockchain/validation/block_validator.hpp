@@ -44,7 +44,7 @@ public:
 
 protected:
     bool median_time_past(uint64_t out_time_past, size_t height) const;
-    bool retarget_time_span(uint64_t& out_time_span, size_t height) const;
+    bool retarget_timespan(uint64_t& out_timespan, size_t height) const;
     bool work_required(uint32_t out_work_required, size_t height,
         uint32_t timestamp, bool is_testnet) const;
     bool work_required_testnet(uint32_t out_work_required, size_t height,
