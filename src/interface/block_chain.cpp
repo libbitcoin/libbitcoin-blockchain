@@ -293,7 +293,7 @@ bool block_chain::insert(block_const_ptr block, uint64_t height)
 }
 
 // Append the block to the top of the chain, height is validated.
-bool block_chain::push(block_const_ptr block, size_t height)
+bool block_chain::push(block_const_ptr block, uint64_t height)
 {
     return database_.push(*block, height);
 }
