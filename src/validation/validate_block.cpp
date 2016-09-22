@@ -135,7 +135,7 @@ void validate_block::connect_input(const transaction& tx, uint32_t input_index,
     ///////////////////////////////////////////////////////////////////////////
     // TODO: incorporate libbitcoin-consensus option here.
     ///////////////////////////////////////////////////////////////////////////
-    handler(tx.connect_input(chain_state_, input_index));
+    handler(error::success /*tx.connect_input(chain_state_, input_index)*/);
 }
 
 void validate_block::handle_connect(const code& ec, block_const_ptr block,
