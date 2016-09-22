@@ -29,6 +29,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/full_chain.hpp>
 #include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -78,6 +79,9 @@ public:
 
     /// Return the next chain gap at or after the specified start height.
     bool get_next_gap(uint64_t& out_height, uint64_t start_height) const;
+
+    /// Get a determination of whether the block hash exists in the store.
+    bool get_exists(const hash_digest& block_hash) const;
 
     /// Get the difficulty of the branch starting at the given height.
     bool get_difficulty(hash_number& out_difficulty, uint64_t height) const;
@@ -257,8 +261,9 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-    orphan_pool_manager orphan_pool_manager_;
-    blockchain::transaction_pool transaction_pool_;
+    orphan_pool orphan_pool_;
+    orphan_pool_manager orphan_manager_;
+    transaction_pool transaction_pool_;
 
     // This is protected by mutex.
     database::data_base database_;

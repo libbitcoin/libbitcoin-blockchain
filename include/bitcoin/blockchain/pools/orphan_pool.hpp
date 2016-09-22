@@ -47,11 +47,8 @@ public:
     /// Remove from the message all vectors that match orphans.
     void filter(get_data_ptr message) const;
 
-    /// Get the longest connected chain of orphans after 'end'.
-    block_const_ptr_list trace(block_const_ptr end) const;
-
-    /// Get the set of unprocessed orphans.
-    block_const_ptr_list unprocessed() const;
+    /// Get the longest connected chain of orphans to block.
+    block_const_ptr_list trace(block_const_ptr block) const;
 
 private:
     typedef boost::circular_buffer<block_const_ptr> buffer;

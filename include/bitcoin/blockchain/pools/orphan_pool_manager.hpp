@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -39,61 +40,58 @@ namespace blockchain {
 class BCB_API orphan_pool_manager
 {
 public:
+    typedef block_const_ptr_list list;
+
     typedef handle0 result_handler;
     typedef std::shared_ptr<orphan_pool_manager> ptr;
     typedef full_chain::reorganize_handler reorganize_handler;
-
-    typedef resubscriber<const code&, size_t, const block_const_ptr_list&,
-        const block_const_ptr_list&> reorganize_subscriber;
+    typedef resubscriber<const code&, size_t, const list&, const list&>
+        reorganize_subscriber;
 
     /// Construct an instance.
-    orphan_pool_manager(threadpool& pool, simple_chain& chain,
-        const settings& settings);
+    orphan_pool_manager(threadpool& thread_pool, simple_chain& chain,
+        orphan_pool& pool, const settings& settings);
 
     virtual void start();
     virtual void stop();
 
-    virtual code reorganize(block_const_ptr block);
-    virtual void filter_orphans(get_data_ptr message) const;
+    virtual code organize(block_const_ptr block);
     virtual void subscribe_reorganize(reorganize_handler handler);
 
 protected:
     virtual bool stopped() const;
 
 private:
-    static size_t compute_height(size_t fork_height, size_t orphan_index);
+    static hash_number fork_difficulty(list& fork);
+    static size_t to_height(size_t fork_height, size_t start_index);
+    static bool validated(block_const_ptr block, size_t height);
+    static void remove(list& fork, block_const_ptr block);
+    static void set_result(block_const_ptr block, const code& ec);
+    static void set_height(block_const_ptr block,
+        size_t height=chain::block::metadata::orphan_height);
+    
+    code verify(block_const_ptr block, size_t height);
+    code reorganize(list& fork, size_t fork_height);
+    void prune(list& fork, size_t fork_height);
+    void purge(list& fork, size_t start_index, const code& reason);
+    void notify_reorganize(size_t fork_height, const list& fork,
+        const list& original);
 
-    // const
-    code verify(size_t fork_height, const block_const_ptr_list& new_chain,
-        size_t orphan_index) const;
-    bool strict(size_t fork_height) const;
-
-    // non-const
-    void process(block_const_ptr block);
-    void chain_work(hash_number& work, block_const_ptr_list& new_chain,
-        size_t fork_height);
-    void replace_chain(block_const_ptr_list& new_chain, size_t fork_height);
-    void clip_orphans(block_const_ptr_list& new_chain, size_t orphan_index,
-        const code& reason);
-    void remove_processed(block_const_ptr block);
-
-    /// This method is thread safe.
-    void notify_reorganize(size_t fork_height,
-        const block_const_ptr_list& new_chain,
-        const block_const_ptr_list& old_chain);
-
+    void handle_connect(const code& ec, block_const_ptr block,
+        size_t height, std::promise<code>& complete);
 
     // These are protected by the caller protecting organize().
     simple_chain& chain_;
-    block_const_ptr_list process_queue_;
+
+    // TODO: make threadsafe.
     validate_block validator_;
 
     // These are thread safe.
     const bool testnet_rules_;
     const config::checkpoint::list checkpoints_;
-    std::atomic<bool> stopped_;
-    orphan_pool orphan_pool_;
     reorganize_subscriber::ptr subscriber_;
+    std::atomic<bool> stopped_;
+    orphan_pool& pool_;
 };
 
 } // namespace blockchain

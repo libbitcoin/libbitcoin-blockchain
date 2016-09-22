@@ -62,8 +62,11 @@ bool validate_block::stopped() const
 
 // Must call this to update chain state before calling accept or connect.
 // There is no need to call a second time for connect after accept.
-void validate_block::reset(size_t height, result_handler handler)
+code validate_block::reset(size_t height)
 {
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: populate chain state.
+    ///////////////////////////////////////////////////////////////////////////
     //// get_block_versions(height, chain_state_.sample_size)
     //// median_time_past(time, height);
     //// work_required(work, height);
@@ -71,25 +74,22 @@ void validate_block::reset(size_t height, result_handler handler)
 
     // This has a side effect on subsequent calls!
     chain_state_.set_context(height, history_);
-
-    // TODO: modify query to return code on failure, including height mismatch.
-    handler(error::success);
+    return error::success;
 }
 
 // Validation sequence (thread safe).
 //-----------------------------------------------------------------------------
 
 // These checks are context free (no reset).
-void validate_block::check(block_const_ptr block, result_handler handler) const
+code validate_block::check(block_const_ptr block) const
 {
-    handler(block->check());
+    return block->check();
 }
 
 // These checks require height or other chain context (reset).
-void validate_block::accept(block_const_ptr block,
-    result_handler handler) const
+code validate_block::accept(block_const_ptr block) const
 {
-    handler(block->accept(chain_state_));
+    return block->accept(chain_state_);
 }
 
 // These checks require output traversal and validation (reset).
@@ -117,9 +117,9 @@ void validate_block::connect(block_const_ptr block,
     // Skip the first transaction in order to avoid the coinbase.
     for (const auto& tx: block->transactions)
         for (uint32_t index = 0; index < tx.inputs.size(); ++index)
-            ////dispatch_.concurrent(&validate_block::connect_input,
-            ////    this, std::ref(tx), index, join_handler);
-                connect_input(tx, index, join_handler);
+            dispatch_.concurrent(&validate_block::connect_input,
+                this, std::ref(tx), index, join_handler);
+            ////connect_input(tx, index, join_handler);
 }
 
 void validate_block::connect_input(const transaction& tx, uint32_t input_index,

@@ -111,12 +111,14 @@ inline const hash_digest& pre(block_const_ptr_list& list)
     return list.front()->header.previous_block_hash;
 }
 
-
 inline void enqueue(block_const_ptr_list& list, block_const_ptr block)
 {
     list.insert(list.begin(), block);
 }
 
+///////////////////////////////////////////////////////////////////////////
+// TODO: obtain longest possible chain containing the block.
+///////////////////////////////////////////////////////////////////////////
 block_const_ptr_list orphan_pool::trace(block_const_ptr end) const
 {
     block_const_ptr_list trace;
@@ -135,27 +137,6 @@ block_const_ptr_list orphan_pool::trace(block_const_ptr end) const
 
     trace.shrink_to_fit();
     return trace;
-}
-
-block_const_ptr_list orphan_pool::unprocessed() const
-{
-    block_const_ptr_list unprocessed;
-    unprocessed.reserve(buffer_.size());
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    mutex_.lock_shared();
-
-    // Earlier blocks enter pool first, so reversal helps avoid fragmentation.
-    for (auto it = buffer_.rbegin(); it != buffer_.rend(); ++it)
-        if (!(*it)->metadata.processed_orphan)
-            unprocessed.push_back(*it);
-
-    mutex_.unlock_shared();
-    ///////////////////////////////////////////////////////////////////////////
-
-    unprocessed.shrink_to_fit();
-    return unprocessed;
 }
 
 // private

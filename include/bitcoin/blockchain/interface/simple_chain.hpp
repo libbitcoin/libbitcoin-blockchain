@@ -45,6 +45,9 @@ public:
     virtual bool get_next_gap(uint64_t& out_height,
         uint64_t start_height) const = 0;
 
+    /// Get a determination of whether the block hash exists in the store.
+    virtual bool get_exists(const hash_digest& block_hash) const = 0;
+
     /// Get the difficulty of the branch starting at the given height.
     virtual bool get_difficulty(hash_number& out_difficulty,
         uint64_t from_height) const = 0;
