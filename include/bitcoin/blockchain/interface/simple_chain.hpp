@@ -45,6 +45,9 @@ public:
     virtual bool get_next_gap(uint64_t& out_height,
         uint64_t start_height) const = 0;
 
+    /// Get a determination of whether the block hash exists in the store.
+    virtual bool get_exists(const hash_digest& block_hash) const = 0;
+
     /// Get the difficulty of the branch starting at the given height.
     virtual bool get_difficulty(hash_number& out_difficulty,
         uint64_t from_height) const = 0;
@@ -87,11 +90,11 @@ public:
     // Setters.
     // ------------------------------------------------------------------------
 
-    /// Import a block for the given height.
-    virtual bool import(block_const_ptr block, uint64_t height) = 0;
+    /// Insert a block to the blockchain, height is checked for existence.
+    virtual bool insert(block_const_ptr block, uint64_t height) = 0;
 
-    /// Append the block to the top of the chain.
-    virtual bool push(block_const_ptr block) = 0;
+    /// Append the block to the top of the chain, height is validated.
+    virtual bool push(block_const_ptr block, uint64_t height) = 0;
 
     /// Remove blocks at or above the given height, returning them in order.
     virtual bool pop_from(block_const_ptr_list& out_blocks,

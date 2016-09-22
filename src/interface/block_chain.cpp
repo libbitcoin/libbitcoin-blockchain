@@ -28,6 +28,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/interface/block_fetcher.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool.hpp>
+#include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -43,7 +45,8 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
-    orphan_pool_manager_(pool, *this, chain_settings),
+    orphan_pool_(chain_settings.block_pool_capacity),
+    orphan_manager_(pool, *this, orphan_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -88,7 +91,7 @@ bool block_chain::start()
         return false;
 
     stopped_ = false;
-    orphan_pool_manager_.start();
+    orphan_manager_.start();
     transaction_pool_.start();
     return true;
 }
@@ -101,7 +104,7 @@ bool block_chain::stop()
     unique_lock lock(mutex_);
 
     stopped_ = true;
-    orphan_pool_manager_.stop();
+    orphan_manager_.stop();
     transaction_pool_.stop();
     return database_.stop();
     ///////////////////////////////////////////////////////////////////////////
@@ -154,6 +157,11 @@ bool block_chain::get_next_gap(uint64_t& out_height,
     return true;
 }
 
+bool block_chain::get_exists(const hash_digest& block_hash) const
+{
+    return database_.blocks.get(block_hash);
+}
+
 bool block_chain::get_difficulty(hash_number& out_difficulty,
     uint64_t from_height) const
 {
@@ -168,7 +176,7 @@ bool block_chain::get_difficulty(hash_number& out_difficulty,
         if (!result)
             return false;
 
-        out_difficulty += block::work(result.bits());
+        out_difficulty += block::difficulty(result.bits());
     }
 
     return true;
@@ -275,20 +283,19 @@ transaction_ptr block_chain::get_transaction(uint64_t& out_block_height,
 // ----------------------------------------------------------------------------
 
 // This is safe to call concurrently (but with no other methods).
-bool block_chain::import(block_const_ptr block, uint64_t height)
+bool block_chain::insert(block_const_ptr block, uint64_t height)
 {
     if (stopped())
         return false;
 
     // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-    database_.push(*block, height);
-    return true;
+    return database_.insert(*block, height);
 }
 
-bool block_chain::push(block_const_ptr block)
+// Append the block to the top of the chain, height is validated.
+bool block_chain::push(block_const_ptr block, uint64_t height)
 {
-    database_.push(*block);
-    return true;
+    return database_.push(*block, height);
 }
 
 bool block_chain::pop_from(block_const_ptr_list& out_blocks,
@@ -856,7 +863,7 @@ void block_chain::filter_transactions(get_data_ptr message,
 void block_chain::filter_orphans(get_data_ptr message,
     result_handler handler) const
 {
-    orphan_pool_manager_.filter_orphans(message);
+    orphan_pool_.filter(message);
     handler(error::success);
 }
 
@@ -872,7 +879,7 @@ void block_chain::filter_floaters(get_data_ptr message,
 void block_chain::subscribe_reorganize(reorganize_handler handler)
 {
     // Pass this through to the manager, which issues the notifications.
-    orphan_pool_manager_.subscribe_reorganize(handler);
+    orphan_manager_.subscribe_reorganize(handler);
 }
 
 void block_chain::subscribe_transaction(transaction_handler handler)
@@ -915,11 +922,7 @@ void block_chain::do_store(block_const_ptr block, block_store_handler handler)
         handler(database_.end_write() ? error::operation_failed :
             error::operation_failed, 0);
 
-    else if (database_.blocks.get(block->hash()))
-        handler(database_.end_write() ? error::duplicate :
-            error::operation_failed, 0);
-
-    else if ((ec = orphan_pool_manager_.reorganize(block)))
+    else if ((ec = orphan_manager_.organize(block)))
         handler(database_.end_write() ? ec : error::operation_failed, 0);
 
     else

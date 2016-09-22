@@ -45,12 +45,12 @@ public:
     void stop();
 
     /// These are thread safe as long as reset is not called concurrently.
-    void check(block_const_ptr block, result_handler handler) const;
-    void accept(block_const_ptr block, result_handler handler) const;
+    code check(block_const_ptr block) const;
+    code accept(block_const_ptr block) const;
     void connect(block_const_ptr block, result_handler handler) const;
 
     /// Call once only before invoking accept/connect.
-    void reset(size_t height, result_handler handler);
+    code reset(size_t height);
 
 protected:
     bool stopped() const;
