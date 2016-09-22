@@ -77,7 +77,7 @@ void orphan_pool::remove(block_const_ptr block)
         return;
     }
 
-    const auto old_size = buffer_.size();
+    ////const auto old_size = buffer_.size();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
     buffer_.erase(it);
@@ -94,16 +94,26 @@ void orphan_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    shared_lock lock(mutex_);
-
     for (auto it = inventories.begin(); it != inventories.end();)
-        if (it->is_block_type() && exists(it->hash))
+    {
+        if (!it->is_block_type())
+        {
+            ++it;
+            continue;
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        mutex_.lock_shared();
+        const auto found = exists(it->hash);
+        mutex_.unlock_shared();
+        ///////////////////////////////////////////////////////////////////////
+
+        if (found)
             it = inventories.erase(it);
         else
             ++it;
-    ///////////////////////////////////////////////////////////////////////////
+    }
 }
 
 inline const hash_digest& pre(block_const_ptr_list& list)
@@ -119,15 +129,16 @@ inline void enqueue(block_const_ptr_list& list, block_const_ptr block)
 ///////////////////////////////////////////////////////////////////////////
 // TODO: obtain longest possible chain containing the block.
 ///////////////////////////////////////////////////////////////////////////
-block_const_ptr_list orphan_pool::trace(block_const_ptr end) const
+block_const_ptr_list orphan_pool::trace(block_const_ptr block) const
 {
     block_const_ptr_list trace;
-    trace.reserve(buffer_.size());
-    enqueue(trace, end);
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
+
+    trace.reserve(buffer_.size());
+    enqueue(trace, block);
 
     for (auto it = find(pre(trace)); it != buffer_.end(); it = find(pre(trace)))
         enqueue(trace, *it);
