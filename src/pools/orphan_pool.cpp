@@ -26,8 +26,9 @@ namespace libbitcoin {
 namespace blockchain {
 
 orphan_pool::orphan_pool(size_t capacity)
-  : buffer_(capacity)
+  : capacity_(capacity == 0 ? 1 : capacity)
 {
+    buffer_.reserve(capacity_);
 }
 
 // There is no validation whatsoever of the block up to this pont.
@@ -47,9 +48,14 @@ bool orphan_pool::add(block_const_ptr block)
         return false;
     }
 
-    const auto old_size = buffer_.size();
+    const auto size = buffer_.size();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
+
+    // Remove the front element, a circular buffer might be more efficient.
+    if (size == capacity_)
+        buffer_.erase(buffer_.begin());
+
     buffer_.push_back(block);
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
@@ -57,7 +63,7 @@ bool orphan_pool::add(block_const_ptr block)
     ////log::debug(LOG_BLOCKCHAIN)
     ////    << "Orphan pool added block [" << encode_hash(block->hash())
     ////    << "] previous [" << encode_hash(header.previous_block_hash)
-    ////    << "] old size (" << old_size << ").";
+    ////    << "] old size (" << size << ").";
 
     return true;
 }
@@ -109,10 +115,7 @@ void orphan_pool::filter(get_data_ptr message) const
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
-        if (found)
-            it = inventories.erase(it);
-        else
-            ++it;
+        it = found ? inventories.erase(it) : it + 1;
     }
 }
 

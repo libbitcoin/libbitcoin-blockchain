@@ -22,7 +22,7 @@
 
 #include <cstddef>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -51,7 +51,7 @@ public:
     block_const_ptr_list trace(block_const_ptr block) const;
 
 private:
-    typedef boost::circular_buffer<block_const_ptr> buffer;
+    typedef std::vector<block_const_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
 
     bool exists(const hash_digest& hash) const;
@@ -61,6 +61,7 @@ private:
     // The buffer is protected by mutex.
     buffer buffer_;
     mutable upgrade_mutex mutex_;
+    const size_t capacity_;
 };
 
 } // namespace blockchain
