@@ -26,8 +26,9 @@ namespace libbitcoin {
 namespace blockchain {
 
 orphan_pool::orphan_pool(size_t capacity)
-  : buffer_(capacity)
+  : capacity_(capacity == 0 ? 1 : capacity)
 {
+    buffer_.reserve(capacity_);
 }
 
 // There is no validation whatsoever of the block up to this pont.
@@ -47,9 +48,14 @@ bool orphan_pool::add(block_const_ptr block)
         return false;
     }
 
-    const auto old_size = buffer_.size();
+    const auto size = buffer_.size();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
+
+    // Remove the front element, a circular buffer might be more efficient.
+    if (size == capacity_)
+        buffer_.erase(buffer_.begin());
+
     buffer_.push_back(block);
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
@@ -57,7 +63,7 @@ bool orphan_pool::add(block_const_ptr block)
     ////log::debug(LOG_BLOCKCHAIN)
     ////    << "Orphan pool added block [" << encode_hash(block->hash())
     ////    << "] previous [" << encode_hash(header.previous_block_hash)
-    ////    << "] old size (" << old_size << ").";
+    ////    << "] old size (" << size << ").";
 
     return true;
 }
@@ -77,7 +83,7 @@ void orphan_pool::remove(block_const_ptr block)
         return;
     }
 
-    const auto old_size = buffer_.size();
+    ////const auto old_size = buffer_.size();
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
     buffer_.erase(it);
@@ -94,16 +100,23 @@ void orphan_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    shared_lock lock(mutex_);
-
     for (auto it = inventories.begin(); it != inventories.end();)
-        if (it->is_block_type() && exists(it->hash))
-            it = inventories.erase(it);
-        else
+    {
+        if (!it->is_block_type())
+        {
             ++it;
-    ///////////////////////////////////////////////////////////////////////////
+            continue;
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        mutex_.lock_shared();
+        const auto found = exists(it->hash);
+        mutex_.unlock_shared();
+        ///////////////////////////////////////////////////////////////////////
+
+        it = found ? inventories.erase(it) : it + 1;
+    }
 }
 
 inline const hash_digest& pre(block_const_ptr_list& list)
@@ -119,15 +132,16 @@ inline void enqueue(block_const_ptr_list& list, block_const_ptr block)
 ///////////////////////////////////////////////////////////////////////////
 // TODO: obtain longest possible chain containing the block.
 ///////////////////////////////////////////////////////////////////////////
-block_const_ptr_list orphan_pool::trace(block_const_ptr end) const
+block_const_ptr_list orphan_pool::trace(block_const_ptr block) const
 {
     block_const_ptr_list trace;
-    trace.reserve(buffer_.size());
-    enqueue(trace, end);
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
+
+    trace.reserve(buffer_.size());
+    enqueue(trace, block);
 
     for (auto it = find(pre(trace)); it != buffer_.end(); it = find(pre(trace)))
         enqueue(trace, *it);
