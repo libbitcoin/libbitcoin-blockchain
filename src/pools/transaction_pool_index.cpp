@@ -72,11 +72,12 @@ void erase(const payment_address& key, const Point& value_point, Multimap& map)
 
     const auto range = map.equal_range(key);
     const auto it = std::find_if(range.first, range.second, match);
-    
+
     if (it != range.second)
         map.erase(it);
 }
 
+// This does not preserve order (std::transform).
 template <typename InfoList, typename Multimap>
 InfoList to_info_list(const payment_address& address, Multimap& map)
 {

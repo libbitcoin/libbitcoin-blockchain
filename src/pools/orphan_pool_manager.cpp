@@ -44,7 +44,8 @@ using namespace std::placeholders;
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     simple_chain& chain, orphan_pool& pool, const settings& settings)
   : chain_(chain),
-    validator_(thread_pool, settings.use_testnet_rules, checkpoints_, chain_),
+    validator_(thread_pool, settings.use_testnet_rules,
+        settings.use_libconsensus, checkpoints_, chain_),
     testnet_rules_(settings.use_testnet_rules),
     checkpoints_(checkpoint::sort(settings.checkpoints)),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),

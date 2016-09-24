@@ -61,7 +61,8 @@ validate_transaction::validate_transaction(full_chain& chain,
     const transaction_pool& pool, dispatcher& dispatch)
   : blockchain_(chain),
     pool_(pool),
-    dispatch_(dispatch)
+    dispatch_(dispatch),
+    use_libconsensus_(false)
 {
 }
 
