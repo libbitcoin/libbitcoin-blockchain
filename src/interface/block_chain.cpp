@@ -353,7 +353,7 @@ void block_chain::fetch_block_header(uint64_t height,
         return;
     }
 
-    const auto do_fetch = [this, height, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.blocks.get(height);
 
@@ -380,7 +380,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
         return;
     }
 
-    const auto do_fetch = [this, hash, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
 
@@ -407,7 +407,7 @@ void block_chain::fetch_merkle_block(uint64_t height,
         return;
     }
 
-    const auto do_fetch = [this, height, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.blocks.get(height);
 
@@ -434,7 +434,7 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         return;
     }
 
-    const auto do_fetch = [this, hash, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
 
@@ -459,7 +459,7 @@ void block_chain::fetch_block_height(const hash_digest& hash,
         return;
     }
 
-    const auto do_fetch = [this, hash, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.blocks.get(hash);
         return result ?
@@ -478,7 +478,7 @@ void block_chain::fetch_last_height(
         return;
     }
 
-    const auto do_fetch = [this, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         size_t last_height;
         return database_.blocks.top(last_height) ?
@@ -497,7 +497,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         return;
     }
 
-    const auto do_fetch = [this, hash, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions.get(hash);
 
@@ -522,7 +522,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
         return;
     }
 
-    const auto do_fetch = [this, hash, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions.get(hash);
         return result ?
@@ -542,8 +542,7 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
         return;
     }
 
-    // TODO: use of &outpoint ref is invalid if this is not serial execution.
-    const auto do_fetch = [this, &outpoint, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions.get(outpoint.hash);
 
@@ -567,8 +566,7 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
         return;
     }
 
-    // TODO: use of &outpoint ref is invalid if this is not serial execution.
-    const auto do_fetch = [this, &outpoint, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         const auto point = database_.spends.get(outpoint);
         return point.hash != null_hash ?
@@ -587,8 +585,7 @@ void block_chain::fetch_history(const wallet::payment_address& address,
         return;
     }
 
-    const auto do_fetch = [this, address, handler, limit, from_height](
-        size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         return finish_fetch(slock, handler, error::success,
             database_.history.get(address.hash(), limit, from_height));
@@ -605,7 +602,7 @@ void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
         return;
     }
 
-    const auto do_fetch = [this, filter, handler, from_height](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         return finish_fetch(slock, handler, error::success,
             database_.stealth.scan(filter, from_height));
@@ -623,8 +620,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         return;
     }
 
-    // TODO: use of &heights ref is invalid if this is not serial execution.
-    const auto do_fetch = [this, &heights, handler](size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         size_t top;
         code ec(error::operation_failed);
@@ -670,8 +666,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
-    const auto do_fetch = [this, locator, threshold, limit, handler](
-        size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         // Find the first block height.
         // If no start block is on our chain we start with block 0.
@@ -742,8 +737,7 @@ void block_chain::fetch_locator_block_headers(
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
-    const auto do_fetch = [this, locator, threshold, limit, handler](
-        size_t slock)
+    const auto do_fetch = [&](size_t slock)
     {
         // TODO: consolidate this portion with fetch_locator_block_hashes.
         //---------------------------------------------------------------------
