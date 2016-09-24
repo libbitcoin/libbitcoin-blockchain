@@ -175,7 +175,6 @@ void validate_transaction::handle_previous_tx(const code& ec,
 
 //-----------------------------------------------------------------------------
 
-// TODO: summarize values in custom stateful synchronizer.
 void validate_transaction::handle_join(const code& ec,
     const indexes& unconfirmed, transaction_const_ptr tx,
     validate_handler handler)
@@ -194,7 +193,6 @@ void validate_transaction::handle_join(const code& ec,
 
 // pointers (mempool)
 
-// TODO: this only needs the specific utxo (output), coinbase testable.
 // common expensive checks
 code validate_transaction::check_input(const transaction& tx,
     uint32_t input_index, const transaction& previous_tx,

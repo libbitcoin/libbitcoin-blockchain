@@ -82,8 +82,6 @@ private:
 
     // These are protected by the caller protecting organize().
     simple_chain& chain_;
-
-    // TODO: make threadsafe.
     validate_block validator_;
 
     // These are thread safe.
