@@ -342,7 +342,6 @@ void transaction_pool::subscribe_transaction(
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
     transaction_const_ptr tx)
 {
-    // TODO: make const?
     subscriber_->relay(error::success, unconfirmed, tx);
 }
 
