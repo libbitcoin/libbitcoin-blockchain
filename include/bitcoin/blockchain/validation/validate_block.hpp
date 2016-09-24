@@ -39,7 +39,7 @@ public:
     typedef chain::chain_state::versions versions;
     typedef std::function<bool()> stopped_callback;
 
-    validate_block(threadpool& pool, bool testnet,
+    validate_block(threadpool& pool, bool testnet, bool libconsensus,
         const checkpoints& checkpoints, const simple_chain& chain);
 
     void stop();
@@ -57,10 +57,15 @@ protected:
 
     void connect_input(const chain::transaction& tx,
         uint32_t input_index, result_handler handler) const;
+    code validate_input(const chain::transaction& tx,
+        uint32_t input_index) const;
     void handle_connect(const code& ec, block_const_ptr block,
         asio::time_point start_time, result_handler handler) const;
 
 private:
+    static code verify_script(const chain::transaction& tx,
+        uint32_t input_index, uint32_t flags, bool use_libconsensus);
+
     // These are not thread safe.
     chain::chain_state chain_state_;
     versions history_;
@@ -69,6 +74,7 @@ private:
     std::atomic<bool> stopped_;
     mutable dispatcher dispatch_;
     const simple_chain& chain_;
+    const bool use_libconsensus_;
 };
 
 } // namespace blockchain

@@ -25,6 +25,10 @@
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
 
+#ifdef WITH_CONSENSUS
+#include <bitcoin/consensus.hpp>
+#endif
+
 namespace libbitcoin {
 namespace blockchain {
 
@@ -37,12 +41,14 @@ using namespace std::placeholders;
 static constexpr size_t ms_per_second = 1000;
 
 validate_block::validate_block(threadpool& pool, bool testnet,
-    const checkpoints& checkpoints, const simple_chain& chain)
+    bool libconsensus, const checkpoints& checkpoints,
+    const simple_chain& chain)
   : chain_state_(testnet, checkpoints),
     history_(chain_state_.sample_size),
     stopped_(false),
     dispatch_(pool, NAME "_dispatch"),
-    chain_(chain)
+    chain_(chain),
+    use_libconsensus_(libconsensus)
 {
 }
 
@@ -126,16 +132,26 @@ void validate_block::connect(block_const_ptr block,
 void validate_block::connect_input(const transaction& tx, uint32_t input_index,
     result_handler handler) const
 {
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
+    handler(validate_input(tx, input_index));
+}
 
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: incorporate libbitcoin-consensus option here.
-    ///////////////////////////////////////////////////////////////////////////
-    handler(error::success /*tx.connect_input(chain_state_, input_index)*/);
+code validate_block::validate_input(const transaction& tx,
+    uint32_t input_index) const
+{
+    if (stopped())
+        return error::service_stopped;
+
+    if (tx.is_coinbase())
+        return error::success;
+
+    if (input_index >= tx.inputs.size())
+        return error::input_not_found;
+
+    if (!tx.inputs[input_index].previous_output.is_cached())
+        return error::not_found;
+
+    return verify_script(tx, input_index, chain_state_.enabled_forks(),
+        use_libconsensus_);
 }
 
 void validate_block::handle_connect(const code& ec, block_const_ptr block,
@@ -156,6 +172,124 @@ void validate_block::handle_connect(const code& ec, block_const_ptr block,
 
     handler(ec);
 }
+
+#ifdef WITH_CONSENSUS
+
+static uint32_t convert_flags(uint32_t native_flags)
+{
+    using namespace bc::consensus;
+    uint32_t consensus_flags = verify_flags_none;
+
+    if (script::is_enabled(native_flags, rule_fork::bip16_rule))
+        consensus_flags |= verify_flags_p2sh;
+
+    if (script::is_enabled(native_flags, rule_fork::bip65_rule))
+        consensus_flags |= verify_flags_checklocktimeverify;
+
+    if (script::is_enabled(native_flags, rule_fork::bip66_rule))
+        consensus_flags |= verify_flags_dersig;
+
+    return consensus_flags;
+}
+
+static code convert_result(consensus::verify_result_type result)
+{
+    using namespace bc::consensus;
+    switch (result)
+    {
+        // Logical true result.
+    case verify_result_type::verify_result_eval_true:
+        return error::success;
+
+        // Logical false result.
+    case verify_result_type::verify_result_eval_false:
+        return error::validate_inputs_failed;
+
+        // Max size errors.
+    case verify_result_type::verify_result_script_size:
+    case verify_result_type::verify_result_push_size:
+    case verify_result_type::verify_result_op_count:
+    case verify_result_type::verify_result_stack_size:
+    case verify_result_type::verify_result_sig_count:
+    case verify_result_type::verify_result_pubkey_count:
+        return error::size_limits;
+
+        // Failed verify operations.
+    case verify_result_type::verify_result_verify:
+    case verify_result_type::verify_result_equalverify:
+    case verify_result_type::verify_result_checkmultisigverify:
+    case verify_result_type::verify_result_checksigverify:
+    case verify_result_type::verify_result_numequalverify:
+        return error::validate_inputs_failed;
+
+        // Logical/Format/Canonical errors.
+    case verify_result_type::verify_result_bad_opcode:
+    case verify_result_type::verify_result_disabled_opcode:
+    case verify_result_type::verify_result_invalid_stack_operation:
+    case verify_result_type::verify_result_invalid_altstack_operation:
+    case verify_result_type::verify_result_unbalanced_conditional:
+        return error::validate_inputs_failed;
+
+        // BIP62 errors (should not see these unless requsted).
+    case verify_result_type::verify_result_sig_hashtype:
+    case verify_result_type::verify_result_sig_der:
+    case verify_result_type::verify_result_minimaldata:
+    case verify_result_type::verify_result_sig_pushonly:
+    case verify_result_type::verify_result_sig_high_s:
+    case verify_result_type::verify_result_sig_nulldummy:
+    case verify_result_type::verify_result_pubkeytype:
+    case verify_result_type::verify_result_cleanstack:
+        return error::validate_inputs_failed;
+
+        // Softfork safeness
+    case verify_result_type::verify_result_discourage_upgradable_nops:
+        return error::validate_inputs_failed;
+
+        // Other
+    case verify_result_type::verify_result_op_return:
+    case verify_result_type::verify_result_unknown_error:
+        return error::validate_inputs_failed;
+
+        // augmention codes for tx deserialization
+    case verify_result_type::verify_result_tx_invalid:
+    case verify_result_type::verify_result_tx_size_invalid:
+    case verify_result_type::verify_result_tx_input_invalid:
+        return error::validate_inputs_failed;
+
+        // BIP65 errors
+    case verify_result_type::verify_result_negative_locktime:
+    case verify_result_type::verify_result_unsatisfied_locktime:
+        return error::validate_inputs_failed;
+
+    default:
+        return error::validate_inputs_failed;
+    }
+}
+
+code validate_block::verify_script(const transaction& tx, uint32_t input_index,
+    uint32_t flags, bool use_libconsensus)
+{
+    if (!use_libconsensus)
+        return script::verify(tx, input_index, flags);
+
+    BITCOIN_ASSERT(input_index < tx.inputs.size());
+    const auto& prevout = tx.inputs[input_index].previous_output;
+    const auto transaction_data = tx.to_data();
+    const auto script_data = prevout.cache.script.to_data(false);
+    return convert_result(consensus::verify_script(transaction_data.data(),
+        transaction_data.size(), script_data.data(), script_data.size(),
+        input_index, convert_flags(flags)));
+}
+
+#else
+
+code validate_block::verify_script(const transaction& tx,
+    uint32_t input_index, uint32_t flags, bool)
+{
+    return script::verify(tx, input_index, flags);
+}
+
+#endif
 
 } // namespace blockchain
 } // namespace libbitcoin

@@ -108,6 +108,7 @@ private:
     full_chain& blockchain_;
     const transaction_pool& pool_;
     dispatcher& dispatch_;
+    const bool use_libconsensus_;
 };
 
 } // namespace blockchain

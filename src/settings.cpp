@@ -26,6 +26,7 @@ settings::settings()
   : block_pool_capacity(50),
     transaction_pool_capacity(1000),
     transaction_pool_consistency(false),
+    use_libconsensus(false),
     use_testnet_rules(false)
 {
 }
