@@ -59,12 +59,12 @@ public:
         block_header_fetch_handler;
     typedef std::function<void(const code&, transaction_ptr, uint64_t)>
         transaction_fetch_handler;
-    typedef std::function<void(const code&, inventory_ptr)>
-        locator_block_hashes_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
     typedef std::function<void(const code&, get_blocks_ptr)>
         block_locator_fetch_handler;
+    typedef std::function<void(const code&, inventory_ptr)>
+        inventory_fetch_handler;
 
     /// Subscription handlers.
     typedef std::function<bool(const code&, size_t,
@@ -135,11 +135,17 @@ public:
 
     virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
         const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler) const = 0;
+        inventory_fetch_handler handler) const = 0;
 
     virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
+
+    // Transaction Pool.
+    //-------------------------------------------------------------------------
+
+    virtual void fetch_floaters(size_t limit,
+        inventory_fetch_handler handler) const = 0;
 
     // Filters.
     //-------------------------------------------------------------------------

@@ -135,13 +135,21 @@ public:
 
     virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
         const hash_digest& threshold, size_t limit,
-        locator_block_hashes_fetch_handler handler) const
+        inventory_fetch_handler handler) const
     {
     }
 
     virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const
+    {
+    }
+
+    // Transaction Pool.
+    //-------------------------------------------------------------------------
+
+    virtual void fetch_floaters(size_t limit,
+        inventory_fetch_handler handler) const
     {
     }
 
