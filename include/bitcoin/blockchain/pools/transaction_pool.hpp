@@ -43,9 +43,12 @@ public:
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
 
-    // Don'ut use const reference for smart pointer parameters.
+    // Don't use const reference for smart pointer parameters.
     typedef std::function<void(const code&, transaction_const_ptr)>
         fetch_handler;
+    typedef std::function<void(const code&, inventory_ptr)>
+        fetch_inventory_handler;
+
     typedef std::function<bool(const code&, const indexes&,
         transaction_const_ptr)> transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_const_ptr>
@@ -71,7 +74,7 @@ public:
     /// Signal stop of current work, speeds shutdown.
     void stop();
 
-    inventory_ptr fetch_inventory() const;
+    void fetch_inventory(size_t limit, fetch_inventory_handler handler) const;
     void fetch(const hash_digest& tx_hash, fetch_handler handler) const;
     void fetch_history(const wallet::payment_address& address, size_t limit,
         size_t from_height, full_chain::history_fetch_handler handler) const;
@@ -100,6 +103,8 @@ protected:
         transaction_const_ptr tx, validate_transaction::ptr self,
         validate_handler handler) const;
 
+    void do_fetch_inventory(size_t limit,
+        fetch_inventory_handler handler) const;
     void do_validate(transaction_const_ptr tx, validate_handler handler) const;
     void do_store(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, result_handler handle_confirm,

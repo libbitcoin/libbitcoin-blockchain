@@ -34,8 +34,9 @@ namespace blockchain {
 
 #define NAME "mempool"
 
-using namespace chain;
-using namespace wallet;
+using namespace bc::chain;
+using namespace bc::message;
+using namespace bc::wallet;
 using namespace std::placeholders;
 
 transaction_pool::transaction_pool(threadpool& pool, full_chain& chain,
@@ -81,12 +82,46 @@ bool transaction_pool::stopped() const
     return stopped_;
 }
 
-inventory_ptr transaction_pool::fetch_inventory() const
+void transaction_pool::fetch_inventory(size_t limit,
+    fetch_inventory_handler handler) const
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: populate the inventory vector from the full memory pool.
-    ///////////////////////////////////////////////////////////////////////////
-    return nullptr;
+    dispatch_.unordered(&transaction_pool::do_fetch_inventory,
+        this, limit, handler);
+}
+
+// Populate one *or more* inventory vectors from the full memory pool.
+// This is unusual in that the handler may be invoked multiple times.
+void transaction_pool::do_fetch_inventory(size_t limit,
+    fetch_inventory_handler handler) const
+{
+    if (buffer_.empty())
+    {
+        handler(error::success, std::make_shared<inventory>());
+        return;
+    }
+
+    const auto map = [](const transaction_const_ptr& tx) -> inventory_vector
+    {
+        return { inventory_vector::type_id::transaction, tx->hash() };
+    };
+
+    auto size = buffer_.size();
+    auto start_tx = buffer_.begin();
+
+    while (size != 0)
+    {
+        BITCOIN_ASSERT(start_tx != buffer_.end());
+        const auto result = std::make_shared<inventory>();
+        const auto batch_size = std::min(size, limit);
+        auto& inventories = result->inventories;
+        inventories.reserve(batch_size);
+        auto end_tx = start_tx + batch_size;
+        std::transform(start_tx, end_tx, inventories.begin(), map);
+        size -= batch_size;
+        start_tx = end_tx;
+
+        handler(error::success, result);
+    }
 }
 
 void transaction_pool::validate(transaction_const_ptr tx,

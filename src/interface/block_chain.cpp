@@ -656,7 +656,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
 // This may execute over 500 queries.
 void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     const hash_digest& threshold, size_t limit,
-    locator_block_hashes_fetch_handler handler) const
+    inventory_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -795,6 +795,15 @@ void block_chain::fetch_locator_block_headers(
         return finish_fetch(slock, handler, error::success, headers);
     };
     fetch_serial(do_fetch);
+}
+
+// Transaction Pool.
+//-------------------------------------------------------------------------
+
+void block_chain::fetch_floaters(size_t size,
+    inventory_fetch_handler handler) const
+{
+    transaction_pool_.fetch_inventory(size, handler);
 }
 
 // Filters.
