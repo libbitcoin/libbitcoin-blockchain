@@ -37,7 +37,7 @@ public:
     typedef std::shared_ptr<fork> ptr;
 
     /// Establish a fork with the given parent checkpoint.
-    fork(size_t capacity);
+    fork(size_t capacity=0);
 
     /// Set the height of the parent of this fork (fork point).
     void set_height(size_t height);
