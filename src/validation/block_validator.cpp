@@ -249,7 +249,7 @@ bool block_validator::fetch_version(uint32_t& out_version,
 transaction_ptr block_validator::fetch_transaction(size_t& tx_height,
     const hash_digest& tx_hash) const
 {
-    uint64_t out_tx_height;
+    size_t out_tx_height;
     const auto tx = chain_.get_transaction(out_tx_height, tx_hash);
 
     if (tx && out_tx_height <= fork_height_)
@@ -287,7 +287,7 @@ transaction_ptr block_validator::fetch_orphan_transaction(
 
 bool block_validator::is_output_spent(const output_point& outpoint) const
 {
-    uint64_t tx_height;
+    size_t tx_height;
     hash_digest tx_hash;
     return
         chain_.get_transaction_hash(tx_hash, outpoint) &&
