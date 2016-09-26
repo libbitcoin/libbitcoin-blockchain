@@ -167,6 +167,7 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
         return;
     }
 
+    // This must continue on a new thread or we will exhaust the stack.
     // Checks dependent on chain state, prevouts and perform script validation.
     validator_.connect(block, next_block);
 }

@@ -130,6 +130,7 @@ void validate_block::connect(block_const_ptr block,
     const result_handler join_handler =
         synchronize(complete_handler, block->total_inputs(), NAME "_join");
 
+    // We must always continue on a new thread.
     for (const auto& tx: block->transactions)
         for (uint32_t index = 0; index < tx.inputs.size(); ++index)
             dispatch_.concurrent(&validate_block::connect_input,
