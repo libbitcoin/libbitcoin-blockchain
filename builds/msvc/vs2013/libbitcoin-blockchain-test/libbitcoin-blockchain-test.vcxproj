@@ -88,7 +88,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLEXE|x64'">
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseSEXE|x64'">
+    <PostBuildEvent>
+      <Command>"$(TargetPath)" --run_test=fork_tests --show_progress=no --result_code=no --detect_memory_leak=0 --report_level=no --build_info=yes</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\fork.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
