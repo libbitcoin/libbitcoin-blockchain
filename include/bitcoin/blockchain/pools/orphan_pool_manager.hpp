@@ -22,7 +22,6 @@
 
 #include <atomic>
 #include <cstddef>
-#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -30,6 +29,7 @@
 #include <bitcoin/blockchain/interface/simple_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
@@ -55,30 +55,21 @@ public:
     virtual void start();
     virtual void stop();
 
-    virtual code organize(block_const_ptr block);
+    virtual void organize(block_const_ptr block, result_handler handler);
     virtual void subscribe_reorganize(reorganize_handler handler);
 
 protected:
     virtual bool stopped() const;
 
 private:
-    static hash_number fork_difficulty(list& fork);
-    static size_t to_height(size_t fork_height, size_t start_index);
-    static bool validated(block_const_ptr block, size_t height);
-    static void remove(list& fork, block_const_ptr block);
-    static void set_result(block_const_ptr block, const code& ec);
-    static void set_height(block_const_ptr block,
-        size_t height=chain::block::metadata::orphan_height);
-    
-    code verify(block_const_ptr block, size_t height);
-    code reorganize(list& fork, size_t fork_height);
-    void prune(list& fork, size_t fork_height);
-    void purge(list& fork, size_t start_index, const code& reason);
+    fork::ptr find_connected_fork(block_const_ptr block);
+    void verify(fork::ptr fork, size_t index, result_handler handler);
+    void organized(fork::ptr fork, result_handler handler);
     void notify_reorganize(size_t fork_height, const list& fork,
         const list& original);
 
-    void handle_connect(const code& ec, block_const_ptr block,
-        size_t height, std::promise<code>& complete);
+    void handle_verify(const code& ec, fork::ptr fork, size_t index,
+        result_handler handler);
 
     // These are protected by the caller protecting organize().
     simple_chain& chain_;

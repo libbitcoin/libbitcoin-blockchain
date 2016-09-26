@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/simple_chain.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
