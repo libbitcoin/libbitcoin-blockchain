@@ -23,6 +23,7 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
+using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::blockchain;
 
@@ -57,59 +58,32 @@ BOOST_AUTO_TEST_CASE(fork__hash__default__null_hash)
 
 BOOST_AUTO_TEST_CASE(fork__hash__one_block__only_previous_block_hash)
 {
+    DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
-    DECLARE_BLOCK(block, 2);
 
-    const auto expected = block1->hash();
-    block2->header.previous_block_hash = expected;
+    const auto expected = block0->hash();
+    block1->header.previous_block_hash = expected;
 
     fork instance;
-    BOOST_REQUIRE(instance.push(block2));
+    BOOST_REQUIRE(instance.push(block1));
     BOOST_REQUIRE(instance.hash() == expected);
 }
 
 BOOST_AUTO_TEST_CASE(fork__hash__two_blocks__first_previous_block_hash)
 {
     fork instance;
-    DECLARE_BLOCK(top, 1);
-    DECLARE_BLOCK(block, 2);
-    DECLARE_BLOCK(block, 3);
-
-    // Link the blocks.
-    const auto expected = top1->hash();
-    block2->header.previous_block_hash = expected;
-    block3->header.previous_block_hash = block2->hash();
-
-    BOOST_REQUIRE(instance.push(block2));
-    BOOST_REQUIRE(instance.push(block3));
-    BOOST_REQUIRE(instance.hash() == expected);
-}
-
-// difficulty
-
-BOOST_AUTO_TEST_CASE(fork__difficulty__default__zero)
-{
-    fork instance;
-    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
-{
-    fork instance;
+    DECLARE_BLOCK(top, 42);
+    DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
-    DECLARE_BLOCK(block, 2);
 
     // Link the blocks.
-    block2->header.previous_block_hash = block1->hash();
+    const auto expected = top42->hash();
+    block0->header.previous_block_hash = expected;
+    block1->header.previous_block_hash = block0->hash();
 
+    BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
-    BOOST_REQUIRE(instance.push(block2));
-    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
-
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: devise value tests.
-    ///////////////////////////////////////////////////////////////////////////
-    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
+    BOOST_REQUIRE(instance.hash() == expected);
 }
 
 // height/set_height
@@ -218,49 +192,170 @@ BOOST_AUTO_TEST_CASE(fork__blocks__default__empty)
     BOOST_REQUIRE(instance.blocks().empty());
 }
 
+BOOST_AUTO_TEST_CASE(fork__blocks__one__empty)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(!instance.empty());
+    BOOST_REQUIRE_EQUAL(instance.blocks().size(), 1u);
+    instance.clear();
+    BOOST_REQUIRE(instance.blocks().empty());
+}
+
 // push
 
 BOOST_AUTO_TEST_CASE(fork__push__one__success)
 {
     fork instance;
-    DECLARE_BLOCK(block, 1);
-    BOOST_REQUIRE(instance.push(block1));
+    DECLARE_BLOCK(block, 0);
+    BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(!instance.empty());
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
-    BOOST_REQUIRE(instance.block_at(0) == block1);
+    BOOST_REQUIRE(instance.block_at(0) == block0);
 }
 
-BOOST_AUTO_TEST_CASE(fork__push__two__success)
+BOOST_AUTO_TEST_CASE(fork__push__two_linked__success)
 {
     fork instance;
+    DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
-    DECLARE_BLOCK(block, 2);
 
     // Link the blocks.
-    block2->header.previous_block_hash = block1->hash();
+    block1->header.previous_block_hash = block0->hash();
 
+    BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
-    BOOST_REQUIRE(instance.push(block2));
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
-    BOOST_REQUIRE_EQUAL(instance.blocks().size(), 2u);
-    BOOST_REQUIRE(instance.block_at(0) == block1);
-    BOOST_REQUIRE(instance.block_at(1) == block2);
+    BOOST_REQUIRE(instance.block_at(0) == block0);
+    BOOST_REQUIRE(instance.block_at(1) == block1);
 }
 
-BOOST_AUTO_TEST_CASE(fork__push__unlinked__failure_on_second)
+BOOST_AUTO_TEST_CASE(fork__push__two_unlinked__failure_on_second)
 {
     fork instance;
+    DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
-    DECLARE_BLOCK(block, 2);
 
     // Ensure the blocks are not linked.
-    block2->header.previous_block_hash = null_hash;
+    block1->header.previous_block_hash = null_hash;
 
-    BOOST_REQUIRE(instance.push(block1));
-    BOOST_REQUIRE(!instance.push(block2));
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(!instance.push(block1));
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
-    BOOST_REQUIRE_EQUAL(instance.blocks().size(), 1u);
-    BOOST_REQUIRE(instance.block_at(0) == block1);
+    BOOST_REQUIRE(instance.block_at(0) == block0);
+}
+
+// pop
+
+BOOST_AUTO_TEST_CASE(fork__pop__one_of_two__first_remains)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    DECLARE_BLOCK(block, 1);
+
+    // Link the blocks.
+    block1->header.previous_block_hash = block0->hash();
+
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(instance.push(block1));
+    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
+
+    const auto list = instance.pop(1, error::invalid_proof_of_work);
+    BOOST_REQUIRE_EQUAL(list.size(), 1u);
+    BOOST_REQUIRE(instance.block_at(0) == block0);
+
+    const auto first = list.front();
+    BOOST_REQUIRE(first == block1);
+    BOOST_REQUIRE_EQUAL(first->metadata.validation_result, error::invalid_proof_of_work);
+    BOOST_REQUIRE_EQUAL(first->metadata.validation_height, block::metadata::orphan_height);
+}
+
+BOOST_AUTO_TEST_CASE(fork__pop__two_of_two__none_remain)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    DECLARE_BLOCK(block, 1);
+
+    // Link the blocks.
+    block1->header.previous_block_hash = block0->hash();
+
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(instance.push(block1));
+    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
+
+    const auto list = instance.pop(0, error::invalid_proof_of_work);
+    BOOST_REQUIRE_EQUAL(list.size(), 2u);
+    BOOST_REQUIRE(instance.empty());
+    BOOST_REQUIRE(list[0] == block0);
+    BOOST_REQUIRE(list[1] == block1);
+}
+
+BOOST_AUTO_TEST_CASE(fork__pop__three_of_two__unchanged_fork_empty_return)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    DECLARE_BLOCK(block, 1);
+
+    // Link the blocks.
+    block1->header.previous_block_hash = block0->hash();
+
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(instance.push(block1));
+    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
+    BOOST_REQUIRE(instance.pop(2, error::invalid_proof_of_work).empty());
+    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
+}
+
+// is_verified
+
+BOOST_AUTO_TEST_CASE(fork__is_verified__default__false)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(!instance.empty());
+    BOOST_REQUIRE(!instance.is_verified(0));
+}
+
+// set_verified
+
+BOOST_AUTO_TEST_CASE(fork__set_verified__first__round_trips)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(!instance.empty());
+    BOOST_REQUIRE(!instance.is_verified(0));
+    instance.set_verified(0);
+    BOOST_REQUIRE(instance.is_verified(0));
+}
+
+// difficulty
+
+BOOST_AUTO_TEST_CASE(fork__difficulty__default__zero)
+{
+    fork instance;
+    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
+{
+    fork instance;
+    DECLARE_BLOCK(block, 0);
+    DECLARE_BLOCK(block, 1);
+
+    // Link the blocks.
+    block1->header.previous_block_hash = block0->hash();
+
+    BOOST_REQUIRE(instance.push(block0));
+    BOOST_REQUIRE(instance.push(block1));
+    BOOST_REQUIRE_EQUAL(instance.size(), 2u);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: devise value tests.
+    ///////////////////////////////////////////////////////////////////////////
+    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
