@@ -74,7 +74,6 @@ public:
         transaction_const_ptr)> transaction_handler;
 
     /// Store handlers.
-    typedef handle1<uint64_t> block_store_handler;
     typedef handle1<const chain::point::indexes&> transaction_store_handler;
 
     // Startup and shutdown.
@@ -171,7 +170,7 @@ public:
     // Stores.
     //-------------------------------------------------------------------------
 
-    virtual void store(block_const_ptr block, block_store_handler handler) = 0;
+    virtual void store(block_const_ptr block, result_handler handler) = 0;
     virtual void store(transaction_const_ptr transaction,
         transaction_store_handler handler) = 0;
 };

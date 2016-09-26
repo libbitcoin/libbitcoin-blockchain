@@ -33,12 +33,12 @@ settings::settings()
 
 // Use push_back due to initializer_list bug:
 // stackoverflow.com/a/20168627/1172329
-settings::settings(bc::settings context)
+settings::settings(config::settings context)
   : settings()
 {
     switch (context)
     {
-        case bc::settings::mainnet:
+        case config::settings::mainnet:
         {
             checkpoints.reserve(22);
             checkpoints.push_back({ "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 0 });
@@ -66,7 +66,7 @@ settings::settings(bc::settings context)
             break;
         }
 
-        case bc::settings::testnet:
+        case config::settings::testnet:
         {
             use_testnet_rules = true;
 
@@ -82,7 +82,7 @@ settings::settings(bc::settings context)
         }
 
         default:
-        case bc::settings::none:
+        case config::settings::none:
         {
         }
     }

@@ -109,6 +109,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_index.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\block_validator.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\fork.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="..\..\..\..\src\pools\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\block_validator.cpp" />
+    <ClCompile Include="..\..\..\..\src\validation\fork.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\validate_transaction.cpp" />
   </ItemGroup>

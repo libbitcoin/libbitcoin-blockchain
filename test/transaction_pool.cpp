@@ -191,7 +191,7 @@ public:
     // Stores.
     //-------------------------------------------------------------------------
 
-    virtual void store(block_const_ptr block, block_store_handler handler)
+    virtual void store(block_const_ptr block, result_handler handler)
     {
     }
 

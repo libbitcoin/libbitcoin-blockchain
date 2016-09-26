@@ -110,6 +110,7 @@ void transaction_pool::do_fetch_inventory(size_t limit,
 
     while (size != 0)
     {
+        // Addition is bounded.
         BITCOIN_ASSERT(start_tx != buffer_.end());
         const auto result = std::make_shared<inventory>();
         const auto batch_size = std::min(size, limit);
@@ -524,8 +525,10 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     if (it == buffer_.end())
         return false;
 
-    if ((*it)->metadata.confirm != nullptr)
-        (*it)->metadata.confirm(ec);
+    const auto confirmation_callback = (*it)->metadata.confirm;
+
+    if (confirmation_callback != nullptr)
+        confirmation_callback(ec);
 
     buffer_.erase(it);
     return true;

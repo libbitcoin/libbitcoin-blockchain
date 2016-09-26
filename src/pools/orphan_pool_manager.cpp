@@ -22,7 +22,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include <future>
 #include <memory>
 #include <numeric>
 #include <bitcoin/bitcoin.hpp>
@@ -30,6 +29,7 @@
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
@@ -79,125 +79,152 @@ bool orphan_pool_manager::stopped() const
 // Organize.
 //-----------------------------------------------------------------------------
 
-// Not thread safe.
 // This is called from block_chain::do_store(), a critical section.
-code orphan_pool_manager::organize(block_const_ptr block)
+void orphan_pool_manager::organize(block_const_ptr block,
+    result_handler handler)
 {
-    if (chain_.get_exists(block->hash()) || !pool_.add(block))
-        return error::duplicate;
-
-    // Get the chain that this block connects to (but not connected to it).
-    auto fork = pool_.trace(block);
-
-    // The fork must always include at least the new block.
-    BITCOIN_ASSERT(!fork.empty());
-
-    uint64_t fork_height;
-    const auto& previous_block_hash = fork.front()->header.previous_block_hash;
-
-    // The blockchain parent of the oldest fork block is at the fork height.
-    if (!chain_.get_height(fork_height, previous_block_hash))
-    {
-        // Indicate that this block's chain does not connect to the blockchain,
-        // as opposed to having insufficient work, etc. Ask peer for missing.
-        set_height(block);
-        set_result(block, error::orphan);
-        return error::success;
-    }
-
-    // Validate the fork blocks and purge any invalid trailing segment.
-    prune(fork, fork_height);
-
-    // Attempt to reorganize the blockchain using the remaining valid fork.
-    return reorganize(fork, fork_height);
-}
-
-// Verify the fork and remove any invalid trailing segment.
-void orphan_pool_manager::prune(list& fork, size_t fork_height)
-{
-    code ec(error::success);
-
-    for (size_t index = 0; !ec && index < fork.size(); ++index)
-        if ((ec = verify(fork[index], to_height(fork_height, index))))
-            purge(fork, index, ec);
-}
-
-// Validate a block for a given height.
-code orphan_pool_manager::verify(block_const_ptr block, size_t height)
-{
-    if (stopped())
-        return error::service_stopped;
-
-    // Bypass validation if the block has previously validated for this height.
-    if (validated(block, height))
-        return error::success;
-
     code ec;
+    fork::ptr fork;
 
-    // Checks that are independent of the chain.
-    if ((ec = validator_.check(block)))
-        return ec;
-
-    if ((ec = validator_.reset(height)))
-        return ec;
-
-    // Checks that are dependent on chain state.
-    if ((ec = validator_.accept(block)))
-        return ec;
-
-    std::promise<code> promise;
-
-    const result_handler join_handler =
-        std::bind(&orphan_pool_manager::handle_connect,
-            this, _1, block, height, std::ref(promise));
-
-    // Checks that are dependent on chain state and include script validation.
-    validator_.connect(block, join_handler);
-
-    // Block until the promise is signalled, returns the value passed.
-    return promise.get_future().get();
-}
-
-// Invoked on thread join following completion of input validation.
-void orphan_pool_manager::handle_connect(const code& ec, block_const_ptr block,
-    size_t height, std::promise<code>& complete)
-{
-    set_height(block, height);
-    set_result(block, error::success);
-
-    // Singnal the main thread (verify) to continue.
-    complete.set_value(ec);
-}
-
-// Purge connectable-but-invalid-at-connect-height blocks from the orphan pool.
-void orphan_pool_manager::purge(list& fork, size_t start_index,
-    const code& reason)
-{
-    BITCOIN_ASSERT(start_index < fork.size());
-    const auto start = fork.begin() + start_index;
-
-    for (auto it = start; it != fork.end(); ++it)
+    if (stopped())
     {
-        // The first block should already be configured with ec/height.
-        // Indicate to handler/subscribers that the block is purged.
-        set_result(*it, it == start ? reason : error::previous_block_invalid);
-
-        // Remove the (invalid) fork block from the orphan pool.
-        pool_.remove(*it);
+        handler(error::service_stopped);
+        return;
     }
 
-    fork.erase(start, fork.end());
+    // Checks independent of the chain.
+    if ((ec = validator_.check(block)))
+    {
+        handler(ec);
+        return;
+    }
+
+    // Check database and orphan pool for duplicate block hash.
+    if (chain_.get_exists(block->hash()) || !pool_.add(block))
+    {
+        handler(error::duplicate);
+        return;
+    }
+
+    // Find longest fork of blocks that connects the block to the blockchain.
+    // If there is no connection the original block is currently an orphan.
+    if ((fork = find_connected_fork(block))->empty())
+    {
+        handler(error::orphan);
+        return;
+    }
+
+    // Start the loop by verifying the first block.
+    verify(fork, 0, handler);
 }
 
-// Replace! Switch!
-code orphan_pool_manager::reorganize(list& fork, size_t fork_height)
+// Verify the block at the given index in the fork.
+void orphan_pool_manager::verify(fork::ptr fork, size_t index,
+    result_handler handler)
 {
-    // These may have been no valid blocks in the trace.
-    if (fork.empty())
-        return error::success;
+    code ec;
+    BITCOIN_ASSERT(index < fork->size());
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    // Call this to continue the loop or handler to stop.
+    const result_handler next_block =
+        std::bind(&orphan_pool_manager::handle_verify,
+            this, _1, fork, index, handler);
+
+    // Bypass validation if previously validated for this height.
+    if (fork->is_verified(index))
+    {
+        next_block(error::success);
+        return;
+    }
+
+    const auto block = fork->block_at(index);
+    const auto height = fork->height_at(index);
+
+    // Configure chain state for accept/connect checks.
+    if ((ec = validator_.reset(height)))
+    {
+        handler(ec);
+        return;
+    }
+
+    // Populate the previous outputs of the block.
+    if ((ec = validator_.populate(block)))
+    {
+        handler(ec);
+        return;
+    }
+
+    // Checks that are dependent on chain state and prevouts.
+    if ((ec = validator_.accept(block)))
+    {
+        handler(ec);
+        return;
+    }
+
+    // Checks dependent on chain state, prevouts and perform script validation.
+    validator_.connect(block, next_block);
+}
+
+// Call handler to stop, organized to coninue.
+void orphan_pool_manager::handle_verify(const code& ec, fork::ptr fork,
+    size_t index, result_handler handler)
+{
+    BITCOIN_ASSERT(!fork->empty());
+    BITCOIN_ASSERT(index < fork->size());
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    // The index block failed to verify, remove it and descendants, or the
+    // index block is verified, ensure it is marked (may be already).
+    if (ec)
+        pool_.remove(fork->pop(index, ec));
+    else
+        fork->set_verified(index);
+
+    // If we just cleared out the entire fork, return the guilty block's code.
+    if (fork->empty())
+    {
+        handler(ec);
+        return;
+    }
+
+    const auto next = safe_increment(index);
+
+    // If the loop is done (due to iteration or removal) attempt to reorg.
+    // Otherwise continue the verify loop with the next block in the fork.
+    if (next >= fork->size())
+    {
+        organized(fork, handler);
+        return;
+    }
+
+    // This recursion ties up the stack until the end of verify.
+    verify(fork, next, handler);
+}
+
+// Attempt to reorganize the blockchain using the remaining valid fork.
+void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
+{
+    BITCOIN_ASSERT(!fork->empty());
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
 
     // This is the height of the first block of each branch after the fork.
-    const auto base_height = fork_height + 1;
+    const auto base_height = safe_add(fork->height(), size_t(1));
     hash_number original_difficulty;
 
     // Summarize the difficulty of the original chain from base_height to top.
@@ -205,17 +232,20 @@ code orphan_pool_manager::reorganize(list& fork, size_t fork_height)
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure getting difficulty from [" << base_height << "]";
-        return error::operation_failed;
+        handler(error::operation_failed);
+        return;
     }
 
     // Summarize difficulty of fork and reorganize only if exceeds original.
-    if (fork_difficulty(fork) <= original_difficulty)
+    if (fork->difficulty() <= original_difficulty)
     {
         log::debug(LOG_BLOCKCHAIN)
             << "Insufficient work to reorganize from [" << base_height << "]";
-        return error::success;
+        handler(error::insufficient_work);
+        return;
     }
 
+    // Replace! Switch!
     list original;
 
     // Remove the original chain blocks from the store.
@@ -223,42 +253,49 @@ code orphan_pool_manager::reorganize(list& fork, size_t fork_height)
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure reorganizing from [" << base_height << "]";
-        return error::operation_failed;
+        handler(error::operation_failed);
+        return;
     }
 
     if (!original.empty())
     {
         log::info(LOG_BLOCKCHAIN)
             << "Reorganizing from block " << base_height << " to "
-            << base_height + original.size() << "]";
+            << safe_add(base_height, original.size()) << "]";
     }
 
-    auto height = base_height;
+    auto height = fork->height();
 
-    for (const auto block: fork)
+    for (size_t index = 0; index < fork->size(); ++index)
     {
+        const auto block = fork->block_at(index);
+
         // Remove the fork block from the orphan pool.
         pool_.remove(block);
 
         // Add the fork block to the store (logs failures).
-        if (!chain_.push(block, height++))
-            return error::operation_failed;
+        if (!chain_.push(block, safe_increment(height)))
+        {
+            handler(error::operation_failed);
+            return;
+        }
     }
 
-    height = base_height;
+    height = fork->height();
 
     for (const auto block: original)
     {
         // Original blocks remain valid at their original heights.
-        set_height(block, height++);
-        set_result(block, error::success);
+        block->metadata.validation_height = safe_increment(height);
+        block->metadata.validation_result = error::success;
 
         // Add the original block to the orphan pool.
         pool_.add(block);
     }
 
-    notify_reorganize(fork_height, fork, original);
-    return error::success;
+    // v3 reorg block order is reverse of v2, fork.back() is the new top.
+    notify_reorganize(fork->height(), fork->blocks(), original);
+    handler(error::success);
 }
 
 // Subscription.
@@ -275,55 +312,24 @@ void orphan_pool_manager::notify_reorganize(size_t fork_height,
     subscriber_->relay(error::success, fork_height, fork, original);
 }
 
-// Utilities.
+// Utility.
 //-----------------------------------------------------------------------------
-// static
 
-// Summarize the difficulty of a chain of blocks.
-hash_number orphan_pool_manager::fork_difficulty(list& fork)
+// Once connected we can discard fork segments that fail validation at height.
+fork::ptr orphan_pool_manager::find_connected_fork(block_const_ptr block)
 {
-    hash_number total;
+    // Get the longest possible chain containing this new block.
+    const auto fork = pool_.trace(block);
 
-    for (auto& block: fork)
-        total += block->difficulty();
+    size_t fork_height;
 
-    return total;
-}
+    // Get blockchain parent of the oldest fork block and save to fork.
+    if (chain_.get_height(fork_height, fork->hash()))
+        fork->set_height(fork_height);
+    else
+        fork->clear();
 
-// Calculate the blockchain height of the next block.
-size_t orphan_pool_manager::to_height(size_t fork_height, size_t start_index)
-{
-    BITCOIN_ASSERT(fork_height <= max_size_t - start_index &&
-        fork_height + start_index <= max_size_t - 1);
-
-    // The height of the blockchain fork point plus zero-based orphan index.
-    return fork_height + start_index + 1;
-}
-
-// Determine if the block has been validated for the height.
-bool orphan_pool_manager::validated(block_const_ptr block, size_t height)
-{
-    return (block->metadata.validation_result == error::success &&
-        block->metadata.validation_height == height);
-}
-
-void orphan_pool_manager::set_height(block_const_ptr block, size_t height)
-{
-    block->metadata.validation_height = height;
-}
-
-void orphan_pool_manager::set_result(block_const_ptr block, const code& ec)
-{
-    block->metadata.validation_result = ec;
-}
-
-// Remove the block from the fork.
-void orphan_pool_manager::remove(list& fork, block_const_ptr block)
-{
-    const auto it = std::find(fork.begin(), fork.end(), block);
-
-    if (it != fork.end())
-        fork.erase(it);
+    return fork;
 }
 
 } // namespace blockchain

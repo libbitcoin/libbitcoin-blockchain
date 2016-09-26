@@ -126,35 +126,14 @@ bool block_chain::stopped() const
 // simple_chain getters (no locks, not thread safe).
 // ----------------------------------------------------------------------------
 
-bool block_chain::get_gap_range(uint64_t& out_first,
-    uint64_t& out_last) const
+bool block_chain::get_gap_range(size_t& out_first, size_t& out_last) const
 {
-    size_t first;
-    size_t last;
-
-    if (!database_.blocks.gap_range(first, last))
-        return false;
-
-    out_first = static_cast<uint64_t>(first);
-    out_last = static_cast<uint64_t>(last);
-    return true;
+    return database_.blocks.gap_range(out_first, out_last);
 }
 
-bool block_chain::get_next_gap(uint64_t& out_height,
-    uint64_t start_height) const
+bool block_chain::get_next_gap(size_t& out_height, size_t start_height) const
 {
-    if (stopped())
-        return false;
-
-    BITCOIN_ASSERT(start_height <= max_size_t);
-    const auto start = static_cast<size_t>(start_height);
-    size_t out;
-
-    if (!database_.blocks.next_gap(out, start))
-        return false;
-
-    out_height = static_cast<uint64_t>(out);
-    return true;
+    return !database_.blocks.next_gap(out_height, start_height);
 }
 
 bool block_chain::get_exists(const hash_digest& block_hash) const
@@ -163,14 +142,14 @@ bool block_chain::get_exists(const hash_digest& block_hash) const
 }
 
 bool block_chain::get_difficulty(hash_number& out_difficulty,
-    uint64_t from_height) const
+    size_t from_height) const
 {
     size_t top;
     if (!database_.blocks.top(top))
         return false;
 
     out_difficulty = 0;
-    for (uint64_t height = from_height; height <= top; ++height)
+    for (size_t height = from_height; height <= top; ++height)
     {
         const auto result = database_.blocks.get(height);
         if (!result)
@@ -182,7 +161,7 @@ bool block_chain::get_difficulty(hash_number& out_difficulty,
     return true;
 }
 
-bool block_chain::get_header(header& out_header, uint64_t height) const
+bool block_chain::get_header(header& out_header, size_t height) const
 {
     auto result = database_.blocks.get(height);
     if (!result)
@@ -192,7 +171,7 @@ bool block_chain::get_header(header& out_header, uint64_t height) const
     return true;
 }
 
-bool block_chain::get_height(uint64_t& out_height,
+bool block_chain::get_height(size_t& out_height,
     const hash_digest& block_hash) const
 {
     auto result = database_.blocks.get(block_hash);
@@ -203,7 +182,7 @@ bool block_chain::get_height(uint64_t& out_height,
     return true;
 }
 
-bool block_chain::get_bits(uint32_t& out_bits, const uint64_t& height) const
+bool block_chain::get_bits(uint32_t& out_bits, const size_t& height) const
 {
     auto result = database_.blocks.get(height);
     if (!result)
@@ -214,7 +193,7 @@ bool block_chain::get_bits(uint32_t& out_bits, const uint64_t& height) const
 }
 
 bool block_chain::get_timestamp(uint32_t& out_timestamp,
-    const uint64_t& height) const
+    const size_t& height) const
 {
     auto result = database_.blocks.get(height);
     if (!result)
@@ -225,7 +204,7 @@ bool block_chain::get_timestamp(uint32_t& out_timestamp,
 }
 
 bool block_chain::get_version(uint32_t& out_version,
-    const uint64_t& height) const
+    const size_t& height) const
 {
     auto result = database_.blocks.get(height);
     if (!result)
@@ -235,14 +214,9 @@ bool block_chain::get_version(uint32_t& out_version,
     return true;
 }
 
-bool block_chain::get_last_height(uint64_t& out_height) const
+bool block_chain::get_last_height(size_t& out_height) const
 {
-    size_t top;
-    if (!database_.blocks.top(top))
-        return false;
-
-    out_height = static_cast<uint64_t>(top);
-    return true;
+    return database_.blocks.top(out_height);
 }
 
 bool block_chain::get_transaction_hash(hash_digest& out_hash,
@@ -256,7 +230,7 @@ bool block_chain::get_transaction_hash(hash_digest& out_hash,
     return true;
 }
 
-bool block_chain::get_transaction_height(uint64_t& out_block_height,
+bool block_chain::get_transaction_height(size_t& out_block_height,
     const hash_digest& transaction_hash) const
 {
     const auto result = database_.transactions.get(transaction_hash);
@@ -267,7 +241,7 @@ bool block_chain::get_transaction_height(uint64_t& out_block_height,
     return true;
 }
 
-transaction_ptr block_chain::get_transaction(uint64_t& out_block_height,
+transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     const hash_digest& transaction_hash) const
 {
     const auto result = database_.transactions.get(transaction_hash);
@@ -283,7 +257,7 @@ transaction_ptr block_chain::get_transaction(uint64_t& out_block_height,
 // ----------------------------------------------------------------------------
 
 // This is safe to call concurrently (but with no other methods).
-bool block_chain::insert(block_const_ptr block, uint64_t height)
+bool block_chain::insert(block_const_ptr block, size_t height)
 {
     if (stopped())
         return false;
@@ -293,13 +267,13 @@ bool block_chain::insert(block_const_ptr block, uint64_t height)
 }
 
 // Append the block to the top of the chain, height is validated.
-bool block_chain::push(block_const_ptr block, uint64_t height)
+bool block_chain::push(block_const_ptr block, size_t height)
 {
     return database_.push(*block, height);
 }
 
 bool block_chain::pop_from(block_const_ptr_list& out_blocks,
-    uint64_t height)
+    size_t height)
 {
     size_t top;
 
@@ -307,22 +281,27 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
     if (!database_.blocks.top(top))
         return false;
 
-    BITCOIN_ASSERT_MSG(top <= max_size_t - 1, "chain overflow");
+    const auto next = safe_add(top, size_t(1));
 
     // The fork is at the top of the chain, nothing to pop.
-    if (height == top + 1)
+    if (height == next)
         return true;
 
-    // The fork is disconnected from the chain, fail.
-    if (height > top)
+    // The fork is below genesis or disconnected above the chain, fail.
+    if (height == 0 || height > next)
         return false;
 
+    // height < next (safe)
     // If the fork is at the top there is one block to pop, and so on.
-    out_blocks.reserve(top - height + 1);
+    out_blocks.reserve(next - height);
 
-    for (uint64_t index = top; index >= height; --index)
-        out_blocks.push_back(std::make_shared<message::block_message>(
-            database_.pop()));
+    // height > 0 (safe)
+    // Enqueue blocks so .front() block is new top + 1 and .back() is old top.
+    for (size_t index = top; index >= height; --index)
+    {
+        auto block = std::make_shared<message::block_message>(database_.pop());
+        out_blocks.insert(out_blocks.begin(), block);
+    }
 
     return true;
 }
@@ -443,7 +422,6 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 
         auto merkle = std::make_shared<message::merkle_block>(
             message::merkle_block{ result.header(), to_hashes(result), {} });
-
         return finish_fetch(slock, handler, error::success, merkle,
             result.height());
     };
@@ -506,7 +484,6 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
         const auto tx = std::make_shared<message::transaction_message>(
             result.transaction());
-
         return finish_fetch(slock, handler, error::success, tx,
             result.height());
     };
@@ -683,7 +660,8 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + limit + 1;
+        auto stop = safe_add(safe_add(start, limit), size_t(1));
+
         if (locator->stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
@@ -756,7 +734,8 @@ void block_chain::fetch_locator_block_headers(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + limit + 1;
+        auto stop = safe_add(safe_add(start, limit), size_t(1));
+
         if (locator->stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
@@ -896,41 +875,55 @@ void block_chain::subscribe_transaction(transaction_handler handler)
 
 
 // This call is sequential, but we are preserving the callback model for now.
-void block_chain::store(block_const_ptr block, block_store_handler handler)
+void block_chain::store(block_const_ptr block, result_handler handler)
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section.
-    mutex_.lock();
+    auto lock = std::make_shared<scope_lock>(mutex_);
 
-    const auto stopped = stopped_.load();
+    if (!stopped_.load())
+    {
+        do_store(block, lock, handler);
+        //?????????????????????????????????????????????????????????????????????
+        return;
+    }
 
-    if (!stopped)
-        do_store(block, handler);
-
-    mutex_.unlock();
+    lock.reset();
     ///////////////////////////////////////////////////////////////////////////
 
-    if (stopped)
-        handler(error::service_stopped, 0);
+    handler(error::service_stopped);
 }
 
 // This processes the block through the orphan_pool_manager.
-void block_chain::do_store(block_const_ptr block, block_store_handler handler)
+void block_chain::do_store(block_const_ptr block, scope_lock::ptr lock,
+    result_handler handler)
 {
-    code ec;
-
-    // End write is always called regardless of begin write success.
+    const result_handler close_store =
+        std::bind(&block_chain::handle_store,
+            this, _1, lock, handler);
 
     if (!database_.begin_write())
-        handler(database_.end_write() ? error::operation_failed :
-            error::operation_failed, 0);
+    {
+        DEBUG_ONLY(const auto result =) database_.end_write();
+        BITCOIN_ASSERT_MSG(!result, "database closed after open failure");
+        return;
+    }
 
-    else if ((ec = orphan_manager_.organize(block)))
-        handler(database_.end_write() ? ec : error::operation_failed, 0);
+    orphan_manager_.organize(block, close_store);
+}
 
-    else
-        handler(database_.end_write() ? block->metadata.validation_result :
-            error::operation_failed, block->metadata.validation_height);
+void block_chain::handle_store(const code& ec, scope_lock::ptr lock,
+    result_handler handler)
+{
+    // End write is always called regardless of begin write success.
+    const auto close_result = database_.end_write() ? error::success :
+        error::operation_failed;
+
+    //?????????????????????????????????????????????????????????????????????????
+    lock.reset();
+    ///////////////////////////////////////////////////////////////////////////
+
+    handler(ec ? ec : close_result);
 }
 
 void block_chain::store(transaction_const_ptr transaction,
