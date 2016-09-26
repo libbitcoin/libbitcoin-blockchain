@@ -65,7 +65,7 @@ bool validate_block::stopped() const
     return stopped_.load();
 }
 
-// Reset (not thread safe).
+// Create state (not thread safe).
 //-----------------------------------------------------------------------------
 
 // Must call this to update chain state before calling accept or connect.
@@ -82,6 +82,14 @@ code validate_block::reset(size_t height)
 
     // This has a side effect on subsequent calls!
     chain_state_.set_context(height, history_);
+    return error::success;
+}
+
+code validate_block::populate(block_const_ptr block) const
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: populate mutable block state.
+    ///////////////////////////////////////////////////////////////////////////
     return error::success;
 }
 
@@ -120,9 +128,8 @@ void validate_block::connect(block_const_ptr block,
             this, _1, block, asio::steady_clock::now(), handler);
 
     const result_handler join_handler =
-        synchronize(complete_handler, block->total_inputs(), NAME "_sync");
+        synchronize(complete_handler, block->total_inputs(), NAME "_join");
 
-    // Skip the first transaction in order to avoid the coinbase.
     for (const auto& tx: block->transactions)
         for (uint32_t index = 0; index < tx.inputs.size(); ++index)
             dispatch_.concurrent(&validate_block::connect_input,

@@ -49,8 +49,9 @@ public:
     code accept(block_const_ptr block) const;
     void connect(block_const_ptr block, result_handler handler) const;
 
-    /// Call once only before invoking accept/connect.
+    /// Call each before invoking accept/connect.
     code reset(size_t height);
+    code populate(block_const_ptr block) const;
 
 protected:
     bool stopped() const;

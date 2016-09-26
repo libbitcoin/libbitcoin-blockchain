@@ -21,9 +21,14 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
+#include <memory>
+#include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+using namespace std::placeholders;
 
 orphan_pool::orphan_pool(size_t capacity)
   : capacity_(capacity == 0 ? 1 : capacity)
@@ -95,6 +100,12 @@ void orphan_pool::remove(block_const_ptr block)
     ////    << "] old size (" << old_size << ").";
 }
 
+void orphan_pool::remove(const block_const_ptr_list& block)
+{
+    auto remover = [this](const block_const_ptr& block) { remove(block); };
+    std::for_each(block.begin(), block.end(), remover);
+}
+
 // TODO: use hash table pool to eliminate this O(n^2) search.
 void orphan_pool::filter(get_data_ptr message) const
 {
@@ -119,37 +130,23 @@ void orphan_pool::filter(get_data_ptr message) const
     }
 }
 
-inline const hash_digest& pre(block_const_ptr_list& list)
+fork::ptr orphan_pool::trace(block_const_ptr block) const
 {
-    return list.front()->header.previous_block_hash;
-}
-
-inline void enqueue(block_const_ptr_list& list, block_const_ptr block)
-{
-    list.insert(list.begin(), block);
-}
-
-///////////////////////////////////////////////////////////////////////////
-// TODO: obtain longest possible chain containing the block.
-///////////////////////////////////////////////////////////////////////////
-block_const_ptr_list orphan_pool::trace(block_const_ptr block) const
-{
-    block_const_ptr_list trace;
-
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_shared();
 
-    trace.reserve(buffer_.size());
-    enqueue(trace, block);
+    const auto capacity = buffer_.size();
+    const auto trace = std::make_shared<fork>(capacity);
 
-    for (auto it = find(pre(trace)); it != buffer_.end(); it = find(pre(trace)))
-        enqueue(trace, *it);
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: obtain longest possible chain containing the new block.
+    ///////////////////////////////////////////////////////////////////////////
+    trace->push(block);
 
     mutex_.unlock_shared();
     ///////////////////////////////////////////////////////////////////////////
 
-    trace.shrink_to_fit();
     return trace;
 }
 

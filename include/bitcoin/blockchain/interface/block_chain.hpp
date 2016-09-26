@@ -75,58 +75,58 @@ public:
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
-    bool get_gap_range(uint64_t& out_first, uint64_t& out_last) const;
+    bool get_gap_range(size_t& out_first, size_t& out_last) const;
 
     /// Return the next chain gap at or after the specified start height.
-    bool get_next_gap(uint64_t& out_height, uint64_t start_height) const;
+    bool get_next_gap(size_t& out_height, size_t start_height) const;
 
     /// Get a determination of whether the block hash exists in the store.
     bool get_exists(const hash_digest& block_hash) const;
 
     /// Get the difficulty of the branch starting at the given height.
-    bool get_difficulty(hash_number& out_difficulty, uint64_t height) const;
+    bool get_difficulty(hash_number& out_difficulty, size_t height) const;
 
     /// Get the header of the block at the given height.
-    bool get_header(chain::header& out_header, uint64_t height) const;
+    bool get_header(chain::header& out_header, size_t height) const;
 
     /// Get the height of the block with the given hash.
-    bool get_height(uint64_t& out_height, const hash_digest& block_hash) const;
+    bool get_height(size_t& out_height, const hash_digest& block_hash) const;
 
     /// Get the bits of the block with the given height.
-    bool get_bits(uint32_t& out_bits, const uint64_t& height) const;
+    bool get_bits(uint32_t& out_bits, const size_t& height) const;
 
     /// Get the timestamp of the block with the given height.
-    bool get_timestamp(uint32_t& out_timestamp, const uint64_t& height) const;
+    bool get_timestamp(uint32_t& out_timestamp, const size_t& height) const;
 
     /// Get the version of the block with the given height.
-    bool get_version(uint32_t& out_version, const uint64_t& height) const;
+    bool get_version(uint32_t& out_version, const size_t& height) const;
 
     /// Get height of latest block.
-    bool get_last_height(uint64_t& out_height) const;
+    bool get_last_height(size_t& out_height) const;
 
     /// Get the hash digest of the transaction of the outpoint.
     bool get_transaction_hash(hash_digest& out_hash,
         const chain::output_point& outpoint) const;
 
     /// Get the block height of the transaction given its hash.
-    bool get_transaction_height(uint64_t& out_block_height,
+    bool get_transaction_height(size_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
     /// Get the transaction of the given hash and its block height.
-    transaction_ptr get_transaction(uint64_t& out_block_height,
+    transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
     // simple_chain setters (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
     /// Insert a block to the blockchain, height is checked for existence.
-    bool insert(block_const_ptr block, uint64_t height);
+    bool insert(block_const_ptr block, size_t height);
 
     /// Append the block to the top of the chain, height is validated.
-    bool push(block_const_ptr block, uint64_t height);
+    bool push(block_const_ptr block, size_t height);
 
     /// Remove blocks at or above the given height, returning them in order.
-    bool pop_from(block_const_ptr_list& out_blocks, uint64_t height);
+    bool pop_from(block_const_ptr_list& out_blocks, size_t height);
 
     // full_chain queries (thread safe).
     // ------------------------------------------------------------------------
@@ -239,7 +239,7 @@ public:
     //-------------------------------------------------------------------------
 
     /// Store a block to the block chain (via orphan pool).
-    virtual void store(block_const_ptr block, block_store_handler handler);
+    virtual void store(block_const_ptr block, result_handler handler);
 
     /// Store a transaction to the memory pool.
     virtual void store(transaction_const_ptr transaction,
@@ -259,7 +259,10 @@ private:
         return true;
     }
 
-    void do_store(block_const_ptr block, block_store_handler handler);
+    void do_store(block_const_ptr block, scope_lock::ptr lock,
+        result_handler handler);
+    void handle_store(const code& ec, scope_lock::ptr lock,
+        result_handler handler);
 
     void fetch_serial(perform_read_functor perform_read) const;
     bool stopped() const;

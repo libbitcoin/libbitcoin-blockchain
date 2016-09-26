@@ -81,6 +81,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp">
       <Filter>include\bitcoin</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\fork.hpp">
+      <Filter>include\bitcoin\blockchain\validation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
@@ -111,6 +114,9 @@
       <Filter>src\validation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\validation\block_validator.cpp">
+      <Filter>src\validation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validation\fork.cpp">
       <Filter>src\validation</Filter>
     </ClCompile>
   </ItemGroup>

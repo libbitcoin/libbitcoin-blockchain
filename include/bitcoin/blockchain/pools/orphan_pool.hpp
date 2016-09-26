@@ -25,6 +25,7 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -44,11 +45,14 @@ public:
     /// Remove a block from the pool.
     void remove(block_const_ptr block);
 
+    /// Remove a set blocks from the pool.
+    void remove(const block_const_ptr_list& block);
+
     /// Remove from the message all vectors that match orphans.
     void filter(get_data_ptr message) const;
 
     /// Get the longest connected chain of orphans to block.
-    block_const_ptr_list trace(block_const_ptr block) const;
+    fork::ptr trace(block_const_ptr block) const;
 
 private:
     typedef std::vector<block_const_ptr> buffer;

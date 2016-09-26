@@ -62,14 +62,15 @@ bool block_validator::get_block_versions(versions& out_history, size_t height,
     // 1000 previous versions maximum sample.
     // 950 previous versions minimum required for enforcement.
     // 750 previous versions minimum required for activation.
-    const auto size = std::min(maximum, height);
+    const auto size = std::min(height, maximum);
     out_history.reserve(size);
     out_history.clear();
+    uint32_t version;
 
     // Read block (top) through (top - 99|999) and return versions.
     for (size_t index = 0; index < size; ++index)
     {
-        uint32_t version;
+        // The index is guaranteed to be less than height (and maximum).
         if (!fetch_version(version, height - index - 1))
             return false;
 
@@ -93,10 +94,11 @@ bool block_validator::median_time_past(uint64_t out_time_past,
     // Read last 11 (or height if height < 11) block times into array.
     const auto count = std::min(height, median_time_past_blocks);
     std::vector<uint64_t> times(count);
+    uint32_t timestamp;
 
     for (size_t index = 0; index < count; ++index)
     {
-        uint32_t timestamp;
+        // The index is guaranteed to be less than height (and mtpb).
         if (!fetch_timestamp(timestamp, height - index - 1))
             return false;
 
@@ -147,7 +149,8 @@ bool block_validator::work_required_testnet(uint32_t out_work, size_t height,
     uint32_t timestamp) const
 {
     uint32_t time;
-    if (!fetch_timestamp(time, height - 1))
+
+    if (!fetch_timestamp(time, safe_subtract(height, size_t(1))))
         return false;
 
     const auto max_time_gap = time + 2 * target_spacing_seconds;
@@ -166,6 +169,7 @@ bool block_validator::work_required_testnet(uint32_t out_work, size_t height,
     // does not have max_bits (is not special). Zero is a retarget height.
     while (!found)
     {
+        // previous_height is guarded by first subtract and is_retarget_height.
         if (!fetch_bits(previous_bits, --previous_height))
             return false;
 
@@ -181,14 +185,12 @@ bool block_validator::work_required_testnet(uint32_t out_work, size_t height,
 bool block_validator::retarget_timespan(uint64_t& out_timespan,
     size_t height) const
 {
-    // Zero is precluded and the first retarget height above zero is 2016.
-    BITCOIN_ASSERT(height > 0 && height >= retargeting_interval);
-
     uint32_t time_hi;
     uint32_t time_lo;
 
-    if (!fetch_timestamp(time_hi, height - 1) ||
-        !fetch_timestamp(time_lo, height - retargeting_interval))
+    // Zero height is precluded and first retarget height above zero is 2016.
+    if (!fetch_timestamp(time_hi, safe_subtract(height, size_t(1))) ||
+        !fetch_timestamp(time_lo, safe_subtract(height, retargeting_interval)))
         return false;
 
     out_timespan = time_hi - time_lo;
@@ -247,7 +249,7 @@ bool block_validator::fetch_version(uint32_t& out_version,
 transaction_ptr block_validator::fetch_transaction(size_t& tx_height,
     const hash_digest& tx_hash) const
 {
-    uint64_t out_tx_height;
+    size_t out_tx_height;
     const auto tx = chain_.get_transaction(out_tx_height, tx_hash);
 
     if (tx && out_tx_height <= fork_height_)
@@ -285,7 +287,7 @@ transaction_ptr block_validator::fetch_orphan_transaction(
 
 bool block_validator::is_output_spent(const output_point& outpoint) const
 {
-    uint64_t tx_height;
+    size_t tx_height;
     hash_digest tx_hash;
     return
         chain_.get_transaction_hash(tx_hash, outpoint) &&
