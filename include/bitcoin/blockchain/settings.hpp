@@ -33,7 +33,7 @@ class BCB_API settings
 {
 public:
     settings();
-    settings(bc::settings context);
+    settings(config::settings context);
 
     /// Properties.
     uint32_t block_pool_capacity;
