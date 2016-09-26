@@ -261,10 +261,10 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     {
         log::info(LOG_BLOCKCHAIN)
             << "Reorganizing from block " << base_height << " to "
-            << base_height + original.size() << "]";
+            << safe_add(base_height, original.size()) << "]";
     }
 
-    auto height = base_height;
+    auto height = fork->height();
 
     for (size_t index = 0; index < fork->size(); ++index)
     {
@@ -274,19 +274,19 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         pool_.remove(block);
 
         // Add the fork block to the store (logs failures).
-        if (!chain_.push(block, height++))
+        if (!chain_.push(block, safe_increment(height)))
         {
             handler(error::operation_failed);
             return;
         }
     }
 
-    height = base_height;
+    height = fork->height();
 
     for (const auto block: original)
     {
         // Original blocks remain valid at their original heights.
-        block->metadata.validation_height = height++;
+        block->metadata.validation_height = safe_increment(height);
         block->metadata.validation_result = error::success;
 
         // Add the original block to the orphan pool.

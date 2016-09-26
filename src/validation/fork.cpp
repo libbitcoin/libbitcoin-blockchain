@@ -135,12 +135,8 @@ hash_digest fork::hash() const
 // Calculate the blockchain height of the block at the given index.
 size_t fork::height_at(size_t index) const
 {
-    const auto fork_height = height();
-    BITCOIN_ASSERT(fork_height <= max_size_t - index);
-    BITCOIN_ASSERT(fork_height + index <= max_size_t - 1);
-
     // The height of the blockchain fork point plus zero-based orphan index.
-    return fork_height + index + 1;
+    return safe_add(safe_add(height(), index), size_t(1));
 }
 
 // Index is unguarded, caller must verify.

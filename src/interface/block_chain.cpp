@@ -281,19 +281,21 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
     if (!database_.blocks.top(top))
         return false;
 
-    BITCOIN_ASSERT_MSG(top <= max_size_t - 1, "chain overflow");
+    const auto next = safe_add(top, size_t(1));
 
     // The fork is at the top of the chain, nothing to pop.
-    if (height == top + 1)
+    if (height == next)
         return true;
 
-    // The fork is disconnected from the chain, fail.
-    if (height > top)
+    // The fork is below genesis or disconnected above the chain, fail.
+    if (height == 0 || height > next)
         return false;
 
+    // height < next (safe)
     // If the fork is at the top there is one block to pop, and so on.
-    out_blocks.reserve(top - height + 1);
+    out_blocks.reserve(next - height);
 
+    // height > 0 (safe)
     // Enqueue blocks so .front() block is new top + 1 and .back() is old top.
     for (size_t index = top; index >= height; --index)
     {
@@ -658,7 +660,8 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + limit + 1;
+        auto stop = safe_add(safe_add(start, limit), size_t(1));
+
         if (locator->stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
@@ -731,7 +734,8 @@ void block_chain::fetch_locator_block_headers(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        size_t stop = start + limit + 1;
+        auto stop = safe_add(safe_add(start, limit), size_t(1));
+
         if (locator->stop_hash != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
