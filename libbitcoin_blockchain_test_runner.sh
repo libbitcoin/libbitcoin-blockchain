@@ -9,7 +9,7 @@
 # Define tests and options.
 #==============================================================================
 BOOST_UNIT_TEST_OPTIONS=\
-"--run_test=transaction_pool_tests,validate_block_tests "\
+"--run_test=fork_tests,transaction_pool_tests,validate_block_tests "\
 "--show_progress=no "\
 "--detect_memory_leak=0 "\
 "--report_level=no "\

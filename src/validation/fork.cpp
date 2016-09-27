@@ -59,7 +59,6 @@ bool fork::push(block_const_ptr block)
 // Index is unguarded, caller must verify.
 block_const_ptr_list fork::pop(size_t index, const code& reason)
 {
-    BITCOIN_ASSERT(index < blocks_.size());
     const auto end = blocks_.end();
     const auto start = blocks_.begin() + index;
 
@@ -87,7 +86,7 @@ void fork::clear()
     height_ = 0;
 }
 
-// Index is unguarded, caller must verify.
+// Index is unguarded, caller must verify or access violation will result.
 void fork::set_verified(size_t index)
 {
     BITCOIN_ASSERT(index < blocks_.size());
@@ -96,7 +95,7 @@ void fork::set_verified(size_t index)
     block->metadata.validation_result = error::success;
 }
 
-// Index is unguarded, caller must verify.
+// Index is unguarded, caller must verify or access violation will result.
 bool fork::is_verified(size_t index) const
 {
     BITCOIN_ASSERT(index < blocks_.size());
