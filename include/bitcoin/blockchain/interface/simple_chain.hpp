@@ -45,10 +45,10 @@ public:
         size_t start_height) const = 0;
 
     /// Get a determination of whether the block hash exists in the store.
-    virtual bool get_exists(const hash_digest& block_hash) const = 0;
+    virtual bool get_block_exists(const hash_digest& block_hash) const = 0;
 
     /// Get the difficulty of the branch starting at the given height.
-    virtual bool get_difficulty(hash_number& out_difficulty,
+    virtual bool get_branch_difficulty(hash_number& out_difficulty,
         size_t from_height) const = 0;
 
     /// Get the header of the block at the given height.
@@ -73,9 +73,17 @@ public:
     /// Get height of latest block.
     virtual bool get_last_height(size_t& out_height) const = 0;
 
-    /// Get the hash digest of the transaction of the outpoint.
-    virtual bool get_transaction_hash(hash_digest& out_hash,
+    /// Get the output that is referenced by the outpoint.
+    virtual bool get_output(chain::output& out_output, size_t& out_height,
+        size_t& out_position, const chain::output_point& outpoint) const = 0;
+
+    /// Get the hash digest of the transaction that spent the outpoint.
+    virtual bool get_spender_hash(hash_digest& out_hash,
         const chain::output_point& outpoint) const = 0;
+
+    /// Determine if an unspent transaction exists with the given hash.
+    virtual bool get_is_unspent_transaction(
+        const hash_digest& transaction_hash) const = 0;
 
     /// Get the block height of the transaction given its hash.
     virtual bool get_transaction_height(size_t& out_block_height,

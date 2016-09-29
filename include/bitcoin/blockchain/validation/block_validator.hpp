@@ -60,9 +60,6 @@ protected:
     // TODO: move to blockchain.
     transaction_ptr fetch_transaction(size_t& height,
         const hash_digest& tx_hash) const;
-    bool is_output_spent(const chain::output_point& outpoint) const;
-    bool is_orphan_spent(const chain::output_point& previous_output,
-        const chain::transaction& skip_tx, uint32_t skip_input_index) const;
 
 private:
     transaction_ptr fetch_orphan_transaction(size_t& previous_height,

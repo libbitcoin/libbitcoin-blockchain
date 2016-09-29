@@ -19,11 +19,15 @@
  */
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <numeric>
 #include <bitcoin/bitcoin.hpp>
+#include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/validation/fork.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>
@@ -34,21 +38,21 @@ namespace blockchain {
 
 using namespace bc::chain;
 using namespace bc::config;
+using namespace bc::error;
 using namespace std::placeholders;
 
 #define NAME "validate_block"
 
-static constexpr size_t ms_per_second = 1000;
-
-validate_block::validate_block(threadpool& pool, bool testnet,
-    bool libconsensus, const checkpoints& checkpoints,
-    const simple_chain& chain)
-  : chain_state_(testnet, checkpoints),
-    history_(chain_state_.sample_size),
-    stopped_(false),
-    dispatch_(pool, NAME "_dispatch"),
+validate_block::validate_block(threadpool& pool, const simple_chain& chain,
+    const settings& settings)
+  : stopped_(false),
     chain_(chain),
-    use_libconsensus_(libconsensus)
+    use_libconsensus_(settings.use_libconsensus),
+    use_testnet_rules_(settings.use_testnet_rules),
+    checkpoints_(checkpoint::sort(settings.checkpoints)),
+    dispatch_(pool, NAME "_dispatch"),
+    chain_state_(use_testnet_rules_, checkpoints_),
+    history_(chain_state_.sample_size)
 {
 }
 
@@ -65,12 +69,26 @@ bool validate_block::stopped() const
     return stopped_.load();
 }
 
-// Create state (not thread safe).
+// Populate sequence (not thread safe).
 //-----------------------------------------------------------------------------
 
-// Must call this to update chain state before calling accept or connect.
-// There is no need to call a second time for connect after accept.
-code validate_block::reset(size_t height)
+// TODO: provide fail-fast configuration option (any_of vs. for_each).
+void validate_block::populate(fork::const_ptr fork, size_t index,
+    result_handler handler)
+{
+    populate_chain_state(fork, index, nullptr);
+    populate_block(fork, index, handler);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TODO: make block state a member of block.validation.
+///////////////////////////////////////////////////////////////////////////////
+// TODO: precalculate block state on start and after each block push,
+// storing a reference in blockchain for use by memory pool and copying to
+// blocks as they are received into a fork.
+///////////////////////////////////////////////////////////////////////////////
+void validate_block::populate_chain_state(fork::const_ptr fork , size_t index,
+    result_handler)
 {
     ///////////////////////////////////////////////////////////////////////////
     // TODO: populate chain state.
@@ -79,18 +97,187 @@ code validate_block::reset(size_t height)
     //// median_time_past(time, height);
     //// work_required(work, height);
     //// work_required_testnet(work, height, candidate_block.timestamp);
+    ///////////////////////////////////////////////////////////////////////////
 
-    // This has a side effect on subsequent calls!
-    chain_state_.set_context(height, history_);
-    return error::success;
+    // This has a side effect on subsequent calls.
+    chain_state_.set_context(fork->height_at(index), history_);
 }
 
-code validate_block::populate(block_const_ptr block) const
+void validate_block::populate_block(fork::const_ptr fork, size_t index,
+    result_handler handler)
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: populate mutable block state.
-    ///////////////////////////////////////////////////////////////////////////
-    return error::success;
+    const auto fork_height = fork->height();
+
+    // TODO: parallelize by input, change operation_failed to throw.
+    const auto out = [&](error_code_t ec, const transaction& tx)
+    {
+        const auto in = [&](error_code_t ec, const input& input)
+        {
+            // This is the only failure case, a database integrity fault.
+            if (!populate_spent(fork_height, input.previous_output))
+                return error::operation_failed; 
+
+            populate_spent(fork, index, input.previous_output);
+            populate_prevout(fork_height, input.previous_output);
+            populate_prevout(fork, index, input.previous_output);
+            return ec;
+        };
+
+        populate_transaction(tx);
+        populate_transaction(fork, index, tx);
+
+        const auto& ins = tx.inputs;
+        return std::accumulate(ins.begin(), ins.end(), ec, in);
+    };
+
+    const auto start_time = asio::steady_clock::now();
+    const auto block = fork->block_at(index);
+    populate_coinbase(block);
+
+    const auto& txs = block->transactions;
+    auto ec = std::accumulate(txs.begin() + 1, txs.end(), error::success, out);
+
+    // TODO: move to timer class managed by orphan pool manager.
+    //=========================================================================
+    static constexpr size_t micro_per_milli = 1000;
+    const auto delta = asio::steady_clock::now() - start_time;
+    const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
+    const auto micro_per_block = static_cast<float>(elapsed.count());
+    const auto micro_per_input = micro_per_block / block->total_inputs();
+    const auto milli_per_block = micro_per_block / micro_per_milli;
+
+    log::info(LOG_BLOCKCHAIN)
+        << "Block [" << chain_state_.next_height() << "] "
+        << (code(ec) ? "unpopulated" : "populated") << " (" << txs.size()
+        << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
+        << ") μs/input";
+    //=========================================================================
+
+    handler(ec);
+}
+
+// Returns false only when transaction is duplicate on chain.
+void validate_block::populate_transaction(const chain::transaction& tx) const
+{
+    // BUGBUG: this is overly restrictive, see BIP30.
+    tx.validation.duplicate = chain_.get_is_unspent_transaction(tx.hash());
+}
+
+// Returns false only when transaction is duplicate on fork.
+void validate_block::populate_transaction(fork::const_ptr fork, size_t index,
+    const chain::transaction& tx) const
+{
+    // Distinctness is a static check so this looks only below the index.
+    if (!tx.validation.duplicate)
+        fork->populate_tx(index, tx);
+}
+
+// Returns false only when database operation fails.
+void validate_block::populate_spent(fork::const_ptr fork, size_t index,
+    const output_point& outpoint) const
+{
+    if (!outpoint.validation.spent)
+        fork->populate_spent(index, outpoint);
+}
+
+void validate_block::populate_prevout(fork::const_ptr fork, size_t index,
+    const output_point& outpoint) const
+{
+    if (!outpoint.validation.cache.is_valid())
+        fork->populate_prevout(index, outpoint);
+}
+
+// Initialize the coinbase input for subsequent validation.
+void validate_block::populate_coinbase(block_const_ptr block) const
+{
+    const auto& txs = block->transactions;
+
+    // This is only a guard against invalid input.
+    if (txs.empty() || !txs.front().is_coinbase())
+        return;
+
+    // A coinbase tx guarnatees exactly one input.
+    const auto& input = txs.front().inputs.front();
+    auto& prevout = input.previous_output.validation;
+
+    // A coinbase input cannot be a double spend since it originates coin.
+    prevout.spent = false;
+
+    // A coinbase is only valid within a block and input is confirmed if valid.
+    prevout.confirmed = true;
+
+    // A coinbase input has no previous output.
+    prevout.cache.reset();
+
+    // A coinbase input does not spend an output so is itself always mature.
+    prevout.height = output_point::validation::not_specified;
+}
+
+// Returns false only when database operation fails.
+bool validate_block::populate_spent(size_t fork_height,
+    const output_point& outpoint) const
+{
+    size_t spender_height;
+    hash_digest spender_hash;
+    auto& prevout = outpoint.validation;
+
+    // Confirmed state matches spend state (unless tx pool validation).
+    prevout.confirmed = false;
+
+    // Determine if the prevout is spent by a confirmed input.
+    prevout.spent = chain_.get_spender_hash(spender_hash, outpoint);
+
+    // Either the prevout is unspent, spent in fork, the outpoint is invalid.
+    if (!prevout.spent)
+        return true;
+
+    // It is a store failure it the spender transaction is not found.
+    if (!chain_.get_transaction_height(spender_height, spender_hash))
+        return false;
+
+    // Unspend the prevout if it is above the fork.
+    prevout.spent = spender_height <= fork_height;
+
+    // All block spends are confirmed spends.
+    prevout.confirmed = prevout.spent;
+    return true;
+}
+
+void validate_block::populate_prevout(size_t fork_height,
+    const output_point& outpoint) const
+{
+    size_t height;
+    size_t position;
+    auto& prevout = outpoint.validation;
+
+    // In case this input is a coinbase or the prevout is spent.
+    prevout.cache.reset();
+
+    // The height of the prevout must be set iff the prevout is coinbase.
+    prevout.height = output_point::validation::not_specified;
+
+    // The input is a coinbase, so there is no prevout to populate.
+    if (outpoint.is_null())
+        return;
+
+    ////// The prevout is spent, so don't bother to populate it [optimized].
+    ////if (prevout.spent)
+    ////    return true;
+
+    // Get the script and value for the prevout.
+    if (!chain_.get_output(prevout.cache, height, position, outpoint))
+        return;
+
+    // Unfind the prevout if it is above the fork (clear the cache).
+    if (height > fork_height)
+    {
+        prevout.cache.reset();
+        return;
+    }
+
+    // Set height iff the prevout is coinbase (first tx is coinbase).
+    if (position == 0)
+        prevout.height = height;
 }
 
 // Validation sequence (thread safe).
@@ -115,10 +302,13 @@ void validate_block::connect(block_const_ptr block,
 {
     if (!chain_state_.use_full_validation())
     {
+        //=====================================================================
         log::info(LOG_BLOCKCHAIN)
             << "Block [" << chain_state_.next_height() << "] accepted ("
             << block->transactions.size() << ") txs and ("
             << block->total_inputs() << ") inputs under checkpoint.";
+        //=====================================================================
+
         handler(error::success);
         return;
     }
@@ -132,22 +322,20 @@ void validate_block::connect(block_const_ptr block,
 
     // We must always continue on a new thread.
     for (const auto& tx: block->transactions)
-        for (uint32_t index = 0; index < tx.inputs.size(); ++index)
+        for (size_t index = 0; index < tx.inputs.size(); ++index)
             dispatch_.concurrent(&validate_block::connect_input,
                 this, std::ref(tx), index, join_handler);
 }
 
-void validate_block::connect_input(const transaction& tx, uint32_t input_index,
+void validate_block::connect_input(const transaction& tx, size_t input_index,
     result_handler handler) const
 {
     handler(validate_input(tx, input_index));
 }
 
 code validate_block::validate_input(const transaction& tx,
-    uint32_t input_index) const
+    size_t input_index) const
 {
-    return error::success;
-
     if (stopped())
         return error::service_stopped;
 
@@ -155,30 +343,35 @@ code validate_block::validate_input(const transaction& tx,
         return error::success;
 
     if (input_index >= tx.inputs.size())
-        return error::input_not_found;
+        return error::operation_failed;
 
-    if (!tx.inputs[input_index].previous_output.is_cached())
+    const auto index32 = static_cast<uint32_t>(input_index);
+    const auto& prevout = tx.inputs[input_index].previous_output.validation;
+
+    if (!prevout.cache.is_valid())
         return error::not_found;
 
-    return verify_script(tx, input_index, chain_state_.enabled_forks(),
+    return verify_script(tx, index32, chain_state_.enabled_forks(),
         use_libconsensus_);
 }
 
 void validate_block::handle_connect(const code& ec, block_const_ptr block,
     asio::time_point start_time, result_handler handler) const
 {
+    //=========================================================================
+    static constexpr size_t micro_per_milli = 1000;
     const auto delta = asio::steady_clock::now() - start_time;
-    const auto elapsed = std::chrono::duration_cast<asio::milliseconds>(delta);
-    const auto ms_per_block = static_cast<float>(elapsed.count());
-    const auto ms_per_input = ms_per_block / block->total_inputs();
-    const auto seconds_per_block = ms_per_block / ms_per_second;
+    const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
+    const auto micro_per_block = static_cast<float>(elapsed.count());
+    const auto micro_per_input = micro_per_block / block->total_inputs();
+    const auto milli_per_block = micro_per_block / micro_per_milli;
 
     log::info(LOG_BLOCKCHAIN)
         << "Block [" << chain_state_.next_height() << "] "
-        << (ec ? "aborted" : "accepted") << " ("
-        << block->transactions.size() << ") txs in ("
-        << seconds_per_block << ") secs or ("
-        << ms_per_input << ") ms/input";
+        << (ec ? "invalidated" : "validated") << " ("
+        << block->transactions.size() << ") txs in (" << milli_per_block
+        << ") ms or (" << micro_per_input << ") μs/input";
+    //=========================================================================
 
     handler(ec);
 }
@@ -283,12 +476,14 @@ code validate_block::verify_script(const transaction& tx, uint32_t input_index,
         return script::verify(tx, input_index, flags);
 
     BITCOIN_ASSERT(input_index < tx.inputs.size());
-    const auto& prevout = tx.inputs[input_index].previous_output;
-    const auto transaction_data = tx.to_data();
+    const auto& prevout = tx.inputs[input_index].previous_output.validation;
     const auto script_data = prevout.cache.script.to_data(false);
-    return convert_result(consensus::verify_script(transaction_data.data(),
-        transaction_data.size(), script_data.data(), script_data.size(),
-        input_index, convert_flags(flags)));
+    const auto tx_data = tx.to_data();
+
+    // libconsensus
+    return convert_result(consensus::verify_script(tx_data.data(),
+        tx_data.size(), script_data.data(), script_data.size(), input_index,
+        convert_flags(flags)));
 }
 
 #else
@@ -303,24 +498,3 @@ code validate_block::verify_script(const transaction& tx,
 
 } // namespace blockchain
 } // namespace libbitcoin
-
-////bool validate_block::contains_duplicates(block_const_ptr block) const
-////{
-////    size_t height;
-////    transaction other;
-////    auto duplicate = false;
-////    const auto& txs = block.transactions;
-////
-////    //|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-////    for (auto tx = txs.begin(); !duplicate && tx != txs.end(); ++tx)
-////    {
-////        duplicate = fetch_transaction(other, height, tx->hash());
-////    }
-////    //|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-////
-////    return duplicate;
-////}
-////
-// Lookup transaction and block height of the previous output.
-////if (!fetch_transaction(previous_tx, previous_tx_height, previous_hash))
-////    return error::input_not_found;

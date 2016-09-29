@@ -35,6 +35,7 @@ class BCB_API fork
 {
 public:
     typedef std::shared_ptr<fork> ptr;
+    typedef std::shared_ptr<const fork> const_ptr;
 
     /// Establish a fork with the given parent checkpoint.
     fork(size_t capacity=0);
@@ -53,6 +54,17 @@ public:
 
     /// Determine if the block has been validated for the height of index.
     bool is_verified(size_t index) const;
+
+    /// Populate transaction validation state using fork height to index.
+    void populate_tx(size_t index, const chain::transaction& tx) const;
+
+    /// Populate prevout validation spend state using fork height to index.
+    void populate_spent(size_t index,
+        const chain::output_point& outpoint) const;
+
+    /// Populate prevout validation output state using fork height to index.
+    void populate_prevout(size_t index,
+        const chain::output_point& outpoint) const;
 
     /// The member block pointer list.
     const block_const_ptr_list& blocks() const;
