@@ -33,6 +33,7 @@
 #include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
 #include <bitcoin/blockchain/validation/block_validator.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
+#include <bitcoin/blockchain/validation/populate_block.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 #include <bitcoin/blockchain/validation/validate_transaction.hpp>
 

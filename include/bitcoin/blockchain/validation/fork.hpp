@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FORK_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FORK_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BRANCH_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BRANCH_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -50,7 +50,7 @@ public:
     block_const_ptr_list pop(size_t index, const code& reason);
 
     /// Set validation result metadata on the block. 
-    void set_verified(size_t index);
+    void set_verified(size_t index) const;
 
     /// Determine if the block has been validated for the height of index.
     bool is_verified(size_t index) const;

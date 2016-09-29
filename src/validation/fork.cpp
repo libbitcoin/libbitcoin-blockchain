@@ -88,7 +88,7 @@ void fork::clear()
 }
 
 // Index is unguarded, caller must verify or access violation will result.
-void fork::set_verified(size_t index)
+void fork::set_verified(size_t index) const
 {
     BITCOIN_ASSERT(index < blocks_.size());
     const auto block = blocks_[index];
@@ -103,6 +103,56 @@ bool fork::is_verified(size_t index) const
     const auto block = blocks_[index];
     return (block->validation.result == error::success &&
         block->validation.height == height_at(index));
+}
+
+const block_const_ptr_list& fork::blocks() const
+{
+    return blocks_;
+}
+
+bool fork::empty() const
+{
+    return blocks_.empty();
+}
+
+size_t fork::size() const
+{
+    return blocks_.size();
+}
+
+size_t fork::height() const
+{
+    return height_;
+}
+
+hash_digest fork::hash() const
+{
+    return blocks_.empty() ? null_hash :
+        blocks_.front()->header.previous_block_hash;
+}
+
+// Index is unguarded, caller must verify.
+// Calculate the blockchain height of the block at the given index.
+size_t fork::height_at(size_t index) const
+{
+    // The height of the blockchain fork point plus zero-based orphan index.
+    return safe_add(safe_add(height(), index), size_t(1));
+}
+
+// Index is unguarded, caller must verify.
+block_const_ptr fork::block_at(size_t index) const
+{
+    return index < size() ? blocks_[index] : nullptr;
+}
+
+hash_number fork::difficulty() const
+{
+    hash_number total;
+
+    for (auto& block: blocks_)
+        total += block->difficulty();
+
+    return total;
 }
 
 // Excluding self and early termination is harder than just counting all.
@@ -196,14 +246,14 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     if (outpoint.is_null())
         return;
 
-    ////// The prevout is spent, so don't bother to populate it [optimized].
-    ////if (prevout.spent)
-    ////    return true;
+    ///////////////////////////////////////////////////////////////////////////
+    // We continue even if prevout spent and/or missing.
+    ///////////////////////////////////////////////////////////////////////////
 
     // Get the script and value for the prevout.
     const auto finder = get_output();
 
-    // Found the prevout at or below the top of the branch.
+    // Found the prevout at or below the top of the fork.
     if (!finder.out.is_valid())
         return;
 
@@ -212,56 +262,6 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     // Set height iff the prevout is coinbase (first tx is coinbase).
     if (finder.position == 0)
         prevout.height = finder.height;
-}
-
-const block_const_ptr_list& fork::blocks() const
-{
-    return blocks_;
-}
-
-bool fork::empty() const
-{
-    return blocks_.empty();
-}
-
-size_t fork::size() const
-{
-    return blocks_.size();
-}
-
-size_t fork::height() const
-{
-    return height_;
-}
-
-hash_digest fork::hash() const
-{
-    return blocks_.empty() ? null_hash :
-        blocks_.front()->header.previous_block_hash;
-}
-
-// Index is unguarded, caller must verify.
-// Calculate the blockchain height of the block at the given index.
-size_t fork::height_at(size_t index) const
-{
-    // The height of the blockchain fork point plus zero-based orphan index.
-    return safe_add(safe_add(height(), index), size_t(1));
-}
-
-// Index is unguarded, caller must verify.
-block_const_ptr fork::block_at(size_t index) const
-{
-    return index < size() ? blocks_[index] : nullptr;
-}
-
-hash_number fork::difficulty() const
-{
-    hash_number total;
-
-    for (auto& block: blocks_)
-        total += block->difficulty();
-
-    return total;
 }
 
 } // namespace blockchain

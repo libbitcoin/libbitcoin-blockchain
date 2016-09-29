@@ -63,25 +63,27 @@ protected:
 
 private:
     fork::ptr find_connected_fork(block_const_ptr block);
+
     void verify(fork::ptr fork, size_t index, result_handler handler);
+    void handle_accept(const code& ec, fork::ptr fork, size_t index,
+        result_handler handler);
+    void handle_connect(const code& ec, fork::ptr fork, size_t index,
+        result_handler handler);
+
     void organized(fork::ptr fork, result_handler handler);
     void notify_reorganize(size_t fork_height, const list& fork,
         const list& original);
 
-    void handle_verify(const code& ec, fork::ptr fork, size_t index,
-        result_handler handler);
-    void handle_populate(const code& ec, fork::ptr fork, size_t index,
-        result_handler handler);
-
-    // These are protected by the caller protecting organize().
+    // This is protected by the caller protecting organize().
     simple_chain& chain_;
-    validate_block validator_;
 
     // These are thread safe.
-    orphan_pool& orphan_pool_;
     std::atomic<bool> stopped_;
+    orphan_pool& orphan_pool_;
+    validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
+
 };
 
 } // namespace blockchain
