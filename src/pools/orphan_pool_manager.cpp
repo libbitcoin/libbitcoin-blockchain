@@ -44,9 +44,9 @@ using namespace std::placeholders;
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     simple_chain& chain, orphan_pool& pool, const settings& settings)
   : chain_(chain),
-    validator_(thread_pool, chain_, settings),
-    orphan_pool_(pool),
     stopped_(true),
+    orphan_pool_(pool),
+    validator_(thread_pool, chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
     dispatch_(thread_pool, NAME "_dispatch")
 {
@@ -87,15 +87,16 @@ void orphan_pool_manager::organize(block_const_ptr block,
         return;
     }
 
-    code error_code;
+    // Checks that are independent of chain state.
+    const auto ec = validator_.check(block);
 
-    // Checks independent of the chain.
-    if ((error_code = validator_.check(block)))
+    if (ec)
     {
-        handler(error_code);
+        handler(ec);
         return;
     }
 
+    // This is a free-roaming consensus check.
     // Check database and orphan pool for duplicate block hash.
     if (chain_.get_block_exists(block->hash()) || !orphan_pool_.add(block))
     {
@@ -103,11 +104,11 @@ void orphan_pool_manager::organize(block_const_ptr block,
         return;
     }
 
-    fork::ptr fork;
-
     // Find longest fork of blocks that connects the block to the blockchain.
+    const auto fork = find_connected_fork(block);
+
     // If there is no connection the original block is currently an orphan.
-    if ((fork = find_connected_fork(block))->empty())
+    if (fork->empty())
     {
         handler(error::orphan);
         return;
@@ -133,20 +134,21 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
     if (fork->is_verified(index))
     {
         // This must be dispatched in order to prevent recursion.
-        dispatch_.concurrent(&orphan_pool_manager::handle_verify,
+        dispatch_.concurrent(&orphan_pool_manager::handle_connect,
             this, error::success, fork, index, handler);
+        return;
     }
-    else
-    {
-        // TODO: fork pointer should be cast to const fork.
-        // Populate height chain state and block previous outputs.
-        validator_.populate(fork, index,
-            std::bind(&orphan_pool_manager::handle_populate,
-                this, _1, fork, index, handler));
-    }
+
+    // Protect the fork from the validator.
+    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
+
+    // Checks that are dependent on chain state and prevouts.
+    validator_.accept(const_fork, index,
+        std::bind(&orphan_pool_manager::handle_accept,
+            this, _1, fork, index, handler));
 }
 
-void orphan_pool_manager::handle_populate(const code& ec, fork::ptr fork,
+void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
     size_t index, result_handler handler)
 {
     BITCOIN_ASSERT(!fork->empty());
@@ -160,28 +162,22 @@ void orphan_pool_manager::handle_populate(const code& ec, fork::ptr fork,
 
     if (ec)
     {
+        // This is not a validation failure, so no pool removal.
         handler(ec);
         return;
     }
 
-    code error_code;
-    const auto block = fork->block_at(index);
-
-    // Checks that are dependent on chain state and prevouts.
-    if ((error_code = validator_.accept(block)))
-    {
-        handler(error_code);
-        return;
-    }
+    // Protect the fork from the validator.
+    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
 
     // Checks that include script validation.
-    validator_.connect(block,
-        std::bind(&orphan_pool_manager::handle_verify,
+    validator_.connect(const_fork, index,
+        std::bind(&orphan_pool_manager::handle_connect,
             this, _1, fork, index, handler));
 }
 
 // Call handler to stop, organized to coninue.
-void orphan_pool_manager::handle_verify(const code& ec, fork::ptr fork,
+void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
     size_t index, result_handler handler)
 {
     BITCOIN_ASSERT(!fork->empty());
@@ -235,12 +231,12 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    // This is the height of the first block of each branch after the fork.
+    // This is the height of the first block of each fork after the fork.
     const auto base_height = safe_add(fork->height(), size_t(1));
     hash_number original_difficulty;
 
     // Summarize the difficulty of the original chain from base_height to top.
-    if (!chain_.get_branch_difficulty(original_difficulty, base_height))
+    if (!chain_.get_fork_difficulty(original_difficulty, base_height))
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure getting difficulty from [" << base_height << "]";

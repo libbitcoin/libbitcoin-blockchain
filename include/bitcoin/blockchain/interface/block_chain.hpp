@@ -83,8 +83,8 @@ public:
     /// Get a determination of whether the block hash exists in the store.
     bool get_block_exists(const hash_digest& block_hash) const;
 
-    /// Get the difficulty of the branch starting at the given height.
-    bool get_branch_difficulty(hash_number& out_difficulty,
+    /// Get the difficulty of the fork starting at the given height.
+    bool get_fork_difficulty(hash_number& out_difficulty,
         size_t height) const;
 
     /// Get the header of the block at the given height.

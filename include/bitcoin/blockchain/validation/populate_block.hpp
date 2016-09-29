@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_BLOCK_HPP
-#define LIBBITCOIN_BLOCKCHAIN_VALIDATE_BLOCK_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_POPULATE_BLOCK_HPP
+#define LIBBITCOIN_BLOCKCHAIN_POPULATE_BLOCK_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -28,50 +28,59 @@
 #include <bitcoin/blockchain/interface/simple_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
-#include <bitcoin/blockchain/validation/populate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe.
-class BCB_API validate_block
+class BCB_API populate_block
 {
 public:
     typedef handle0 result_handler;
 
-    validate_block(threadpool& pool, const simple_chain& chain,
+    populate_block(threadpool& pool, const simple_chain& chain,
         const settings& settings);
 
     void stop();
 
-    code check(block_const_ptr block) const;
-
-    void accept(fork::const_ptr fork, size_t index,
-        result_handler handler) const;
-
-    void connect(fork::const_ptr fork, size_t index,
+    /// Populate all validation state for block[index] and to on the block.
+    void populate(fork::const_ptr fork, size_t index,
         result_handler handler) const;
 
 protected:
     bool stopped() const;
 
 private:
-    static code verify_script(const chain::transaction& tx,
-        uint32_t input_index, uint32_t flags, bool use_libconsensus);
     static void report(block_const_ptr block, asio::time_point start_time,
         const std::string& token);
 
-    void handle_accepted(const code& ec, block_const_ptr block,
+    // Return the current chain state for the given height.
+    chain::chain_state::ptr create_chain_state(size_t height) const;
+
+    void populate_transactions(fork::const_ptr fork, size_t index,
         result_handler handler) const;
-    void connect_input(const chain::transaction& tx,
-        size_t input_index, uint32_t flags, result_handler handler) const;
-    void handle_connect(const code& ec, block_const_ptr block,
+    void populate_coinbase(block_const_ptr block) const;
+    void populate_transaction(const chain::transaction& tx) const;
+    void populate_transaction(fork::const_ptr fork, size_t index,
+        const chain::transaction& tx) const;
+    void populate_inputs(fork::const_ptr fork, size_t index,
+        const chain::transaction& input, result_handler handler) const;
+    bool populate_spent(size_t fork_height,
+        const chain::output_point& outpoint) const;
+    void populate_spent(fork::const_ptr fork, size_t index,
+        const chain::output_point& outpoint) const;
+    void populate_prevout(size_t fork_height,
+        const chain::output_point& outpoint) const;
+    void populate_prevout(fork::const_ptr fork, size_t index,
+        const chain::output_point& outpoint) const;
+    void handle_populate(const code& ec, block_const_ptr block,
         asio::time_point start_time, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool use_libconsensus_;
-    populate_block populator_;
+    const bool use_testnet_rules_;
+    const config::checkpoint::list checkpoints_;
+    const simple_chain& chain_;
     mutable dispatcher dispatch_;
 };
 

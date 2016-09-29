@@ -29,6 +29,19 @@ namespace blockchain {
 
 using namespace bc::chain;
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: make block state a member of block.validation.
+///////////////////////////////////////////////////////////////////////////////
+// TODO: precalculate block state on start and after each block push,
+// storing a reference in blockchain for use by memory pool and copying to
+// blocks as they are received into a fork.
+///////////////////////////////////////////////////////////////////////////////
+//// get_block_versions(height, chain_state.sample_size)
+//// median_time_past(time, height);
+//// work_required(work, height);
+//// work_required_testnet(work, height, candidate_block.timestamp);
+///////////////////////////////////////////////////////////////////////////////
+
 // The height parameter is the new block (top + 1).
 block_validator::block_validator(size_t fork_height,
     const block_const_ptr_list& orphan_chain, size_t orphan_index,
