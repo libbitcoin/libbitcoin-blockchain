@@ -136,12 +136,12 @@ bool block_chain::get_next_gap(size_t& out_height, size_t start_height) const
     return !database_.blocks.next_gap(out_height, start_height);
 }
 
-bool block_chain::get_exists(const hash_digest& block_hash) const
+bool block_chain::get_block_exists(const hash_digest& block_hash) const
 {
     return database_.blocks.get(block_hash);
 }
 
-bool block_chain::get_difficulty(hash_number& out_difficulty,
+bool block_chain::get_branch_difficulty(hash_number& out_difficulty,
     size_t from_height) const
 {
     size_t top;
@@ -219,7 +219,7 @@ bool block_chain::get_last_height(size_t& out_height) const
     return database_.blocks.top(out_height);
 }
 
-bool block_chain::get_transaction_hash(hash_digest& out_hash,
+bool block_chain::get_spender_hash(hash_digest& out_hash,
     const output_point& outpoint) const
 {
     const auto spend = database_.spends.get(outpoint);
@@ -228,6 +228,33 @@ bool block_chain::get_transaction_hash(hash_digest& out_hash,
 
     out_hash = std::move(spend.hash);
     return true;
+}
+
+bool block_chain::get_output(chain::output& out_output, size_t& out_height,
+    size_t& out_position, const chain::output_point& outpoint) const
+{
+    const auto result = database_.transactions.get(outpoint.hash);
+    if (!result)
+    {
+        ////log::info(LOG_BLOCKCHAIN)
+        ////    << "Missing output {" << encode_hash(outpoint.hash) << ", "
+        ////    << outpoint.index << "}.";
+        return false;
+    }
+
+    out_height = result.height();
+    out_position = result.position();
+    out_output = result.output(outpoint.index);
+
+    // If the index is invalid the output will be as well.
+    return out_output.is_valid();
+}
+
+// BUGBUG: this is insufficient but we don't support duplicates, see BIP30.
+bool block_chain::get_is_unspent_transaction(
+    const hash_digest& transaction_hash) const
+{
+    return database_.transactions.get(transaction_hash);
 }
 
 bool block_chain::get_transaction_height(size_t& out_block_height,

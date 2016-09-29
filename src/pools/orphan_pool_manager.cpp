@@ -44,13 +44,11 @@ using namespace std::placeholders;
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     simple_chain& chain, orphan_pool& pool, const settings& settings)
   : chain_(chain),
-    validator_(thread_pool, settings.use_testnet_rules,
-        settings.use_libconsensus, checkpoints_, chain_),
-    testnet_rules_(settings.use_testnet_rules),
-    checkpoints_(checkpoint::sort(settings.checkpoints)),
-    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
+    validator_(thread_pool, chain_, settings),
+    orphan_pool_(pool),
     stopped_(true),
-    pool_(pool)
+    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
+    dispatch_(thread_pool, NAME "_dispatch")
 {
 }
 
@@ -83,28 +81,29 @@ bool orphan_pool_manager::stopped() const
 void orphan_pool_manager::organize(block_const_ptr block,
     result_handler handler)
 {
-    code ec;
-    fork::ptr fork;
-
     if (stopped())
     {
         handler(error::service_stopped);
         return;
     }
 
+    code error_code;
+
     // Checks independent of the chain.
-    if ((ec = validator_.check(block)))
+    if ((error_code = validator_.check(block)))
     {
-        handler(ec);
+        handler(error_code);
         return;
     }
 
     // Check database and orphan pool for duplicate block hash.
-    if (chain_.get_exists(block->hash()) || !pool_.add(block))
+    if (chain_.get_block_exists(block->hash()) || !orphan_pool_.add(block))
     {
         handler(error::duplicate);
         return;
     }
+
+    fork::ptr fork;
 
     // Find longest fork of blocks that connects the block to the blockchain.
     // If there is no connection the original block is currently an orphan.
@@ -122,7 +121,7 @@ void orphan_pool_manager::organize(block_const_ptr block,
 void orphan_pool_manager::verify(fork::ptr fork, size_t index,
     result_handler handler)
 {
-    code ec;
+    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
 
     if (stopped())
@@ -131,45 +130,54 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
         return;
     }
 
-    // Call this to continue the loop or handler to stop.
-    const result_handler next_block =
-        std::bind(&orphan_pool_manager::handle_verify,
-            this, _1, fork, index, handler);
-
-    // Bypass validation if previously validated for this height.
     if (fork->is_verified(index))
     {
-        next_block(error::success);
+        // This must be dispatched in order to prevent recursion.
+        dispatch_.concurrent(&orphan_pool_manager::handle_verify,
+            this, error::success, fork, index, handler);
+    }
+    else
+    {
+        // TODO: fork pointer should be cast to const fork.
+        // Populate height chain state and block previous outputs.
+        validator_.populate(fork, index,
+            std::bind(&orphan_pool_manager::handle_populate,
+                this, _1, fork, index, handler));
+    }
+}
+
+void orphan_pool_manager::handle_populate(const code& ec, fork::ptr fork,
+    size_t index, result_handler handler)
+{
+    BITCOIN_ASSERT(!fork->empty());
+    BITCOIN_ASSERT(index < fork->size());
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
         return;
     }
 
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    code error_code;
     const auto block = fork->block_at(index);
-    const auto height = fork->height_at(index);
-
-    // Configure chain state for accept/connect checks.
-    if ((ec = validator_.reset(height)))
-    {
-        handler(ec);
-        return;
-    }
-
-    // Populate the previous outputs of the block.
-    if ((ec = validator_.populate(block)))
-    {
-        handler(ec);
-        return;
-    }
 
     // Checks that are dependent on chain state and prevouts.
-    if ((ec = validator_.accept(block)))
+    if ((error_code = validator_.accept(block)))
     {
-        handler(ec);
+        handler(error_code);
         return;
     }
 
-    // This must continue on a new thread or we will exhaust the stack.
-    // Checks dependent on chain state, prevouts and perform script validation.
-    validator_.connect(block, next_block);
+    // Checks that include script validation.
+    validator_.connect(block,
+        std::bind(&orphan_pool_manager::handle_verify,
+            this, _1, fork, index, handler));
 }
 
 // Call handler to stop, organized to coninue.
@@ -185,12 +193,16 @@ void orphan_pool_manager::handle_verify(const code& ec, fork::ptr fork,
         return;
     }
 
-    // The index block failed to verify, remove it and descendants, or the
-    // index block is verified, ensure it is marked (may be already).
     if (ec)
-        pool_.remove(fork->pop(index, ec));
+    {
+        // The index block failed to verify, remove it and descendants.
+        orphan_pool_.remove(fork->pop(index, ec));
+    }
     else
+    {
+        // The index block is verified, ensure it is marked (may be already).
         fork->set_verified(index);
+    }
 
     // If we just cleared out the entire fork, return the guilty block's code.
     if (fork->empty())
@@ -201,16 +213,15 @@ void orphan_pool_manager::handle_verify(const code& ec, fork::ptr fork,
 
     const auto next = safe_increment(index);
 
-    // If the loop is done (due to iteration or removal) attempt to reorg.
-    // Otherwise continue the verify loop with the next block in the fork.
-    if (next >= fork->size())
+    // Loop back this next block up the fork (requires thread break above).
+    if (next < fork->size())
     {
-        organized(fork, handler);
+        verify(fork, next, handler);
         return;
     }
 
-    // This recursion ties up the stack until the end of verify.
-    verify(fork, next, handler);
+    // If the loop is done (due to iteration or removal) attempt to reorg.
+    organized(fork, handler);
 }
 
 // Attempt to reorganize the blockchain using the remaining valid fork.
@@ -229,7 +240,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     hash_number original_difficulty;
 
     // Summarize the difficulty of the original chain from base_height to top.
-    if (!chain_.get_difficulty(original_difficulty, base_height))
+    if (!chain_.get_branch_difficulty(original_difficulty, base_height))
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure getting difficulty from [" << base_height << "]";
@@ -272,8 +283,12 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         const auto block = fork->block_at(index);
 
         // Remove the fork block from the orphan pool.
-        pool_.remove(block);
+        orphan_pool_.remove(block);
 
+        ///////////////////////////////////////////////////////////////////////
+        // TODO: defer store write lock until the block is actually written,
+        // and instead place a lock on the pool manager's organize call.
+        ///////////////////////////////////////////////////////////////////////
         // Add the fork block to the store (logs failures).
         if (!chain_.push(block, safe_increment(height)))
         {
@@ -287,11 +302,11 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     for (const auto block: original)
     {
         // Original blocks remain valid at their original heights.
-        block->metadata.validation_height = safe_increment(height);
-        block->metadata.validation_result = error::success;
+        block->validation.height = safe_increment(height);
+        block->validation.result = error::success;
 
         // Add the original block to the orphan pool.
-        pool_.add(block);
+        orphan_pool_.add(block);
     }
 
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
@@ -320,7 +335,7 @@ void orphan_pool_manager::notify_reorganize(size_t fork_height,
 fork::ptr orphan_pool_manager::find_connected_fork(block_const_ptr block)
 {
     // Get the longest possible chain containing this new block.
-    const auto fork = pool_.trace(block);
+    const auto fork = orphan_pool_.trace(block);
 
     size_t fork_height;
 

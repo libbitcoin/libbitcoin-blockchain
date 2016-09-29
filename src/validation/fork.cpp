@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <numeric>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -68,8 +69,8 @@ block_const_ptr_list fork::pop(size_t index, const code& reason)
     for (auto it = start; it != end; ++it)
     {
         const auto block = *it;
-        block->metadata.validation_height = block::metadata::orphan_height;
-        block->metadata.validation_result = it == start ? reason :
+        block->validation.height = block::validation::orphan_height;
+        block->validation.result = it == start ? reason :
             error::previous_block_invalid;
         out.push_back(block);
     }
@@ -91,8 +92,8 @@ void fork::set_verified(size_t index)
 {
     BITCOIN_ASSERT(index < blocks_.size());
     const auto block = blocks_[index];
-    block->metadata.validation_height = height_at(index);
-    block->metadata.validation_result = error::success;
+    block->validation.height = height_at(index);
+    block->validation.result = error::success;
 }
 
 // Index is unguarded, caller must verify or access violation will result.
@@ -100,8 +101,117 @@ bool fork::is_verified(size_t index) const
 {
     BITCOIN_ASSERT(index < blocks_.size());
     const auto block = blocks_[index];
-    return (block->metadata.validation_result == error::success &&
-        block->metadata.validation_height == height_at(index));
+    return (block->validation.result == error::success &&
+        block->validation.height == height_at(index));
+}
+
+// Excluding self and early termination is harder than just counting all.
+void fork::populate_tx(size_t index, const chain::transaction& tx) const
+{
+    const auto outer = [&tx](size_t total, block_const_ptr block)
+    {
+        const auto hashes = [&tx](const transaction& block_tx)
+        {
+            return block_tx.hash() == tx.hash();
+        };
+
+        const auto& txs = block->transactions;
+        return total + std::count_if(txs.begin(), txs.end(), hashes);
+    };
+
+    const auto& end = blocks_.begin() + index + 1u;
+    const auto count = std::accumulate(blocks_.begin(), end, size_t(0), outer);
+
+    tx.validation.duplicate = count > 1u;
+}
+
+// Excluding self and early termination is harder than just counting all.
+void fork::populate_spent(size_t index, const output_point& outpoint) const
+{
+    const auto outer = [&outpoint](size_t total, block_const_ptr block)
+    {
+        const auto inner = [&outpoint](size_t sum, const transaction& tx)
+        {
+            const auto points = [&outpoint](const input& input)
+            {
+                return input.previous_output == outpoint;
+            };
+
+            const auto& ins = tx.inputs;
+            return sum + std::count_if(ins.begin(), ins.end(), points);
+        };
+
+        const auto& txs = block->transactions;
+        return total + std::accumulate(txs.begin(), txs.end(), total, inner);
+    };
+
+    const auto& end = blocks_.begin() + index + 1u;
+    const auto spent = std::accumulate(blocks_.begin(), end, size_t(0), outer);
+
+    auto& prevout = outpoint.validation;
+    prevout.spent = spent > 1u;
+    prevout.confirmed = prevout.spent;
+}
+
+void fork::populate_prevout(size_t index, const output_point& outpoint) const
+{
+    auto& prevout = outpoint.validation;
+    struct result { size_t height; size_t position;  output out; };
+
+    const auto get_output = [this, &outpoint, index]() -> result
+    {
+        for (size_t forward = 0; forward <= index; ++forward)
+        {
+            const auto reverse = index - forward;
+            const auto& txs = block_at(reverse)->transactions;
+
+            for (size_t position = 0; position < txs.size(); ++position)
+            {
+                const auto& tx = txs[position];
+
+                if (outpoint.hash == tx.hash() &&
+                    outpoint.index < tx.outputs.size())
+                {
+                    return
+                    {
+                        height_at(reverse),
+                        position,
+                        tx.outputs[outpoint.index]
+                    };
+                }
+            }
+        }
+
+        return{};
+    };
+
+
+    // In case this input is a coinbase or the prevout is spent.
+    prevout.cache.reset();
+
+    // The height of the prevout must be set iff the prevout is coinbase.
+    prevout.height = output_point::validation::not_specified;
+
+    // The input is a coinbase, so there is no prevout to populate.
+    if (outpoint.is_null())
+        return;
+
+    ////// The prevout is spent, so don't bother to populate it [optimized].
+    ////if (prevout.spent)
+    ////    return true;
+
+    // Get the script and value for the prevout.
+    const auto finder = get_output();
+
+    // Found the prevout at or below the top of the branch.
+    if (!finder.out.is_valid())
+        return;
+
+    prevout.cache = finder.out;
+
+    // Set height iff the prevout is coinbase (first tx is coinbase).
+    if (finder.position == 0)
+        prevout.height = finder.height;
 }
 
 const block_const_ptr_list& fork::blocks() const

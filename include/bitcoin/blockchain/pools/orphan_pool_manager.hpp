@@ -70,17 +70,18 @@ private:
 
     void handle_verify(const code& ec, fork::ptr fork, size_t index,
         result_handler handler);
+    void handle_populate(const code& ec, fork::ptr fork, size_t index,
+        result_handler handler);
 
     // These are protected by the caller protecting organize().
     simple_chain& chain_;
     validate_block validator_;
 
     // These are thread safe.
-    const bool testnet_rules_;
-    const config::checkpoint::list checkpoints_;
-    reorganize_subscriber::ptr subscriber_;
+    orphan_pool& orphan_pool_;
     std::atomic<bool> stopped_;
-    orphan_pool& pool_;
+    reorganize_subscriber::ptr subscriber_;
+    mutable dispatcher dispatch_;
 };
 
 } // namespace blockchain

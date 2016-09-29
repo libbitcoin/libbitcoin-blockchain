@@ -81,10 +81,11 @@ public:
     bool get_next_gap(size_t& out_height, size_t start_height) const;
 
     /// Get a determination of whether the block hash exists in the store.
-    bool get_exists(const hash_digest& block_hash) const;
+    bool get_block_exists(const hash_digest& block_hash) const;
 
     /// Get the difficulty of the branch starting at the given height.
-    bool get_difficulty(hash_number& out_difficulty, size_t height) const;
+    bool get_branch_difficulty(hash_number& out_difficulty,
+        size_t height) const;
 
     /// Get the header of the block at the given height.
     bool get_header(chain::header& out_header, size_t height) const;
@@ -104,9 +105,16 @@ public:
     /// Get height of latest block.
     bool get_last_height(size_t& out_height) const;
 
+    /// Get the output that is referenced by the outpoint.
+    bool get_output(chain::output& out_output, size_t& out_height,
+        size_t& out_position, const chain::output_point& outpoint) const;
+
     /// Get the hash digest of the transaction of the outpoint.
-    bool get_transaction_hash(hash_digest& out_hash,
+    bool get_spender_hash(hash_digest& out_hash,
         const chain::output_point& outpoint) const;
+
+    /// Determine if an unspent transaction exists with the given hash.
+    bool get_is_unspent_transaction(const hash_digest& transaction_hash) const;
 
     /// Get the block height of the transaction given its hash.
     bool get_transaction_height(size_t& out_block_height,
