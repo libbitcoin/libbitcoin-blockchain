@@ -131,12 +131,17 @@ hash_digest fork::hash() const
         blocks_.front()->header.previous_block_hash;
 }
 
+// The caller must ensure that the height is above the fork.
+size_t fork::index_of(size_t height) const
+{
+    return safe_subtract(safe_subtract(height, height_), size_t(1));
+}
+
 // Index is unguarded, caller must verify.
-// Calculate the blockchain height of the block at the given index.
 size_t fork::height_at(size_t index) const
 {
     // The height of the blockchain fork point plus zero-based orphan index.
-    return safe_add(safe_add(height(), index), size_t(1));
+    return safe_add(safe_add(height_, index), size_t(1));
 }
 
 // Index is unguarded, caller must verify.
@@ -235,7 +240,6 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
         return{};
     };
 
-
     // In case this input is a coinbase or the prevout is spent.
     prevout.cache.reset();
 
@@ -262,6 +266,51 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     // Set height iff the prevout is coinbase (first tx is coinbase).
     if (finder.position == 0)
         prevout.height = finder.height;
+}
+
+/// The bits of the block at the given height in the fork.
+bool fork::get_bits(uint32_t out_bits, size_t height) const
+{
+    if (height <= height_)
+        return false;
+
+    const auto block = block_at(index_of(height));
+
+    if (!block)
+        return false;
+
+    out_bits = block->header.bits;
+    return true;
+}
+
+/// The version of the block at the given height in the fork.
+bool fork::get_version(uint32_t out_version, size_t height) const
+{
+    if (height <= height_)
+        return false;
+
+    const auto block = block_at(index_of(height));
+
+    if (!block)
+        return false;
+
+    out_version = block->header.version;
+    return true;
+}
+
+/// The timestamp of the block at the given height in the fork.
+bool fork::get_timestamp(uint32_t out_timestamp, size_t height) const
+{
+    if (height <= height_)
+        return false;
+
+    const auto block = block_at(index_of(height));
+
+    if (!block)
+        return false;
+
+    out_timestamp = block->header.timestamp;
+    return true;
 }
 
 } // namespace blockchain

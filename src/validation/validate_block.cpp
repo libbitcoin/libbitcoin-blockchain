@@ -76,6 +76,7 @@ code validate_block::check(block_const_ptr block) const
 // Accept sequence.
 //-----------------------------------------------------------------------------
 // These checks require height or other chain context.
+// Guarantees handler is invoked on a new thread.
 
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -85,10 +86,17 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
 
-    // TODO: bypass population if state is populated.
+    if (block->validation.state)
+    {
+        // We must complete on a new thread.
+        dispatch_.concurrent(handler, error::success);
+        return;
+    }
+
     populator_.populate(fork, index,
         std::bind(&validate_block::handle_accepted,
             this, _1, block, handler));
+
 }
 
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
@@ -100,8 +108,8 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 // Connect sequence.
 //-----------------------------------------------------------------------------
 // These checks require output traversal and validation.
+// Guarantees handler is invoked on a new thread.
 
-// We do not use block/tx.connect here because we want to fan out by input.
 void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
@@ -109,7 +117,6 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
 
-    // TODO: just populate from here if there is no state.
     if (!block->validation.state)
     {
         // We must complete on a new thread.
@@ -129,24 +136,22 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto non_coinbase_inputs = block->total_inputs(false);
-    const result_handler join_handler = synchronize(complete_handler,
-        non_coinbase_inputs, NAME "_validate");
-
     const auto flags = block->validation.state->enabled_forks();
+    const result_handler join_handler = synchronize(complete_handler,
+        txs.size() - 1, NAME "_validate");
 
-    // Skip coinbase.
+    // TODO: implement fan-out batching (divide work evenly into core count).
+
+    // Skip coinbase, fan out by tx.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
-        for (size_t index = 0; index < tx->inputs.size(); ++index)
-            dispatch_.concurrent(&validate_block::connect_input,
-                this, std::ref(*tx), index, flags, join_handler);
+        dispatch_.concurrent(&validate_block::connect_inputs,
+            this, std::ref(*tx), flags, join_handler);
 }
 
-void validate_block::connect_input(const transaction& tx, size_t input_index,
-    uint32_t flags, result_handler handler) const
+void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
+    result_handler handler) const
 {
     BITCOIN_ASSERT(!tx.is_coinbase());
-    BITCOIN_ASSERT(input_index < tx.inputs.size());
 
     if (stopped())
     {
@@ -154,16 +159,28 @@ void validate_block::connect_input(const transaction& tx, size_t input_index,
         return;
     }
 
-    const auto& prevout = tx.inputs[input_index].previous_output.validation;
+    code ec(error::success);
+    uint32_t input_index = 0;
 
-    if (!prevout.cache.is_valid())
+    for (auto& input: tx.inputs)
     {
-        handler(error::input_not_found);
-        return;
+        if (stopped())
+        {
+            ec = error::service_stopped;
+            break;
+        }
+
+        if (!input.previous_output.validation.cache.is_valid())
+        {
+            ec = error::input_not_found;
+            break;
+        }
+
+        if ((ec = verify_script(tx, input_index++, flags, use_libconsensus_)))
+            break;
     }
 
-    const auto index32 = static_cast<uint32_t>(input_index);
-    handler(verify_script(tx, index32, flags, use_libconsensus_));
+    handler(ec);
 }
 
 void validate_block::handle_connect(const code& ec, block_const_ptr block,
@@ -191,7 +208,7 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const auto micro_per_input = micro_per_block / block->total_inputs();
     const auto milli_per_block = micro_per_block / micro_per_milliseconds;
     const auto transactions = block->transactions.size();
-    const auto next_height = block->validation.state->next_height();
+    const auto next_height = block->validation.state->height();
 
     log::info(LOG_BLOCKCHAIN)
         << "Block [" << next_height << "] " << token << " (" << transactions

@@ -63,8 +63,8 @@ private:
 
     void handle_accepted(const code& ec, block_const_ptr block,
         result_handler handler) const;
-    void connect_input(const chain::transaction& tx,
-        size_t input_index, uint32_t flags, result_handler handler) const;
+    void connect_inputs(const chain::transaction& tx, uint32_t flags,
+        result_handler handler) const;
     void handle_connect(const code& ec, block_const_ptr block,
         asio::time_point start_time, result_handler handler) const;
 

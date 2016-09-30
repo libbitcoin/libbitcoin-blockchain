@@ -78,20 +78,32 @@ public:
     /// The number of blocks in the fork.
     size_t size() const;
 
+    /// Summarize the difficulty of the fork.
+    hash_number difficulty() const;
+
     /// The hash of the parent of this fork (fork point).
     hash_digest hash() const;
 
     /// The height of the parent of this fork (fork point).
     size_t height() const;
 
-    /// The height of the block at the given index.
+    /// The fork index of the block at the given blockchain height.
+    size_t index_of(size_t height) const;
+
+    /// The blockchain height of the block at the given fork index.
     size_t height_at(size_t index) const;
 
     /// The block at the given index.
     block_const_ptr block_at(size_t index) const;
 
-    /// Summarize the difficulty of the fork.
-    hash_number difficulty() const;
+    /// The bits of the block at the given height in the fork.
+    bool get_bits(uint32_t out_bits, size_t height) const;
+
+    /// The bits of the block at the given height in the fork.
+    bool get_version(uint32_t out_version, size_t height) const;
+
+    /// The bits of the block at the given height in the fork.
+    bool get_timestamp(uint32_t out_timestamp, size_t height) const;
 
 private:
     size_t height_;

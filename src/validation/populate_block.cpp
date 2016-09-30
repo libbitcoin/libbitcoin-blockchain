@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/validation/populate_block.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -49,7 +50,7 @@ populate_block::populate_block(threadpool& pool, const simple_chain& chain,
 {
 }
 
-// Stop sequence (thread safe).
+// Stop sequence.
 //-----------------------------------------------------------------------------
 
 void populate_block::stop()
@@ -62,8 +63,114 @@ bool populate_block::stopped() const
     return stopped_.load();
 }
 
-// Populate (chain and block) state sequence.
+// Populate chain state.
 //-----------------------------------------------------------------------------
+// TODO: move to another class/file (populate_chain_state).
+
+bool populate_block::get_bits(uint32_t& out_bits, size_t height,
+    fork::const_ptr fork) const
+{
+    // fork returns false only if the height is out of range.
+    return fork->get_bits(out_bits, height) ||
+        chain_.get_bits(out_bits, height);
+}
+
+bool populate_block::get_version(uint32_t& out_version, size_t height,
+    fork::const_ptr fork) const
+{
+    // fork returns false only if the height is out of range.
+    return fork->get_version(out_version, height) ||
+        chain_.get_version(out_version, height);
+}
+
+bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
+    fork::const_ptr fork) const
+{
+    // fork returns false only if the height is out of range.
+    return fork->get_timestamp(out_timestamp, height) ||
+        chain_.get_timestamp(out_timestamp, height);
+}
+
+bool populate_block::populate_bits(state::data& data,
+    const state::map& heights, fork::const_ptr fork) const
+{
+    auto start = heights.bits.low;
+    auto& bits = data.bits.ordered;
+    bits.resize(heights.bits.high - start + 1u);
+
+    for (auto& bit: bits)
+        if (!get_bits(bit, start++, fork))
+            return false;
+
+    return true;
+}
+
+bool populate_block::populate_versions(state::data& data,
+    const state::map& heights, fork::const_ptr fork) const
+{
+    auto start = heights.version.low;
+    auto& versions = data.version.unordered;
+    versions.resize(heights.version.high - start + 1u);
+
+    for (auto& bit: versions)
+        if (!get_version(bit, start++, fork))
+            return false;
+
+    return true;
+}
+
+bool populate_block::populate_timestamps(state::data& data,
+    const state::map& heights, fork::const_ptr fork) const
+{
+    auto start = heights.timestamp.low;
+    auto& timestamps = data.timestamp.ordered;
+    timestamps.resize(heights.timestamp.high - start + 1u);
+
+    for (auto& timestamp: timestamps)
+        if (!get_timestamp(timestamp, start++, fork))
+            return false;
+
+    // Won't be used, just looks cool in the debugger.
+    data.timestamp_self = 0xbaadf00d;
+    data.timestamp_retarget = 0xbaadf00d;
+
+    // Additional self requirement is signaled by self != high.
+    if (heights.timestamp_self != heights.timestamp.high &&
+        !get_timestamp(data.timestamp_self, 
+            heights.timestamp_self, fork))
+            return false;
+
+    // Additional retarget requirement is signaled by retarget != high.
+    if (heights.timestamp_retarget != heights.timestamp.high &&
+        !get_timestamp(data.timestamp_retarget, 
+            heights.timestamp_retarget, fork))
+            return false;
+
+    return true;
+}
+
+chain_state::ptr populate_block::populate_chain_state(size_t height,
+    fork::const_ptr fork) const
+{
+    state::data data;
+    data.height = height;
+    data.testnet = use_testnet_rules_;
+
+    const auto heights = state::get_map(height, use_testnet_rules_);
+
+    // There are only 11 redundant queries on mainnet, so we don't combine.
+    // cache-based construction of the data set will eliminate most redundancy.
+    if (!populate_bits(data, heights, fork) ||
+        !populate_versions(data, heights, fork) ||
+        !populate_timestamps(data, heights, fork))
+        return nullptr;
+
+    return std::make_shared<state>(std::move(data), checkpoints_);
+}
+
+// Populate block state sequence.
+//-----------------------------------------------------------------------------
+// Guarantees handler is invoked on a new thread.
 
 void populate_block::populate(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -73,29 +180,17 @@ void populate_block::populate(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
+    
+    block->validation.state = populate_chain_state(height, fork);
 
-    block->validation.state = create_chain_state(height);
-    BITCOIN_ASSERT(block->validation.state);
+    if (!block->validation.state)
+    {
+        // We must complete on a new thread.
+        dispatch_.concurrent(handler, error::operation_failed);
+        return;
+    }
 
     populate_transactions(fork, index, handler);
-}
-
-chain_state::ptr populate_block::create_chain_state(size_t height) const
-{
-    auto state = std::make_shared<chain_state>(use_testnet_rules_,
-        checkpoints_);
-
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: populate state for chain state.
-    chain_state::versions history(state->sample_size);
-    ///////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: enable last two block validation rules that require chain state.
-    state->set_context(height, history);
-    ///////////////////////////////////////////////////////////////////////////
-
-    return state;
 }
 
 void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
@@ -120,7 +215,9 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     const result_handler join_handler = synchronize(complete_handler,
         txs.size() - 1, NAME "_populate");
 
-    // skip coinbase.
+    // TODO: implement fan-out batching (divide work evenly into core count).
+
+    // skip coinbase, fan out by tx.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
         populate_transaction(*tx);
@@ -180,15 +277,22 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
         return;
     }
 
+    code ec(error::success);
     const auto fork_height = fork->height();
 
     for (auto& input: tx.inputs)
     {
+        if (stopped())
+        {
+            ec = error::service_stopped;
+            break;
+        }
+
         if (!populate_spent(fork_height, input.previous_output))
         {
             // This is the only early terminate (database integrity error).
-            handler(error::operation_failed);
-            return;
+            ec = error::operation_failed;
+            break;
         }
 
         populate_spent(fork, index, input.previous_output);
@@ -196,7 +300,7 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
         populate_prevout(fork, index, input.previous_output);
     }
 
-    handler(error::success);
+    handler(ec);
 }
 
 // Returns false only when database operation fails.
@@ -303,7 +407,7 @@ void populate_block::report(block_const_ptr block, asio::time_point start_time,
     const auto micro_per_input = micro_per_block / block->total_inputs();
     const auto milli_per_block = micro_per_block / micro_per_milliseconds;
     const auto transactions = block->transactions.size();
-    const auto next_height = block->validation.state->next_height();
+    const auto next_height = block->validation.state->height();
 
     log::info(LOG_BLOCKCHAIN)
         << "Block [" << next_height << "] " << token << " (" << transactions

@@ -176,7 +176,7 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
             this, _1, fork, index, handler));
 }
 
-// Call handler to stop, organized to coninue.
+// Call handler to stop, organized to continue.
 void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
     size_t index, result_handler handler)
 {
