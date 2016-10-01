@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
@@ -38,7 +38,7 @@ class BCB_API populate_block
 public:
     typedef handle0 result_handler;
 
-    populate_block(threadpool& pool, const simple_chain& chain,
+    populate_block(threadpool& pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();
@@ -95,7 +95,7 @@ private:
     std::atomic<bool> stopped_;
     const bool use_testnet_rules_;
     const config::checkpoint::list checkpoints_;
-    const simple_chain& chain_;
+    const fast_chain& fast_chain_;
     mutable dispatcher dispatch_;
 };
 

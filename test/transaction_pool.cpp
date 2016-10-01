@@ -33,7 +33,7 @@ class threadpool_fixture
 };
 
 class blockchain_fixture
-  : public full_chain
+  : public safe_chain
 {
 public:
 
@@ -216,13 +216,13 @@ public:
         return value;
     }
 
-    transaction_pool_fixture(threadpool& pool, full_chain& chain,
+    transaction_pool_fixture(threadpool& pool, safe_chain& chain,
         const blockchain::settings& settings)
       : transaction_pool(pool, chain, settings)
     {
     }
 
-    transaction_pool_fixture(threadpool& pool, full_chain& chain, buffer& txs)
+    transaction_pool_fixture(threadpool& pool, safe_chain& chain, buffer& txs)
       : transaction_pool(pool, chain, settings_factory(txs.capacity(), true))
     {
         // Start by default, fill with our test buffer data.
@@ -305,8 +305,8 @@ public:
 
 #define DECLARE_TRANSACTION_POOL(pool, txs) \
     threadpool_fixture memory_pool_; \
-    blockchain_fixture full_chain_; \
-    transaction_pool_fixture pool(memory_pool_, full_chain_, txs)
+    blockchain_fixture safe_chain_; \
+    transaction_pool_fixture pool(memory_pool_, safe_chain_, txs)
 
 #define DECLARE_TRANSACTION(number, code_) \
     auto tx##number = std::make_shared<message::transaction_message>(); \
@@ -766,7 +766,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__empty__empty)
     BOOST_REQUIRE(mempool.transactions().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__forward_full_chain__head_remains)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__forward_safe_chain__head_remains)
 {
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::futuristic_timestamp);
@@ -785,7 +785,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__forward_full_chain_
     REQUIRE_CALLBACK(2, error::futuristic_timestamp);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__reverse_full_chain__head_remains)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__reverse_safe_chain__head_remains)
 {
     DECLARE_TRANSACTION(0, error::futuristic_timestamp);
     DECLARE_TRANSACTION(1, error::futuristic_timestamp);
@@ -841,7 +841,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__multiple_chlidren__
     REQUIRE_CALLBACK(1, error::futuristic_timestamp);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__stopped_full_chain__unchanged)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies1__stopped_safe_chain__unchanged)
 {
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);
@@ -870,7 +870,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__empty__empty)
     BOOST_REQUIRE(mempool.transactions().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__forward_full_chain__head_remains)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__forward_safe_chain__head_remains)
 {
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::futuristic_timestamp);
@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__forward_full_chain_
     REQUIRE_CALLBACK(2, error::futuristic_timestamp);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__reverse_full_chain__head_remains)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__reverse_safe_chain__head_remains)
 {
     DECLARE_TRANSACTION(0, error::futuristic_timestamp);
     DECLARE_TRANSACTION(1, error::futuristic_timestamp);
@@ -944,7 +944,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__multiple_chlidren__
     REQUIRE_CALLBACK(1, error::futuristic_timestamp);
 }
 
-BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__stopped_full_chain__unchanged)
+BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies2__stopped_safe_chain__unchanged)
 {
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::service_stopped);

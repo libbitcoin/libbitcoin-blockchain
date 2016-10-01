@@ -24,7 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -38,10 +38,12 @@ using namespace std::placeholders;
 
 static constexpr uint64_t genesis_height = 0;
 
+// Database access is limited to: fetch_history.
+
 transaction_pool_index::transaction_pool_index(threadpool& pool,
-    full_chain& blockchain)
+    safe_chain& chain)
   : stopped_(true),
-    blockchain_(blockchain),
+    safe_chain_(chain),
     dispatch_(pool, NAME)
 {
 }
@@ -194,7 +196,7 @@ void transaction_pool_index::do_remove(transaction_const_ptr tx,
 void transaction_pool_index::fetch_all_history(const payment_address& address,
     size_t limit, size_t from_height, fetch_handler handler) const
 {
-    blockchain_.fetch_history(address, limit, from_height,
+    safe_chain_.fetch_history(address, limit, from_height,
         std::bind(&transaction_pool_index::blockchain_history_fetched,
             this, _1, _2, address, handler));
 }

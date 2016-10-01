@@ -123,7 +123,7 @@ bool block_chain::stopped() const
     return stopped_;
 }
 
-// simple_chain getters (no locks, not thread safe).
+// fast_chain getters (no locks, not thread safe).
 // ----------------------------------------------------------------------------
 
 bool block_chain::get_gap_range(size_t& out_first, size_t& out_last) const
@@ -280,7 +280,7 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
         result.transaction());
 }
 
-// simple_chain setters (no locks, not thread safe).
+// fast_chain setters (no locks, not thread safe).
 // ----------------------------------------------------------------------------
 
 // This is safe to call concurrently (but with no other methods).
@@ -333,7 +333,7 @@ bool block_chain::pop_from(block_const_ptr_list& out_blocks,
     return true;
 }
 
-// full_chain queries (internal locks).
+// safe_chain queries (internal locks).
 // ----------------------------------------------------------------------------
 
 void block_chain::fetch_block(uint64_t height,

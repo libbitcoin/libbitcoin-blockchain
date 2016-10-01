@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
@@ -41,7 +41,12 @@ using namespace std::placeholders;
 
 #define NAME "validate_block"
 
-validate_block::validate_block(threadpool& pool, const simple_chain& chain,
+// Database access is limited to: populator:
+// spend: { spender }
+// block: { bits, version, timestamp }
+// transaction: { exists, height, output }
+
+validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
@@ -148,6 +153,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
             this, std::ref(*tx), flags, join_handler);
 }
 
+// TODO: move to validate_input.hpp/cpp (post fan-out, static methods only).
 void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
     result_handler handler) const
 {
@@ -216,12 +222,12 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
         << ") μs/input";
 }
 
-// Verify script.
+// Validate input.
 //-----------------------------------------------------------------------------
+// TODO: move to validate_input.hpp/cpp (static methods only).
 
 #ifdef WITH_CONSENSUS
 
-// TODO: move to libconsensus.hpp/cpp
 static uint32_t convert_flags(uint32_t native_flags)
 {
     using namespace bc::consensus;
@@ -239,7 +245,6 @@ static uint32_t convert_flags(uint32_t native_flags)
     return consensus_flags;
 }
 
-// TODO: move to libconsensus.hpp/cpp
 static code convert_result(consensus::verify_result_type result)
 {
     using namespace bc::consensus;

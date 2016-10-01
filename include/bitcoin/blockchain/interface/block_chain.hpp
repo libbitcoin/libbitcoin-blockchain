@@ -27,8 +27,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
@@ -37,9 +37,9 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// The simple_chain interface portion of this class is not thread safe.
+/// The fast_chain interface portion of this class is not thread safe.
 class BCB_API block_chain
-  : public full_chain, public simple_chain
+  : public safe_chain, public fast_chain
 {
 public:
     block_chain(threadpool& pool, 
@@ -59,7 +59,7 @@ public:
     // Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
-    // full_chain start/stop (thread safe).
+    // safe_chain start/stop (thread safe).
     // ------------------------------------------------------------------------
 
     /// Start or restart the blockchain.
@@ -71,7 +71,7 @@ public:
     /// Close the blockchain, threads must first be joined, can be restarted.
     virtual bool close();
 
-    // simple_chain getters (NOT THREAD SAFE).
+    // fast_chain getters (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
@@ -124,7 +124,7 @@ public:
     transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
-    // simple_chain setters (NOT THREAD SAFE).
+    // fast_chain setters (NOT THREAD SAFE).
     // ------------------------------------------------------------------------
 
     /// Insert a block to the blockchain, height is checked for existence.
@@ -136,7 +136,7 @@ public:
     /// Remove blocks at or above the given height, returning them in order.
     bool pop_from(block_const_ptr_list& out_blocks, size_t height);
 
-    // full_chain queries (thread safe).
+    // safe_chain queries (thread safe).
     // ------------------------------------------------------------------------
 
     /// fetch a block by height.

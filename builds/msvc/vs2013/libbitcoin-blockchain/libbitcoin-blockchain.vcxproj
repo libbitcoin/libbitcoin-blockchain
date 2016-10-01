@@ -101,8 +101,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_fetcher.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\full_chain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\simple_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool_manager.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp" />
@@ -111,7 +111,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\fork.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\populate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -125,7 +124,6 @@
     <ClCompile Include="..\..\..\..\src\validation\fork.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\populate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp" />
-    <ClCompile Include="..\..\..\..\src\validation\validate_transaction.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionSettings">

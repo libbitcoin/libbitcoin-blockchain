@@ -40,12 +40,17 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
-populate_block::populate_block(threadpool& pool, const simple_chain& chain,
+// Database access is limited to:
+// spend: { spender }
+// block: { bits, version, timestamp }
+// transaction: { exists, height, output }
+
+populate_block::populate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_testnet_rules_(settings.use_testnet_rules),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    chain_(chain),
+    fast_chain_(chain),
     dispatch_(pool, NAME "_dispatch")
 {
 }
@@ -72,7 +77,7 @@ bool populate_block::get_bits(uint32_t& out_bits, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_bits(out_bits, height) ||
-        chain_.get_bits(out_bits, height);
+        fast_chain_.get_bits(out_bits, height);
 }
 
 bool populate_block::get_version(uint32_t& out_version, size_t height,
@@ -80,7 +85,7 @@ bool populate_block::get_version(uint32_t& out_version, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_version(out_version, height) ||
-        chain_.get_version(out_version, height);
+        fast_chain_.get_version(out_version, height);
 }
 
 bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
@@ -88,7 +93,7 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_timestamp(out_timestamp, height) ||
-        chain_.get_timestamp(out_timestamp, height);
+        fast_chain_.get_timestamp(out_timestamp, height);
 }
 
 bool populate_block::populate_bits(state::data& data,
@@ -256,7 +261,8 @@ void populate_block::populate_coinbase(block_const_ptr block) const
 void populate_block::populate_transaction(const chain::transaction& tx) const
 {
     // BUGBUG: this is overly restrictive, see BIP30.
-    tx.validation.duplicate = chain_.get_is_unspent_transaction(tx.hash());
+    tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
+        tx.hash());
 }
 
 // Returns false only when transaction is duplicate on fork.
@@ -323,14 +329,14 @@ bool populate_block::populate_spent(size_t fork_height,
     prevout.confirmed = false;
 
     // Determine if the prevout is spent by a confirmed input.
-    prevout.spent = chain_.get_spender_hash(spender_hash, outpoint);
+    prevout.spent = fast_chain_.get_spender_hash(spender_hash, outpoint);
 
     // Either the prevout is unspent, spent in fork, the outpoint is invalid.
     if (!prevout.spent)
         return true;
 
     // It is a store failure it the spender transaction is not found.
-    if (!chain_.get_transaction_height(spender_height, spender_hash))
+    if (!fast_chain_.get_transaction_height(spender_height, spender_hash))
         return false;
 
     // Unspend the prevout if it is above the fork.
@@ -370,7 +376,7 @@ void populate_block::populate_prevout(size_t fork_height,
     ///////////////////////////////////////////////////////////////////////////
 
     // Get the script and value for the prevout.
-    if (!chain_.get_output(prevout.cache, height, position, outpoint))
+    if (!fast_chain_.get_output(prevout.cache, height, position, outpoint))
         return;
 
     // Unfind the prevout if it is above the fork (clear the cache).

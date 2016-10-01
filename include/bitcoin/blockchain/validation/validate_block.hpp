@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
@@ -39,7 +39,7 @@ class BCB_API validate_block
 public:
     typedef handle0 result_handler;
 
-    validate_block(threadpool& pool, const simple_chain& chain,
+    validate_block(threadpool& pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();

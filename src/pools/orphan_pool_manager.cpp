@@ -25,7 +25,7 @@
 #include <memory>
 #include <numeric>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -41,12 +41,18 @@ using namespace std::placeholders;
 
 #define NAME "orphan_pool_manager"
 
+// Database access is limited to: push, pop, last-height, fork-difficulty,
+// validator->populator:
+// spend: { spender }
+// block: { bits, version, timestamp }
+// transaction: { exists, height, output }
+
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
-    simple_chain& chain, orphan_pool& pool, const settings& settings)
-  : chain_(chain),
+    fast_chain& chain, orphan_pool& orphan_pool, const settings& settings)
+  : fast_chain_(chain),
     stopped_(true),
-    orphan_pool_(pool),
-    validator_(thread_pool, chain_, settings),
+    orphan_pool_(orphan_pool),
+    validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
     dispatch_(thread_pool, NAME "_dispatch")
 {
@@ -98,7 +104,8 @@ void orphan_pool_manager::organize(block_const_ptr block,
 
     // This is a free-roaming consensus check.
     // Check database and orphan pool for duplicate block hash.
-    if (chain_.get_block_exists(block->hash()) || !orphan_pool_.add(block))
+    if (fast_chain_.get_block_exists(block->hash()) ||
+        !orphan_pool_.add(block))
     {
         handler(error::duplicate);
         return;
@@ -236,7 +243,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     hash_number original_difficulty;
 
     // Summarize the difficulty of the original chain from base_height to top.
-    if (!chain_.get_fork_difficulty(original_difficulty, base_height))
+    if (!fast_chain_.get_fork_difficulty(original_difficulty, base_height))
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure getting difficulty from [" << base_height << "]";
@@ -257,7 +264,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     list original;
 
     // Remove the original chain blocks from the store.
-    if (!chain_.pop_from(original, base_height))
+    if (!fast_chain_.pop_from(original, base_height))
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure reorganizing from [" << base_height << "]";
@@ -286,7 +293,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         // and instead place a lock on the pool manager's organize call.
         ///////////////////////////////////////////////////////////////////////
         // Add the fork block to the store (logs failures).
-        if (!chain_.push(block, safe_increment(height)))
+        if (!fast_chain_.push(block, safe_increment(height)))
         {
             handler(error::operation_failed);
             return;
@@ -336,7 +343,7 @@ fork::ptr orphan_pool_manager::find_connected_fork(block_const_ptr block)
     size_t fork_height;
 
     // Get blockchain parent of the oldest fork block and save to fork.
-    if (chain_.get_height(fork_height, fork->hash()))
+    if (fast_chain_.get_height(fork_height, fork->hash()))
         fork->set_height(fork_height);
     else
         fork->clear();

@@ -26,10 +26,10 @@
 #include <boost/circular_buffer.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
-#include <bitcoin/blockchain/validation/validate_transaction.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,7 +39,6 @@ class BCB_API transaction_pool
 {
 public:
     typedef chain::point::indexes indexes;
-
     typedef handle0 result_handler;
     typedef handle1<indexes> validate_handler;
 
@@ -48,7 +47,6 @@ public:
         fetch_handler;
     typedef std::function<void(const code&, inventory_ptr)>
         fetch_inventory_handler;
-
     typedef std::function<bool(const code&, const indexes&,
         transaction_const_ptr)> transaction_handler;
     typedef resubscriber<const code&, const indexes&, transaction_const_ptr>
@@ -58,26 +56,20 @@ public:
         transaction_const_ptr tx);
 
     /// Construct a transaction memory pool.
-    transaction_pool(threadpool& pool, full_chain& chain,
+    transaction_pool(threadpool& pool, safe_chain& chain,
         const settings& settings);
-
-    /// Clear the pool, threads must be joined.
-    ~transaction_pool();
 
     /// This class is not copyable.
     transaction_pool(const transaction_pool&) = delete;
     void operator=(const transaction_pool&) = delete;
 
-    /// Start the transaction pool.
     void start();
-
-    /// Signal stop of current work, speeds shutdown.
     void stop();
 
     void fetch_inventory(size_t limit, fetch_inventory_handler handler) const;
     void fetch(const hash_digest& tx_hash, fetch_handler handler) const;
     void fetch_history(const wallet::payment_address& address, size_t limit,
-        size_t from_height, full_chain::history_fetch_handler handler) const;
+        size_t from_height, safe_chain::history_fetch_handler handler) const;
     void exists(const hash_digest& tx_hash, result_handler handler) const;
     void filter(get_data_ptr message, result_handler handler) const;
     void validate(transaction_const_ptr tx, validate_handler handler) const;
@@ -88,10 +80,9 @@ public:
     void subscribe_transaction(transaction_handler handler);
 
 protected:
+    typedef std::function<bool(const chain::input&)> input_compare;
     typedef boost::circular_buffer<transaction_const_ptr> buffer;
     typedef buffer::const_iterator const_iterator;
-
-    typedef std::function<bool(const chain::input&)> input_compare;
 
     bool stopped() const;
     const_iterator find_iterator(const hash_digest& tx_hash) const;
@@ -100,8 +91,7 @@ protected:
         const block_const_ptr_list& new_blocks,
         const block_const_ptr_list& replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
-        transaction_const_ptr tx, validate_transaction::ptr self,
-        validate_handler handler) const;
+        transaction_const_ptr tx, validate_handler handler) const;
 
     void do_fetch_inventory(size_t limit,
         fetch_inventory_handler handler) const;
@@ -127,23 +117,21 @@ protected:
     void delete_package(transaction_const_ptr tx, const code& ec);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
 
-    // The buffer is protected by non-concurrent dispatch.
-    buffer buffer_;
-    std::atomic<bool> stopped_;
-
 private:
-    ////// Unsafe methods limited to friend caller.
-    ////friend class validate_transaction;
-
-    // These methods are NOT thread safe.
+    // These are not thread safe.
     bool is_in_pool(const hash_digest& tx_hash) const;
     bool is_spent_in_pool(transaction_const_ptr tx) const;
     bool is_spent_in_pool(const chain::output_point& outpoint) const;
     transaction_const_ptr find(const hash_digest& tx_hash) const;
 
+    // This is protected by exclusive dispatch.
+    buffer buffer_;
+
     // These are thread safe.
-    full_chain& blockchain_;
+    std::atomic<bool> stopped_;
+    safe_chain& safe_chain_;
     transaction_pool_index index_;
+    ////validate_block validator_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
     const bool maintain_consistency_;

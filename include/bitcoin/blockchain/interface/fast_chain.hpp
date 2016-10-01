@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
-#define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_FAST_CHAIN_HPP
+#define LIBBITCOIN_BLOCKCHAIN_FAST_CHAIN_HPP
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
@@ -31,7 +31,7 @@ namespace blockchain {
 /// Caller must ensure the database is not otherwise in use during these calls.
 /// Implementations are NOT expected to be thread safe with the exception
 /// that the import method may itself be called concurrently.
-class BCB_API simple_chain
+class BCB_API fast_chain
 {
 public:
     // Getters.

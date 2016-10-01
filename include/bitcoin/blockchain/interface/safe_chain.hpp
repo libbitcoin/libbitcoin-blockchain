@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_SAFE_CHAIN_HPP
+#define LIBBITCOIN_BLOCKCHAIN_SAFE_CHAIN_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -34,7 +34,7 @@ namespace blockchain {
 /// This interface is thread safe.
 /// A high level interface for encapsulation of the blockchain database.
 /// Implementations are expected to be thread safe.
-class BCB_API full_chain
+class BCB_API safe_chain
 {
 public:
     typedef handle0 result_handler;

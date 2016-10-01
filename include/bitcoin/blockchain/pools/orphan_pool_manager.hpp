@@ -25,8 +25,8 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
@@ -44,13 +44,13 @@ public:
 
     typedef handle0 result_handler;
     typedef std::shared_ptr<orphan_pool_manager> ptr;
-    typedef full_chain::reorganize_handler reorganize_handler;
+    typedef safe_chain::reorganize_handler reorganize_handler;
     typedef resubscriber<const code&, size_t, const list&, const list&>
         reorganize_subscriber;
 
     /// Construct an instance.
-    orphan_pool_manager(threadpool& thread_pool, simple_chain& chain,
-        orphan_pool& pool, const settings& settings);
+    orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
+        orphan_pool& orphan_pool, const settings& settings);
 
     virtual void start();
     virtual void stop();
@@ -75,7 +75,7 @@ private:
         const list& original);
 
     // This is protected by the caller protecting organize().
-    simple_chain& chain_;
+    fast_chain& fast_chain_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
