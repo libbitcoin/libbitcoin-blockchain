@@ -32,7 +32,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
+/// This class is NOT thread safe.
 class BCB_API populate_block
 {
 public:
@@ -95,8 +95,10 @@ private:
     std::atomic<bool> stopped_;
     const bool use_testnet_rules_;
     const config::checkpoint::list checkpoints_;
-    const fast_chain& fast_chain_;
     mutable dispatcher dispatch_;
+
+    // This is protected by caller not invoking populate concurrently.
+    const fast_chain& fast_chain_;
 };
 
 } // namespace blockchain

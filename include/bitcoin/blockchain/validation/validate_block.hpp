@@ -33,7 +33,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
+/// This class is NOT thread safe.
 class BCB_API validate_block
 {
 public:
@@ -45,10 +45,8 @@ public:
     void stop();
 
     code check(block_const_ptr block) const;
-
     void accept(fork::const_ptr fork, size_t index,
         result_handler handler) const;
-
     void connect(fork::const_ptr fork, size_t index,
         result_handler handler) const;
 
@@ -71,8 +69,10 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
-    populate_block populator_;
     mutable dispatcher dispatch_;
+
+    // This is protected by caller not invoking accept/connect concurrently.
+    populate_block populator_;
 };
 
 } // namespace blockchain

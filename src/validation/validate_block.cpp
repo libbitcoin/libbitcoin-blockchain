@@ -46,12 +46,14 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
+// bool activated = activatedheight >= full_activation_height_;
+
 validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
-    populator_(pool, chain, settings),
-    dispatch_(pool, NAME "_dispatch")
+    dispatch_(pool, NAME "_dispatch"),
+    populator_(pool, chain, settings)
 {
 }
 
