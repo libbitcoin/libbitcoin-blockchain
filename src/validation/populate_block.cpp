@@ -50,8 +50,8 @@ populate_block::populate_block(threadpool& pool, const fast_chain& chain,
   : stopped_(false),
     use_testnet_rules_(settings.use_testnet_rules),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    fast_chain_(chain),
-    dispatch_(pool, NAME "_dispatch")
+    dispatch_(pool, NAME "_dispatch"),
+    fast_chain_(chain)
 {
 }
 
@@ -136,32 +136,35 @@ bool populate_block::populate_timestamps(state::data& data,
             return false;
 
     // Won't be used, just looks cool in the debugger.
-    data.timestamp_self = 0xbaadf00d;
-    data.timestamp_retarget = 0xbaadf00d;
+    data.timestamp.self = 0xbaadf00d;
+    data.timestamp.retarget = 0xbaadf00d;
 
     // Additional self requirement is signaled by self != high.
     if (heights.timestamp_self != heights.timestamp.high &&
-        !get_timestamp(data.timestamp_self, 
+        !get_timestamp(data.timestamp.self, 
             heights.timestamp_self, fork))
             return false;
 
     // Additional retarget requirement is signaled by retarget != high.
     if (heights.timestamp_retarget != heights.timestamp.high &&
-        !get_timestamp(data.timestamp_retarget, 
+        !get_timestamp(data.timestamp.retarget, 
             heights.timestamp_retarget, fork))
             return false;
 
     return true;
 }
 
+// TODO: populate data.activated by caching full activation height.
+// The hight must be tied to block push/pop and invalidated on failure.
 chain_state::ptr populate_block::populate_chain_state(size_t height,
     fork::const_ptr fork) const
 {
     state::data data;
     data.height = height;
+    data.activated = false;
     data.testnet = use_testnet_rules_;
 
-    const auto heights = state::get_map(height, use_testnet_rules_);
+    const auto heights = state::get_map(height, data.activated, data.testnet);
 
     // There are only 11 redundant queries on mainnet, so we don't combine.
     // cache-based construction of the data set will eliminate most redundancy.
