@@ -936,6 +936,10 @@ void block_chain::do_store(block_const_ptr block, scope_lock::ptr lock,
         return;
     }
 
+    // TODO: internally lock inside of organize to protect organization and
+    // lock the store only during the actual write (inside of organization).
+    // That eliminates the need for a scope lock in block_chain by using a
+    // member mutex in the organizer and makes this a simple critical section.
     orphan_manager_.organize(block, close_store);
 }
 
@@ -977,8 +981,19 @@ void block_chain::fetch_serial(perform_read_functor perform_read) const
         return (!database_.is_write_locked(handle) && perform_read(handle));
     };
 
+    // Serial fetch allows each caller to become suspended during a write,
+    // But writes perform thread dispatch and may become thread starved and
+    // therefore blocked due to these pending reads. As a result we have a
+    // requirement for at least one thread per concurrent database caller
+    // (channel) plus one free thread for the write. This will be fully
+    // resolved by giving the writer its own thread pool. That thread pool
+    // can be managed according to the desired level of concurreny in
+    // population and validation. We could also suspend the main thread pool
+    // during validation if we wanted to prioritize validation speed over
+    // download once a block has been 'checked'.
     const auto do_read = [this, try_read]()
     {
+        // TODO: narrow the write lock and reduce the wait time!
         // Sleep while waiting for write to complete.
         while (!try_read())
             std::this_thread::sleep_for(asio::milliseconds(10));

@@ -42,7 +42,6 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/pools/orphan_pool_manager.cpp \
     src/pools/transaction_pool.cpp \
     src/pools/transaction_pool_index.cpp \
-    src/validation/block_validator.cpp \
     src/validation/fork.cpp \
     src/validation/populate_block.cpp \
     src/validation/validate_block.cpp \
@@ -105,7 +104,6 @@ include_bitcoin_blockchain_pools_HEADERS = \
 
 include_bitcoin_blockchain_validationdir = ${includedir}/bitcoin/blockchain/validation
 include_bitcoin_blockchain_validation_HEADERS = \
-    include/bitcoin/blockchain/validation/block_validator.hpp \
     include/bitcoin/blockchain/validation/fork.hpp \
     include/bitcoin/blockchain/validation/populate_block.hpp \
     include/bitcoin/blockchain/validation/validate_block.hpp \

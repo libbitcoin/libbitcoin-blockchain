@@ -51,11 +51,26 @@ protected:
     bool stopped() const;
 
 private:
+    typedef chain::chain_state state;
     static void report(block_const_ptr block, asio::time_point start_time,
         const std::string& token);
 
-    // Return the current chain state for the given height.
-    chain::chain_state::ptr create_chain_state(size_t height) const;
+    /// Return the current chain state for the given height.
+    state::ptr populate_chain_state(size_t height, fork::const_ptr fork) const;
+
+    bool get_bits(uint32_t& out_bits, size_t height,
+        fork::const_ptr fork) const;
+    bool get_version(uint32_t& out_version, size_t height,
+        fork::const_ptr fork) const;
+    bool get_timestamp(uint32_t& out_timestamp, size_t height,
+        fork::const_ptr fork) const;
+
+    bool populate_bits(state::data& data, const state::map& heights,
+        fork::const_ptr fork) const;
+    bool populate_versions(state::data& data, const state::map& heights,
+        fork::const_ptr fork) const;
+    bool populate_timestamps(state::data& data, const state::map& heights,
+        fork::const_ptr fork) const;
 
     void populate_transactions(fork::const_ptr fork, size_t index,
         result_handler handler) const;

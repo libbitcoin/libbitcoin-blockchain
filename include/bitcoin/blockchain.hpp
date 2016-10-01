@@ -31,7 +31,6 @@
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
-#include <bitcoin/blockchain/validation/block_validator.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
