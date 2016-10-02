@@ -47,6 +47,11 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
+inline thread_priority get_validation_priority(const settings& settings)
+{
+    return settings.priority ? thread_priority::high : thread_priority::normal;
+}
+
 // The thread pool controls the parallelism of block validation.
 // Other uses are potentially detrimental to that cause and should be split.
 orphan_pool_manager::orphan_pool_manager(fast_chain& chain, 
@@ -54,7 +59,7 @@ orphan_pool_manager::orphan_pool_manager(fast_chain& chain,
   : fast_chain_(chain),
     stopped_(true),
     orphan_pool_(orphan_pool),
-    thread_pool_(settings.threads),
+    thread_pool_(settings.threads, get_validation_priority(settings)),
     validator_(thread_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool_, NAME)),
     dispatch_(thread_pool_, NAME "_dispatch")

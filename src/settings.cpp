@@ -25,11 +25,12 @@ namespace blockchain {
 // TODO: default threads to number of cores.
 settings::settings()
   : threads(8),
-    block_pool_capacity(50),
-    transaction_pool_capacity(1000),
-    transaction_pool_consistency(false),
+    priority(true),
     use_libconsensus(false),
-    use_testnet_rules(false)
+    use_testnet_rules(false),
+    transaction_pool_consistency(false),
+    transaction_pool_capacity(1000),
+    block_pool_capacity(50)
 {
 }
 
