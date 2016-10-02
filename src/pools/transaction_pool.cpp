@@ -114,7 +114,7 @@ void transaction_pool::do_fetch_inventory(size_t limit,
         BITCOIN_ASSERT(start_tx != buffer_.end());
         const auto result = std::make_shared<inventory>();
         const auto batch_size = std::min(size, limit);
-        auto& inventories = result->inventories;
+        auto& inventories = result->inventories();
         inventories.reserve(batch_size);
         auto end_tx = start_tx + batch_size;
         std::transform(start_tx, end_tx, inventories.begin(), map);
@@ -289,11 +289,11 @@ void transaction_pool::filter(get_data_ptr message,
 
     const auto filter_transactions = [this, message, handler]()
     {
-        auto& inventories = message->inventories;
+        auto& inventories = message->inventories();
 
         for (auto it = inventories.begin(); it != inventories.end();)
         {
-            if (it->is_transaction_type() && is_in_pool(it->hash))
+            if (it->is_transaction_type() && is_in_pool(it->hash()))
                 it = inventories.erase(it);
             else
                 ++it;
@@ -427,7 +427,7 @@ void transaction_pool::delete_confirmed_in_blocks(
         return;
 
     for (const auto block: blocks)
-        for (const auto& tx: block->transactions)
+        for (const auto& tx: block->transactions())
             delete_single(tx.hash(), error::success);
 }
 
@@ -439,9 +439,9 @@ void transaction_pool::delete_spent_in_blocks(
         return;
 
     for (const auto block: blocks)
-        for (const auto& tx: block->transactions)
-            for (const auto& input: tx.inputs)
-                delete_dependencies(input.previous_output,
+        for (const auto& tx: block->transactions())
+            for (const auto& input: tx.inputs())
+                delete_dependencies(input.previous_output(),
                     error::double_spend);
 }
 
@@ -451,7 +451,7 @@ void transaction_pool::delete_dependencies(const output_point& point,
 {
     const auto comparitor = [&point](const input& input)
     {
-        return input.previous_output == point;
+        return input.previous_output() == point;
     };
 
     delete_dependencies(comparitor, ec);
@@ -463,7 +463,7 @@ void transaction_pool::delete_dependencies(const hash_digest& tx_hash,
 {
     const auto comparitor = [&tx_hash](const input& input)
     {
-        return input.previous_output.hash == tx_hash;
+        return input.previous_output().hash() == tx_hash;
     };
 
     delete_dependencies(comparitor, ec);
@@ -478,7 +478,7 @@ void transaction_pool::delete_dependencies(input_compare is_dependency,
     transaction_const_ptr_list dependencies;
 
     for (const auto tx: buffer_)
-        for (const auto& input: tx->inputs)
+        for (const auto& input: tx->inputs())
             if (is_dependency(input))
             {
                 dependencies.push_back(tx);
@@ -561,10 +561,10 @@ bool transaction_pool::is_spent_in_pool(transaction_const_ptr tx) const
 {
     const auto found = [this](const input& input)
     {
-        return is_spent_in_pool(input.previous_output);
+        return is_spent_in_pool(input.previous_output());
     };
 
-    const auto& inputs = tx->inputs;
+    const auto& inputs = tx->inputs();
     return std::any_of(inputs.begin(), inputs.end(), found);
 }
 
@@ -584,10 +584,10 @@ bool transaction_pool::is_spent_by_tx(const output_point& outpoint,
 {
     const auto found = [&outpoint](const input& input)
     {
-        return input.previous_output == outpoint;
+        return input.previous_output() == outpoint;
     };
 
-    const auto& inputs = tx->inputs;
+    const auto& inputs = tx->inputs();
     return std::any_of(inputs.begin(), inputs.end(), found);
 }
 

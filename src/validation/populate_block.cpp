@@ -197,7 +197,7 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
     const auto block = fork->block_at(index);
-    const auto& txs = block->transactions;
+    const auto& txs = block->transactions();
 
     const result_handler complete_handler =
         std::bind(&populate_block::handle_populate,
@@ -232,12 +232,12 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
 // Initialize the coinbase input for subsequent validation.
 void populate_block::populate_coinbase(block_const_ptr block) const
 {
-    const auto& txs = block->transactions;
+    const auto& txs = block->transactions();
     BITCOIN_ASSERT(!txs.empty() && txs.front().is_coinbase());
 
     // A coinbase tx guarnatees exactly one input.
-    const auto& input = txs.front().inputs.front();
-    auto& prevout = input.previous_output.validation;
+    const auto& input = txs.front().inputs().front();
+    auto& prevout = input.previous_output().validation;
 
     // A coinbase input cannot be a double spend since it originates coin.
     prevout.spent = false;
@@ -280,7 +280,7 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     code ec(error::success);
     const auto fork_height = fork->height();
 
-    for (auto& input: tx.inputs)
+    for (auto& input: tx.inputs())
     {
         if (stopped())
         {
@@ -288,16 +288,16 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
             break;
         }
 
-        if (!populate_spent(fork_height, input.previous_output))
+        if (!populate_spent(fork_height, input.previous_output()))
         {
             // This is the only early terminate (database integrity error).
             ec = error::operation_failed;
             break;
         }
 
-        populate_spent(fork, index, input.previous_output);
-        populate_prevout(fork_height, input.previous_output);
-        populate_prevout(fork, index, input.previous_output);
+        populate_spent(fork, index, input.previous_output());
+        populate_prevout(fork_height, input.previous_output());
+        populate_prevout(fork, index, input.previous_output());
     }
 
     handler(ec);
@@ -406,7 +406,7 @@ void populate_block::report(block_const_ptr block, asio::time_point start_time,
     const auto micro_per_block = static_cast<float>(elapsed.count());
     const auto micro_per_input = micro_per_block / block->total_inputs();
     const auto milli_per_block = micro_per_block / micro_per_milliseconds;
-    const auto transactions = block->transactions.size();
+    const auto transactions = block->transactions().size();
     const auto next_height = block->validation.state->height();
 
     log::info(LOG_BLOCKCHAIN)

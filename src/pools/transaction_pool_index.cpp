@@ -110,14 +110,14 @@ void transaction_pool_index::do_add(transaction_const_ptr tx,
     uint32_t index = 0;
     const auto tx_hash = tx->hash();
 
-    for (const auto& input: tx->inputs)
+    for (const auto& input: tx->inputs())
     {
-        const auto address = payment_address::extract(input.script);
+        const auto address = payment_address::extract(input.script());
 
         if (address)
         {
             const input_point point{ tx_hash, index };
-            const spend_info info{ point, input.previous_output };
+            const spend_info info{ point, input.previous_output() };
             spends_map_.emplace(std::move(address), std::move(info));
         }
 
@@ -126,14 +126,14 @@ void transaction_pool_index::do_add(transaction_const_ptr tx,
 
     index = 0;
 
-    for (const auto& output: tx->outputs)
+    for (const auto& output: tx->outputs())
     {
-        const auto address = payment_address::extract(output.script);
+        const auto address = payment_address::extract(output.script());
 
         if (address)
         {
             const output_point point{ tx_hash, index };
-            const output_info info{ point, output.value };
+            const output_info info{ point, output.value() };
             outputs_map_.emplace(std::move(address), std::move(info));
         }
 
@@ -161,9 +161,9 @@ void transaction_pool_index::do_remove(transaction_const_ptr tx,
     uint32_t index = 0;
     const auto tx_hash = tx->hash();
 
-    for (const auto& input: tx->inputs)
+    for (const auto& input: tx->inputs())
     {
-        const auto address = payment_address::extract(input.script);
+        const auto address = payment_address::extract(input.script());
 
         if (address)
             erase(address, input_point{ tx_hash, index }, spends_map_);
@@ -173,9 +173,9 @@ void transaction_pool_index::do_remove(transaction_const_ptr tx,
 
     index = 0;
 
-    for (const auto& output: tx->outputs)
+    for (const auto& output: tx->outputs())
     {
-        const auto address = payment_address::extract(output.script);
+        const auto address = payment_address::extract(output.script());
 
         if (address)
             erase(address, output_point{ tx_hash, index }, outputs_map_);
