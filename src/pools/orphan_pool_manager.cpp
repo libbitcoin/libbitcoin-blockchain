@@ -47,21 +47,16 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-inline thread_priority get_validation_priority(const settings& settings)
-{
-    return settings.priority ? thread_priority::high : thread_priority::normal;
-}
-
-// The thread pool controls the parallelism of block validation.
-// Other uses are potentially detrimental to that cause and should be split.
-orphan_pool_manager::orphan_pool_manager(fast_chain& chain, 
-    orphan_pool& orphan_pool, const settings& settings)
+// The local thread pool controls the parallelism of block validation.
+// The parameterized thread pool is from the network and used forsubscription.
+orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
+    fast_chain& chain, orphan_pool& orphan_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     orphan_pool_(orphan_pool),
-    thread_pool_(settings.threads, get_validation_priority(settings)),
+    thread_pool_(settings.threads, get_priority(settings)),
     validator_(thread_pool_, fast_chain_, settings),
-    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool_, NAME)),
+    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
     dispatch_(thread_pool_, NAME "_dispatch")
 {
 }
@@ -341,6 +336,12 @@ void orphan_pool_manager::notify_reorganize(size_t fork_height,
 
 // Utility.
 //-----------------------------------------------------------------------------
+
+// static
+thread_priority orphan_pool_manager::get_priority(const settings& settings)
+{
+    return settings.priority ? thread_priority::high : thread_priority::normal;
+}
 
 // Once connected we can discard fork segments that fail validation at height.
 fork::ptr orphan_pool_manager::find_connected_fork(block_const_ptr block)

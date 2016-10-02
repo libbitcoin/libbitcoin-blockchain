@@ -49,8 +49,8 @@ public:
         reorganize_subscriber;
 
     /// Construct an instance.
-    orphan_pool_manager(fast_chain& chain, orphan_pool& orphan_pool,
-        const settings& settings);
+    orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
+        orphan_pool& orphan_pool, const settings& settings);
 
     virtual void start();
     virtual void stop();
@@ -62,6 +62,7 @@ protected:
     virtual bool stopped() const;
 
 private:
+    static thread_priority get_priority(const settings& settings);
     fork::ptr find_connected_fork(block_const_ptr block);
 
     void verify(fork::ptr fork, size_t index, result_handler handler);
