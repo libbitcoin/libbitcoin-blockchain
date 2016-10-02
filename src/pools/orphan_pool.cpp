@@ -39,7 +39,7 @@ orphan_pool::orphan_pool(size_t capacity)
 // There is no validation whatsoever of the block up to this pont.
 bool orphan_pool::add(block_const_ptr block)
 {
-    const auto& header = block->header;
+    const auto& header = block->header();
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -109,7 +109,7 @@ void orphan_pool::remove(const block_const_ptr_list& block)
 // TODO: use hash table pool to eliminate this O(n^2) search.
 void orphan_pool::filter(get_data_ptr message) const
 {
-    auto& inventories = message->inventories;
+    auto& inventories = message->inventories();
 
     for (auto it = inventories.begin(); it != inventories.end();)
     {
@@ -122,7 +122,7 @@ void orphan_pool::filter(get_data_ptr message) const
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         mutex_.lock_shared();
-        const auto found = exists(it->hash);
+        const auto found = exists(it->hash());
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
@@ -167,7 +167,7 @@ bool orphan_pool::exists(const chain::header& header) const
 {
     const auto match = [&header](const block_const_ptr& entry)
     {
-        return header == entry->header;
+        return header == entry->header();
     };
 
     return std::any_of(buffer_.begin(), buffer_.end(), match);

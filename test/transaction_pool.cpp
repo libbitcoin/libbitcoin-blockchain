@@ -310,7 +310,7 @@ public:
 
 #define DECLARE_TRANSACTION(number, code_) \
     auto tx##number = std::make_shared<message::transaction_message>(); \
-    tx##number->locktime = number; \
+    tx##number->set_locktime(number); \
     auto hash##number = tx##number->hash(); \
     const size_t tx##number##_id = number; \
     code result##number(error::unknown); \
@@ -325,10 +325,10 @@ public:
     BOOST_CHECK_EQUAL(result##number, code)
 
 #define TX_ID_AT_POSITION(pool, position) \
-    pool.transactions()[position]->locktime
+    pool.transactions()[position]->locktime()
 
 #define ADD_INPUT_TO_TX_NUMBER(number, prevout_hash, prevout_index) \
-    tx##number->inputs.push_back({ { prevout_hash, prevout_index }, {}, 0 }); \
+    tx##number->inputs().push_back({ { prevout_hash, prevout_index }, {}, 0 }); \
     hash##number = tx##number->hash();
 
 BOOST_AUTO_TEST_SUITE(transaction_pool__construct)
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_dependencies3__custom_comparison_p
     // ONLY match hash1 (so tx2 will not be deleted).
     const auto comparison = [&hash1](const chain::input& input)
     {
-        return input.previous_output.hash == hash1;
+        return input.previous_output().hash() == hash1;
     };
 
     DECLARE_TRANSACTION_POOL(mempool, buffer);
@@ -1014,10 +1014,10 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
     DECLARE_TRANSACTION(1, error::success);
     DECLARE_TRANSACTION(2, error::success);
     DECLARE_TRANSACTION(3, error::service_stopped);
-    block1.transactions.push_back(*tx0);
-    block1.transactions.push_back(*tx1);
-    block1.transactions.push_back(*tx2);
-    block1.transactions.push_back(*tx3);
+    block1.transactions().push_back(*tx0);
+    block1.transactions().push_back(*tx1);
+    block1.transactions().push_back(*tx2);
+    block1.transactions().push_back(*tx3);
     blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
@@ -1040,9 +1040,9 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_de
     DECLARE_TRANSACTION(0, error::service_stopped);
     DECLARE_TRANSACTION(1, error::success);
     DECLARE_TRANSACTION(2, error::success);
-    block1.transactions.push_back(*tx0);
-    block2.transactions.push_back(*tx1);
-    block2.transactions.push_back(*tx2);
+    block1.transactions().push_back(*tx0);
+    block2.transactions().push_back(*tx1);
+    block2.transactions().push_back(*tx2);
     blocks.push_back(std::make_shared<const message::block_message>(block1));
     blocks.push_back(std::make_shared<const message::block_message>(block2));
     transaction_pool_fixture::buffer buffer(8);
@@ -1108,10 +1108,10 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_dup
     ADD_INPUT_TO_TX_NUMBER(3, hash0, 49);
     ADD_INPUT_TO_TX_NUMBER(3, hash1, 59);
     ADD_INPUT_TO_TX_NUMBER(3, hash2, 51);
-    block1.transactions.push_back(*tx0);
-    block1.transactions.push_back(*tx1);
-    block1.transactions.push_back(*tx2);
-    block1.transactions.push_back(*tx3);
+    block1.transactions().push_back(*tx0);
+    block1.transactions().push_back(*tx1);
+    block1.transactions().push_back(*tx2);
+    block1.transactions().push_back(*tx3);
     blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);
@@ -1146,10 +1146,10 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
     DECLARE_TRANSACTION(1, error::success);
     DECLARE_TRANSACTION(2, error::success);
     DECLARE_TRANSACTION(3, error::success);
-    block1.transactions.push_back(*tx0);
-    block1.transactions.push_back(*tx1);
-    block1.transactions.push_back(*tx2);
-    block1.transactions.push_back(*tx3);
+    block1.transactions().push_back(*tx0);
+    block1.transactions().push_back(*tx1);
+    block1.transactions().push_back(*tx2);
+    block1.transactions().push_back(*tx3);
     blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
@@ -1188,10 +1188,10 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__
     ADD_INPUT_TO_TX_NUMBER(3, hash0, 49);
     ADD_INPUT_TO_TX_NUMBER(3, hash1, 59);
     ADD_INPUT_TO_TX_NUMBER(3, hash2, 51);
-    block1.transactions.push_back(*tx0);
-    block1.transactions.push_back(*tx1);
-    block1.transactions.push_back(*tx2);
-    block1.transactions.push_back(*tx3);
+    block1.transactions().push_back(*tx0);
+    block1.transactions().push_back(*tx1);
+    block1.transactions().push_back(*tx2);
+    block1.transactions().push_back(*tx3);
     blocks.push_back(std::make_shared<const message::block_message>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);

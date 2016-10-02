@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_SUITE(fork_tests)
 
 #define DECLARE_BLOCK(block, number) \
     const auto block##number = std::make_shared<block_message>(); \
-    block##number->header.bits = number;
+    block##number->header().set_bits(number);
 
 // construct
 
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(fork__hash__one_block__only_previous_block_hash)
     DECLARE_BLOCK(block, 1);
 
     const auto expected = block0->hash();
-    block1->header.previous_block_hash = expected;
+    block1->header().set_previous_block_hash(expected);
 
     blockchain::fork instance;
     BOOST_REQUIRE(instance.push(block1));
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(fork__hash__two_blocks__first_previous_block_hash)
 
     // Link the blocks.
     const auto expected = top42->hash();
-    block0->header.previous_block_hash = expected;
-    block1->header.previous_block_hash = block0->hash();
+    block0->header().set_previous_block_hash(expected);
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(fork__push__two_linked__success)
     DECLARE_BLOCK(block, 1);
 
     // Link the blocks.
-    block1->header.previous_block_hash = block0->hash();
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(fork__push__two_unlinked__failure_on_second)
     DECLARE_BLOCK(block, 1);
 
     // Ensure the blocks are not linked.
-    block1->header.previous_block_hash = null_hash;
+    block1->header().set_previous_block_hash(null_hash);
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(!instance.push(block1));
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__one_of_two__first_remains)
     DECLARE_BLOCK(block, 1);
 
     // Link the blocks.
-    block1->header.previous_block_hash = block0->hash();
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__two_of_two__none_remain)
     DECLARE_BLOCK(block, 1);
 
     // Link the blocks.
-    block1->header.previous_block_hash = block0->hash();
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__three_of_two__unchanged_fork_empty_return)
     DECLARE_BLOCK(block, 1);
 
     // Link the blocks.
-    block1->header.previous_block_hash = block0->hash();
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
     DECLARE_BLOCK(block, 1);
 
     // Link the blocks.
-    block1->header.previous_block_hash = block0->hash();
+    block1->header().set_previous_block_hash(block0->hash());
 
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));

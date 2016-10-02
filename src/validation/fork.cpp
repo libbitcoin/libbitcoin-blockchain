@@ -48,7 +48,7 @@ void fork::set_height(size_t height)
 bool fork::push(block_const_ptr block)
 {
     if (blocks_.empty() ||
-        blocks_.back()->hash() == block->header.previous_block_hash)
+        blocks_.back()->hash() == block->header().previous_block_hash())
     {
         blocks_.push_back(block);
         return true;
@@ -128,7 +128,7 @@ size_t fork::height() const
 hash_digest fork::hash() const
 {
     return blocks_.empty() ? null_hash :
-        blocks_.front()->header.previous_block_hash;
+        blocks_.front()->header().previous_block_hash();
 }
 
 // The caller must ensure that the height is above the fork.
@@ -170,7 +170,7 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
             return block_tx.hash() == tx.hash();
         };
 
-        const auto& txs = block->transactions;
+        const auto& txs = block->transactions();
         return total + std::count_if(txs.begin(), txs.end(), hashes);
     };
 
@@ -189,14 +189,14 @@ void fork::populate_spent(size_t index, const output_point& outpoint) const
         {
             const auto points = [&outpoint](const input& input)
             {
-                return input.previous_output == outpoint;
+                return input.previous_output() == outpoint;
             };
 
-            const auto& ins = tx.inputs;
+            const auto& ins = tx.inputs();
             return sum + std::count_if(ins.begin(), ins.end(), points);
         };
 
-        const auto& txs = block->transactions;
+        const auto& txs = block->transactions();
         return total + std::accumulate(txs.begin(), txs.end(), total, inner);
     };
 
@@ -218,20 +218,20 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
         for (size_t forward = 0; forward <= index; ++forward)
         {
             const auto reverse = index - forward;
-            const auto& txs = block_at(reverse)->transactions;
+            const auto& txs = block_at(reverse)->transactions();
 
             for (size_t position = 0; position < txs.size(); ++position)
             {
                 const auto& tx = txs[position];
 
-                if (outpoint.hash == tx.hash() &&
-                    outpoint.index < tx.outputs.size())
+                if (outpoint.hash() == tx.hash() &&
+                    outpoint.index() < tx.outputs().size())
                 {
                     return
                     {
                         height_at(reverse),
                         position,
-                        tx.outputs[outpoint.index]
+                        tx.outputs()[outpoint.index()]
                     };
                 }
             }
@@ -279,7 +279,7 @@ bool fork::get_bits(uint32_t out_bits, size_t height) const
     if (!block)
         return false;
 
-    out_bits = block->header.bits;
+    out_bits = block->header().bits();
     return true;
 }
 
@@ -294,7 +294,7 @@ bool fork::get_version(uint32_t out_version, size_t height) const
     if (!block)
         return false;
 
-    out_version = block->header.version;
+    out_version = block->header().version();
     return true;
 }
 
@@ -309,7 +309,7 @@ bool fork::get_timestamp(uint32_t out_timestamp, size_t height) const
     if (!block)
         return false;
 
-    out_timestamp = block->header.timestamp;
+    out_timestamp = block->header().timestamp();
     return true;
 }
 

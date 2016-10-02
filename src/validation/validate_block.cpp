@@ -124,7 +124,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto& txs = block->transactions;
+    const auto& txs = block->transactions();
     const result_handler complete_handler =
         std::bind(&validate_block::handle_connect,
             this, _1, block, asio::steady_clock::now(), handler);
@@ -162,7 +162,7 @@ void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
     code ec(error::success);
     uint32_t input_index = 0;
 
-    for (auto& input: tx.inputs)
+    for (auto& input: tx.inputs())
     {
         if (stopped())
         {
@@ -170,7 +170,7 @@ void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
             break;
         }
 
-        if (!input.previous_output.validation.cache.is_valid())
+        if (!input.previous_output().validation.cache.is_valid())
         {
             ec = error::input_not_found;
             break;
@@ -207,7 +207,7 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const auto micro_per_block = static_cast<float>(elapsed.count());
     const auto micro_per_input = micro_per_block / block->total_inputs();
     const auto milli_per_block = micro_per_block / micro_per_milliseconds;
-    const auto transactions = block->transactions.size();
+    const auto transactions = block->transactions().size();
     const auto next_height = block->validation.state->height();
 
     log::info(LOG_BLOCKCHAIN)
@@ -320,9 +320,9 @@ code validate_block::verify_script(const transaction& tx, uint32_t input_index,
     if (!use_libconsensus)
         return script::verify(tx, input_index, flags);
 
-    BITCOIN_ASSERT(input_index < tx.inputs.size());
-    const auto& prevout = tx.inputs[input_index].previous_output.validation;
-    const auto script_data = prevout.cache.script.to_data(false);
+    BITCOIN_ASSERT(input_index < tx.inputs().size());
+    const auto& prevout = tx.inputs()[input_index].previous_output().validation;
+    const auto script_data = prevout.cache.script().to_data(false);
     const auto tx_data = tx.to_data();
 
     // libconsensus

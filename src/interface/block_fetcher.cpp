@@ -62,12 +62,12 @@ private:
             return;
         }
 
-        const auto size = merkle->hashes.size();
-        BITCOIN_ASSERT(size == merkle->header.transaction_count);
+        const auto size = merkle->hashes().size();
+        BITCOIN_ASSERT(size == merkle->header().transaction_count());
 
         auto block = std::make_shared<message::block_message>(
-            message::block_message{ std::move(merkle->header), {} });
-        block->transactions.reserve(size);
+            message::block_message{ std::move(merkle->header()), {} });
+        block->transactions().reserve(size);
 
         // This will be called exactly once by the synchronizer.
         const auto completion_handler =
@@ -80,7 +80,7 @@ private:
 
         // blockchain::fetch_transaction is thread safe.
         size_t index = 0;
-        for (const auto& hash: merkle->hashes)
+        for (const auto& hash: merkle->hashes())
             blockchain_.fetch_transaction(hash,
                 std::bind(&block_fetcher::handle_fetch_transaction,
                     shared_from_this(), _1, _2, _3, index++, block, height,
@@ -108,7 +108,7 @@ private:
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
         mutex_.lock();
-        swapper(block->transactions[index], *transaction);
+        swapper(block->transactions()[index], *transaction);
         mutex_.unlock();
         ///////////////////////////////////////////////////////////////////////
 

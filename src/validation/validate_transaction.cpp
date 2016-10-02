@@ -112,10 +112,10 @@ void validate_transaction::handle_last_height(const code& ec,
             shared_from_this(), _1, _2, tx, handler);
 
     const validate_handler complete =
-        synchronize(rejoin, tx->inputs.size(), NAME);
+        synchronize(rejoin, tx->inputs().size(), NAME);
 
     // Asynchronously loop all inputs.
-    for (uint32_t index = 0; index < tx->inputs.size(); ++index)
+    for (uint32_t index = 0; index < tx->inputs().size(); ++index)
         dispatch_.concurrent(&validate_transaction::validate_input,
             shared_from_this(), tx, index, last_height, complete);
 }
@@ -123,7 +123,7 @@ void validate_transaction::handle_last_height(const code& ec,
 void validate_transaction::validate_input(transaction_const_ptr tx,
     uint32_t input_index, size_t last_height, validate_handler handler)
 {
-    const auto& outpoint = tx->inputs[input_index].previous_output;
+    const auto& outpoint = tx->inputs()[input_index].previous_output();
 
     // Search for a spend of this output in the blockchain.
     blockchain_.fetch_spend(outpoint,
@@ -136,7 +136,7 @@ void validate_transaction::handle_double_spend(const code& ec,
     const chain::input_point&, transaction_const_ptr tx, uint32_t input_index,
     size_t last_height, validate_handler handler)
 {
-    const auto& outpoint = tx->inputs[input_index].previous_output;
+    const auto& outpoint = tx->inputs()[input_index].previous_output();
 
     ////if (pool_.is_spent_in_pool(outpoint))
     ////    return;
@@ -153,7 +153,7 @@ void validate_transaction::handle_previous_tx(const code& ec,
     transaction_const_ptr tx, uint32_t input_index, size_t last_height,
     validate_handler handler)
 {
-    const auto& outpoint = tx->inputs[input_index].previous_output;
+    const auto& outpoint = tx->inputs()[input_index].previous_output();
 
     if (ec == error::input_not_found)
     {
@@ -199,10 +199,10 @@ code validate_transaction::check_input(const transaction& tx,
     size_t previous_tx_height, size_t last_height, uint32_t flags,
     uint64_t& output_value)
 {
-    const auto& input = tx.inputs[input_index];
-    const auto& previous_outpoint = input.previous_output;
-    const auto& previous_output = previous_tx.outputs[previous_outpoint.index];
-    return check_script(tx, input_index, previous_output.script, flags);
+    const auto& input = tx.inputs()[input_index];
+    const auto& previous_outpoint = input.previous_output();
+    const auto& previous_output = previous_tx.outputs()[previous_outpoint.index()];
+    return check_script(tx, input_index, previous_output.script(), flags);
 }
 
 // references (block)
@@ -216,7 +216,7 @@ code validate_transaction::check_script(transaction_const_ptr tx,
 code validate_transaction::check_script(const transaction& tx,
     uint32_t input_index, const script& prevout_script, uint32_t flags)
 {
-    if (input_index >= tx.inputs.size())
+    if (input_index >= tx.inputs().size())
         return error::input_not_found;
 
 #ifdef WITH_CONSENSUS

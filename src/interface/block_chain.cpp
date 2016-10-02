@@ -226,14 +226,14 @@ bool block_chain::get_spender_hash(hash_digest& out_hash,
     if (!spend.is_valid())
         return false;
 
-    out_hash = std::move(spend.hash);
+    out_hash = std::move(spend.hash());
     return true;
 }
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
     size_t& out_position, const chain::output_point& outpoint) const
 {
-    const auto result = database_.transactions.get(outpoint.hash);
+    const auto result = database_.transactions.get(outpoint.hash());
     if (!result)
     {
         ////log::info(LOG_BLOCKCHAIN)
@@ -244,7 +244,7 @@ bool block_chain::get_output(chain::output& out_output, size_t& out_height,
 
     out_height = result.height();
     out_position = result.position();
-    out_output = result.output(outpoint.index);
+    out_output = result.output(outpoint.index());
 
     // If the index is invalid the output will be as well.
     return out_output.is_valid();
@@ -370,7 +370,7 @@ void block_chain::fetch_block_header(uint64_t height,
             result.header());
 
         // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
+        header->set_transaction_count(result.transaction_count());
         return finish_fetch(slock, handler, error::success, header,
             result.height());
     };
@@ -397,7 +397,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
             result.header());
 
         // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
+        header->set_transaction_count(result.transaction_count());
         return finish_fetch(slock, handler, error::success, header,
             result.height());
     };
@@ -424,7 +424,7 @@ void block_chain::fetch_merkle_block(uint64_t height,
             message::merkle_block{ result.header(), to_hashes(result), {} });
 
         // Asign the optional tx count to the merkle header.
-        merkle->header.transaction_count = result.transaction_count();
+        merkle->header().set_transaction_count(result.transaction_count());
         return finish_fetch(slock, handler, error::success, merkle,
             result.height());
     };
@@ -548,13 +548,13 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(outpoint.hash);
+        const auto result = database_.transactions.get(outpoint.hash());
 
         if (!result)
             return finish_fetch(slock, handler, error::not_found,
                 chain::output{});
 
-        const auto output = result.output(outpoint.index);
+        const auto output = result.output(outpoint.index());
         const auto ec = output.is_valid() ? error::success : error::not_found;
         return finish_fetch(slock, handler, ec, std::move(output));
     };
@@ -573,7 +573,7 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     const auto do_fetch = [&](size_t slock)
     {
         const auto point = database_.spends.get(outpoint);
-        return point.hash != null_hash ?
+        return point.hash() != null_hash ?
             finish_fetch(slock, handler, error::success, point) :
             finish_fetch(slock, handler, error::not_found, point);
     };
@@ -633,7 +633,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
             return finish_fetch(slock, handler, ec, nullptr);
 
         auto get_blocks = std::make_shared<message::get_blocks>();
-        auto& hashes = get_blocks->start_hashes;
+        auto& hashes = get_blocks->start_hashes();
         hashes.reserve(heights.size());
         ec = error::success;
 
@@ -675,7 +675,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         // Find the first block height.
         // If no start block is on our chain we start with block 0.
         size_t start = 0;
-        for (const auto& hash: locator->start_hashes)
+        for (const auto& hash: locator->start_hashes())
         {
             const auto result = database_.blocks.get(hash);
             if (result)
@@ -689,10 +689,10 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         // The maximum stop block is 501 blocks after start (to return 500).
         auto stop = safe_add(safe_add(start, limit), size_t(1));
 
-        if (locator->stop_hash != null_hash)
+        if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks.get(locator->stop_hash);
+            const auto stop_result = database_.blocks.get(locator->stop_hash());
             if (stop_result)
                 stop = std::min(stop_result.height(), stop);
         }
@@ -707,7 +707,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
 
         auto hashes = std::make_shared<message::inventory>();
-        hashes->inventories.reserve(stop);
+        hashes->inventories().reserve(stop);
 
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
@@ -717,13 +717,13 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
             if (result)
             {
                 static const auto id = message::inventory::type_id::block;
-                hashes->inventories.push_back({ id, result.header().hash() });
+                hashes->inventories().push_back({ id, result.header().hash() });
                 break;
             }
         }
         ///////////////////////////////////////////////////////////////////////
 
-        hashes->inventories.shrink_to_fit();
+        hashes->inventories().shrink_to_fit();
         return finish_fetch(slock, handler, error::success, hashes);
     };
     fetch_serial(do_fetch);
@@ -749,7 +749,7 @@ void block_chain::fetch_locator_block_headers(
         // Find the first block height.
         // If no start block is on our chain we start with block 0.
         size_t start = 0;
-        for (const auto& hash: locator->start_hashes)
+        for (const auto& hash: locator->start_hashes())
         {
             const auto result = database_.blocks.get(hash);
             if (result)
@@ -763,10 +763,10 @@ void block_chain::fetch_locator_block_headers(
         // The maximum stop block is 501 blocks after start (to return 500).
         auto stop = safe_add(safe_add(start, limit), size_t(1));
 
-        if (locator->stop_hash != null_hash)
+        if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks.get(locator->stop_hash);
+            const auto stop_result = database_.blocks.get(locator->stop_hash());
             if (stop_result)
                 stop = std::min(stop_result.height(), stop);
         }
@@ -782,7 +782,7 @@ void block_chain::fetch_locator_block_headers(
         //---------------------------------------------------------------------
 
         const auto headers = std::make_shared<message::headers>();
-        headers->elements.reserve(stop);
+        headers->elements().reserve(stop);
 
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
@@ -791,13 +791,13 @@ void block_chain::fetch_locator_block_headers(
             const auto result = database_.blocks.get(index);
             if (result)
             {
-                headers->elements.push_back(result.header());
+                headers->elements().push_back(result.header());
                 break;
             }
         }
         ///////////////////////////////////////////////////////////////////////
 
-        headers->elements.shrink_to_fit();
+        headers->elements().shrink_to_fit();
         return finish_fetch(slock, handler, error::success, headers);
     };
     fetch_serial(do_fetch);
@@ -827,11 +827,11 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     const auto do_fetch = [this, message, handler](size_t slock)
     {
-        auto& inventories = message->inventories;
+        auto& inventories = message->inventories();
         const auto& blocks = database_.blocks;
 
         for (auto it = inventories.begin(); it != inventories.end();)
-            if (it->is_block_type() && blocks.get(it->hash))
+            if (it->is_block_type() && blocks.get(it->hash()))
                 it = inventories.erase(it);
             else
                 ++it;
@@ -853,12 +853,12 @@ void block_chain::filter_transactions(get_data_ptr message,
 
     const auto do_fetch = [this, message, handler](size_t slock)
     {
-        auto& inventories = message->inventories;
+        auto& inventories = message->inventories();
         const auto& transactions = database_.transactions;
 
         for (auto it = inventories.begin(); it != inventories.end();)
         {
-            if (it->is_transaction_type() && transactions.get(it->hash))
+            if (it->is_transaction_type() && transactions.get(it->hash()))
                 it = inventories.erase(it);
             else
                 ++it;
