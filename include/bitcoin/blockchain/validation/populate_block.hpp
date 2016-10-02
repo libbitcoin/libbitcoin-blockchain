@@ -79,7 +79,8 @@ private:
     void populate_transaction(fork::const_ptr fork, size_t index,
         const chain::transaction& tx) const;
     void populate_inputs(fork::const_ptr fork, size_t index,
-        const chain::transaction& input, result_handler handler) const;
+        chain::transaction::sets_const_ptr input_sets, size_t sets_index,
+        result_handler handler) const;
     bool populate_spent(size_t fork_height,
         const chain::output_point& outpoint) const;
     void populate_spent(fork::const_ptr fork, size_t index,
@@ -93,6 +94,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const size_t threads_;
     const bool use_testnet_rules_;
     const config::checkpoint::list checkpoints_;
     mutable dispatcher dispatch_;

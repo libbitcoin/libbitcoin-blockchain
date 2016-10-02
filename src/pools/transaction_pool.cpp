@@ -383,7 +383,7 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
     if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
         delete_package(error::pool_filled);
 
-    tx->metadata.confirm = handler;
+    tx->validation.confirm = handler;
     buffer_.push_back(tx);
 }
 
@@ -391,8 +391,8 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 void transaction_pool::clear(const code& ec)
 {
     for (const auto tx: buffer_)
-        if (tx->metadata.confirm != nullptr)
-            tx->metadata.confirm(ec);
+        if (tx->validation.confirm != nullptr)
+            tx->validation.confirm(ec);
 
     buffer_.clear();
 }
@@ -490,8 +490,8 @@ void transaction_pool::delete_package(const code& ec)
     // Must copy the entry because it is going to be deleted from the list.
     const auto oldest_tx = buffer_.front();
 
-    if (oldest_tx->metadata.confirm != nullptr)
-        oldest_tx->metadata.confirm(ec);
+    if (oldest_tx->validation.confirm != nullptr)
+        oldest_tx->validation.confirm(ec);
 
     delete_package(oldest_tx, ec);
 }
@@ -517,7 +517,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     if (it == buffer_.end())
         return false;
 
-    const auto confirmation_callback = (*it)->metadata.confirm;
+    const auto confirmation_callback = (*it)->validation.confirm;
 
     if (confirmation_callback != nullptr)
         confirmation_callback(ec);

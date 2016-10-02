@@ -93,17 +93,19 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
 
-    if (block->validation.state)
+    const result_handler complete_handler =
+        std::bind(&validate_block::handle_accepted,
+            this, _1, block, handler);
+
+    // Skip data and set population if both are populated.
+    if (block->validation.state && block->validation.state)
     {
         // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::success);
+        dispatch_.concurrent(complete_handler, error::success);
         return;
     }
 
-    populator_.populate(fork, index,
-        std::bind(&validate_block::handle_accepted,
-            this, _1, block, handler));
-
+    populator_.populate(fork, index, complete_handler);
 }
 
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
@@ -123,54 +125,48 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
+    const auto& txs = block->transactions;
+    const auto sets = block->validation.sets;
+    const auto state = block->validation.state;
 
-    if (!block->validation.state)
+    // Data and set population must be completed via a prior call to accept.
+    if (!sets || !state)
     {
         // We must complete on a new thread.
         dispatch_.concurrent(handler, error::operation_failed);
         return;
     }
 
-    const auto& txs = block->transactions();
     const result_handler complete_handler =
         std::bind(&validate_block::handle_connect,
             this, _1, block, asio::steady_clock::now(), handler);
 
-    if (txs.size() < 2 || !block->validation.state->use_full_validation())
+    // Sets will be empty if there is only a coinbase tx.
+    if (sets->empty() || !state->use_full_validation())
     {
         // We must complete on a new thread.
         dispatch_.concurrent(complete_handler, error::success);
         return;
     }
 
-    const auto flags = block->validation.state->enabled_forks();
     const result_handler join_handler = synchronize(complete_handler,
-        txs.size() - 1, NAME "_validate");
+        sets->size(), NAME "_validate");
 
-    // TODO: implement fan-out batching (divide work evenly into core count).
-
-    // Skip coinbase, fan out by tx.
-    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
+    for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&validate_block::connect_inputs,
-            this, std::ref(*tx), flags, join_handler);
+            this, sets, set, state->enabled_forks(), join_handler);
 }
 
-// TODO: move to validate_input.hpp/cpp (post fan-out, static methods only).
-void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
-    result_handler handler) const
+// TODO: move to validate_input.hpp/cpp (static methods only).
+void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
+    size_t sets_index, uint32_t flags, result_handler handler) const
 {
-    BITCOIN_ASSERT(!tx.is_coinbase());
-
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
+    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
 
     code ec(error::success);
-    uint32_t input_index = 0;
+    const auto& sets = (*input_sets)[sets_index];
 
-    for (auto& input: tx.inputs())
+    for (auto& set: sets)
     {
         if (stopped())
         {
@@ -178,13 +174,18 @@ void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
             break;
         }
 
-        if (!input.previous_output().validation.cache.is_valid())
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
+        if (!input.previous_output.validation.cache.is_valid())
         {
             ec = error::input_not_found;
             break;
         }
 
-        if ((ec = verify_script(tx, input_index++, flags, use_libconsensus_)))
+        if ((ec = verify_script(set.tx, set.input_index, flags,
+            use_libconsensus_)))
             break;
     }
 

@@ -48,6 +48,7 @@ using namespace std::placeholders;
 populate_block::populate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
+    threads_(pool.size()),
     use_testnet_rules_(settings.use_testnet_rules),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     dispatch_(pool, NAME "_dispatch"),
@@ -188,15 +189,10 @@ void populate_block::populate(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
-    
-    block->validation.state = populate_chain_state(height, fork);
 
-    if (!block->validation.state)
-    {
-        // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::operation_failed);
-        return;
-    }
+    // Skip coinbase inputs.
+    block->validation.sets = block->to_input_sets(threads_, false);
+    block->validation.state = populate_chain_state(height, fork);
 
     populate_transactions(fork, index, handler);
 }
@@ -206,6 +202,7 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
 {
     const auto block = fork->block_at(index);
     const auto& txs = block->transactions();
+    const auto sets = block->validation.sets;
 
     const result_handler complete_handler =
         std::bind(&populate_block::handle_populate,
@@ -213,28 +210,27 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
 
     populate_coinbase(block);
 
-    if (txs.size() < 2)
+    // Sets will be empty if there is only a coinbase tx.
+    if (sets->empty())
     {
         // We must complete on a new thread.
         dispatch_.concurrent(complete_handler, error::success);
         return;
     }
 
-    const result_handler join_handler = synchronize(complete_handler,
-        txs.size() - 1, NAME "_populate");
-
-    // TODO: implement fan-out batching (divide work evenly into core count).
-
-    // skip coinbase, fan out by tx.
+    // Populate non-coinbase tx data.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
         populate_transaction(*tx);
         populate_transaction(fork, index, *tx);
-
-        // We must complete on a new thread.
-        dispatch_.concurrent(&populate_block::populate_inputs,
-            this, fork, index, std::ref(*tx), join_handler);
     }
+
+    const result_handler join_handler = synchronize(complete_handler,
+        sets->size(), NAME "_populate");
+
+    for (size_t set = 0; set < sets->size(); ++set)
+        dispatch_.concurrent(&populate_block::populate_inputs,
+            this, fork, index, sets, set, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
@@ -278,18 +274,16 @@ void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
 }
 
 void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
-    const transaction& tx, result_handler handler) const
+    transaction::sets_const_ptr input_sets, size_t sets_index,
+    result_handler handler) const
 {
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
+    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
 
     code ec(error::success);
     const auto fork_height = fork->height();
+    const auto& sets = (*input_sets)[sets_index];
 
-    for (auto& input: tx.inputs())
+    for (auto& set: sets)
     {
         if (stopped())
         {
@@ -297,7 +291,11 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
             break;
         }
 
-        if (!populate_spent(fork_height, input.previous_output()))
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs.size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
+        if (!populate_spent(fork_height, input.previous_output))
         {
             // This is the only early terminate (database integrity error).
             ec = error::operation_failed;

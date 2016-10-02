@@ -22,8 +22,10 @@
 namespace libbitcoin {
 namespace blockchain {
 
+// TODO: default threads to number of cores.
 settings::settings()
-  : block_pool_capacity(50),
+  : threads(8),
+    block_pool_capacity(50),
     transaction_pool_capacity(1000),
     transaction_pool_consistency(false),
     use_libconsensus(false),

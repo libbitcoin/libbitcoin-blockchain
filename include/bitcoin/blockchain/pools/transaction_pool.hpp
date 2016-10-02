@@ -117,6 +117,12 @@ protected:
     void delete_package(transaction_const_ptr tx, const code& ec);
     bool delete_single(const hash_digest& tx_hash, const code& ec);
 
+    // This is thread safe.
+    std::atomic<bool> stopped_;
+
+    // This is protected by exclusive dispatch.
+    buffer buffer_;
+
 private:
     // These are not thread safe.
     bool is_in_pool(const hash_digest& tx_hash) const;
@@ -124,14 +130,10 @@ private:
     bool is_spent_in_pool(const chain::output_point& outpoint) const;
     transaction_const_ptr find(const hash_digest& tx_hash) const;
 
-    // This is protected by exclusive dispatch.
-    buffer buffer_;
-
     // These are thread safe.
-    std::atomic<bool> stopped_;
     safe_chain& safe_chain_;
     transaction_pool_index index_;
-    ////validate_block validator_;
+    ////validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
     const bool maintain_consistency_;

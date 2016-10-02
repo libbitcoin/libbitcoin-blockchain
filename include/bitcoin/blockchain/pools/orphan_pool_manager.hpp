@@ -49,8 +49,8 @@ public:
         reorganize_subscriber;
 
     /// Construct an instance.
-    orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
-        orphan_pool& orphan_pool, const settings& settings);
+    orphan_pool_manager(fast_chain& chain, orphan_pool& orphan_pool,
+        const settings& settings);
 
     virtual void start();
     virtual void stop();
@@ -80,6 +80,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     orphan_pool& orphan_pool_;
+    threadpool thread_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;

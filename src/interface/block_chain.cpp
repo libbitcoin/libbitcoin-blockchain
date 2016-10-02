@@ -46,7 +46,7 @@ block_chain::block_chain(threadpool& pool,
   : stopped_(true),
     settings_(chain_settings),
     orphan_pool_(chain_settings.block_pool_capacity),
-    orphan_manager_(pool, *this, orphan_pool_, chain_settings),
+    orphan_manager_(*this, orphan_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {

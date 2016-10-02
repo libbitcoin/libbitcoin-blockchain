@@ -47,14 +47,17 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
-    fast_chain& chain, orphan_pool& orphan_pool, const settings& settings)
+// The thread pool controls the parallelism of block validation.
+// Other uses are potentially detrimental to that cause and should be split.
+orphan_pool_manager::orphan_pool_manager(fast_chain& chain, 
+    orphan_pool& orphan_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     orphan_pool_(orphan_pool),
-    validator_(thread_pool, fast_chain_, settings),
-    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
-    dispatch_(thread_pool, NAME "_dispatch")
+    thread_pool_(settings.threads),
+    validator_(thread_pool_, fast_chain_, settings),
+    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool_, NAME)),
+    dispatch_(thread_pool_, NAME "_dispatch")
 {
 }
 
