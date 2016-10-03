@@ -121,16 +121,15 @@ public:
     /// These invalid reads are outside the scope of the sequence lock.
     bool insert(block_const_ptr block, size_t height);
 
-    /// Append the block to the top of the chain, height is validated.
+    /// Append the blocks to the top of the chain, height is validated.
     /// This is NOT safe for concurrent execution with another write.
     /// This is safe for concurrent execution with safe_chain reads.
-    bool push(block_const_ptr block, size_t height);
+    bool push(const block_const_ptr_list& block, size_t height);
 
     /// Remove blocks from above the given hash, returning them in order.
     /// This is NOT safe for concurrent execution with another write.
     /// This is safe for concurrent execution with safe_chain reads.
-    bool pop_above(block_const_ptr_list& out_blocks,
-        const hash_digest& fork_hash);
+    bool pop(block_const_ptr_list& out_blocks, const hash_digest& fork_hash);
 
     // ========================================================================
     // SAFE CHAIN
@@ -302,8 +301,7 @@ private:
 
     bool do_insert(const chain::block& block, size_t height);
     bool do_push(const chain::block& block, size_t height);
-    bool do_pop_above(chain::block::list& out_blocks,
-        const hash_digest& fork_hash);
+    bool do_pop(chain::block::list& out_blocks, const hash_digest& fork_hash);
 
     // These are thread safe.
     std::atomic<bool> stopped_;

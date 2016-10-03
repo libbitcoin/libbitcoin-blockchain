@@ -217,7 +217,7 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // Writers.
 // ----------------------------------------------------------------------------
 
-// This is used for parallel initial block download. Blocks do not require
+// This is used by parallel initial block download. Blocks do not require
 // ordering and gaps must be filled before the chain is queryable. The height
 // value is tested for the existence of a block at the height only.
 bool block_chain::insert(block_const_ptr block, size_t height)
@@ -232,32 +232,34 @@ bool block_chain::do_insert(const block& block, size_t height)
     return database_.insert(block, height);
 }
 
-// This is used for ordered block download. Height is used by the database to
+// This is used by ordered block download. Height is used by the database to
 // validate the intended height. Hash chaining is also verified.
-bool block_chain::push(block_const_ptr block, size_t height)
+bool block_chain::push(const block_const_ptr_list& blocks, size_t height)
 {
-    return write_serial(
-        std::bind(&block_chain::do_push,
-            this, std::ref(*block), height));
+    for (const auto block: blocks)
+        if (!write_serial(
+            std::bind(&block_chain::do_push,
+                this, std::ref(*block), height)))
+            return false;
+
+    return true;
 }
 
-bool block_chain::do_push(const block& block, size_t height)
+bool block_chain::do_push(const chain::block& block, size_t height)
 {
-    return database_.insert(block, height);
+    return database_.push(block, height);
 }
 
-// This is used in the case of a reorganization, removing a set of connected
-// blocks from above the specified hash to the top.
-bool block_chain::pop_above(block_const_ptr_list& out_blocks,
+// This is used by reorganization, removing a set of connected blocks from
+// above the specified hash to the top.
+bool block_chain::pop(block_const_ptr_list& out_blocks,
     const hash_digest& fork_hash)
 {
     block::list blocks;
 
-    const auto result = write_serial(
-        std::bind(&block_chain::do_pop_above,
-            this, std::ref(blocks), std::ref(fork_hash)));
-
-    if (!result)
+    if (!write_serial(
+        std::bind(&block_chain::do_pop,
+            this, std::ref(blocks), std::ref(fork_hash))))
         return false;
 
     const auto map = [](block& block)
@@ -273,8 +275,7 @@ bool block_chain::pop_above(block_const_ptr_list& out_blocks,
     return true;
 }
 
-bool block_chain::do_pop_above(block::list& out_blocks,
-    const hash_digest& fork_hash)
+bool block_chain::do_pop(block::list& out_blocks, const hash_digest& fork_hash)
 {
     return database_.pop_above(out_blocks, fork_hash);
 }
@@ -690,7 +691,6 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         auto hashes = std::make_shared<inventory>();
         hashes->inventories.reserve(stop);
 
-        ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
         for (size_t index = start + 1; index < stop; ++index)
         {
@@ -702,7 +702,6 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
                 break;
             }
         }
-        ///////////////////////////////////////////////////////////////////////
 
         hashes->inventories.shrink_to_fit();
         return finish_read(slock, handler, error::success, hashes);
@@ -765,7 +764,6 @@ void block_chain::fetch_locator_block_headers(
         const auto headers = std::make_shared<message::headers>();
         headers->elements().reserve(stop);
 
-        ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
         for (size_t index = start + 1; index < stop; ++index)
         {
@@ -776,7 +774,6 @@ void block_chain::fetch_locator_block_headers(
                 break;
             }
         }
-        ///////////////////////////////////////////////////////////////////////
 
         headers->elements().shrink_to_fit();
         return finish_read(slock, handler, error::success, headers);

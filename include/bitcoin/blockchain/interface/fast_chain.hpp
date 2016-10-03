@@ -99,11 +99,11 @@ public:
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height) = 0;
 
-    /// Append the block to the top of the chain, height is validated.
-    virtual bool push(block_const_ptr block, size_t height) = 0;
+    /// Append the blocks to the top of the chain, height is validated.
+    virtual bool push(const block_const_ptr_list& blocks, size_t height) = 0;
 
     /// Remove blocks from above the given hash, returning them in order.
-    virtual bool pop_above(block_const_ptr_list& out_blocks,
+    virtual bool pop(block_const_ptr_list& out_blocks,
         const hash_digest& fork_hash) = 0;
 };
 

@@ -109,9 +109,11 @@ void orphan_pool_manager::organize(block_const_ptr block,
     //  Use scope lock to protect the fast chain from concurrent organizations.
     // This has no impact on direct use of either blockchain interface.
     //
+    const auto lock = std::make_shared<scope_lock>(mutex_);
+
     const result_handler locked_handler =
         std::bind(&orphan_pool_manager::complete,
-            this, _1, std::make_shared<scope_lock>(mutex_), handler);
+            this, _1, lock, handler);
 
     // CONSENSUS: check database and orphan pool for duplicate block hash.
     if (fast_chain_.get_block_exists(block->hash()) ||
@@ -162,7 +164,7 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
 
     // Preserve validation priority pool by returning on a network thread.
     const result_handler accept_handler = 
-        dispatch_.concurrent_delegate(&orphan_pool_manager::handle_accept,
+        std::bind(&orphan_pool_manager::handle_accept,
             this, _1, fork, index, handler);
 
     if (fork->is_verified(index))
@@ -201,7 +203,7 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
     // Preserve validation priority pool by returning on a network thread.
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
-        dispatch_.concurrent_delegate(&orphan_pool_manager::handle_connect,
+        std::bind(&orphan_pool_manager::handle_connect,
             this, _1, fork, index, handler);
 
     if (ec || fork->is_verified(index))
@@ -280,86 +282,55 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    // This is the height of the first block of each fork after the fork.
-    const auto base_height = safe_add(fork->height(), size_t(1));
+    const auto first_height = safe_add(fork->height(), size_t(1));
     hash_number original_difficulty;
 
-    // Summarize the difficulty of the original chain from base_height to top.
-    if (!fast_chain_.get_fork_difficulty(original_difficulty, base_height))
+    if (!fast_chain_.get_fork_difficulty(original_difficulty, first_height))
     {
         log::error(LOG_BLOCKCHAIN)
-            << "Failure getting difficulty from [" << base_height << "]";
+            << "Failure getting difficulty from [" << first_height << "]";
         handler(error::operation_failed);
         return;
     }
 
-    // Summarize difficulty of fork and reorganize only if exceeds original.
     if (fork->difficulty() <= original_difficulty)
     {
         log::debug(LOG_BLOCKCHAIN)
-            << "Insufficient work to reorganize from [" << base_height << "]";
+            << "Insufficient work to reorganize from [" << first_height << "]";
         handler(error::insufficient_work);
         return;
     }
 
+    list outgoing;
+
     // Replace! Switch!
-    list original;
+    //#########################################################################
+    const auto reorganized = 
+        fast_chain_.pop(outgoing, fork->hash()) &&
+        fast_chain_.push(fork->blocks(), first_height);
+    //########################################################################
 
-    // Remove the original chain blocks from the store.
-    //#####################################################################
-    const auto popped = fast_chain_.pop_above(original, fork->hash());
-    //#####################################################################
-
-    if (!popped)
+    if (!reorganized)
     {
         log::error(LOG_BLOCKCHAIN)
-            << "Failure reorganizing from [" << base_height << "]";
+            << "Failure reorganizing from [" << first_height << "]";
         handler(error::operation_failed);
         return;
     }
 
-    if (!original.empty())
+    // Remove before add so that we don't overflow the pool and lose blocks.
+    orphan_pool_.remove(fork->blocks());
+    orphan_pool_.add(outgoing);
+
+    if (!outgoing.empty())
     {
         log::info(LOG_BLOCKCHAIN)
-            << "Reorganizing from block " << base_height << " to "
-            << safe_add(base_height, original.size()) << "]";
-    }
-
-    auto height = fork->height();
-
-    for (size_t index = 0; index < fork->size(); ++index)
-    {
-        const auto block = fork->block_at(index);
-
-        // Remove the fork block from the orphan pool.
-        orphan_pool_.remove(block);
-
-        // Add the fork block to the store (logs failures).
-        //#####################################################################
-        const auto pushed = fast_chain_.push(block, safe_increment(height));
-        //#####################################################################
-
-        if (!pushed)
-        {
-            handler(error::operation_failed);
-            return;
-        }
-    }
-
-    height = fork->height();
-
-    for (const auto block: original)
-    {
-        // Original blocks remain valid at their original heights.
-        block->validation.height = safe_increment(height);
-        block->validation.result = error::success;
-
-        // Add the original block to the orphan pool.
-        orphan_pool_.add(block);
+            << "Reorganized from block " << first_height << " to "
+            << safe_add(first_height, outgoing.size()) << "]";
     }
 
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
-    notify_reorganize(fork->height(), fork->blocks(), original);
+    notify_reorganize(fork->height(), fork->blocks(), outgoing);
     handler(error::success);
 }
 

@@ -36,7 +36,7 @@ orphan_pool::orphan_pool(size_t capacity)
     buffer_.reserve(capacity_);
 }
 
-// There is no validation whatsoever of the block up to this pont.
+// There is no validation up to this point apart from deserialization.
 bool orphan_pool::add(block_const_ptr block)
 {
     const auto& header = block->header();
@@ -73,6 +73,13 @@ bool orphan_pool::add(block_const_ptr block)
     return true;
 }
 
+// These are blocks arriving from the blockchain, so should be prevalidated.
+bool orphan_pool::add(const block_const_ptr_list& blocks)
+{
+    auto adder = [this](const block_const_ptr& block) { add(block); };
+    std::for_each(blocks.begin(), blocks.end(), adder);
+}
+
 void orphan_pool::remove(block_const_ptr block)
 {
     ///////////////////////////////////////////////////////////////////////////
@@ -100,10 +107,10 @@ void orphan_pool::remove(block_const_ptr block)
     ////    << "] old size (" << old_size << ").";
 }
 
-void orphan_pool::remove(const block_const_ptr_list& block)
+void orphan_pool::remove(const block_const_ptr_list& blocks)
 {
     auto remover = [this](const block_const_ptr& block) { remove(block); };
-    std::for_each(block.begin(), block.end(), remover);
+    std::for_each(blocks.begin(), blocks.end(), remover);
 }
 
 // TODO: use hash table pool to eliminate this O(n^2) search.
