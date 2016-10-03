@@ -69,6 +69,8 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
+    threadpool priority_pool_;
+    threadpool& thread_pool_;
     mutable dispatcher dispatch_;
 
     // This is protected by caller not invoking accept/connect concurrently.

@@ -38,7 +38,7 @@ class BCB_API populate_block
 public:
     typedef handle0 result_handler;
 
-    populate_block(threadpool& pool, const fast_chain& chain,
+    populate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();
@@ -94,7 +94,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const size_t threads_;
+    const size_t priority_threads_;
     const bool use_testnet_rules_;
     const config::checkpoint::list checkpoints_;
     mutable dispatcher dispatch_;

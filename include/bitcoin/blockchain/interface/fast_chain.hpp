@@ -34,7 +34,7 @@ namespace blockchain {
 class BCB_API fast_chain
 {
 public:
-    // Getters.
+    // Readers.
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
@@ -93,7 +93,7 @@ public:
     virtual transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
-    // Setters.
+    // Writers.
     // ------------------------------------------------------------------------
 
     /// Insert a block to the blockchain, height is checked for existence.
@@ -102,9 +102,9 @@ public:
     /// Append the block to the top of the chain, height is validated.
     virtual bool push(block_const_ptr block, size_t height) = 0;
 
-    /// Remove blocks at or above the given height, returning them in order.
-    virtual bool pop_from(block_const_ptr_list& out_blocks,
-        size_t height) = 0;
+    /// Remove blocks from above the given hash, returning them in order.
+    virtual bool pop_above(block_const_ptr_list& out_blocks,
+        const hash_digest& fork_hash) = 0;
 };
 
 } // namespace blockchain

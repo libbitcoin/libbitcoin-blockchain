@@ -47,15 +47,13 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-// The local thread pool controls the parallelism of block validation.
-// The parameterized thread pool is from the network and used forsubscription.
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
-    fast_chain& chain, orphan_pool& orphan_pool, const settings& settings)
+    fast_chain& chain, orphan_pool& orphan_pool,
+    const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     orphan_pool_(orphan_pool),
-    thread_pool_(settings.threads, get_priority(settings)),
-    validator_(thread_pool_, fast_chain_, settings),
+    validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
     dispatch_(thread_pool_, NAME "_dispatch")
 {
@@ -83,7 +81,7 @@ bool orphan_pool_manager::stopped() const
     return stopped_;
 }
 
-// Organize.
+// Organize sequence.
 //-----------------------------------------------------------------------------
 
 // This is called from block_chain::do_store(), a critical section.
@@ -105,27 +103,48 @@ void orphan_pool_manager::organize(block_const_ptr block,
         return;
     }
 
-    // This is a free-roaming consensus check.
-    // Check database and orphan pool for duplicate block hash.
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section.
+    //
+    //  Use scope lock to protect the fast chain from concurrent organizations.
+    // This has no impact on direct use of either blockchain interface.
+    //
+    const result_handler locked_handler =
+        std::bind(&orphan_pool_manager::complete,
+            this, _1, std::make_shared<scope_lock>(mutex_), handler);
+
+    // CONSENSUS: check database and orphan pool for duplicate block hash.
     if (fast_chain_.get_block_exists(block->hash()) ||
         !orphan_pool_.add(block))
     {
-        handler(error::duplicate);
+        locked_handler(error::duplicate);
         return;
     }
 
     // Find longest fork of blocks that connects the block to the blockchain.
     const auto fork = find_connected_fork(block);
 
-    // If there is no connection the original block is currently an orphan.
     if (fork->empty())
     {
-        handler(error::orphan);
+        // There is no link so the block is currently an orphan.
+        locked_handler(error::orphan);
         return;
     }
 
     // Start the loop by verifying the first block.
-    verify(fork, 0, handler);
+    verify(fork, 0, locked_handler);
+}
+
+void orphan_pool_manager::complete(const code& ec, scope_lock::ptr lock,
+    result_handler handler)
+{
+    lock.reset();
+    //
+    // End Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+
+    // This is the end of the organize sequence.
+    handler(ec);
 }
 
 // Verify the block at the given index in the fork.
@@ -141,11 +160,15 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
         return;
     }
 
+    // Preserve validation priority pool by returning on a network thread.
+    const result_handler accept_handler = 
+        dispatch_.concurrent_delegate(&orphan_pool_manager::handle_accept,
+            this, _1, fork, index, handler);
+
     if (fork->is_verified(index))
     {
-        // This must be dispatched in order to prevent recursion.
-        dispatch_.concurrent(&orphan_pool_manager::handle_connect,
-            this, error::success, fork, index, handler);
+        // Validation already done, handle in accept.
+        accept_handler(error::success);
         return;
     }
 
@@ -153,9 +176,7 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
     auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
 
     // Checks that are dependent on chain state and prevouts.
-    validator_.accept(const_fork, index,
-        std::bind(&orphan_pool_manager::handle_accept,
-            this, _1, fork, index, handler));
+    validator_.accept(const_fork, index, accept_handler);
 }
 
 void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
@@ -170,10 +191,23 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
         return;
     }
 
-    if (ec)
+    if (ec == error::service_stopped || ec == error::operation_failed)
     {
         // This is not a validation failure, so no pool removal.
         handler(ec);
+        return;
+    }
+
+    // Preserve validation priority pool by returning on a network thread.
+    // This also protects our stack from exhaustion due to recursion.
+    const result_handler connect_handler = 
+        dispatch_.concurrent_delegate(&orphan_pool_manager::handle_connect,
+            this, _1, fork, index, handler);
+
+    if (ec || fork->is_verified(index))
+    {
+        // Validation already done or failed, handle in connect.
+        connect_handler(ec);
         return;
     }
 
@@ -181,9 +215,7 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
     auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
 
     // Checks that include script validation.
-    validator_.connect(const_fork, index,
-        std::bind(&orphan_pool_manager::handle_connect,
-            this, _1, fork, index, handler));
+    validator_.connect(const_fork, index, connect_handler);
 }
 
 // Call handler to stop, organized to continue.
@@ -199,6 +231,13 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
         return;
     }
 
+    if (ec == error::service_stopped || ec == error::operation_failed)
+    {
+        // This is not a validation failure, so no pool removal.
+        handler(ec);
+        return;
+    }
+
     if (ec)
     {
         // The index block failed to verify, remove it and descendants.
@@ -210,7 +249,7 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
         fork->set_verified(index);
     }
 
-    // If we just cleared out the entire fork, return the guilty block's code.
+    // If we just cleared out the entire fork, return the guilty block's ec.
     if (fork->empty())
     {
         handler(ec);
@@ -219,9 +258,9 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
 
     const auto next = safe_increment(index);
 
-    // Loop back this next block up the fork (requires thread break above).
     if (next < fork->size())
     {
+        // Recurse: this *requires* thread change to prevent stack exhaustion.
         verify(fork, next, handler);
         return;
     }
@@ -267,7 +306,11 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     list original;
 
     // Remove the original chain blocks from the store.
-    if (!fast_chain_.pop_from(original, base_height))
+    //#####################################################################
+    const auto popped = fast_chain_.pop_above(original, fork->hash());
+    //#####################################################################
+
+    if (!popped)
     {
         log::error(LOG_BLOCKCHAIN)
             << "Failure reorganizing from [" << base_height << "]";
@@ -291,12 +334,12 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         // Remove the fork block from the orphan pool.
         orphan_pool_.remove(block);
 
-        ///////////////////////////////////////////////////////////////////////
-        // TODO: defer store write lock until the block is actually written,
-        // and instead place a lock on the pool manager's organize call.
-        ///////////////////////////////////////////////////////////////////////
         // Add the fork block to the store (logs failures).
-        if (!fast_chain_.push(block, safe_increment(height)))
+        //#####################################################################
+        const auto pushed = fast_chain_.push(block, safe_increment(height));
+        //#####################################################################
+
+        if (!pushed)
         {
             handler(error::operation_failed);
             return;
@@ -336,12 +379,6 @@ void orphan_pool_manager::notify_reorganize(size_t fork_height,
 
 // Utility.
 //-----------------------------------------------------------------------------
-
-// static
-thread_priority orphan_pool_manager::get_priority(const settings& settings)
-{
-    return settings.priority ? thread_priority::high : thread_priority::normal;
-}
 
 // Once connected we can discard fork segments that fail validation at height.
 fork::ptr orphan_pool_manager::find_connected_fork(block_const_ptr block)

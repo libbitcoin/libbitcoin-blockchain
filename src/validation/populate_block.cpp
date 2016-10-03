@@ -45,13 +45,15 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-populate_block::populate_block(threadpool& pool, const fast_chain& chain,
-    const settings& settings)
+// TODO: allow priority pool to be empty and fall back the network pool:
+// dispatch_(priority_pool.size() == 0 ? network_pool : priority_pool)
+populate_block::populate_block(threadpool& priority_pool,
+    const fast_chain& chain, const settings& settings)
   : stopped_(false),
-    threads_(pool.size()),
+    priority_threads_(priority_pool.size()),
     use_testnet_rules_(settings.use_testnet_rules),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    dispatch_(pool, NAME "_dispatch"),
+    dispatch_(priority_pool, NAME "_dispatch"),
     fast_chain_(chain)
 {
 }
@@ -189,11 +191,15 @@ void populate_block::populate(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
+    auto start_time = asio::steady_clock::now();
 
-    // Skip coinbase inputs.
-    block->validation.sets = block->to_input_sets(threads_, false);
+    // Populate all state necessary for block accept/connect.
     block->validation.state = populate_chain_state(height, fork);
 
+    // Populate input sets for parallel dispersion.
+    block->validation.sets = block->to_input_sets(priority_threads_, false);
+
+    report(block, start_time, "chainstat");
     populate_transactions(fork, index, handler);
 }
 
@@ -213,8 +219,7 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty())
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(complete_handler, error::success);
+        complete_handler(error::success);
         return;
     }
 

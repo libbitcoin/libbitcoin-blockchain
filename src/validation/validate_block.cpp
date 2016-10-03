@@ -48,18 +48,24 @@ using namespace std::placeholders;
 
 // bool activated = activatedheight >= full_activation_height_;
 
+// Fall back to the netowkr pool if zero threads in priority pool.
 validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
-    dispatch_(pool, NAME "_dispatch"),
-    populator_(pool, chain, settings)
+    priority_pool_(settings.threads, settings.priority ?
+        thread_priority::high : thread_priority::normal),
+    thread_pool_(priority_pool_.empty() ? pool : priority_pool_),
+    dispatch_(thread_pool_, NAME "_dispatch"),
+    populator_(thread_pool_, chain, settings)
 {
 }
 
 // Stop sequence.
 //-----------------------------------------------------------------------------
 
+// There is no need to maange the priority thread pool as all threads must be
+// joined to unblock the calling thread, so the stopped flag is sufficient.
 void validate_block::stop()
 {
     populator_.stop();
@@ -100,8 +106,7 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
     // Skip data and set population if both are populated.
     if (block->validation.state && block->validation.state)
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(complete_handler, error::success);
+        complete_handler(error::success);
         return;
     }
 
@@ -132,8 +137,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     // Data and set population must be completed via a prior call to accept.
     if (!sets || !state)
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::operation_failed);
+        handler(error::operation_failed);
         return;
     }
 
@@ -144,8 +148,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty() || !state->use_full_validation())
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(complete_handler, error::success);
+        handler(error::success);
         return;
     }
 

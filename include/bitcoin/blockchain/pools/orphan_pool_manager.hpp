@@ -62,7 +62,6 @@ protected:
     virtual bool stopped() const;
 
 private:
-    static thread_priority get_priority(const settings& settings);
     fork::ptr find_connected_fork(block_const_ptr block);
 
     void verify(fork::ptr fork, size_t index, result_handler handler);
@@ -74,9 +73,12 @@ private:
     void organized(fork::ptr fork, result_handler handler);
     void notify_reorganize(size_t fork_height, const list& fork,
         const list& original);
+    void complete(const code& ec, scope_lock::ptr lock,
+        result_handler handler);
 
-    // This is protected by the caller protecting organize().
+    // This is protected by mutex.
     fast_chain& fast_chain_;
+    mutable upgrade_mutex mutex_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

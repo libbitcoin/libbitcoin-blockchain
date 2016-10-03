@@ -175,7 +175,7 @@ void transaction_pool::handle_validated(const code& ec,
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(transaction_const_ptr tx,
+void transaction_pool::organize(transaction_const_ptr tx,
     result_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
@@ -185,12 +185,12 @@ void transaction_pool::store(transaction_const_ptr tx,
     }
 
     validate(tx,
-        std::bind(&transaction_pool::do_store,
+        std::bind(&transaction_pool::do_organize,
             this, _1, _2, tx, handle_confirm, handle_validate));
 }
 
 // This is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
+void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
     transaction_const_ptr tx, result_handler handle_confirm,
     validate_handler handle_validate)
 {

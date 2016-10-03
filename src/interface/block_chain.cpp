@@ -19,11 +19,11 @@
  */
 #include <bitcoin/blockchain/interface/block_chain.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
@@ -37,6 +37,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
+using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
@@ -45,6 +46,7 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
+    spin_lock_sleep_(asio::milliseconds(1)),
     orphan_pool_(chain_settings.block_pool_capacity),
     orphan_manager_(pool, *this, orphan_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
@@ -52,78 +54,11 @@ block_chain::block_chain(threadpool& pool,
 {
 }
 
-// Close does not call stop because there is no way to detect thread join.
-block_chain::~block_chain()
-{
-    close();
-}
+// ============================================================================
+// FAST CHAIN
+// ============================================================================
 
-// Utilities.
-// ----------------------------------------------------------------------------
-
-static hash_list to_hashes(const block_result& result)
-{
-    const auto count = result.transaction_count();
-    hash_list hashes;
-    hashes.reserve(count);
-
-    for (size_t index = 0; index < count; ++index)
-        hashes.push_back(result.transaction_hash(index));
-
-    return hashes;
-}
-
-// Properties.
-// ----------------------------------------------------------------------------
-
-const settings& block_chain::chain_settings() const
-{
-    return settings_;
-}
-
-// Startup and shutdown.
-// ----------------------------------------------------------------------------
-
-// Start is required and the blockchain is restartable.
-bool block_chain::start()
-{
-    if (!stopped() || !database_.start())
-        return false;
-
-    stopped_ = false;
-    orphan_manager_.start();
-    transaction_pool_.start();
-    return true;
-}
-
-// Stop is not required, speeds work shutdown with multiple threads.
-bool block_chain::stop()
-{
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section.
-    unique_lock lock(mutex_);
-
-    stopped_ = true;
-    orphan_manager_.stop();
-    transaction_pool_.stop();
-    return database_.stop();
-    ///////////////////////////////////////////////////////////////////////////
-}
-
-// Database threads must be joined before close is called (or destruct).
-bool block_chain::close()
-{
-    return database_.close();
-}
-
-// private
-bool block_chain::stopped() const
-{
-    // TODO: consider relying on the database stopped state.
-    return stopped_;
-}
-
-// fast_chain getters (no locks, not thread safe).
+// Readers.
 // ----------------------------------------------------------------------------
 
 bool block_chain::get_gap_range(size_t& out_first, size_t& out_last) const
@@ -276,64 +211,112 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
         return nullptr;
 
     out_block_height = result.height();
-    return std::make_shared<message::transaction_message>(
-        result.transaction());
+    return std::make_shared<transaction_message>(result.transaction());
 }
 
-// fast_chain setters (no locks, not thread safe).
+// Writers.
 // ----------------------------------------------------------------------------
 
-// This is safe to call concurrently (but with no other methods).
+// This is used for parallel initial block download. Blocks do not require
+// ordering and gaps must be filled before the chain is queryable. The height
+// value is tested for the existence of a block at the height only.
 bool block_chain::insert(block_const_ptr block, size_t height)
 {
-    if (stopped())
-        return false;
-
-    // THIS IS THE DATABASE BLOCK WRITE AND INDEX OPERATION.
-    return database_.insert(*block, height);
+    return write_serial(
+        std::bind(&block_chain::do_insert,
+            this, std::ref(*block), height));
 }
 
-// Append the block to the top of the chain, height is validated.
+bool block_chain::do_insert(const block& block, size_t height)
+{
+    return database_.insert(block, height);
+}
+
+// This is used for ordered block download. Height is used by the database to
+// validate the intended height. Hash chaining is also verified.
 bool block_chain::push(block_const_ptr block, size_t height)
 {
-    return database_.push(*block, height);
+    return write_serial(
+        std::bind(&block_chain::do_push,
+            this, std::ref(*block), height));
 }
 
-bool block_chain::pop_from(block_const_ptr_list& out_blocks,
-    size_t height)
+bool block_chain::do_push(const block& block, size_t height)
 {
-    size_t top;
+    return database_.insert(block, height);
+}
 
-    // The chain has no genesis block, fail.
-    if (!database_.blocks.top(top))
+// This is used in the case of a reorganization, removing a set of connected
+// blocks from above the specified hash to the top.
+bool block_chain::pop_above(block_const_ptr_list& out_blocks,
+    const hash_digest& fork_hash)
+{
+    block::list blocks;
+
+    const auto result = write_serial(
+        std::bind(&block_chain::do_pop_above,
+            this, std::ref(blocks), std::ref(fork_hash)));
+
+    if (!result)
         return false;
 
-    const auto next = safe_add(top, size_t(1));
-
-    // The fork is at the top of the chain, nothing to pop.
-    if (height == next)
-        return true;
-
-    // The fork is below genesis or disconnected above the chain, fail.
-    if (height == 0 || height > next)
-        return false;
-
-    // height < next (safe)
-    // If the fork is at the top there is one block to pop, and so on.
-    out_blocks.reserve(next - height);
-
-    // height > 0 (safe)
-    // Enqueue blocks so .front() block is new top + 1 and .back() is old top.
-    for (size_t index = top; index >= height; --index)
+    const auto map = [](block& block)
     {
-        auto block = std::make_shared<message::block_message>(database_.pop());
-        out_blocks.insert(out_blocks.begin(), block);
-    }
+        // This uses the block_message move constructor to limit copying.
+        return std::make_shared<const block_message>(std::move(block));
+    };
 
+    // Transform the list of blocks into a list of block message const ptrs.
+    out_blocks.clear();
+    out_blocks.resize(blocks.size());
+    std::transform(blocks.begin(), blocks.end(), out_blocks.begin(), map);
     return true;
 }
 
-// safe_chain queries (internal locks).
+bool block_chain::do_pop_above(block::list& out_blocks,
+    const hash_digest& fork_hash)
+{
+    return database_.pop_above(out_blocks, fork_hash);
+}
+
+// ============================================================================
+// SAFE CHAIN
+// ============================================================================
+
+// Startup and shutdown.
+// ----------------------------------------------------------------------------
+// TODO: make start thread safe, protect start with mutex.
+
+bool block_chain::start()
+{
+    if (!stopped() || !database_.open())
+        return false;
+
+    stopped_ = false;
+    orphan_manager_.start();
+    transaction_pool_.start();
+    return true;
+}
+
+bool block_chain::stop()
+{
+    stopped_ = true;
+    orphan_manager_.stop();
+    transaction_pool_.stop();
+    return true;
+}
+
+bool block_chain::close()
+{
+    return database_.close();
+}
+
+block_chain::~block_chain()
+{
+    close();
+}
+
+// Queries.
 // ----------------------------------------------------------------------------
 
 void block_chain::fetch_block(uint64_t height,
@@ -364,17 +347,16 @@ void block_chain::fetch_block_header(uint64_t height,
         const auto result = database_.blocks.get(height);
 
         if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto header = std::make_shared<message::header_message>(
-            result.header());
+        const auto header = std::make_shared<header_message>(result.header());
 
         // Asign the optional tx count to the header.
-        header->set_transaction_count(result.transaction_count());
-        return finish_fetch(slock, handler, error::success, header,
+        header->transaction_count = result.transaction_count();
+        return finish_read(slock, handler, error::success, header,
             result.height());
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_block_header(const hash_digest& hash,
@@ -391,17 +373,16 @@ void block_chain::fetch_block_header(const hash_digest& hash,
         const auto result = database_.blocks.get(hash);
 
         if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto header = std::make_shared<message::header_message>(
-            result.header());
+        const auto header = std::make_shared<header_message>(result.header());
 
         // Asign the optional tx count to the header.
-        header->set_transaction_count(result.transaction_count());
-        return finish_fetch(slock, handler, error::success, header,
+        header->transaction_count = result.transaction_count();
+        return finish_read(slock, handler, error::success, header,
             result.height());
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_merkle_block(uint64_t height,
@@ -418,17 +399,17 @@ void block_chain::fetch_merkle_block(uint64_t height,
         const auto result = database_.blocks.get(height);
 
         if (!result)
-            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+            finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        auto merkle = std::make_shared<message::merkle_block>(
-            message::merkle_block{ result.header(), to_hashes(result), {} });
+        auto merkle = std::make_shared<merkle_block>(
+            merkle_block{ result.header(), to_hashes(result), {} });
 
         // Asign the optional tx count to the merkle header.
-        merkle->header().set_transaction_count(result.transaction_count());
-        return finish_fetch(slock, handler, error::success, merkle,
+        merkle->header.transaction_count = result.transaction_count();
+        return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_merkle_block(const hash_digest& hash,
@@ -445,14 +426,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         const auto result = database_.blocks.get(hash);
 
         if (!result)
-            finish_fetch(slock, handler, error::not_found, nullptr, 0);
+            finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        auto merkle = std::make_shared<message::merkle_block>(
-            message::merkle_block{ result.header(), to_hashes(result), {} });
-        return finish_fetch(slock, handler, error::success, merkle,
+        auto merkle = std::make_shared<merkle_block>(
+            merkle_block{ result.header(), to_hashes(result), {} });
+        return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_block_height(const hash_digest& hash,
@@ -468,10 +449,10 @@ void block_chain::fetch_block_height(const hash_digest& hash,
     {
         const auto result = database_.blocks.get(hash);
         return result ?
-            finish_fetch(slock, handler, error::success, result.height()) :
-            finish_fetch(slock, handler, error::not_found, 0);
+            finish_read(slock, handler, error::success, result.height()) :
+            finish_read(slock, handler, error::not_found, 0);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_last_height(
@@ -487,10 +468,10 @@ void block_chain::fetch_last_height(
     {
         size_t last_height;
         return database_.blocks.top(last_height) ?
-            finish_fetch(slock, handler, error::success, last_height) :
-            finish_fetch(slock, handler, error::not_found, 0);
+            finish_read(slock, handler, error::success, last_height) :
+            finish_read(slock, handler, error::not_found, 0);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_transaction(const hash_digest& hash,
@@ -507,14 +488,14 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         const auto result = database_.transactions.get(hash);
 
         if (!result)
-            return finish_fetch(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto tx = std::make_shared<message::transaction_message>(
+        const auto tx = std::make_shared<transaction_message>(
             result.transaction());
-        return finish_fetch(slock, handler, error::success, tx,
+        return finish_read(slock, handler, error::success, tx,
             result.height());
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_transaction_position(const hash_digest& hash,
@@ -530,11 +511,11 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     {
         const auto result = database_.transactions.get(hash);
         return result ?
-            finish_fetch(slock, handler, error::success, result.position(),
+            finish_read(slock, handler, error::success, result.position(),
                 result.height()) :
-            finish_fetch(slock, handler, error::not_found, 0, 0);
+            finish_read(slock, handler, error::not_found, 0, 0);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_output(const chain::output_point& outpoint,
@@ -551,14 +532,14 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
         const auto result = database_.transactions.get(outpoint.hash());
 
         if (!result)
-            return finish_fetch(slock, handler, error::not_found,
+            return finish_read(slock, handler, error::not_found,
                 chain::output{});
 
         const auto output = result.output(outpoint.index());
         const auto ec = output.is_valid() ? error::success : error::not_found;
-        return finish_fetch(slock, handler, ec, std::move(output));
+        return finish_read(slock, handler, ec, std::move(output));
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_spend(const chain::output_point& outpoint,
@@ -573,11 +554,11 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     const auto do_fetch = [&](size_t slock)
     {
         const auto point = database_.spends.get(outpoint);
-        return point.hash() != null_hash ?
-            finish_fetch(slock, handler, error::success, point) :
-            finish_fetch(slock, handler, error::not_found, point);
+        return point.hash != null_hash ?
+            finish_read(slock, handler, error::success, point) :
+            finish_read(slock, handler, error::not_found, point);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_history(const wallet::payment_address& address,
@@ -591,10 +572,10 @@ void block_chain::fetch_history(const wallet::payment_address& address,
 
     const auto do_fetch = [&](size_t slock)
     {
-        return finish_fetch(slock, handler, error::success,
+        return finish_read(slock, handler, error::success,
             database_.history.get(address.hash(), limit, from_height));
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
@@ -608,10 +589,10 @@ void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
 
     const auto do_fetch = [&](size_t slock)
     {
-        return finish_fetch(slock, handler, error::success,
+        return finish_read(slock, handler, error::success,
             database_.stealth.scan(filter, from_height));
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 // This may generally execute 29+ queries.
@@ -630,7 +611,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         code ec(error::operation_failed);
 
         if (!database_.blocks.top(top))
-            return finish_fetch(slock, handler, ec, nullptr);
+            return finish_read(slock, handler, ec, nullptr);
 
         auto get_blocks = std::make_shared<message::get_blocks>();
         auto& hashes = get_blocks->start_hashes();
@@ -652,9 +633,9 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         }
 
         hashes.shrink_to_fit();
-        return finish_fetch(slock, handler, ec, get_blocks);
+        return finish_read(slock, handler, ec, get_blocks);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 // This may execute over 500 queries.
@@ -706,8 +687,8 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
                 start = std::max(start_result.height(), start);
         }
 
-        auto hashes = std::make_shared<message::inventory>();
-        hashes->inventories().reserve(stop);
+        auto hashes = std::make_shared<inventory>();
+        hashes->inventories.reserve(stop);
 
         ////////////////////////// TODO: parallelize. /////////////////////////
         // Build the hash list until we hit last or the blockchain top.
@@ -716,17 +697,17 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
             const auto result = database_.blocks.get(index);
             if (result)
             {
-                static const auto id = message::inventory::type_id::block;
-                hashes->inventories().push_back({ id, result.header().hash() });
+                static const auto id = inventory::type_id::block;
+                hashes->inventories.push_back({ id, result.header().hash() });
                 break;
             }
         }
         ///////////////////////////////////////////////////////////////////////
 
-        hashes->inventories().shrink_to_fit();
-        return finish_fetch(slock, handler, error::success, hashes);
+        hashes->inventories.shrink_to_fit();
+        return finish_read(slock, handler, error::success, hashes);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 // This may execute over 2000 queries.
@@ -798,13 +779,13 @@ void block_chain::fetch_locator_block_headers(
         ///////////////////////////////////////////////////////////////////////
 
         headers->elements().shrink_to_fit();
-        return finish_fetch(slock, handler, error::success, headers);
+        return finish_read(slock, handler, error::success, headers);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 // Transaction Pool.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 void block_chain::fetch_floaters(size_t size,
     inventory_fetch_handler handler) const
@@ -813,7 +794,7 @@ void block_chain::fetch_floaters(size_t size,
 }
 
 // Filters.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 // This may execute up to 500 queries.
 void block_chain::filter_blocks(get_data_ptr message,
@@ -836,9 +817,9 @@ void block_chain::filter_blocks(get_data_ptr message,
             else
                 ++it;
 
-        return finish_fetch(slock, handler, error::success);
+        return finish_read(slock, handler, error::success);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 // BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
@@ -864,9 +845,9 @@ void block_chain::filter_transactions(get_data_ptr message,
                 ++it;
         }
 
-        return finish_fetch(slock, handler, error::success);
+        return finish_read(slock, handler, error::success);
     };
-    fetch_serial(do_fetch);
+    read_serial(do_fetch);
 }
 
 void block_chain::filter_orphans(get_data_ptr message,
@@ -883,7 +864,7 @@ void block_chain::filter_floaters(get_data_ptr message,
 }
 
 // Subscribers.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 void block_chain::subscribe_reorganize(reorganize_handler handler)
 {
@@ -897,110 +878,95 @@ void block_chain::subscribe_transaction(transaction_handler handler)
     transaction_pool_.subscribe_transaction(handler);
 }
 
-// Stores.
-//-------------------------------------------------------------------------
+// Organizers (pools).
+//-----------------------------------------------------------------------------
 
-
-// This call is sequential, but we are preserving the callback model for now.
-void block_chain::store(block_const_ptr block, result_handler handler)
+void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section.
-    auto lock = std::make_shared<scope_lock>(mutex_);
-
-    if (!stopped_.load())
-    {
-        do_store(block, lock, handler);
-        //?????????????????????????????????????????????????????????????????????
-        return;
-    }
-
-    lock.reset();
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(error::service_stopped);
+    orphan_manager_.organize(block, handler);
 }
 
-// This processes the block through the orphan_pool_manager.
-void block_chain::do_store(block_const_ptr block, scope_lock::ptr lock,
-    result_handler handler)
-{
-    const result_handler close_store =
-        std::bind(&block_chain::handle_store,
-            this, _1, lock, handler);
-
-    if (!database_.begin_write())
-    {
-        DEBUG_ONLY(const auto result =) database_.end_write();
-        BITCOIN_ASSERT_MSG(!result, "database closed after open failure");
-        return;
-    }
-
-    // TODO: internally lock inside of organize to protect organization and
-    // lock the store only during the actual write (inside of organization).
-    // That eliminates the need for a scope lock in block_chain by using a
-    // member mutex in the organizer and makes this a simple critical section.
-    orphan_manager_.organize(block, close_store);
-}
-
-void block_chain::handle_store(const code& ec, scope_lock::ptr lock,
-    result_handler handler)
-{
-    // End write is always called regardless of begin write success.
-    const auto close_result = database_.end_write() ? error::success :
-        error::operation_failed;
-
-    //?????????????????????????????????????????????????????????????????????????
-    lock.reset();
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(ec ? ec : close_result);
-}
-
-void block_chain::store(transaction_const_ptr transaction,
+void block_chain::organize(transaction_const_ptr transaction,
     transaction_store_handler handler)
 {
     // This is a simplification for the blockchain interface.
     const auto unhandled = [](code) {};
 
     // Notify only on completion of validation and accept/reject in pool.
-    transaction_pool_.store(transaction, unhandled, handler);
+    transaction_pool_.organize(transaction, unhandled, handler);
 }
 
-// Utility.
+// Properties (thread safe).
+// ----------------------------------------------------------------------------
+
+const settings& block_chain::chain_settings() const
+{
+    return settings_;
+}
+
+// private
+bool block_chain::stopped() const
+{
+    return stopped_;
+}
+
+// Sequential locking helpers.
+// ----------------------------------------------------------------------------
+// private
+
+template <typename Writer>
+bool block_chain::write_serial(Writer&& writer)
+{
+    // End must be paried with read, regardless of result.
+    const auto begin = database_.begin_write();
+    const auto write = begin && writer();
+    const auto end = database_.end_write();
+    return begin && write && end;
+}
+
+template <typename Reader>
+void block_chain::read_serial(Reader&& reader) const
+{
+    while (true)
+    {
+        // Get a read handle.
+        const auto sequence = database_.begin_read();
+
+        // If read handle indicates write and reader finishes false, wait.
+        if (!database_.is_write_locked(sequence) && reader(sequence))
+            break;
+
+        // Sleep while waiting for write to complete.
+        std::this_thread::sleep_for(spin_lock_sleep_);
+    }
+}
+
+template <typename Handler, typename... Args>
+bool block_chain::finish_read(handle sequence, Handler handler,
+    Args&&... args) const
+{
+    // If the read sequence was interrupted by a write, return false (wait). 
+    if (!database_.is_read_valid(sequence))
+        return false;
+
+    // Handle the read (done).
+    handler(std::forward<Args>(args)...);
+    return true;
+}
+
+// Utilities.
 //-----------------------------------------------------------------------------
 
-// This callback model is preserved currently to limit downstream changes.
-void block_chain::fetch_serial(perform_read_functor perform_read) const
+hash_list block_chain::to_hashes(const block_result& result)
 {
-    // Post IBD writes are ordered on the strand, so never concurrent.
-    // Reads are unordered and concurrent, but effectively blocked by writes.
-    const auto try_read = [this, perform_read]()
-    {
-        const auto handle = database_.begin_read();
-        return (!database_.is_write_locked(handle) && perform_read(handle));
-    };
+    const auto count = result.transaction_count();
+    hash_list hashes;
+    hashes.reserve(count);
 
-    // Serial fetch allows each caller to become suspended during a write,
-    // But writes perform thread dispatch and may become thread starved and
-    // therefore blocked due to these pending reads. As a result we have a
-    // requirement for at least one thread per concurrent database caller
-    // (channel) plus one free thread for the write. This will be fully
-    // resolved by giving the writer its own thread pool. That thread pool
-    // can be managed according to the desired level of concurreny in
-    // population and validation. We could also suspend the main thread pool
-    // during validation if we wanted to prioritize validation speed over
-    // download once a block has been 'checked'.
-    const auto do_read = [this, try_read]()
-    {
-        // TODO: narrow the write lock and reduce the wait time!
-        // Sleep while waiting for write to complete.
-        while (!try_read())
-            std::this_thread::sleep_for(asio::milliseconds(10));
-    };
+    for (size_t index = 0; index < count; ++index)
+        hashes.push_back(result.transaction_hash(index));
 
-    // Initiate serial read operation.
-    do_read();
+    return hashes;
 }
 
 } // namespace blockchain

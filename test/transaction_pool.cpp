@@ -191,11 +191,11 @@ public:
     // Stores.
     //-------------------------------------------------------------------------
 
-    virtual void store(block_const_ptr block, result_handler handler)
+    virtual void organize(block_const_ptr block, result_handler handler)
     {
     }
 
-    virtual void store(transaction_const_ptr block,
+    virtual void organize(transaction_const_ptr block,
         transaction_store_handler handler)
     {
     }
@@ -319,7 +319,7 @@ public:
         result##number = ec; \
         BOOST_CHECK_EQUAL(ec.value(), code_); \
     }; \
-    tx##number->metadata.confirm = handle_confirm##number;
+    tx##number->validation.confirm = handle_confirm##number;
 
 #define REQUIRE_CALLBACK(number, code) \
     BOOST_CHECK_EQUAL(result##number, code)

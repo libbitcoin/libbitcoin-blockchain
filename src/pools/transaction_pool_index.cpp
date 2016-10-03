@@ -20,7 +20,6 @@
 #include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
 
 #include <algorithm>
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>

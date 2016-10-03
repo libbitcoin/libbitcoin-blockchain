@@ -73,7 +73,7 @@ public:
     void exists(const hash_digest& tx_hash, result_handler handler) const;
     void filter(get_data_ptr message, result_handler handler) const;
     void validate(transaction_const_ptr tx, validate_handler handler) const;
-    void store(transaction_const_ptr tx, result_handler confirm_handler,
+    void organize(transaction_const_ptr tx, result_handler confirm_handler,
         validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
@@ -96,7 +96,7 @@ protected:
     void do_fetch_inventory(size_t limit,
         fetch_inventory_handler handler) const;
     void do_validate(transaction_const_ptr tx, validate_handler handler) const;
-    void do_store(const code& ec, const indexes& unconfirmed,
+    void do_organize(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, result_handler handle_confirm,
         validate_handler handle_validate);
 
