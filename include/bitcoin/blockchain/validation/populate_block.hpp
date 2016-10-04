@@ -90,8 +90,6 @@ private:
     void populate_spent(fork_ptr fork, size_t index, const point& outpoint) const;
     void populate_prevout(size_t fork_height, const point& outpoint) const;
     void populate_prevout(fork_ptr fork, size_t index, const point& outpoint) const;
-    void handle_populate(const code& ec, block_const_ptr block,
-        asio::time_point start_time, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

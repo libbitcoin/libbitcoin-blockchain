@@ -41,6 +41,12 @@ using namespace std::placeholders;
 
 #define NAME "validate_block"
 
+// Report every nth block.
+static constexpr size_t report_interval = 10;
+
+// Constant for log report calculations.
+static constexpr size_t micro_per_milliseconds = 1000;
+
 // Database access is limited to: populator:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -97,10 +103,11 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(index < fork->size());
 
     const auto block = fork->block_at(index);
+    const auto height = fork->height_at(index);
 
     const result_handler complete_handler =
         std::bind(&validate_block::handle_accepted,
-            this, _1, block, handler);
+            this, _1, block, height, asio::steady_clock::now(), handler);
 
     // Skip data and set population if both are populated.
     if (block->validation.state && block->validation.sets)
@@ -113,9 +120,22 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 }
 
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
-    result_handler handler) const
+    size_t height, asio::time_point start_time, result_handler handler) const
 {
-    handler(ec ? ec : block->accept());
+    // If validation was successful run the accept checks.
+    if (!ec)
+        block->accept();
+
+    if (height % report_interval == 0)
+    {
+        BITCOIN_ASSERT(block->validation.state);
+        const auto skipped = !block->validation.state->use_full_validation();
+        const auto validated = skipped ? "accepted " : "validated";
+        const auto token = ec ? "INVALIDATED" : validated;
+        report(block, start_time, token);
+    }
+
+    handler(ec);
 }
 
 // Connect sequence.
@@ -128,6 +148,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(index < fork->size());
 
     const auto block = fork->block_at(index);
+    const auto height = fork->height_at(index);
     const auto& txs = block->transactions();
     const auto sets = block->validation.sets;
     const auto state = block->validation.state;
@@ -140,8 +161,8 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     }
 
     const result_handler complete_handler =
-        std::bind(&validate_block::handle_connect,
-            this, _1, block, asio::steady_clock::now(), handler);
+        std::bind(&validate_block::handle_connected,
+            this, _1, block, height, asio::steady_clock::now(), handler);
 
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty() || !state->use_full_validation())
@@ -193,14 +214,18 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
     handler(ec);
 }
 
-void validate_block::handle_connect(const code& ec, block_const_ptr block,
-    asio::time_point start_time, result_handler handler) const
+void validate_block::handle_connected(const code& ec, block_const_ptr block,
+    size_t height, asio::time_point start_time, result_handler handler) const
 {
-    BITCOIN_ASSERT(block->validation.state);
-    const auto skipped = !block->validation.state->use_full_validation();
-    const auto validated = skipped ? "accepted " : "validated";
-    const auto token = ec ? "INVALIDATED" : validated;
-    report(block, start_time, token);
+    if (height % report_interval == 0)
+    {
+        BITCOIN_ASSERT(block->validation.state);
+        const auto skipped = !block->validation.state->use_full_validation();
+        const auto validated = skipped ? "accepted " : "validated";
+        const auto token = ec ? "INVALIDATED" : validated;
+        report(block, start_time, token);
+    }
+
     handler(ec);
 }
 
@@ -211,7 +236,6 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const std::string& token)
 {
     BITCOIN_ASSERT(block->validation.state);
-    static constexpr size_t micro_per_milliseconds = 1000;
     const auto delta = asio::steady_clock::now() - start_time;
     const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
     const auto micro_per_block = static_cast<float>(elapsed.count());

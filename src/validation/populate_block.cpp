@@ -43,6 +43,9 @@ using namespace std::placeholders;
 // These values should not be used, but are helpful in the debugger.
 static constexpr uint32_t unspecified = 0xbaadf00d;
 
+// Constant for log report calculations.
+static constexpr size_t micro_per_milliseconds = 1000;
+
 // Database access is limited to:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -171,8 +174,8 @@ void populate_block::populate_chain_state(fork::const_ptr fork, size_t index) co
     data.height = fork->height_at(index);
     auto map = chain_state::get_map(data.height, data.enabled, data.testnet);
 
-    // There are only 11 redundant queries on mainnet, so we don't combine.
-    // cache-based construction of the data set will eliminate most redundancy.
+    // At most 11 redundant mainnet header queries, so we don't combine them.
+    // Cache-based construction of the data set will eliminate most redundancy.
     if (populate_bits(data, map, fork) &&
         populate_versions(data, map, fork) &&
         populate_timestamps(data, map, fork))
@@ -193,14 +196,10 @@ void populate_block::populate_input_sets(fork::const_ptr fork,
 
 // Populate block state sequence.
 //-----------------------------------------------------------------------------
-// Guarantees handler is invoked on a new thread.
 
 void populate_block::populate(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    ////auto start_time = asio::steady_clock::now();
-    ////report(block, start_time, "chainstat");
-
     populate_input_sets(fork, index);
     populate_chain_state(fork, index);
     populate_transactions(fork, index, handler);
@@ -213,16 +212,12 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     const auto& txs = block->transactions();
     const auto sets = block->validation.sets;
 
-    const result_handler complete_handler =
-        std::bind(&populate_block::handle_populate,
-            this, _1, block, asio::steady_clock::now(), handler);
-
     populate_coinbase(block);
 
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty())
     {
-        complete_handler(error::success);
+        handler(error::success);
         return;
     }
 
@@ -233,8 +228,8 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
         populate_transaction(fork, index, *tx);
     }
 
-    const result_handler join_handler = synchronize(complete_handler,
-        sets->size(), NAME "_populate");
+    const result_handler join_handler = synchronize(handler, sets->size(),
+        NAME "_populate");
 
     for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&populate_block::populate_inputs,
@@ -381,9 +376,7 @@ void populate_block::populate_prevout(size_t fork_height,
     if (outpoint.is_null())
         return;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // We continue even if prevout spent and/or missing.
-    ///////////////////////////////////////////////////////////////////////////
+    // We continue even if prevout is spent and/or missing.
 
     // Get the script and value for the prevout.
     if (!fast_chain_.get_output(prevout.cache, height, position, outpoint))
@@ -399,36 +392,6 @@ void populate_block::populate_prevout(size_t fork_height,
     // Set height iff the prevout is coinbase (first tx is coinbase).
     if (position == 0)
         prevout.height = height;
-}
-
-void populate_block::handle_populate(const code& ec, block_const_ptr block,
-    asio::time_point start_time, result_handler handler) const
-{
-    const auto token = code(ec) ? "UNPOPULATED" : "populated";
-    report(block, start_time, token);
-    handler(ec);
-}
-
-// Utility.
-//-----------------------------------------------------------------------------
-
-void populate_block::report(block_const_ptr block, asio::time_point start_time,
-    const std::string& token)
-{
-    BITCOIN_ASSERT(block->validation.state);
-    static constexpr size_t micro_per_milliseconds = 1000;
-    const auto delta = asio::steady_clock::now() - start_time;
-    const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
-    const auto micro_per_block = static_cast<float>(elapsed.count());
-    const auto micro_per_input = micro_per_block / block->total_inputs();
-    const auto milli_per_block = micro_per_block / micro_per_milliseconds;
-    const auto transactions = block->transactions().size();
-    const auto next_height = block->validation.state->height();
-
-    log::info(LOG_BLOCKCHAIN)
-        << "Block [" << next_height << "] " << token << " (" << transactions
-        << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
-        << ") μs/input";
 }
 
 } // namespace blockchain
