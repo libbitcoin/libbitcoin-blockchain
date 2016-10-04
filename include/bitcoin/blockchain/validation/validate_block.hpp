@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
@@ -33,22 +33,20 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
+/// This class is NOT thread safe.
 class BCB_API validate_block
 {
 public:
     typedef handle0 result_handler;
 
-    validate_block(threadpool& pool, const simple_chain& chain,
+    validate_block(threadpool& pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();
 
     code check(block_const_ptr block) const;
-
     void accept(fork::const_ptr fork, size_t index,
         result_handler handler) const;
-
     void connect(fork::const_ptr fork, size_t index,
         result_handler handler) const;
 
@@ -63,16 +61,20 @@ private:
 
     void handle_accepted(const code& ec, block_const_ptr block,
         result_handler handler) const;
-    void connect_inputs(const chain::transaction& tx, uint32_t flags,
-        result_handler handler) const;
+    void connect_inputs(chain::transaction::sets_const_ptr input_sets,
+        size_t sets_index, uint32_t flags, result_handler handler) const;
     void handle_connect(const code& ec, block_const_ptr block,
         asio::time_point start_time, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
-    populate_block populator_;
+    threadpool priority_pool_;
+    threadpool& thread_pool_;
     mutable dispatcher dispatch_;
+
+    // This is protected by caller not invoking accept/connect concurrently.
+    populate_block populator_;
 };
 
 } // namespace blockchain

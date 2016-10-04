@@ -25,7 +25,7 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,8 +39,8 @@ namespace blockchain {
  * @param[in]   height          Height of block to fetch.
  * @param[in]   handle_fetch    Completion handler for fetch operation.
  */
-BCB_API void fetch_block(const full_chain& chain, uint64_t height,
-    full_chain::block_fetch_handler handle_fetch);
+BCB_API void fetch_block(const safe_chain& chain, uint64_t height,
+    safe_chain::block_fetch_handler handle_fetch);
 
 /**
  * Fetch a block by hash.
@@ -51,8 +51,8 @@ BCB_API void fetch_block(const full_chain& chain, uint64_t height,
  * @param[in]   hash            Block hash
  * @param[in]   handle_fetch    Completion handler for fetch operation.
  */
-BCB_API void fetch_block(const full_chain& chain, const hash_digest& hash,
-    full_chain::block_fetch_handler handle_fetch);
+BCB_API void fetch_block(const safe_chain& chain, const hash_digest& hash,
+    safe_chain::block_fetch_handler handle_fetch);
 
 } // namespace blockchain
 } // namespace libbitcoin

@@ -27,7 +27,7 @@
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -46,18 +46,15 @@ class BCB_API transaction_pool_index
 public:
     typedef handle0 completion_handler;
     typedef handle2<spend_info::list, chain::output_info::list> query_handler;
-    typedef full_chain::history_fetch_handler fetch_handler;
+    typedef safe_chain::history_fetch_handler fetch_handler;
 
-    transaction_pool_index(threadpool& pool, full_chain& blockchain);
+    transaction_pool_index(threadpool& pool, safe_chain& chain);
 
     /// This class is not copyable.
     transaction_pool_index(const transaction_pool_index&) = delete;
     void operator=(const transaction_pool_index&) = delete;
 
-    /// Start the transaction pool.
     void start();
-
-    /// Signal stop of current work, speeds shutdown.
     void stop();
 
     void fetch_all_history(const wallet::payment_address& address,
@@ -95,16 +92,12 @@ private:
     void do_fetch(const wallet::payment_address& address,
         query_handler handler) const;
 
-    // This is protected by mutex.
+    // These are protected by ordered dispatch.
     spends_map spends_map_;
-    upgrade_mutex spends_mutex_;
-
-    // This is protected by mutex.
     outputs_map outputs_map_;
-    upgrade_mutex outputs_mutex_;
 
     // These are thread safe.
-    full_chain& blockchain_;
+    safe_chain& safe_chain_;
     std::atomic<bool> stopped_;
     mutable dispatcher dispatch_;
 };

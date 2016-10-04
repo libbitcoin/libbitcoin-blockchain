@@ -23,12 +23,13 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <vector>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
@@ -37,9 +38,9 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// The simple_chain interface portion of this class is not thread safe.
+/// The fast_chain interface portion of this class is not thread safe.
 class BCB_API block_chain
-  : public full_chain, public simple_chain
+  : public safe_chain, public fast_chain
 {
 public:
     block_chain(threadpool& pool, 
@@ -53,26 +54,13 @@ public:
     block_chain(const block_chain&) = delete;
     void operator=(const block_chain&) = delete;
 
-    // Properties (thread safe).
+    // ========================================================================
+    // FAST CHAIN
+    // ========================================================================
+
+    // Readers.
     // ------------------------------------------------------------------------
-
-    // Get a reference to the blockchain configuration settings.
-    const settings& chain_settings() const;
-
-    // full_chain start/stop (thread safe).
-    // ------------------------------------------------------------------------
-
-    /// Start or restart the blockchain.
-    virtual bool start();
-
-    /// Signal stop of current work, speeds shutdown with multiple threads.
-    virtual bool stop();
-
-    /// Close the blockchain, threads must first be joined, can be restarted.
-    virtual bool close();
-
-    // simple_chain getters (NOT THREAD SAFE).
-    // ------------------------------------------------------------------------
+    // Thread safe except during write, unprotected by sequential lock.
 
     /// Return the first and last gaps in the blockchain, or false if none.
     bool get_gap_range(size_t& out_first, size_t& out_last) const;
@@ -124,20 +112,46 @@ public:
     transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& transaction_hash) const;
 
-    // simple_chain setters (NOT THREAD SAFE).
+    // Writers.
     // ------------------------------------------------------------------------
+    // Not thread safe except as noted.
 
     /// Insert a block to the blockchain, height is checked for existence.
+    /// This is safe for concurrent execution with itself (only).
+    /// These invalid reads are outside the scope of the sequence lock.
     bool insert(block_const_ptr block, size_t height);
 
-    /// Append the block to the top of the chain, height is validated.
-    bool push(block_const_ptr block, size_t height);
+    /// Append the blocks to the top of the chain, height is validated.
+    /// This is NOT safe for concurrent execution with another write.
+    /// This is safe for concurrent execution with safe_chain reads.
+    bool push(const block_const_ptr_list& block, size_t height);
 
-    /// Remove blocks at or above the given height, returning them in order.
-    bool pop_from(block_const_ptr_list& out_blocks, size_t height);
+    /// Remove blocks from above the given hash, returning them in order.
+    /// This is NOT safe for concurrent execution with another write.
+    /// This is safe for concurrent execution with safe_chain reads.
+    bool pop(block_const_ptr_list& out_blocks, const hash_digest& fork_hash);
 
-    // full_chain queries (thread safe).
+    // ========================================================================
+    // SAFE CHAIN
+    // ========================================================================
+
+    // Startup and shutdown.
     // ------------------------------------------------------------------------
+    // Thread safe except start.
+
+    /// Start or restart the blockchain.
+    virtual bool start();
+
+    /// Optional signal work stop, speeds shutdown with multiple threads.
+    virtual bool stop();
+
+    /// Unmaps all memory and frees the database file handles.
+    /// Threads must be joined before close is called (or by destruct).
+    virtual bool close();
+
+    // Queries.
+    // ------------------------------------------------------------------------
+    // Thread safe.
 
     /// fetch a block by height.
     virtual void fetch_block(uint64_t height,
@@ -243,48 +257,60 @@ public:
     /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
     virtual void subscribe_transaction(transaction_handler handler);
 
-    // Stores.
+    // Organizers (pools).
     //-------------------------------------------------------------------------
 
-    /// Store a block to the block chain (via orphan pool).
-    virtual void store(block_const_ptr block, result_handler handler);
+    /// Store a block in the orphan pool, triggers may trigger reorganization.
+    virtual void organize(block_const_ptr block, result_handler handler);
 
-    /// Store a transaction to the memory pool.
-    virtual void store(transaction_const_ptr transaction,
+    /// Store a transaction to the pool.
+    virtual void organize(transaction_const_ptr transaction,
         transaction_store_handler handler);
 
+    // Properties.
+    //-----------------------------------------------------------------------------
+    // Thread safe.
+
+    /// Get a reference to the blockchain configuration settings.
+    const settings& chain_settings() const;
+
+protected:
+
+    /// Determine if work should terminate early with service stopped code.
+    bool stopped() const;
+
 private:
-    typedef std::function<bool(database::handle)> perform_read_functor;
+    typedef database::handle handle;
+
+    // Sequential locking helpers.
+    // ----------------------------------------------------------------------------
+
+    template <typename Writeer>
+    bool write_serial(Writeer&& writer);
+
+    template <typename Reader>
+    void read_serial(Reader&& reader) const;
 
     template <typename Handler, typename... Args>
-    bool finish_fetch(database::handle handle,
-        Handler handler, Args&&... args) const
-    {
-        if (!database_.is_read_valid(handle))
-            return false;
+    bool finish_read(handle sequence, Handler handler, Args&&... args) const;
 
-        handler(std::forward<Args>(args)...);
-        return true;
-    }
+    // Utilities.
+    //-----------------------------------------------------------------------------
 
-    void do_store(block_const_ptr block, scope_lock::ptr lock,
-        result_handler handler);
-    void handle_store(const code& ec, scope_lock::ptr lock,
-        result_handler handler);
+    static hash_list to_hashes(const database::block_result& result);
 
-    void fetch_serial(perform_read_functor perform_read) const;
-    bool stopped() const;
+    bool do_insert(const chain::block& block, size_t height);
+    bool do_push(const chain::block& block, size_t height);
+    bool do_pop(chain::block::list& out_blocks, const hash_digest& fork_hash);
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
+    asio::duration spin_lock_sleep_;
     orphan_pool orphan_pool_;
     orphan_pool_manager orphan_manager_;
     transaction_pool transaction_pool_;
-
-    // This is protected by mutex.
     database::data_base database_;
-    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

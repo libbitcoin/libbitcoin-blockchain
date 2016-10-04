@@ -42,11 +42,14 @@ public:
     /// Add a block to the pool.
     bool add(block_const_ptr block);
 
+    /// Add a set of blocks to the pool.
+    bool add(const block_const_ptr_list& blocks);
+
     /// Remove a block from the pool.
     void remove(block_const_ptr block);
 
-    /// Remove a set blocks from the pool.
-    void remove(const block_const_ptr_list& block);
+    /// Remove a set of blocks from the pool.
+    void remove(const block_const_ptr_list& blocks);
 
     /// Remove from the message all vectors that match orphans.
     void filter(get_data_ptr message) const;

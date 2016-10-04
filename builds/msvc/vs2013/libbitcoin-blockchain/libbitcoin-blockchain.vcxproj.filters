@@ -60,15 +60,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp">
       <Filter>include\bitcoin\blockchain\validation</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_transaction.hpp">
-      <Filter>include\bitcoin\blockchain\validation</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\full_chain.hpp">
-      <Filter>include\bitcoin\blockchain\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\simple_chain.hpp">
-      <Filter>include\bitcoin\blockchain\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp">
       <Filter>include\bitcoin\blockchain\interface</Filter>
     </ClInclude>
@@ -83,6 +74,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\populate_block.hpp">
       <Filter>include\bitcoin\blockchain\validation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp">
+      <Filter>include\bitcoin\blockchain\interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -108,9 +105,6 @@
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp">
-      <Filter>src\validation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\validation\validate_transaction.cpp">
       <Filter>src\validation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\validation\fork.cpp">

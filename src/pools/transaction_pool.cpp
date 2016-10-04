@@ -25,9 +25,9 @@
 #include <system_error>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/full_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validation/validate_transaction.hpp>
+#include <bitcoin/blockchain/validation/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,21 +39,19 @@ using namespace bc::message;
 using namespace bc::wallet;
 using namespace std::placeholders;
 
-transaction_pool::transaction_pool(threadpool& pool, full_chain& chain,
+// Database access is limited to: index->fetch_history.
+
+transaction_pool::transaction_pool(threadpool& pool, safe_chain& chain,
     const settings& settings)
   : stopped_(true),
     maintain_consistency_(settings.transaction_pool_consistency),
     buffer_(settings.transaction_pool_capacity),
-    blockchain_(chain),
+    safe_chain_(chain),
     index_(pool, chain),
+    ////validator_(pool, chain, settings),
     subscriber_(std::make_shared<transaction_subscriber>(pool, NAME)),
     dispatch_(pool, NAME)
 {
-}
-
-transaction_pool::~transaction_pool()
-{
-    clear(error::service_stopped);
 }
 
 void transaction_pool::start()
@@ -63,7 +61,7 @@ void transaction_pool::start()
     subscriber_->start();
 
     // Subscribe to blockchain (orphan_pool_manager) reorg notifications.
-    blockchain_.subscribe_reorganize(
+    safe_chain_.subscribe_reorganize(
         std::bind(&transaction_pool::handle_reorganized,
             this, _1, _2, _3, _4));
 }
@@ -75,6 +73,7 @@ void transaction_pool::stop()
     index_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, {}, {});
+    clear(error::service_stopped);
 }
 
 bool transaction_pool::stopped() const
@@ -141,23 +140,16 @@ void transaction_pool::do_validate(transaction_const_ptr tx,
         return;
     }
 
-    // TODO: reenable once implemented.
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    handler(error::validate_inputs_failed, {});
-    return;
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    handler(error::operation_failed, {});
 
-    const auto validator = std::make_shared<validate_transaction>(blockchain_,
-        *this, dispatch_);
-
-    validator->validate(tx,
-        dispatch_.ordered_delegate(&transaction_pool::handle_validated,
-            this, _1, _2, tx, validator, handler));
+    ////validator_->validate(tx,
+    ////    std::bind(&transaction_pool::handle_validated,
+    ////        this, _1, _2, tx, validator, handler));
 }
 
 void transaction_pool::handle_validated(const code& ec,
     const indexes& unconfirmed, transaction_const_ptr tx,
-    validate_transaction::ptr, validate_handler handler) const
+    validate_handler handler) const
 {
     if (stopped())
     {
@@ -179,18 +171,11 @@ void transaction_pool::handle_validated(const code& ec,
         return;
     }
 
-    ////// Recheck the memory pool, as a duplicate may have been added.
-    ////if (is_in_pool(tx->hash()))
-    ////{
-    ////    handler(error::duplicate, {});
-    ////    return;
-    ////}
-
     handler(error::success, unconfirmed);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
-void transaction_pool::store(transaction_const_ptr tx,
+void transaction_pool::organize(transaction_const_ptr tx,
     result_handler handle_confirm, validate_handler handle_validate)
 {
     if (stopped())
@@ -200,18 +185,25 @@ void transaction_pool::store(transaction_const_ptr tx,
     }
 
     validate(tx,
-        std::bind(&transaction_pool::do_store,
+        std::bind(&transaction_pool::do_organize,
             this, _1, _2, tx, handle_confirm, handle_validate));
 }
 
 // This is overly complex due to the transaction pool and index split.
-void transaction_pool::do_store(const code& ec, const indexes& unconfirmed,
+void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
     transaction_const_ptr tx, result_handler handle_confirm,
     validate_handler handle_validate)
 {
     if (ec)
     {
         handle_validate(ec, {});
+        return;
+    }
+
+    // Recheck for existence under lock, as a duplicate may have been added.
+    if (is_in_pool(tx->hash()))
+    {
+        handle_validate(error::duplicate, {});
         return;
     }
 
@@ -271,7 +263,7 @@ void transaction_pool::fetch(const hash_digest& transaction_hash,
 
 void transaction_pool::fetch_history(const payment_address& address,
     size_t limit, size_t from_height,
-    full_chain::history_fetch_handler handler) const
+    safe_chain::history_fetch_handler handler) const
 {
     // This passes through to blockchain to build combined history.
     index_.fetch_all_history(address, limit, from_height, handler);
@@ -391,7 +383,7 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
     if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
         delete_package(error::pool_filled);
 
-    tx->metadata.confirm = handler;
+    tx->validation.confirm = handler;
     buffer_.push_back(tx);
 }
 
@@ -399,8 +391,8 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 void transaction_pool::clear(const code& ec)
 {
     for (const auto tx: buffer_)
-        if (tx->metadata.confirm != nullptr)
-            tx->metadata.confirm(ec);
+        if (tx->validation.confirm != nullptr)
+            tx->validation.confirm(ec);
 
     buffer_.clear();
 }
@@ -498,8 +490,8 @@ void transaction_pool::delete_package(const code& ec)
     // Must copy the entry because it is going to be deleted from the list.
     const auto oldest_tx = buffer_.front();
 
-    if (oldest_tx->metadata.confirm != nullptr)
-        oldest_tx->metadata.confirm(ec);
+    if (oldest_tx->validation.confirm != nullptr)
+        oldest_tx->validation.confirm(ec);
 
     delete_package(oldest_tx, ec);
 }
@@ -525,7 +517,7 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     if (it == buffer_.end())
         return false;
 
-    const auto confirmation_callback = (*it)->metadata.confirm;
+    const auto confirmation_callback = (*it)->validation.confirm;
 
     if (confirmation_callback != nullptr)
         confirmation_callback(ec);

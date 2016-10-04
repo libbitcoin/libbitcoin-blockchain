@@ -40,13 +40,21 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
-populate_block::populate_block(threadpool& pool, const simple_chain& chain,
-    const settings& settings)
+// Database access is limited to:
+// spend: { spender }
+// block: { bits, version, timestamp }
+// transaction: { exists, height, output }
+
+// TODO: allow priority pool to be empty and fall back the network pool:
+// dispatch_(priority_pool.size() == 0 ? network_pool : priority_pool)
+populate_block::populate_block(threadpool& priority_pool,
+    const fast_chain& chain, const settings& settings)
   : stopped_(false),
+    priority_threads_(priority_pool.size()),
     use_testnet_rules_(settings.use_testnet_rules),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    chain_(chain),
-    dispatch_(pool, NAME "_dispatch")
+    dispatch_(priority_pool, NAME "_dispatch"),
+    fast_chain_(chain)
 {
 }
 
@@ -72,7 +80,7 @@ bool populate_block::get_bits(uint32_t& out_bits, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_bits(out_bits, height) ||
-        chain_.get_bits(out_bits, height);
+        fast_chain_.get_bits(out_bits, height);
 }
 
 bool populate_block::get_version(uint32_t& out_version, size_t height,
@@ -80,7 +88,7 @@ bool populate_block::get_version(uint32_t& out_version, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_version(out_version, height) ||
-        chain_.get_version(out_version, height);
+        fast_chain_.get_version(out_version, height);
 }
 
 bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
@@ -88,7 +96,7 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
 {
     // fork returns false only if the height is out of range.
     return fork->get_timestamp(out_timestamp, height) ||
-        chain_.get_timestamp(out_timestamp, height);
+        fast_chain_.get_timestamp(out_timestamp, height);
 }
 
 bool populate_block::populate_bits(state::data& data,
@@ -131,32 +139,35 @@ bool populate_block::populate_timestamps(state::data& data,
             return false;
 
     // Won't be used, just looks cool in the debugger.
-    data.timestamp_self = 0xbaadf00d;
-    data.timestamp_retarget = 0xbaadf00d;
+    data.timestamp.self = 0xbaadf00d;
+    data.timestamp.retarget = 0xbaadf00d;
 
     // Additional self requirement is signaled by self != high.
     if (heights.timestamp_self != heights.timestamp.high &&
-        !get_timestamp(data.timestamp_self, 
+        !get_timestamp(data.timestamp.self, 
             heights.timestamp_self, fork))
             return false;
 
     // Additional retarget requirement is signaled by retarget != high.
     if (heights.timestamp_retarget != heights.timestamp.high &&
-        !get_timestamp(data.timestamp_retarget, 
+        !get_timestamp(data.timestamp.retarget, 
             heights.timestamp_retarget, fork))
             return false;
 
     return true;
 }
 
+// TODO: populate data.activated by caching full activation height.
+// The hight must be tied to block push/pop and invalidated on failure.
 chain_state::ptr populate_block::populate_chain_state(size_t height,
     fork::const_ptr fork) const
 {
     state::data data;
     data.height = height;
+    data.enabled = false;
     data.testnet = use_testnet_rules_;
 
-    const auto heights = state::get_map(height, use_testnet_rules_);
+    const auto heights = state::get_map(height, data.enabled, data.testnet);
 
     // There are only 11 redundant queries on mainnet, so we don't combine.
     // cache-based construction of the data set will eliminate most redundancy.
@@ -180,16 +191,15 @@ void populate_block::populate(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
-    
+    auto start_time = asio::steady_clock::now();
+
+    // Populate all state necessary for block accept/connect.
     block->validation.state = populate_chain_state(height, fork);
 
-    if (!block->validation.state)
-    {
-        // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::operation_failed);
-        return;
-    }
+    // Populate input sets for parallel dispersion.
+    block->validation.sets = block->to_input_sets(priority_threads_, false);
 
+    report(block, start_time, "chainstat");
     populate_transactions(fork, index, handler);
 }
 
@@ -198,6 +208,7 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
 {
     const auto block = fork->block_at(index);
     const auto& txs = block->transactions();
+    const auto sets = block->validation.sets;
 
     const result_handler complete_handler =
         std::bind(&populate_block::handle_populate,
@@ -205,28 +216,26 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
 
     populate_coinbase(block);
 
-    if (txs.size() < 2)
+    // Sets will be empty if there is only a coinbase tx.
+    if (sets->empty())
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(complete_handler, error::success);
+        complete_handler(error::success);
         return;
     }
 
-    const result_handler join_handler = synchronize(complete_handler,
-        txs.size() - 1, NAME "_populate");
-
-    // TODO: implement fan-out batching (divide work evenly into core count).
-
-    // skip coinbase, fan out by tx.
+    // Populate non-coinbase tx data.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
         populate_transaction(*tx);
         populate_transaction(fork, index, *tx);
-
-        // We must complete on a new thread.
-        dispatch_.concurrent(&populate_block::populate_inputs,
-            this, fork, index, std::ref(*tx), join_handler);
     }
+
+    const result_handler join_handler = synchronize(complete_handler,
+        sets->size(), NAME "_populate");
+
+    for (size_t set = 0; set < sets->size(); ++set)
+        dispatch_.concurrent(&populate_block::populate_inputs,
+            this, fork, index, sets, set, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
@@ -256,7 +265,8 @@ void populate_block::populate_coinbase(block_const_ptr block) const
 void populate_block::populate_transaction(const chain::transaction& tx) const
 {
     // BUGBUG: this is overly restrictive, see BIP30.
-    tx.validation.duplicate = chain_.get_is_unspent_transaction(tx.hash());
+    tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
+        tx.hash());
 }
 
 // Returns false only when transaction is duplicate on fork.
@@ -269,24 +279,26 @@ void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
 }
 
 void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
-    const transaction& tx, result_handler handler) const
+    transaction::sets_const_ptr input_sets, size_t sets_index,
+    result_handler handler) const
 {
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
+    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
 
     code ec(error::success);
     const auto fork_height = fork->height();
+    const auto& sets = (*input_sets)[sets_index];
 
-    for (auto& input: tx.inputs())
+    for (auto& set: sets)
     {
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
+
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
 
         if (!populate_spent(fork_height, input.previous_output()))
         {
@@ -323,14 +335,14 @@ bool populate_block::populate_spent(size_t fork_height,
     prevout.confirmed = false;
 
     // Determine if the prevout is spent by a confirmed input.
-    prevout.spent = chain_.get_spender_hash(spender_hash, outpoint);
+    prevout.spent = fast_chain_.get_spender_hash(spender_hash, outpoint);
 
     // Either the prevout is unspent, spent in fork, the outpoint is invalid.
     if (!prevout.spent)
         return true;
 
     // It is a store failure it the spender transaction is not found.
-    if (!chain_.get_transaction_height(spender_height, spender_hash))
+    if (!fast_chain_.get_transaction_height(spender_height, spender_hash))
         return false;
 
     // Unspend the prevout if it is above the fork.
@@ -370,7 +382,7 @@ void populate_block::populate_prevout(size_t fork_height,
     ///////////////////////////////////////////////////////////////////////////
 
     // Get the script and value for the prevout.
-    if (!chain_.get_output(prevout.cache, height, position, outpoint))
+    if (!fast_chain_.get_output(prevout.cache, height, position, outpoint))
         return;
 
     // Unfind the prevout if it is above the fork (clear the cache).

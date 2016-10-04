@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
@@ -41,18 +41,32 @@ using namespace std::placeholders;
 
 #define NAME "validate_block"
 
-validate_block::validate_block(threadpool& pool, const simple_chain& chain,
+// Database access is limited to: populator:
+// spend: { spender }
+// block: { bits, version, timestamp }
+// transaction: { exists, height, output }
+
+// bool activated = activatedheight >= full_activation_height_;
+
+// TODO: look into threadpool fallback initialization order (pool empty).
+// Fall back to the metwork pool if zero threads in priority pool.
+validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
-    populator_(pool, chain, settings),
-    dispatch_(pool, NAME "_dispatch")
+    priority_pool_(settings.threads, settings.priority ?
+        thread_priority::high : thread_priority::normal),
+    thread_pool_(/*settings.threads == 0 ? pool : */ priority_pool_),
+    dispatch_(thread_pool_, NAME "_dispatch"),
+    populator_(thread_pool_, chain, settings)
 {
 }
 
 // Stop sequence.
 //-----------------------------------------------------------------------------
 
+// There is no need to maange the priority thread pool as all threads must be
+// joined to unblock the calling thread, so the stopped flag is sufficient.
 void validate_block::stop()
 {
     populator_.stop();
@@ -76,7 +90,6 @@ code validate_block::check(block_const_ptr block) const
 // Accept sequence.
 //-----------------------------------------------------------------------------
 // These checks require height or other chain context.
-// Guarantees handler is invoked on a new thread.
 
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -86,17 +99,18 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
 
-    if (block->validation.state)
+    const result_handler complete_handler =
+        std::bind(&validate_block::handle_accepted,
+            this, _1, block, handler);
+
+    // Skip data and set population if both are populated.
+    if (block->validation.state && block->validation.sets)
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::success);
+        complete_handler(error::success);
         return;
     }
 
-    populator_.populate(fork, index,
-        std::bind(&validate_block::handle_accepted,
-            this, _1, block, handler));
-
+    populator_.populate(fork, index, complete_handler);
 }
 
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
@@ -108,7 +122,6 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 // Connect sequence.
 //-----------------------------------------------------------------------------
 // These checks require output traversal and validation.
-// Guarantees handler is invoked on a new thread.
 
 void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -116,53 +129,46 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
+    const auto& txs = block->transactions();
+    const auto sets = block->validation.sets;
+    const auto state = block->validation.state;
 
-    if (!block->validation.state)
+    // Data and set population must be completed via a prior call to accept.
+    if (!sets || !state)
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(handler, error::operation_failed);
+        handler(error::operation_failed);
         return;
     }
 
-    const auto& txs = block->transactions();
     const result_handler complete_handler =
         std::bind(&validate_block::handle_connect,
             this, _1, block, asio::steady_clock::now(), handler);
 
-    if (txs.size() < 2 || !block->validation.state->use_full_validation())
+    // Sets will be empty if there is only a coinbase tx.
+    if (sets->empty() || !state->use_full_validation())
     {
-        // We must complete on a new thread.
-        dispatch_.concurrent(complete_handler, error::success);
+        handler(error::success);
         return;
     }
 
-    const auto flags = block->validation.state->enabled_forks();
     const result_handler join_handler = synchronize(complete_handler,
-        txs.size() - 1, NAME "_validate");
+        sets->size(), NAME "_validate");
 
-    // TODO: implement fan-out batching (divide work evenly into core count).
-
-    // Skip coinbase, fan out by tx.
-    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
+    for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&validate_block::connect_inputs,
-            this, std::ref(*tx), flags, join_handler);
+            this, sets, set, state->enabled_forks(), join_handler);
 }
 
-void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
-    result_handler handler) const
+// TODO: move to validate_input.hpp/cpp (static methods only).
+void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
+    size_t sets_index, uint32_t flags, result_handler handler) const
 {
-    BITCOIN_ASSERT(!tx.is_coinbase());
-
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
+    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
 
     code ec(error::success);
-    uint32_t input_index = 0;
+    const auto& sets = (*input_sets)[sets_index];
 
-    for (auto& input: tx.inputs())
+    for (auto& set: sets)
     {
         if (stopped())
         {
@@ -170,13 +176,18 @@ void validate_block::connect_inputs(const transaction& tx, uint32_t flags,
             break;
         }
 
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
         if (!input.previous_output().validation.cache.is_valid())
         {
             ec = error::input_not_found;
             break;
         }
 
-        if ((ec = verify_script(tx, input_index++, flags, use_libconsensus_)))
+        if ((ec = verify_script(set.tx, set.input_index, flags,
+            use_libconsensus_)))
             break;
     }
 
@@ -216,12 +227,12 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
         << ") μs/input";
 }
 
-// Verify script.
+// Validate input.
 //-----------------------------------------------------------------------------
+// TODO: move to validate_input.hpp/cpp (static methods only).
 
 #ifdef WITH_CONSENSUS
 
-// TODO: move to libconsensus.hpp/cpp
 static uint32_t convert_flags(uint32_t native_flags)
 {
     using namespace bc::consensus;
@@ -239,7 +250,6 @@ static uint32_t convert_flags(uint32_t native_flags)
     return consensus_flags;
 }
 
-// TODO: move to libconsensus.hpp/cpp
 static code convert_result(consensus::verify_result_type result)
 {
     using namespace bc::consensus;

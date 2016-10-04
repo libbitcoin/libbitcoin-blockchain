@@ -25,20 +25,20 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/simple_chain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
+/// This class is NOT thread safe.
 class BCB_API populate_block
 {
 public:
     typedef handle0 result_handler;
 
-    populate_block(threadpool& pool, const simple_chain& chain,
+    populate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();
@@ -79,7 +79,8 @@ private:
     void populate_transaction(fork::const_ptr fork, size_t index,
         const chain::transaction& tx) const;
     void populate_inputs(fork::const_ptr fork, size_t index,
-        const chain::transaction& input, result_handler handler) const;
+        chain::transaction::sets_const_ptr input_sets, size_t sets_index,
+        result_handler handler) const;
     bool populate_spent(size_t fork_height,
         const chain::output_point& outpoint) const;
     void populate_spent(fork::const_ptr fork, size_t index,
@@ -93,10 +94,13 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const size_t priority_threads_;
     const bool use_testnet_rules_;
     const config::checkpoint::list checkpoints_;
-    const simple_chain& chain_;
     mutable dispatcher dispatch_;
+
+    // This is protected by caller not invoking populate concurrently.
+    const fast_chain& fast_chain_;
 };
 
 } // namespace blockchain

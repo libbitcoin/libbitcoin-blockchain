@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FULL_CHAIN_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_SAFE_CHAIN_HPP
+#define LIBBITCOIN_BLOCKCHAIN_SAFE_CHAIN_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -34,7 +34,7 @@ namespace blockchain {
 /// This interface is thread safe.
 /// A high level interface for encapsulation of the blockchain database.
 /// Implementations are expected to be thread safe.
-class BCB_API full_chain
+class BCB_API safe_chain
 {
 public:
     typedef handle0 result_handler;
@@ -83,7 +83,7 @@ public:
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    // Fetch.
+    // Queries.
     // ------------------------------------------------------------------------
 
     virtual void fetch_block(uint64_t height,
@@ -167,11 +167,11 @@ public:
     virtual void subscribe_reorganize(reorganize_handler handler) = 0;
     virtual void subscribe_transaction(transaction_handler handler) = 0;
 
-    // Stores.
+    // Organizers (pools).
     //-------------------------------------------------------------------------
 
-    virtual void store(block_const_ptr block, result_handler handler) = 0;
-    virtual void store(transaction_const_ptr transaction,
+    virtual void organize(block_const_ptr block, result_handler handler) = 0;
+    virtual void organize(transaction_const_ptr transaction,
         transaction_store_handler handler) = 0;
 };
 

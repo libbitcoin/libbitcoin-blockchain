@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
-#define LIBBITCOIN_BLOCKCHAIN_SIMPLE_CHAIN_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_FAST_CHAIN_HPP
+#define LIBBITCOIN_BLOCKCHAIN_FAST_CHAIN_HPP
 
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
@@ -31,10 +31,10 @@ namespace blockchain {
 /// Caller must ensure the database is not otherwise in use during these calls.
 /// Implementations are NOT expected to be thread safe with the exception
 /// that the import method may itself be called concurrently.
-class BCB_API simple_chain
+class BCB_API fast_chain
 {
 public:
-    // Getters.
+    // Readers.
     // ------------------------------------------------------------------------
 
     /// Return the first and last gaps in the blockchain, or false if none.
@@ -93,18 +93,18 @@ public:
     virtual transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& transaction_hash) const = 0;
 
-    // Setters.
+    // Writers.
     // ------------------------------------------------------------------------
 
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height) = 0;
 
-    /// Append the block to the top of the chain, height is validated.
-    virtual bool push(block_const_ptr block, size_t height) = 0;
+    /// Append the blocks to the top of the chain, height is validated.
+    virtual bool push(const block_const_ptr_list& blocks, size_t height) = 0;
 
-    /// Remove blocks at or above the given height, returning them in order.
-    virtual bool pop_from(block_const_ptr_list& out_blocks,
-        size_t height) = 0;
+    /// Remove blocks from above the given hash, returning them in order.
+    virtual bool pop(block_const_ptr_list& out_blocks,
+        const hash_digest& fork_hash) = 0;
 };
 
 } // namespace blockchain

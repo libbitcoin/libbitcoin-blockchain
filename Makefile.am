@@ -44,8 +44,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/pools/transaction_pool_index.cpp \
     src/validation/fork.cpp \
     src/validation/populate_block.cpp \
-    src/validation/validate_block.cpp \
-    src/validation/validate_transaction.cpp
+    src/validation/validate_block.cpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -92,8 +91,8 @@ include_bitcoin_blockchain_interfacedir = ${includedir}/bitcoin/blockchain/inter
 include_bitcoin_blockchain_interface_HEADERS = \
     include/bitcoin/blockchain/interface/block_chain.hpp \
     include/bitcoin/blockchain/interface/block_fetcher.hpp \
-    include/bitcoin/blockchain/interface/full_chain.hpp \
-    include/bitcoin/blockchain/interface/simple_chain.hpp
+    include/bitcoin/blockchain/interface/fast_chain.hpp \
+    include/bitcoin/blockchain/interface/safe_chain.hpp
 
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
@@ -106,8 +105,7 @@ include_bitcoin_blockchain_validationdir = ${includedir}/bitcoin/blockchain/vali
 include_bitcoin_blockchain_validation_HEADERS = \
     include/bitcoin/blockchain/validation/fork.hpp \
     include/bitcoin/blockchain/validation/populate_block.hpp \
-    include/bitcoin/blockchain/validation/validate_block.hpp \
-    include/bitcoin/blockchain/validation/validate_transaction.hpp
+    include/bitcoin/blockchain/validation/validate_block.hpp
 
 
 # Custom make targets.
