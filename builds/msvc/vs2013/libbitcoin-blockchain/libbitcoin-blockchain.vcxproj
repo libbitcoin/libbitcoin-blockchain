@@ -111,6 +111,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\fork.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\populate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_input.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -124,6 +125,7 @@
     <ClCompile Include="..\..\..\..\src\validation\fork.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\populate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp" />
+    <ClCompile Include="..\..\..\..\src\validation\validate_input.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionSettings">
