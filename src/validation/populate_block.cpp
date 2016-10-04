@@ -102,12 +102,12 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
 bool populate_block::populate_bits(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = map.bits.low;
+    auto low = map.bits.low;
     auto& bits = data.bits.ordered;
-    bits.resize(map.bits.high - start + 1u);
+    bits.resize(map.bits.high - low + 1u);
 
     for (auto& bit: bits)
-        if (!get_bits(bit, start++, fork))
+        if (!get_bits(bit, low++, fork))
             return false;
 
     return true;
@@ -116,12 +116,12 @@ bool populate_block::populate_bits(chain_state::data& data,
 bool populate_block::populate_versions(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = map.version.low;
+    auto low = map.version.low;
     auto& versions = data.version.unordered;
-    versions.resize(map.version.high - start + 1u);
+    versions.resize(map.version.high - low + 1u);
 
     for (auto& bit: versions)
-        if (!get_version(bit, start++, fork))
+        if (!get_version(bit, low++, fork))
             return false;
 
     return true;
@@ -130,12 +130,12 @@ bool populate_block::populate_versions(chain_state::data& data,
 bool populate_block::populate_timestamps(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = map.timestamp.low;
+    auto low = map.timestamp.low;
     auto& timestamps = data.timestamp.ordered;
-    timestamps.resize(map.timestamp.high - start + 1u);
+    timestamps.resize(map.timestamp.high - low + 1u);
 
     for (auto& timestamp: timestamps)
-        if (!get_timestamp(timestamp, start++, fork))
+        if (!get_timestamp(timestamp, low++, fork))
             return false;
 
     // Won't be used, just looks cool in the debugger.
