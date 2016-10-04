@@ -83,8 +83,8 @@ bool validate_block::stopped() const
 
 // Check.
 //-----------------------------------------------------------------------------
-
 // These checks are context free.
+
 code validate_block::check(block_const_ptr block) const
 {
     return block->check();
@@ -187,15 +187,15 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 
     for (auto& set: sets)
     {
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
-
-        BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
-        const auto& input = set.tx.inputs()[set.input_index];
 
         if (!input.previous_output().validation.cache.is_valid())
         {

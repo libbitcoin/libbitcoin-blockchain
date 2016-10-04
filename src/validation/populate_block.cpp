@@ -289,15 +289,15 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
 
     for (auto& set: sets)
     {
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
-
-        BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
-        const auto& input = set.tx.inputs()[set.input_index];
 
         if (!populate_spent(fork_height, input.previous_output()))
         {
