@@ -129,7 +129,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
-    const auto& txs = block->transactions;
+    const auto& txs = block->transactions();
     const auto sets = block->validation.sets;
     const auto state = block->validation.state;
 
@@ -180,7 +180,7 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
         BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
         const auto& input = set.tx.inputs()[set.input_index];
 
-        if (!input.previous_output.validation.cache.is_valid())
+        if (!input.previous_output().validation.cache.is_valid())
         {
             ec = error::input_not_found;
             break;

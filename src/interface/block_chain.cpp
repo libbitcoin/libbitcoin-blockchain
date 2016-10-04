@@ -352,8 +352,8 @@ void block_chain::fetch_block_header(uint64_t height,
 
         const auto header = std::make_shared<header_message>(result.header());
 
-        // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
+        // Assign the optional tx count to the header.
+        header->set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, header,
             result.height());
     };
@@ -378,8 +378,8 @@ void block_chain::fetch_block_header(const hash_digest& hash,
 
         const auto header = std::make_shared<header_message>(result.header());
 
-        // Asign the optional tx count to the header.
-        header->transaction_count = result.transaction_count();
+        // Assign the optional tx count to the header.
+        header->set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, header,
             result.height());
     };
@@ -405,8 +405,8 @@ void block_chain::fetch_merkle_block(uint64_t height,
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(), to_hashes(result), {} });
 
-        // Asign the optional tx count to the merkle header.
-        merkle->header.transaction_count = result.transaction_count();
+        // Assign the optional tx count to the merkle header.
+        merkle->header().set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
@@ -555,7 +555,7 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     const auto do_fetch = [&](size_t slock)
     {
         const auto point = database_.spends.get(outpoint);
-        return point.hash != null_hash ?
+        return point.hash() != null_hash ?
             finish_read(slock, handler, error::success, point) :
             finish_read(slock, handler, error::not_found, point);
     };
@@ -689,7 +689,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
 
         auto hashes = std::make_shared<inventory>();
-        hashes->inventories.reserve(stop);
+        hashes->inventories().reserve(stop);
 
         // Build the hash list until we hit last or the blockchain top.
         for (size_t index = start + 1; index < stop; ++index)
@@ -697,13 +697,14 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
             const auto result = database_.blocks.get(index);
             if (result)
             {
+                const auto& header = result.header();
                 static const auto id = inventory::type_id::block;
-                hashes->inventories.push_back({ id, result.header().hash() });
+                hashes->inventories().push_back({ id, header.hash() });
                 break;
             }
         }
 
-        hashes->inventories.shrink_to_fit();
+        hashes->inventories().shrink_to_fit();
         return finish_read(slock, handler, error::success, hashes);
     };
     read_serial(do_fetch);

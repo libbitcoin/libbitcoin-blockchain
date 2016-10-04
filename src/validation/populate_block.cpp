@@ -297,10 +297,10 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
         }
 
         BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs.size());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
         const auto& input = set.tx.inputs()[set.input_index];
 
-        if (!populate_spent(fork_height, input.previous_output))
+        if (!populate_spent(fork_height, input.previous_output()))
         {
             // This is the only early terminate (database integrity error).
             ec = error::operation_failed;
