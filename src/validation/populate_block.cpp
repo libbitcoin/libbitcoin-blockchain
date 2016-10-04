@@ -40,6 +40,9 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
+// These values should not be used, but are helpful in the debugger.
+static constexpr uint32_t unspecified = 0xbaadf00d;
+
 // Database access is limited to:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -138,9 +141,8 @@ bool populate_block::populate_timestamps(chain_state::data& data,
         if (!get_timestamp(timestamp, low++, fork))
             return false;
 
-    // Won't be used, just looks cool in the debugger.
-    data.timestamp.self = 0xbaadf00d;
-    data.timestamp.retarget = 0xbaadf00d;
+    data.timestamp.self = unspecified;
+    data.timestamp.retarget = unspecified;
 
     // Additional self requirement is signaled by self != high.
     if (map.timestamp_self != map.timestamp.high &&
