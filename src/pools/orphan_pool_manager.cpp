@@ -162,9 +162,10 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
         return;
     }
 
+    // TODO: want concurrent delegate here but it's failing.
     // Preserve validation priority pool by returning on a network thread.
     const result_handler accept_handler = 
-        std::bind(&orphan_pool_manager::handle_accept,
+        dispatch_.bound_delegate(&orphan_pool_manager::handle_accept,
             this, _1, fork, index, handler);
 
     if (fork->is_verified(index))
@@ -200,10 +201,11 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
         return;
     }
 
+    // TODO: want concurrent delegate here but it's failing.
     // Preserve validation priority pool by returning on a network thread.
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
-        std::bind(&orphan_pool_manager::handle_connect,
+        dispatch_.bound_delegate(&orphan_pool_manager::handle_connect,
             this, _1, fork, index, handler);
 
     if (ec || fork->is_verified(index))
@@ -308,7 +310,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     const auto reorganized = 
         fast_chain_.pop(outgoing, fork->hash()) &&
         fast_chain_.push(fork->blocks(), first_height);
-    //########################################################################
+    //#########################################################################
 
     if (!reorganized)
     {

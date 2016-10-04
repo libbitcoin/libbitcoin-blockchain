@@ -76,8 +76,11 @@ bool orphan_pool::add(block_const_ptr block)
 // These are blocks arriving from the blockchain, so should be prevalidated.
 bool orphan_pool::add(const block_const_ptr_list& blocks)
 {
-    auto adder = [this](const block_const_ptr& block) { add(block); };
-    std::for_each(blocks.begin(), blocks.end(), adder);
+    auto success = true;
+    for (const auto block: blocks)
+        success &= add(block);
+
+    return success;
 }
 
 void orphan_pool::remove(block_const_ptr block)

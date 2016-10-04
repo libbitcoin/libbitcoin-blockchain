@@ -164,10 +164,10 @@ chain_state::ptr populate_block::populate_chain_state(size_t height,
 {
     state::data data;
     data.height = height;
-    data.activated = false;
+    data.enabled = false;
     data.testnet = use_testnet_rules_;
 
-    const auto heights = state::get_map(height, data.activated, data.testnet);
+    const auto heights = state::get_map(height, data.enabled, data.testnet);
 
     // There are only 11 redundant queries on mainnet, so we don't combine.
     // cache-based construction of the data set will eliminate most redundancy.

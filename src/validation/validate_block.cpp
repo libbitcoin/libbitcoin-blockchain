@@ -48,14 +48,15 @@ using namespace std::placeholders;
 
 // bool activated = activatedheight >= full_activation_height_;
 
-// Fall back to the netowkr pool if zero threads in priority pool.
+// TODO: look into threadpool fallback initialization order (pool empty).
+// Fall back to the metwork pool if zero threads in priority pool.
 validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
     priority_pool_(settings.threads, settings.priority ?
         thread_priority::high : thread_priority::normal),
-    thread_pool_(priority_pool_.empty() ? pool : priority_pool_),
+    thread_pool_(/*settings.threads == 0 ? pool : */ priority_pool_),
     dispatch_(thread_pool_, NAME "_dispatch"),
     populator_(thread_pool_, chain, settings)
 {
@@ -89,7 +90,6 @@ code validate_block::check(block_const_ptr block) const
 // Accept sequence.
 //-----------------------------------------------------------------------------
 // These checks require height or other chain context.
-// Guarantees handler is invoked on a new thread.
 
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -104,7 +104,7 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
             this, _1, block, handler);
 
     // Skip data and set population if both are populated.
-    if (block->validation.state && block->validation.state)
+    if (block->validation.state && block->validation.sets)
     {
         complete_handler(error::success);
         return;
@@ -122,7 +122,6 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 // Connect sequence.
 //-----------------------------------------------------------------------------
 // These checks require output traversal and validation.
-// Guarantees handler is invoked on a new thread.
 
 void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
