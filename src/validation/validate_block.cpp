@@ -94,7 +94,6 @@ code validate_block::check(block_const_ptr block) const
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
 
     const auto block = fork->block_at(index);
@@ -126,8 +125,8 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
+
     const auto block = fork->block_at(index);
     const auto& txs = block->transactions();
     const auto sets = block->validation.sets;

@@ -99,12 +99,12 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
         fast_chain_.get_timestamp(out_timestamp, height);
 }
 
-bool populate_block::populate_bits(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_bits(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.bits.low;
+    auto start = map.bits.low;
     auto& bits = data.bits.ordered;
-    bits.resize(heights.bits.high - start + 1u);
+    bits.resize(map.bits.high - start + 1u);
 
     for (auto& bit: bits)
         if (!get_bits(bit, start++, fork))
@@ -113,12 +113,12 @@ bool populate_block::populate_bits(state::data& data,
     return true;
 }
 
-bool populate_block::populate_versions(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_versions(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.version.low;
+    auto start = map.version.low;
     auto& versions = data.version.unordered;
-    versions.resize(heights.version.high - start + 1u);
+    versions.resize(map.version.high - start + 1u);
 
     for (auto& bit: versions)
         if (!get_version(bit, start++, fork))
@@ -127,12 +127,12 @@ bool populate_block::populate_versions(state::data& data,
     return true;
 }
 
-bool populate_block::populate_timestamps(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_timestamps(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.timestamp.low;
+    auto start = map.timestamp.low;
     auto& timestamps = data.timestamp.ordered;
-    timestamps.resize(heights.timestamp.high - start + 1u);
+    timestamps.resize(map.timestamp.high - start + 1u);
 
     for (auto& timestamp: timestamps)
         if (!get_timestamp(timestamp, start++, fork))
@@ -143,15 +143,15 @@ bool populate_block::populate_timestamps(state::data& data,
     data.timestamp.retarget = 0xbaadf00d;
 
     // Additional self requirement is signaled by self != high.
-    if (heights.timestamp_self != heights.timestamp.high &&
+    if (map.timestamp_self != map.timestamp.high &&
         !get_timestamp(data.timestamp.self, 
-            heights.timestamp_self, fork))
+            map.timestamp_self, fork))
             return false;
 
     // Additional retarget requirement is signaled by retarget != high.
-    if (heights.timestamp_retarget != heights.timestamp.high &&
+    if (map.timestamp_retarget != map.timestamp.high &&
         !get_timestamp(data.timestamp.retarget, 
-            heights.timestamp_retarget, fork))
+            map.timestamp_retarget, fork))
             return false;
 
     return true;
@@ -159,24 +159,34 @@ bool populate_block::populate_timestamps(state::data& data,
 
 // TODO: populate data.activated by caching full activation height.
 // The hight must be tied to block push/pop and invalidated on failure.
-chain_state::ptr populate_block::populate_chain_state(size_t height,
-    fork::const_ptr fork) const
+void populate_block::populate_chain_state(fork::const_ptr fork, size_t index) const
 {
-    state::data data;
-    data.height = height;
+    BITCOIN_ASSERT(index < fork->size());
+
+    chain_state::data data;
     data.enabled = false;
     data.testnet = use_testnet_rules_;
-
-    const auto heights = state::get_map(height, data.enabled, data.testnet);
+    data.height = fork->height_at(index);
+    auto map = chain_state::get_map(data.height, data.enabled, data.testnet);
 
     // There are only 11 redundant queries on mainnet, so we don't combine.
     // cache-based construction of the data set will eliminate most redundancy.
-    if (!populate_bits(data, heights, fork) ||
-        !populate_versions(data, heights, fork) ||
-        !populate_timestamps(data, heights, fork))
-        return nullptr;
+    if (populate_bits(data, map, fork) &&
+        populate_versions(data, map, fork) &&
+        populate_timestamps(data, map, fork))
+    {
+        auto& state = fork->block_at(index)->validation.state;
+        state = std::make_shared<chain_state>(std::move(data), checkpoints_);
+    }
+}
 
-    return std::make_shared<state>(std::move(data), checkpoints_);
+void populate_block::populate_input_sets(fork::const_ptr fork,
+    size_t index) const
+{
+    BITCOIN_ASSERT(index < fork->size());
+
+    const auto block = fork->block_at(index);
+    block->validation.sets = block->to_input_sets(priority_threads_, false);
 }
 
 // Populate block state sequence.
@@ -186,20 +196,11 @@ chain_state::ptr populate_block::populate_chain_state(size_t height,
 void populate_block::populate(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!fork->empty());
-    BITCOIN_ASSERT(index < fork->size());
+    ////auto start_time = asio::steady_clock::now();
+    ////report(block, start_time, "chainstat");
 
-    const auto block = fork->block_at(index);
-    const auto height = fork->height_at(index);
-    auto start_time = asio::steady_clock::now();
-
-    // Populate all state necessary for block accept/connect.
-    block->validation.state = populate_chain_state(height, fork);
-
-    // Populate input sets for parallel dispersion.
-    block->validation.sets = block->to_input_sets(priority_threads_, false);
-
-    report(block, start_time, "chainstat");
+    populate_input_sets(fork, index);
+    populate_chain_state(fork, index);
     populate_transactions(fork, index, handler);
 }
 
@@ -282,7 +283,8 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     transaction::sets_const_ptr input_sets, size_t sets_index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
+    BITCOIN_ASSERT(!input_sets->empty());
+    BITCOIN_ASSERT(sets_index < input_sets->size());
 
     code ec(error::success);
     const auto fork_height = fork->height();

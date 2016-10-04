@@ -153,7 +153,6 @@ void orphan_pool_manager::complete(const code& ec, scope_lock::ptr lock,
 void orphan_pool_manager::verify(fork::ptr fork, size_t index,
     result_handler handler)
 {
-    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
 
     if (stopped())
@@ -185,7 +184,6 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
 void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
     size_t index, result_handler handler)
 {
-    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
 
     if (stopped())
@@ -226,7 +224,6 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
 void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
     size_t index, result_handler handler)
 {
-    BITCOIN_ASSERT(!fork->empty());
     BITCOIN_ASSERT(index < fork->size());
 
     if (stopped())
