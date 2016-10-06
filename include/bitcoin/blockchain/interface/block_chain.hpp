@@ -102,15 +102,15 @@ public:
         const chain::output_point& outpoint) const;
 
     /// Determine if an unspent transaction exists with the given hash.
-    bool get_is_unspent_transaction(const hash_digest& transaction_hash) const;
+    bool get_is_unspent_transaction(const hash_digest& hash) const;
 
     /// Get the block height of the transaction given its hash.
     bool get_transaction_height(size_t& out_block_height,
-        const hash_digest& transaction_hash) const;
+        const hash_digest& hash) const;
 
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& transaction_hash) const;
+        const hash_digest& hash) const;
 
     // Writers.
     // ------------------------------------------------------------------------

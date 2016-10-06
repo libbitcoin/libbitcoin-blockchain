@@ -185,11 +185,20 @@ bool block_chain::get_output(chain::output& out_output, size_t& out_height,
     return out_output.is_valid();
 }
 
-// BUGBUG: this is insufficient but we don't support duplicates, see BIP30.
-bool block_chain::get_is_unspent_transaction(
-    const hash_digest& transaction_hash) const
+bool block_chain::get_is_unspent_transaction(const hash_digest& hash) const
 {
-    return database_.transactions.get(transaction_hash);
+    const auto result = database_.transactions.get(hash);
+    if (!result)
+        return false;
+
+    uint32_t index = 0;
+    for (auto& output: result.transaction().outputs())
+        if (database_.spends.get({ hash, index }).is_valid())
+            safe_increment(index);
+        else
+            return false;
+
+    return true;
 }
 
 bool block_chain::get_transaction_height(size_t& out_block_height,
@@ -204,9 +213,9 @@ bool block_chain::get_transaction_height(size_t& out_block_height,
 }
 
 transaction_ptr block_chain::get_transaction(size_t& out_block_height,
-    const hash_digest& transaction_hash) const
+    const hash_digest& hash) const
 {
-    const auto result = database_.transactions.get(transaction_hash);
+    const auto result = database_.transactions.get(hash);
     if (!result)
         return nullptr;
 
@@ -820,7 +829,6 @@ void block_chain::filter_blocks(get_data_ptr message,
     read_serial(do_fetch);
 }
 
-// BUGBUG: should only remove unspent transactions, other dups ok (BIP30).
 void block_chain::filter_transactions(get_data_ptr message,
     result_handler handler) const
 {
@@ -837,7 +845,8 @@ void block_chain::filter_transactions(get_data_ptr message,
 
         for (auto it = inventories.begin(); it != inventories.end();)
         {
-            if (it->is_transaction_type() && transactions.get(it->hash()))
+            if (it->is_transaction_type() &&
+                get_is_unspent_transaction(it->hash()))
                 it = inventories.erase(it);
             else
                 ++it;

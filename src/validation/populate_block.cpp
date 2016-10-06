@@ -256,7 +256,6 @@ void populate_block::populate_coinbase(block_const_ptr block) const
 // Returns false only when transaction is duplicate on chain.
 void populate_block::populate_transaction(const chain::transaction& tx) const
 {
-    // BUGBUG: this is overly restrictive, see BIP30.
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
         tx.hash());
 }
