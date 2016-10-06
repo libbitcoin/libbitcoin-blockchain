@@ -59,11 +59,13 @@ private:
     static void report(block_const_ptr block, asio::time_point start_time,
         const std::string& token);
 
-    void handle_accepted(const code& ec, block_const_ptr block,
-        result_handler handler) const;
+    void handle_accepted(const code& ec, block_const_ptr block, size_t height,
+        asio::time_point start_time, result_handler handler) const;
+
     void connect_inputs(chain::transaction::sets_const_ptr input_sets,
         size_t sets_index, uint32_t flags, result_handler handler) const;
-    void handle_connect(const code& ec, block_const_ptr block,
+
+    void handle_connected(const code& ec, block_const_ptr block, size_t height,
         asio::time_point start_time, result_handler handler) const;
 
     // These are thread safe.

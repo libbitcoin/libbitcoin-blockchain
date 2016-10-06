@@ -40,6 +40,12 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
+// These values should not be used, but are helpful in the debugger.
+static constexpr uint32_t unspecified = 0xbaadf00d;
+
+// Constant for log report calculations.
+static constexpr size_t micro_per_milliseconds = 1000;
+
 // Database access is limited to:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -99,107 +105,97 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
         fast_chain_.get_timestamp(out_timestamp, height);
 }
 
-bool populate_block::populate_bits(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_bits(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.bits.low;
+    auto low = map.bits.low;
     auto& bits = data.bits.ordered;
-    bits.resize(heights.bits.high - start + 1u);
+    bits.resize(map.bits.high - low + 1u);
 
     for (auto& bit: bits)
-        if (!get_bits(bit, start++, fork))
+        if (!get_bits(bit, low++, fork))
             return false;
 
     return true;
 }
 
-bool populate_block::populate_versions(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_versions(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.version.low;
+    auto low = map.version.low;
     auto& versions = data.version.unordered;
-    versions.resize(heights.version.high - start + 1u);
+    versions.resize(map.version.high - low + 1u);
 
     for (auto& bit: versions)
-        if (!get_version(bit, start++, fork))
+        if (!get_version(bit, low++, fork))
             return false;
 
     return true;
 }
 
-bool populate_block::populate_timestamps(state::data& data,
-    const state::map& heights, fork::const_ptr fork) const
+bool populate_block::populate_timestamps(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto start = heights.timestamp.low;
+    auto low = map.timestamp.low;
     auto& timestamps = data.timestamp.ordered;
-    timestamps.resize(heights.timestamp.high - start + 1u);
+    timestamps.resize(map.timestamp.high - low + 1u);
 
     for (auto& timestamp: timestamps)
-        if (!get_timestamp(timestamp, start++, fork))
+        if (!get_timestamp(timestamp, low++, fork))
             return false;
 
-    // Won't be used, just looks cool in the debugger.
-    data.timestamp.self = 0xbaadf00d;
-    data.timestamp.retarget = 0xbaadf00d;
+    if (!get_timestamp(data.timestamp.self, map.timestamp_self, fork))
+        return false;
 
-    // Additional self requirement is signaled by self != high.
-    if (heights.timestamp_self != heights.timestamp.high &&
-        !get_timestamp(data.timestamp.self, 
-            heights.timestamp_self, fork))
-            return false;
-
-    // Additional retarget requirement is signaled by retarget != high.
-    if (heights.timestamp_retarget != heights.timestamp.high &&
-        !get_timestamp(data.timestamp.retarget, 
-            heights.timestamp_retarget, fork))
-            return false;
-
-    return true;
+    // Retarget not required if timestamp_retarget == high.
+    if (map.timestamp_retarget == map.timestamp.high)
+        data.timestamp.retarget = unspecified;
+    else
+        return get_timestamp(data.timestamp.retarget,
+            map.timestamp_retarget, fork);
 }
 
 // TODO: populate data.activated by caching full activation height.
 // The hight must be tied to block push/pop and invalidated on failure.
-chain_state::ptr populate_block::populate_chain_state(size_t height,
-    fork::const_ptr fork) const
+void populate_block::populate_chain_state(fork::const_ptr fork,
+    size_t index) const
 {
-    state::data data;
-    data.height = height;
+    BITCOIN_ASSERT(index < fork->size());
+
+    chain_state::data data;
     data.enabled = false;
     data.testnet = use_testnet_rules_;
+    data.height = fork->height_at(index);
+    auto map = chain_state::get_map(data.height, data.enabled, data.testnet);
 
-    const auto heights = state::get_map(height, data.enabled, data.testnet);
+    // At most 11 redundant mainnet header queries, so we don't combine them.
+    // Cache-based construction of the data set will eliminate most redundancy.
+    if (populate_bits(data, map, fork) &&
+        populate_versions(data, map, fork) &&
+        populate_timestamps(data, map, fork))
+    {
+        auto& state = fork->block_at(index)->validation.state;
+        state = std::make_shared<chain_state>(std::move(data), checkpoints_);
+    }
+}
 
-    // There are only 11 redundant queries on mainnet, so we don't combine.
-    // cache-based construction of the data set will eliminate most redundancy.
-    if (!populate_bits(data, heights, fork) ||
-        !populate_versions(data, heights, fork) ||
-        !populate_timestamps(data, heights, fork))
-        return nullptr;
+void populate_block::populate_input_sets(fork::const_ptr fork,
+    size_t index) const
+{
+    BITCOIN_ASSERT(index < fork->size());
 
-    return std::make_shared<state>(std::move(data), checkpoints_);
+    const auto block = fork->block_at(index);
+    block->validation.sets = block->to_input_sets(priority_threads_, false);
 }
 
 // Populate block state sequence.
 //-----------------------------------------------------------------------------
-// Guarantees handler is invoked on a new thread.
 
 void populate_block::populate(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!fork->empty());
-    BITCOIN_ASSERT(index < fork->size());
-
-    const auto block = fork->block_at(index);
-    const auto height = fork->height_at(index);
-    auto start_time = asio::steady_clock::now();
-
-    // Populate all state necessary for block accept/connect.
-    block->validation.state = populate_chain_state(height, fork);
-
-    // Populate input sets for parallel dispersion.
-    block->validation.sets = block->to_input_sets(priority_threads_, false);
-
-    report(block, start_time, "chainstat");
+    populate_input_sets(fork, index);
+    populate_chain_state(fork, index);
     populate_transactions(fork, index, handler);
 }
 
@@ -210,16 +206,12 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     const auto& txs = block->transactions();
     const auto sets = block->validation.sets;
 
-    const result_handler complete_handler =
-        std::bind(&populate_block::handle_populate,
-            this, _1, block, asio::steady_clock::now(), handler);
-
     populate_coinbase(block);
 
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty())
     {
-        complete_handler(error::success);
+        handler(error::success);
         return;
     }
 
@@ -230,8 +222,8 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
         populate_transaction(fork, index, *tx);
     }
 
-    const result_handler join_handler = synchronize(complete_handler,
-        sets->size(), NAME "_populate");
+    const result_handler join_handler = synchronize(handler, sets->size(),
+        NAME "_populate");
 
     for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&populate_block::populate_inputs,
@@ -282,7 +274,8 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     transaction::sets_const_ptr input_sets, size_t sets_index,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
+    BITCOIN_ASSERT(!input_sets->empty());
+    BITCOIN_ASSERT(sets_index < input_sets->size());
 
     code ec(error::success);
     const auto fork_height = fork->height();
@@ -290,15 +283,15 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
 
     for (auto& set: sets)
     {
+        BITCOIN_ASSERT(!set.tx.is_coinbase());
+        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
+        const auto& input = set.tx.inputs()[set.input_index];
+
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
-
-        BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
-        const auto& input = set.tx.inputs()[set.input_index];
 
         if (!populate_spent(fork_height, input.previous_output()))
         {
@@ -377,9 +370,7 @@ void populate_block::populate_prevout(size_t fork_height,
     if (outpoint.is_null())
         return;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // We continue even if prevout spent and/or missing.
-    ///////////////////////////////////////////////////////////////////////////
+    // We continue even if prevout is spent and/or missing.
 
     // Get the script and value for the prevout.
     if (!fast_chain_.get_output(prevout.cache, height, position, outpoint))
@@ -395,36 +386,6 @@ void populate_block::populate_prevout(size_t fork_height,
     // Set height iff the prevout is coinbase (first tx is coinbase).
     if (position == 0)
         prevout.height = height;
-}
-
-void populate_block::handle_populate(const code& ec, block_const_ptr block,
-    asio::time_point start_time, result_handler handler) const
-{
-    const auto token = code(ec) ? "UNPOPULATED" : "populated";
-    report(block, start_time, token);
-    handler(ec);
-}
-
-// Utility.
-//-----------------------------------------------------------------------------
-
-void populate_block::report(block_const_ptr block, asio::time_point start_time,
-    const std::string& token)
-{
-    BITCOIN_ASSERT(block->validation.state);
-    static constexpr size_t micro_per_milliseconds = 1000;
-    const auto delta = asio::steady_clock::now() - start_time;
-    const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
-    const auto micro_per_block = static_cast<float>(elapsed.count());
-    const auto micro_per_input = micro_per_block / block->total_inputs();
-    const auto milli_per_block = micro_per_block / micro_per_milliseconds;
-    const auto transactions = block->transactions().size();
-    const auto next_height = block->validation.state->height();
-
-    log::info(LOG_BLOCKCHAIN)
-        << "Block [" << next_height << "] " << token << " (" << transactions
-        << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
-        << ") μs/input";
 }
 
 } // namespace blockchain

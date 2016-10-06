@@ -51,46 +51,45 @@ protected:
     bool stopped() const;
 
 private:
-    typedef chain::chain_state state;
+    // Aliases for this header.
+    typedef fork::const_ptr fork_ptr;
+    typedef chain::output_point point;
+    typedef chain::chain_state::map map;
+    typedef chain::chain_state::data data;
+    typedef chain::transaction::sets_const_ptr sets_ptr;
+    
+    // Logging helper.
     static void report(block_const_ptr block, asio::time_point start_time,
         const std::string& token);
 
-    /// Return the current chain state for the given height.
-    state::ptr populate_chain_state(size_t height, fork::const_ptr fork) const;
+    // Input Sets
+    void populate_input_sets(fork::const_ptr fork, size_t index) const;
 
-    bool get_bits(uint32_t& out_bits, size_t height,
-        fork::const_ptr fork) const;
-    bool get_version(uint32_t& out_version, size_t height,
-        fork::const_ptr fork) const;
+    // Chain State
+    void populate_chain_state(fork_ptr fork, size_t index) const;
+    bool populate_bits(data& data, const map& map, fork_ptr fork) const;
+    bool populate_versions(data& data, const map& map, fork_ptr fork) const;
+    bool populate_timestamps(data& data, const map& map, fork_ptr fork) const;
+    bool get_bits(uint32_t& out_bits, size_t height, fork_ptr fork) const;
+    bool get_version(uint32_t& out_version, size_t height, fork_ptr fork) const;
     bool get_timestamp(uint32_t& out_timestamp, size_t height,
-        fork::const_ptr fork) const;
+        fork_ptr fork) const;
 
-    bool populate_bits(state::data& data, const state::map& heights,
-        fork::const_ptr fork) const;
-    bool populate_versions(state::data& data, const state::map& heights,
-        fork::const_ptr fork) const;
-    bool populate_timestamps(state::data& data, const state::map& heights,
-        fork::const_ptr fork) const;
-
-    void populate_transactions(fork::const_ptr fork, size_t index,
+    // Previous Outputs
+    void populate_transactions(fork_ptr fork, size_t index,
         result_handler handler) const;
     void populate_coinbase(block_const_ptr block) const;
     void populate_transaction(const chain::transaction& tx) const;
-    void populate_transaction(fork::const_ptr fork, size_t index,
+    void populate_transaction(fork_ptr fork, size_t index,
         const chain::transaction& tx) const;
-    void populate_inputs(fork::const_ptr fork, size_t index,
-        chain::transaction::sets_const_ptr input_sets, size_t sets_index,
-        result_handler handler) const;
-    bool populate_spent(size_t fork_height,
-        const chain::output_point& outpoint) const;
-    void populate_spent(fork::const_ptr fork, size_t index,
-        const chain::output_point& outpoint) const;
-    void populate_prevout(size_t fork_height,
-        const chain::output_point& outpoint) const;
-    void populate_prevout(fork::const_ptr fork, size_t index,
-        const chain::output_point& outpoint) const;
-    void handle_populate(const code& ec, block_const_ptr block,
-        asio::time_point start_time, result_handler handler) const;
+
+    void populate_inputs(fork_ptr fork, size_t index, sets_ptr input_sets,
+        size_t sets_index, result_handler handler) const;
+
+    bool populate_spent(size_t fork_height, const point& outpoint) const;
+    void populate_spent(fork_ptr fork, size_t index, const point& outpoint) const;
+    void populate_prevout(size_t fork_height, const point& outpoint) const;
+    void populate_prevout(fork_ptr fork, size_t index, const point& outpoint) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
