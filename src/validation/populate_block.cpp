@@ -144,27 +144,21 @@ bool populate_block::populate_timestamps(chain_state::data& data,
         if (!get_timestamp(timestamp, low++, fork))
             return false;
 
-    data.timestamp.self = unspecified;
-    data.timestamp.retarget = unspecified;
+    if (!get_timestamp(data.timestamp.self, map.timestamp_self, fork))
+        return false;
 
-    // Additional self requirement is signaled by self != high.
-    if (map.timestamp_self != map.timestamp.high &&
-        !get_timestamp(data.timestamp.self, 
-            map.timestamp_self, fork))
-            return false;
-
-    // Additional retarget requirement is signaled by retarget != high.
-    if (map.timestamp_retarget != map.timestamp.high &&
-        !get_timestamp(data.timestamp.retarget, 
-            map.timestamp_retarget, fork))
-            return false;
-
-    return true;
+    // Retarget not required if timestamp_retarget == high.
+    if (map.timestamp_retarget == map.timestamp.high)
+        data.timestamp.retarget = unspecified;
+    else
+        return get_timestamp(data.timestamp.retarget,
+            map.timestamp_retarget, fork);
 }
 
 // TODO: populate data.activated by caching full activation height.
 // The hight must be tied to block push/pop and invalidated on failure.
-void populate_block::populate_chain_state(fork::const_ptr fork, size_t index) const
+void populate_block::populate_chain_state(fork::const_ptr fork,
+    size_t index) const
 {
     BITCOIN_ASSERT(index < fork->size());
 
