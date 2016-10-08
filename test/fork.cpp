@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__one_of_two__first_remains)
     const auto first = list.front();
     BOOST_REQUIRE(first == block1);
     BOOST_REQUIRE_EQUAL(first->validation.result, error::invalid_proof_of_work);
-    BOOST_REQUIRE_EQUAL(first->validation.height, block::validation::orphan_height);
+    BOOST_REQUIRE_EQUAL(first->header().validation.height, header::validation::orphan_height);
 }
 
 BOOST_AUTO_TEST_CASE(fork__pop__two_of_two__none_remain)
