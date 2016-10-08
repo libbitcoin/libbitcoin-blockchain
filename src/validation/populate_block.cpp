@@ -148,11 +148,9 @@ bool populate_block::populate_timestamps(chain_state::data& data,
         return false;
 
     // Retarget not required if timestamp_retarget == high.
-    if (map.timestamp_retarget == map.timestamp.high)
-        data.timestamp.retarget = unspecified;
-    else
-        return get_timestamp(data.timestamp.retarget,
-            map.timestamp_retarget, fork);
+    data.timestamp.retarget = unspecified;
+    return map.timestamp_retarget == map.timestamp.high ||
+        get_timestamp(data.timestamp.retarget, map.timestamp_retarget, fork);
 }
 
 // TODO: populate data.activated by caching full activation height.
