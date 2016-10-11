@@ -34,5 +34,6 @@
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/populate_block.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validation/validate_input.hpp>
 
 #endif

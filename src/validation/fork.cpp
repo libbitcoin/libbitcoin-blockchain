@@ -69,7 +69,7 @@ block_const_ptr_list fork::pop(size_t index, const code& reason)
     for (auto it = start; it != end; ++it)
     {
         const auto block = *it;
-        block->validation.height = block::validation::orphan_height;
+        block->header().validation.height = header::validation::orphan_height;
         block->validation.result = it == start ? reason :
             error::previous_block_invalid;
         out.push_back(block);
@@ -92,7 +92,7 @@ void fork::set_verified(size_t index) const
 {
     BITCOIN_ASSERT(index < blocks_.size());
     const auto block = blocks_[index];
-    block->validation.height = height_at(index);
+    block->header().validation.height = height_at(index);
     block->validation.result = error::success;
 }
 
@@ -102,7 +102,7 @@ bool fork::is_verified(size_t index) const
     BITCOIN_ASSERT(index < blocks_.size());
     const auto block = blocks_[index];
     return (block->validation.result == error::success &&
-        block->validation.height == height_at(index));
+        block->header().validation.height == height_at(index));
 }
 
 const block_const_ptr_list& fork::blocks() const
