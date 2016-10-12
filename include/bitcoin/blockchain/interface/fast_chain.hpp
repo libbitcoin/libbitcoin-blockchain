@@ -95,8 +95,11 @@ public:
     // Writers.
     // ------------------------------------------------------------------------
 
-    /// Insert a block to the blockchain, height is checked for existence.
-    virtual bool insert(block_const_ptr block, size_t height) = 0;
+    /// Insert a header to the blockchain, height is checked for existence.
+    virtual bool stub(header_const_ptr header, size_t height) = 0;
+
+    /// Add transactions to a block, verify height.
+    virtual bool fill(block_const_ptr block, size_t height) = 0;
 
     /// Append the blocks to the top of the chain, height is validated.
     virtual bool push(const block_const_ptr_list& blocks, size_t height) = 0;
