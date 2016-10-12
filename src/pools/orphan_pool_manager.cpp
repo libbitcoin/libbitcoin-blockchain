@@ -286,7 +286,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     if (!fast_chain_.get_fork_difficulty(original_difficulty, first_height))
     {
-        log::error(LOG_BLOCKCHAIN)
+        LOG_ERROR(LOG_BLOCKCHAIN)
             << "Failure getting difficulty from [" << first_height << "]";
         handler(error::operation_failed);
         return;
@@ -294,7 +294,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     if (fork->difficulty() <= original_difficulty)
     {
-        log::debug(LOG_BLOCKCHAIN)
+        LOG_DEBUG(LOG_BLOCKCHAIN)
             << "Insufficient work to reorganize from [" << first_height << "]";
         handler(error::insufficient_work);
         return;
@@ -311,7 +311,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     if (!reorganized)
     {
-        log::error(LOG_BLOCKCHAIN)
+        LOG_ERROR(LOG_BLOCKCHAIN)
             << "Failure reorganizing from [" << first_height << "]";
         handler(error::operation_failed);
         return;
@@ -323,7 +323,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     if (!outgoing.empty())
     {
-        log::info(LOG_BLOCKCHAIN)
+        LOG_INFO(LOG_BLOCKCHAIN)
             << "Reorganized from block " << first_height << " to "
             << safe_add(first_height, outgoing.size()) << "]";
     }

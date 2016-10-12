@@ -171,7 +171,7 @@ bool block_chain::get_output(chain::output& out_output, size_t& out_height,
     const auto result = database_.transactions.get(outpoint.hash());
     if (!result)
     {
-        ////log::info(LOG_BLOCKCHAIN)
+        ////LOG_INFO(LOG_BLOCKCHAIN)
         ////    << "Missing output {" << encode_hash(outpoint.hash) << ", "
         ////    << outpoint.index << "}.";
         return false;
