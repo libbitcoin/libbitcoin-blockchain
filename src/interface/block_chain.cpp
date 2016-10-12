@@ -226,19 +226,33 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // Writers.
 // ----------------------------------------------------------------------------
 
-// This is used by parallel initial block download. Blocks do not require
-// ordering and gaps must be filled before the chain is queryable. The height
-// value is tested for the existence of a block at the height only.
-bool block_chain::insert(block_const_ptr block, size_t height)
+// Insert a header to the blockchain, height is checked for existence.
+bool block_chain::stub(header_const_ptr header, size_t height)
 {
     return write_serial(
-        std::bind(&block_chain::do_insert,
+        std::bind(&block_chain::do_stub,
+            this, std::ref(*header), height));
+}
+
+bool block_chain::do_stub(const header_message& header, size_t height)
+{
+    const auto tx_count64 = header.transaction_count();
+    BITCOIN_ASSERT(tx_count64 <= max_size_t);
+    const auto tx_count = static_cast<size_t>(tx_count64);
+    return database_.stub(header, tx_count, height);
+}
+
+// Add transactions to a block, verify height.
+bool block_chain::fill(block_const_ptr block, size_t height)
+{
+    return write_serial(
+        std::bind(&block_chain::do_fill,
             this, std::ref(*block), height));
 }
 
-bool block_chain::do_insert(const block& block, size_t height)
+bool block_chain::do_fill(const chain::block& block, size_t height)
 {
-    return database_.insert(block, height);
+    return database_.fill(block, height);
 }
 
 // This is used by ordered block download. Height is used by the database to
