@@ -236,10 +236,7 @@ bool block_chain::stub(header_const_ptr header, size_t height)
 
 bool block_chain::do_stub(const header_message& header, size_t height)
 {
-    const auto tx_count64 = header.transaction_count();
-    BITCOIN_ASSERT(tx_count64 <= max_size_t);
-    const auto tx_count = static_cast<size_t>(tx_count64);
-    return database_.stub(header, tx_count, height);
+    return database_.stub(header, header.transaction_count(), height);
 }
 
 // Add transactions to a block, verify height.
