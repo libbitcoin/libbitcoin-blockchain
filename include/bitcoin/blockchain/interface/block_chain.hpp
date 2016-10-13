@@ -62,11 +62,8 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe except during write, unprotected by sequential lock.
 
-    /// Return the first and last gaps in the blockchain, or false if none.
-    bool get_gap_range(size_t& out_first, size_t& out_last) const;
-
-    /// Return the next chain gap at or after the specified start height.
-    bool get_next_gap(size_t& out_height, size_t start_height) const;
+    /// Get the set of block gaps in the chain.
+    bool get_gaps(database::block_database::heights& out_gaps) const;
 
     /// Get a determination of whether the block hash exists in the store.
     bool get_block_exists(const hash_digest& block_hash) const;
@@ -116,15 +113,9 @@ public:
     // ------------------------------------------------------------------------
     // Not thread safe except as noted.
 
-    /// Insert a header to the blockchain, height is checked for existence.
-    /// This is safe for concurrent execution with itself and update (only).
-    /// These invalid reads are outside the scope of the sequence lock.
-    bool stub(header_const_ptr header, size_t height);
-
-    /// Add transactions to a block, verify height.
-    /// This is safe for concurrent execution with itself and update (only).
-    /// These invalid reads are outside the scope of the sequence lock.
-    bool fill(block_const_ptr block, size_t height);
+    /// Insert a block to the blockchain, height is checked for existence.
+    /// This is safe for concurrent execution with itself (only).
+    bool insert(block_const_ptr block, size_t height);
 
     /// Append the blocks to the top of the chain, height is validated.
     /// This is NOT safe for concurrent execution with another write.
@@ -304,8 +295,7 @@ private:
 
     static hash_list to_hashes(const database::block_result& result);
 
-    bool do_stub(const message::header_message& header, size_t height);
-    bool do_fill(const chain::block& block, size_t height);
+    bool do_insert(const chain::block& block, size_t height);
     bool do_push(const chain::block& block, size_t height);
     bool do_pop(chain::block::list& out_blocks, const hash_digest& fork_hash);
 

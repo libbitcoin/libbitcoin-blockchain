@@ -37,6 +37,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
+using namespace bc::database;
 using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
@@ -61,14 +62,10 @@ block_chain::block_chain(threadpool& pool,
 // Readers.
 // ----------------------------------------------------------------------------
 
-bool block_chain::get_gap_range(size_t& out_first, size_t& out_last) const
+bool block_chain::get_gaps(block_database::heights& out_gaps) const
 {
-    return database_.blocks.gap_range(out_first, out_last);
-}
-
-bool block_chain::get_next_gap(size_t& out_height, size_t start_height) const
-{
-    return !database_.blocks.next_gap(out_height, start_height);
+    database_.blocks.gaps(out_gaps);
+    return true;
 }
 
 bool block_chain::get_block_exists(const hash_digest& block_hash) const
@@ -226,30 +223,17 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // Writers.
 // ----------------------------------------------------------------------------
 
-// Insert a header to the blockchain, height is checked for existence.
-bool block_chain::stub(header_const_ptr header, size_t height)
+// Insert a block to the blockchain, height is checked for existence.
+bool block_chain::insert(block_const_ptr block, size_t height)
 {
     return write_serial(
-        std::bind(&block_chain::do_stub,
-            this, std::ref(*header), height));
-}
-
-bool block_chain::do_stub(const header_message& header, size_t height)
-{
-    return database_.stub(header, header.transaction_count(), height);
-}
-
-// Add transactions to a block, verify height.
-bool block_chain::fill(block_const_ptr block, size_t height)
-{
-    return write_serial(
-        std::bind(&block_chain::do_fill,
+        std::bind(&block_chain::do_insert,
             this, std::ref(*block), height));
 }
 
-bool block_chain::do_fill(const chain::block& block, size_t height)
+bool block_chain::do_insert(const chain::block& block, size_t height)
 {
-    return database_.fill(block, height);
+    return database_.insert(block, height);
 }
 
 // This is used by ordered block download. Height is used by the database to
