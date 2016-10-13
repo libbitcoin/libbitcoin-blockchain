@@ -228,7 +228,7 @@ void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
         // Notify subscribers that the tx has been validated and indexed.
         notify_transaction(unconfirmed, tx);
 
-        log::debug(LOG_BLOCKCHAIN)
+        LOG_DEBUG(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
         // Notify caller that the tx has been validated and indexed.
@@ -322,19 +322,19 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 {
     if (ec == error::service_stopped)
     {
-        log::debug(LOG_BLOCKCHAIN)
+        LOG_DEBUG(LOG_BLOCKCHAIN)
             << "Stopping transaction pool: " << ec.message();
         return false;
     }
 
     if (ec)
     {
-        log::debug(LOG_BLOCKCHAIN)
+        LOG_DEBUG(LOG_BLOCKCHAIN)
             << "Failure in tx pool reorganize handler: " << ec.message();
         return false;
     }
 
-    log::debug(LOG_BLOCKCHAIN)
+    LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Reorganize: tx pool size (" << buffer_.size()
         << ") forked at (" << fork_point
         << ") new blocks (" << new_blocks.size()

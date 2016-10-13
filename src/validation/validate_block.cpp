@@ -241,7 +241,7 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const auto transactions = block->transactions().size();
     const auto next_height = block->validation.state->height();
 
-    log::info(LOG_BLOCKCHAIN)
+    LOG_INFO(LOG_BLOCKCHAIN)
         << "Block [" << next_height << "] " << token << " (" << transactions
         << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
         << ") μs/input";

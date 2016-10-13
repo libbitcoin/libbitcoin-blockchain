@@ -65,7 +65,7 @@ bool orphan_pool::add(block_const_ptr block)
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    ////log::debug(LOG_BLOCKCHAIN)
+    ////LOG_DEBUG(LOG_BLOCKCHAIN)
     ////    << "Orphan pool added block [" << encode_hash(block->hash())
     ////    << "] previous [" << encode_hash(header.previous_block_hash)
     ////    << "] old size (" << size << ").";
@@ -105,7 +105,7 @@ void orphan_pool::remove(block_const_ptr block)
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    ////log::debug(LOG_BLOCKCHAIN)
+    ////LOG_DEBUG(LOG_BLOCKCHAIN)
     ////    << "Orphan pool removed block [" << encode_hash(block->hash())
     ////    << "] old size (" << old_size << ").";
 }
