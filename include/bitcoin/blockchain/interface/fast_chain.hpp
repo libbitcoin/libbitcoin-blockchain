@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_FAST_CHAIN_HPP
 
 #include <cstddef>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -37,12 +37,9 @@ public:
     // Readers.
     // ------------------------------------------------------------------------
 
-    /// Return the first and last gaps in the blockchain, or false if none.
-    virtual bool get_gap_range(size_t& out_first, size_t& out_last) const = 0;
-
-    /// Return the next chain gap at or after the specified start height.
-    virtual bool get_next_gap(size_t& out_height,
-        size_t start_height) const = 0;
+    /// Get the set of block gaps in the chain.
+    virtual bool get_gaps(
+        database::block_database::heights& out_gaps) const = 0;
 
     /// Get a determination of whether the block hash exists in the store.
     virtual bool get_block_exists(const hash_digest& block_hash) const = 0;
@@ -95,11 +92,8 @@ public:
     // Writers.
     // ------------------------------------------------------------------------
 
-    /// Insert a header to the blockchain, height is checked for existence.
-    virtual bool stub(header_const_ptr header, size_t height) = 0;
-
-    /// Add transactions to a block, verify height.
-    virtual bool fill(block_const_ptr block, size_t height) = 0;
+    /// Insert a block to the blockchain, height is checked for existence.
+    virtual bool insert(block_const_ptr block, size_t height) = 0;
 
     /// Append the blocks to the top of the chain, height is validated.
     virtual bool push(const block_const_ptr_list& blocks, size_t height) = 0;
