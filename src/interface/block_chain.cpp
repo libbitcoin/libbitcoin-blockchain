@@ -404,7 +404,7 @@ void block_chain::fetch_merkle_block(uint64_t height,
 
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
-                static_cast<uint32_t>(result.transaction_count()),
+                safe_unsigned<uint32_t>(result.transaction_count()),
                 to_hashes(result), {} });
 
         return finish_read(slock, handler, error::success, merkle,
@@ -431,7 +431,7 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
-                static_cast<uint32_t>(result.transaction_count()),
+                safe_unsigned<uint32_t>(result.transaction_count()),
                 to_hashes(result), {} });
         return finish_read(slock, handler, error::success, merkle,
             result.height());
