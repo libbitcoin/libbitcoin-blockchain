@@ -164,6 +164,7 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
     data.enabled = false;
     data.testnet = use_testnet_rules_;
     data.height = fork->height_at(index);
+    data.hash = fork->block_at(index)->hash();
     auto map = chain_state::get_map(data.height, data.enabled, data.testnet);
 
     // At most 11 redundant mainnet header queries, so we don't combine them.
