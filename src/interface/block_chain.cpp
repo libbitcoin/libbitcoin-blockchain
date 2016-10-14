@@ -356,8 +356,6 @@ void block_chain::fetch_block_header(uint64_t height,
 
         const auto header = std::make_shared<header_message>(result.header());
 
-        // Assign the optional tx count to the header.
-        header->set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, header,
             result.height());
     };
@@ -382,8 +380,6 @@ void block_chain::fetch_block_header(const hash_digest& hash,
 
         const auto header = std::make_shared<header_message>(result.header());
 
-        // Assign the optional tx count to the header.
-        header->set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, header,
             result.height());
     };
@@ -407,10 +403,10 @@ void block_chain::fetch_merkle_block(uint64_t height,
             finish_read(slock, handler, error::not_found, nullptr, 0);
 
         auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(), to_hashes(result), {} });
+            merkle_block{ result.header(),
+                static_cast<uint32_t>(result.transaction_count()),
+                to_hashes(result), {} });
 
-        // Assign the optional tx count to the merkle header.
-        merkle->header().set_transaction_count(result.transaction_count());
         return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
@@ -434,7 +430,9 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
             finish_read(slock, handler, error::not_found, nullptr, 0);
 
         auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(), to_hashes(result), {} });
+            merkle_block{ result.header(),
+                static_cast<uint32_t>(result.transaction_count()),
+                to_hashes(result), {} });
         return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
