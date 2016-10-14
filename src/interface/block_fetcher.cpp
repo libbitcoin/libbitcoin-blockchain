@@ -67,7 +67,7 @@ private:
         }
 
         const auto size = merkle->hashes().size();
-        BITCOIN_ASSERT(size == merkle->header().transaction_count());
+        BITCOIN_ASSERT(size == merkle->total_transactions());
 
         auto block = std::make_shared<message::block_message>(
             message::block_message{ std::move(merkle->header()), {} });
