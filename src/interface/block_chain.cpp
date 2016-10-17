@@ -158,7 +158,7 @@ bool block_chain::get_spender_hash(hash_digest& out_hash,
     if (!spend.is_valid())
         return false;
 
-    out_hash = std::move(spend.hash());
+    out_hash = spend.hash();
     return true;
 }
 
