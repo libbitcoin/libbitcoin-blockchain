@@ -304,9 +304,13 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     // Replace! Switch!
     //#########################################################################
+    const auto start_time = asio::steady_clock::now();
+
     const auto reorganized = 
         fast_chain_.pop(outgoing, fork->hash()) &&
         fast_chain_.push(fork->blocks(), first_height);
+
+    validate_block::report(fork->blocks().back(), start_time, "deposited");
     //#########################################################################
 
     if (!reorganized)

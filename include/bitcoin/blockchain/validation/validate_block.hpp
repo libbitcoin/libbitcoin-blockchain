@@ -39,6 +39,9 @@ class BCB_API validate_block
 public:
     typedef handle0 result_handler;
 
+    static void report(block_const_ptr block, asio::time_point start_time,
+        const std::string& token);
+
     validate_block(threadpool& pool, const fast_chain& chain,
         const settings& settings);
 
@@ -56,8 +59,6 @@ protected:
 private:
     static code verify_script(const chain::transaction& tx,
         uint32_t input_index, uint32_t flags, bool use_libconsensus);
-    static void report(block_const_ptr block, asio::time_point start_time,
-        const std::string& token);
 
     void handle_accepted(const code& ec, block_const_ptr block, size_t height,
         asio::time_point start_time, result_handler handler) const;
