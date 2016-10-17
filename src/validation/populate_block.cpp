@@ -246,7 +246,7 @@ void populate_block::populate_coinbase(block_const_ptr block) const
     prevout.confirmed = true;
 
     // A coinbase input has no previous output.
-    prevout.cache.reset();
+    prevout.cache = chain::output{};
 
     // A coinbase input does not spend an output so is itself always mature.
     prevout.height = output_point::validation::not_specified;
@@ -360,7 +360,7 @@ void populate_block::populate_prevout(size_t fork_height,
     auto& prevout = outpoint.validation;
 
     // In case this input is a coinbase or the prevout is spent.
-    prevout.cache.reset();
+    prevout.cache = chain::output{};
 
     // The height of the prevout must be set iff the prevout is coinbase.
     prevout.height = output_point::validation::not_specified;
@@ -378,7 +378,7 @@ void populate_block::populate_prevout(size_t fork_height,
     // Unfind the prevout if it is above the fork (clear the cache).
     if (height > fork_height)
     {
-        prevout.cache.reset();
+        prevout.cache = chain::output{};
         return;
     }
 

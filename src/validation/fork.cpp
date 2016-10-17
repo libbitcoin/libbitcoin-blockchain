@@ -241,7 +241,7 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     };
 
     // In case this input is a coinbase or the prevout is spent.
-    prevout.cache.reset();
+    prevout.cache = chain::output{};
 
     // The height of the prevout must be set iff the prevout is coinbase.
     prevout.height = output_point::validation::not_specified;

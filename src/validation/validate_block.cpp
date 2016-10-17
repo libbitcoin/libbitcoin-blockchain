@@ -38,7 +38,7 @@ using namespace std::placeholders;
 #define NAME "validate_block"
 
 // Report every nth block.
-static constexpr size_t report_interval = 10;
+static constexpr size_t report_interval = 1;
 
 // Constant for log report calculations.
 static constexpr size_t micro_per_milliseconds = 1000;
