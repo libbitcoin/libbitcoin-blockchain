@@ -19,7 +19,6 @@
  */
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
