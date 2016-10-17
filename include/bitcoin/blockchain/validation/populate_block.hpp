@@ -57,10 +57,6 @@ private:
     typedef chain::chain_state::map map;
     typedef chain::chain_state::data data;
     typedef chain::transaction::sets_const_ptr sets_ptr;
-    
-    // Logging helper.
-    static void report(block_const_ptr block, asio::time_point start_time,
-        const std::string& token);
 
     // Input Sets
     void populate_input_sets(fork::const_ptr fork, size_t index) const;
