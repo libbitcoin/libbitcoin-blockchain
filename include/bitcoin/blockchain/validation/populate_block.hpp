@@ -75,17 +75,17 @@ private:
     void populate_transactions(fork_ptr fork, size_t index,
         result_handler handler) const;
     void populate_coinbase(block_const_ptr block) const;
-    void populate_transaction(const chain::transaction& tx) const;
+    void populate_transaction(size_t fork_height,
+        const chain::transaction& tx) const;
     void populate_transaction(fork_ptr fork, size_t index,
         const chain::transaction& tx) const;
 
     void populate_inputs(fork_ptr fork, size_t index, sets_ptr input_sets,
         size_t sets_index, result_handler handler) const;
 
-    bool populate_spent(size_t fork_height, const point& outpoint) const;
-    void populate_spent(fork_ptr fork, size_t index, const point& outpoint) const;
     void populate_prevout(size_t fork_height, const point& outpoint) const;
-    void populate_prevout(fork_ptr fork, size_t index, const point& outpoint) const;
+    void populate_prevout(fork_ptr fork, size_t index,
+        const point& outpoint) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
