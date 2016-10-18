@@ -178,12 +178,17 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
     }
 }
 
+// Populate input sets utility.
+//-----------------------------------------------------------------------------
+
 void populate_block::populate_input_sets(fork::const_ptr fork,
     size_t index) const
 {
     BITCOIN_ASSERT(index < fork->size());
-
     const auto block = fork->block_at(index);
+
+    // TODO: balance by sigop count when used for script validation.
+    // Balanced by input count, which is optimal for data population.
     block->validation.sets = block->to_input_sets(priority_threads_, false);
 }
 
@@ -224,6 +229,11 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     const result_handler join_handler = synchronize(handler, sets->size(),
         NAME "_populate");
 
+    ////// Sequential implementation.
+    ////for (size_t set = 0; set < sets->size(); ++set)
+    ////    populate_inputs(fork, index, sets, set, join_handler);
+
+    // Concurrent implementation.
     for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&populate_block::populate_inputs,
             this, fork, index, sets, set, join_handler);
@@ -322,6 +332,10 @@ void populate_block::populate_prevout(size_t fork_height,
         fork_height))
         return;
 
+    // Set height only if prevout is coinbase (first position tx is coinbase).
+    if (position == 0)
+        prevout.height = height;
+
     // The output is spent only if by a spend at or below the fork height.
     const auto spend_height = prevout.cache.validation.spender_height;
 
@@ -333,10 +347,6 @@ void populate_block::populate_prevout(size_t fork_height,
         prevout.cache = chain::output{};
         return;
     }
-
-    // Set height only if prevout is coinbase (first position tx is coinbase).
-    if (position == 0)
-        prevout.height = height;
 }
 
 void populate_block::populate_prevout(fork::const_ptr fork, size_t index,

@@ -41,6 +41,7 @@ public:
     populate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
+    /// Stop the population (thread safe).
     void stop();
 
     /// Populate all validation state for block[index] and to on the block.
@@ -58,9 +59,6 @@ private:
     typedef chain::chain_state::data data;
     typedef chain::transaction::sets_const_ptr sets_ptr;
 
-    // Input Sets
-    void populate_input_sets(fork::const_ptr fork, size_t index) const;
-
     // Chain State
     void populate_chain_state(fork_ptr fork, size_t index) const;
     bool populate_bits(data& data, const map& map, fork_ptr fork) const;
@@ -71,6 +69,9 @@ private:
     bool get_timestamp(uint32_t& out_timestamp, size_t height,
         fork_ptr fork) const;
 
+    // Input Sets
+    void populate_input_sets(fork::const_ptr fork, size_t index) const;
+
     // Previous Outputs
     void populate_transactions(fork_ptr fork, size_t index,
         result_handler handler) const;
@@ -79,10 +80,8 @@ private:
         const chain::transaction& tx) const;
     void populate_transaction(fork_ptr fork, size_t index,
         const chain::transaction& tx) const;
-
     void populate_inputs(fork_ptr fork, size_t index, sets_ptr input_sets,
         size_t sets_index, result_handler handler) const;
-
     void populate_prevout(size_t fork_height, const point& outpoint) const;
     void populate_prevout(fork_ptr fork, size_t index,
         const point& outpoint) const;
