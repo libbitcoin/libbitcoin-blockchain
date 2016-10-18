@@ -92,18 +92,12 @@ public:
 
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
-        size_t& out_position, const chain::output_point& outpoint) const;
-
-    /// Get the hash digest of the transaction of the outpoint.
-    bool get_spender_hash(hash_digest& out_hash,
-        const chain::output_point& outpoint) const;
+        size_t& out_position, const chain::output_point& outpoint,
+        size_t fork_height) const;
 
     /// Determine if an unspent transaction exists with the given hash.
-    bool get_is_unspent_transaction(const hash_digest& hash) const;
-
-    /// Get the block height of the transaction given its hash.
-    bool get_transaction_height(size_t& out_block_height,
-        const hash_digest& hash) const;
+    bool get_is_unspent_transaction(const hash_digest& hash,
+        size_t fork_height) const;
 
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,

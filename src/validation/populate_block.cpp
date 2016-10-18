@@ -217,7 +217,7 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     // Populate non-coinbase tx data.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        populate_transaction(*tx);
+        populate_transaction(fork->height(), *tx);
         populate_transaction(fork, index, *tx);
     }
 
@@ -246,25 +246,24 @@ void populate_block::populate_coinbase(block_const_ptr block) const
     prevout.confirmed = true;
 
     // A coinbase input has no previous output.
-    prevout.cache.reset();
+    prevout.cache = chain::output{};
 
     // A coinbase input does not spend an output so is itself always mature.
     prevout.height = output_point::validation::not_specified;
 }
 
 // Returns false only when transaction is duplicate on chain.
-void populate_block::populate_transaction(const chain::transaction& tx) const
+void populate_block::populate_transaction(size_t fork_height,
+    const chain::transaction& tx) const
 {
-    // TODO: must exclude transactions above fork point.
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
-        tx.hash());
+        tx.hash(), fork_height);
 }
 
 // Returns false only when transaction is duplicate on fork.
 void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
     const chain::transaction& tx) const
 {
-    // Distinctness is a static check so this looks only below the index.
     if (!tx.validation.duplicate)
         fork->populate_tx(index, tx);
 }
@@ -292,14 +291,6 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
             break;
         }
 
-        if (!populate_spent(fork_height, input.previous_output()))
-        {
-            // This is the only early terminate (database integrity error).
-            ec = error::operation_failed;
-            break;
-        }
-
-        populate_spent(fork, index, input.previous_output());
         populate_prevout(fork_height, input.previous_output());
         populate_prevout(fork, index, input.previous_output());
     }
@@ -307,84 +298,57 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     handler(ec);
 }
 
-// Returns false only when database operation fails.
-void populate_block::populate_spent(fork::const_ptr fork, size_t index,
+void populate_block::populate_prevout(size_t fork_height,
     const output_point& outpoint) const
 {
-    if (!outpoint.validation.spent)
-        fork->populate_spent(index, outpoint);
-}
-
-// Returns false only when database operation fails.
-bool populate_block::populate_spent(size_t fork_height,
-    const output_point& outpoint) const
-{
-    size_t spender_height;
-    hash_digest spender_hash;
+    // The previous output will be cached on the input's outpoint.
     auto& prevout = outpoint.validation;
 
-    // Confirmed state matches spend state (unless tx pool validation).
+    prevout.spent = false;
     prevout.confirmed = false;
+    prevout.cache = chain::output{};
+    prevout.height = output_point::validation::not_specified;
 
-    // Determine if the prevout is spent by a confirmed input.
-    prevout.spent = fast_chain_.get_spender_hash(spender_hash, outpoint);
+    // If the input is a coinbase there is no prevout to populate.
+    if (outpoint.is_null())
+        return;
 
-    // Either the prevout is unspent, spent in fork, the outpoint is invalid.
-    if (!prevout.spent)
-        return true;
+    size_t height;
+    size_t position;
 
-    // It is a store failure it the spender transaction is not found.
-    if (!fast_chain_.get_transaction_height(spender_height, spender_hash))
-        return false;
+    // Get the script, value and spender height (if any) for the prevout.
+    // The output (prevout.cache) is populated only if the return is true.
+    if (!fast_chain_.get_output(prevout.cache, height, position, outpoint,
+        fork_height))
+        return;
 
-    // Unspend the prevout if it is above the fork.
-    prevout.spent = spender_height <= fork_height;
+    // The output is spent only if by a spend at or below the fork height.
+    const auto spend_height = prevout.cache.validation.spender_height;
 
-    // All block spends are confirmed spends.
-    prevout.confirmed = prevout.spent;
-    return true;
+    if ((spend_height <= fork_height) &&
+        (spend_height != output::validation::not_spent))
+    {
+        prevout.spent = true;
+        prevout.confirmed = true;
+        prevout.cache = chain::output{};
+        return;
+    }
+
+    // Set height only if prevout is coinbase (first position tx is coinbase).
+    if (position == 0)
+        prevout.height = height;
 }
 
 void populate_block::populate_prevout(fork::const_ptr fork, size_t index,
     const output_point& outpoint) const
 {
+    if (!outpoint.validation.spent)
+        fork->populate_spent(index, outpoint);
+
+    // We continue even if prevout is spent.
+
     if (!outpoint.validation.cache.is_valid())
         fork->populate_prevout(index, outpoint);
-}
-
-void populate_block::populate_prevout(size_t fork_height,
-    const output_point& outpoint) const
-{
-    size_t height;
-    size_t position;
-    auto& prevout = outpoint.validation;
-
-    // In case this input is a coinbase or the prevout is spent.
-    prevout.cache.reset();
-
-    // The height of the prevout must be set iff the prevout is coinbase.
-    prevout.height = output_point::validation::not_specified;
-
-    // The input is a coinbase, so there is no prevout to populate.
-    if (outpoint.is_null())
-        return;
-
-    // We continue even if prevout is spent and/or missing.
-
-    // Get the script and value for the prevout.
-    if (!fast_chain_.get_output(prevout.cache, height, position, outpoint))
-        return;
-
-    // Unfind the prevout if it is above the fork (clear the cache).
-    if (height > fork_height)
-    {
-        prevout.cache.reset();
-        return;
-    }
-
-    // Set height iff the prevout is coinbase (first tx is coinbase).
-    if (position == 0)
-        prevout.height = height;
 }
 
 } // namespace blockchain

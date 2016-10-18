@@ -151,68 +151,41 @@ bool block_chain::get_last_height(size_t& out_height) const
     return database_.blocks.top(out_height);
 }
 
-bool block_chain::get_spender_hash(hash_digest& out_hash,
-    const output_point& outpoint) const
-{
-    const auto spend = database_.spends.get(outpoint);
-    if (!spend.is_valid())
-        return false;
-
-    out_hash = std::move(spend.hash());
-    return true;
-}
-
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
-    size_t& out_position, const chain::output_point& outpoint) const
+    size_t& out_position, const chain::output_point& outpoint,
+    size_t fork_height) const
 {
-    const auto result = database_.transactions.get(outpoint.hash());
-    if (!result)
-    {
-        ////LOG_INFO(LOG_BLOCKCHAIN)
-        ////    << "Missing output {" << encode_hash(outpoint.hash) << ", "
-        ////    << outpoint.index << "}.";
+    // TODO: the fork_height parameter is not yet honored.
+    // Get the highest tx with matching hash, at or below the fork height.
+    auto result = database_.transactions.get(outpoint.hash(), fork_height);
+
+    // TODO: remove this when tx.get(..., fork_height) is honored.
+    // BUGBUG: insufficient as there may be a match below the tx returned.
+    if (!result || result.height() > fork_height)
         return false;
-    }
 
     out_height = result.height();
     out_position = result.position();
+
+    // This includes a cached value for spender height (or not_spent).
+    // This should generally be checked against the fork height upon return.
     out_output = result.output(outpoint.index());
 
     // If the index is invalid the output will be as well.
     return out_output.is_valid();
 }
 
-bool block_chain::get_is_unspent_transaction(const hash_digest& hash) const
+bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
+    size_t fork_height) const
 {
-    const auto result = database_.transactions.get(hash);
-    if (!result)
-        return false;
-
-    uint32_t index = 0;
-    for (auto& output: result.transaction().outputs())
-        if (database_.spends.get({ hash, index }).is_valid())
-            safe_increment(index);
-        else
-            return false;
-
-    return true;
-}
-
-bool block_chain::get_transaction_height(size_t& out_block_height,
-    const hash_digest& transaction_hash) const
-{
-    const auto result = database_.transactions.get(transaction_hash);
-    if (!result)
-        return false;
-
-    out_block_height = result.height();
-    return true;
+    const auto result = database_.transactions.get(hash, fork_height);
+    return result && !result.is_spent(fork_height);
 }
 
 transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     const hash_digest& hash) const
 {
-    const auto result = database_.transactions.get(hash);
+    const auto result = database_.transactions.get(hash, max_size_t);
     if (!result)
         return nullptr;
 
@@ -488,7 +461,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(hash);
+        const auto result = database_.transactions.get(hash, max_size_t);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -512,7 +485,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(hash);
+        const auto result = database_.transactions.get(hash, max_size_t);
         return result ?
             finish_read(slock, handler, error::success, result.position(),
                 result.height()) :
@@ -532,7 +505,7 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(outpoint.hash());
+        auto result = database_.transactions.get(outpoint.hash(), max_size_t);
 
         if (!result)
             return finish_read(slock, handler, error::not_found,
@@ -839,7 +812,7 @@ void block_chain::filter_transactions(get_data_ptr message,
         for (auto it = inventories.begin(); it != inventories.end();)
         {
             if (it->is_transaction_type() &&
-                get_is_unspent_transaction(it->hash()))
+                get_is_unspent_transaction(it->hash(), max_size_t))
                 it = inventories.erase(it);
             else
                 ++it;
