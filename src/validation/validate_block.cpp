@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -122,14 +123,11 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
     if (!ec)
         block->accept();
 
-    if (height % report_interval == 0)
-    {
-        BITCOIN_ASSERT(block->validation.state);
-        const auto skipped = !block->validation.state->use_full_validation();
-        const auto validated = skipped ? "accepted " : "populated";
-        const auto token = ec ? "UNPOPULATED" : validated;
-        report(block, start_time, token);
-    }
+    BITCOIN_ASSERT(block->validation.state);
+    const auto skipped = !block->validation.state->use_full_validation();
+    const auto validated = skipped ? "accepted " : "populated";
+    const auto token = ec ? "UNPOPULATED" : validated;
+    report(block, start_time, token);
 
     handler(ec);
 }
@@ -213,14 +211,11 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
     size_t height, asio::time_point start_time, result_handler handler) const
 {
-    if (height % report_interval == 0)
-    {
-        BITCOIN_ASSERT(block->validation.state);
-        const auto skipped = !block->validation.state->use_full_validation();
-        const auto validated = skipped ? "connected" : "validated";
-        const auto token = ec ? "INVALIDATED" : validated;
-        report(block, start_time, token);
-    }
+    BITCOIN_ASSERT(block->validation.state);
+    const auto skipped = !block->validation.state->use_full_validation();
+    const auto validated = skipped ? "connected" : "validated";
+    const auto token = ec ? "INVALIDATED" : validated;
+    report(block, start_time, token);
 
     handler(ec);
 }
@@ -232,18 +227,27 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const std::string& token)
 {
     BITCOIN_ASSERT(block->validation.state);
-    const auto delta = asio::steady_clock::now() - start_time;
-    const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
-    const auto micro_per_block = static_cast<float>(elapsed.count());
-    const auto micro_per_input = micro_per_block / block->total_inputs();
-    const auto milli_per_block = micro_per_block / micro_per_milliseconds;
-    const auto transactions = block->transactions().size();
-    const auto next_height = block->validation.state->height();
+    const auto height = block->validation.state->height();
 
-    LOG_INFO(LOG_BLOCKCHAIN)
-        << "Block [" << next_height << "] " << token << " (" << transactions
-        << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
-        << ") μs/input";
+    const auto modulus =
+        (height < 100000 ? 1000 :
+            (height < 200000 ? 100 :
+                (height < 300000 ? 10 : 1)));
+
+    if (height % modulus == 0)
+    {
+        const auto delta = asio::steady_clock::now() - start_time;
+        const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
+        const auto micro_per_block = static_cast<float>(elapsed.count());
+        const auto micro_per_input = micro_per_block / block->total_inputs();
+        const auto milli_per_block = micro_per_block / micro_per_milliseconds;
+        const auto transactions = block->transactions().size();
+
+        LOG_INFO(LOG_BLOCKCHAIN)
+            << "Block [" << height << "] " << token << " (" << transactions
+            << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
+            << ") μs/input";
+    }
 }
 
 } // namespace blockchain
