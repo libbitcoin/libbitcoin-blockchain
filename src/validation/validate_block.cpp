@@ -19,6 +19,7 @@
  */
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
@@ -37,9 +38,6 @@ using namespace bc::chain;
 using namespace std::placeholders;
 
 #define NAME "validate_block"
-
-// Report every nth block.
-static constexpr size_t report_interval = 1;
 
 // Constant for log report calculations.
 static constexpr size_t micro_per_milliseconds = 1000;
@@ -87,6 +85,13 @@ bool validate_block::stopped() const
 
 code validate_block::check(block_const_ptr block) const
 {
+    ////// Static checks are never skipped.
+    ////const auto start_time = asio::steady_clock::now();
+    ////const auto ec = block->check();
+    ////report(block, start_time, ec ? "UNCHECKED" : "checked  ");
+    ////return ec;
+
+    // The above includes no height and the cost is tiny, so not reporting.
     return block->check();
 }
 
@@ -119,17 +124,22 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
     size_t height, asio::time_point start_time, result_handler handler) const
 {
-    // If validation was successful run the accept checks.
-    if (!ec)
-        block->accept();
+    // If population errs there may not be validation state.
+    const auto skipped = ec || !block->validation.state->use_full_validation();
 
-    BITCOIN_ASSERT(block->validation.state);
-    const auto skipped = !block->validation.state->use_full_validation();
-    const auto validated = skipped ? "accepted " : "populated";
-    const auto token = ec ? "UNPOPULATED" : validated;
-    report(block, start_time, token);
+    if (skipped)
+    {
+        handler(ec);
+        return;
+    }
 
-    handler(ec);
+    report(block, start_time, ec ? "UNPOPULATED" : "populated");
+
+    // Since population was successful and not skipped run the accept checks.
+    const auto accept_start_time = asio::steady_clock::now();
+    const auto error_code = block->accept();
+    report(block, accept_start_time, error_code ? "REJECTED  " : "accepted ");
+    handler(error_code);
 }
 
 // Connect sequence.
@@ -148,6 +158,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     const auto state = block->validation.state;
 
     // Data and set population must be completed via a prior call to accept.
+    // If !use_full_validation are to be skipped this should not be called.
     if (!sets || !state)
     {
         handler(error::operation_failed);
@@ -211,17 +222,30 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
     size_t height, asio::time_point start_time, result_handler handler) const
 {
-    BITCOIN_ASSERT(block->validation.state);
-    const auto skipped = !block->validation.state->use_full_validation();
-    const auto validated = skipped ? "connected" : "validated";
-    const auto token = ec ? "INVALIDATED" : validated;
-    report(block, start_time, token);
+    const auto skipped = ec || !block->validation.state->use_full_validation();
 
+    if (skipped)
+    {
+        handler(ec);
+        return;
+    }
+
+    report(block, start_time, ec ? "INVALIDATED" : "validated");
     handler(ec);
 }
 
 // Utility.
 //-----------------------------------------------------------------------------
+
+inline bool enabled(size_t height)
+{
+    const auto modulus =
+        (height < 100000 ? 1000 :
+        (height < 200000 ? 100 :
+        (height < 300000 ? 10 : 1)));
+
+    return height % modulus == 0;
+}
 
 void validate_block::report(block_const_ptr block, asio::time_point start_time,
     const std::string& token)
@@ -229,17 +253,13 @@ void validate_block::report(block_const_ptr block, asio::time_point start_time,
     BITCOIN_ASSERT(block->validation.state);
     const auto height = block->validation.state->height();
 
-    const auto modulus =
-        (height < 100000 ? 1000 :
-            (height < 200000 ? 100 :
-                (height < 300000 ? 10 : 1)));
-
-    if (height % modulus == 0)
+    if (enabled(height))
     {
         const auto delta = asio::steady_clock::now() - start_time;
         const auto elapsed = std::chrono::duration_cast<asio::microseconds>(delta);
         const auto micro_per_block = static_cast<float>(elapsed.count());
-        const auto micro_per_input = micro_per_block / block->total_inputs();
+        const auto nonzero_inputs = std::max(block->total_inputs(), size_t(1));
+        const auto micro_per_input = micro_per_block / nonzero_inputs;
         const auto milli_per_block = micro_per_block / micro_per_milliseconds;
         const auto transactions = block->transactions().size();
 
