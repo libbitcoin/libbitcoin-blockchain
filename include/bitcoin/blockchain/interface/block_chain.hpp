@@ -270,7 +270,7 @@ protected:
     bool stopped() const;
 
 private:
-    typedef database::handle handle;
+    typedef database::data_base::handle handle;
 
     // Sequential locking helpers.
     // ----------------------------------------------------------------------------
