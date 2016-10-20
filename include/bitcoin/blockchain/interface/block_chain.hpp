@@ -281,11 +281,11 @@ private:
     // Sequential locking helpers.
     // ----------------------------------------------------------------------------
 
-    template <typename Writeer>
-    bool write_serial(Writeer&& writer, bool crash_lock=true);
+    template <typename Writer>
+    bool write_serial(Writer& writer, bool crash_lock=true);
 
     template <typename Reader>
-    void read_serial(Reader&& reader) const;
+    void read_serial(const Reader& reader) const;
 
     template <typename Handler, typename... Args>
     bool finish_read(handle sequence, Handler handler, Args&&... args) const;
