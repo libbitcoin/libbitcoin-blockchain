@@ -64,26 +64,26 @@ block_chain::block_chain(threadpool& pool,
 
 bool block_chain::get_gaps(block_database::heights& out_gaps) const
 {
-    database_.blocks.gaps(out_gaps);
+    database_.blocks().gaps(out_gaps);
     return true;
 }
 
 bool block_chain::get_block_exists(const hash_digest& block_hash) const
 {
-    return database_.blocks.get(block_hash);
+    return database_.blocks().get(block_hash);
 }
 
 bool block_chain::get_fork_difficulty(hash_number& out_difficulty,
     size_t from_height) const
 {
     size_t top;
-    if (!database_.blocks.top(top))
+    if (!database_.blocks().top(top))
         return false;
 
     out_difficulty = 0;
     for (size_t height = from_height; height <= top; ++height)
     {
-        const auto result = database_.blocks.get(height);
+        const auto result = database_.blocks().get(height);
         if (!result)
             return false;
 
@@ -95,7 +95,7 @@ bool block_chain::get_fork_difficulty(hash_number& out_difficulty,
 
 bool block_chain::get_header(header& out_header, size_t height) const
 {
-    auto result = database_.blocks.get(height);
+    auto result = database_.blocks().get(height);
     if (!result)
         return false;
 
@@ -106,7 +106,7 @@ bool block_chain::get_header(header& out_header, size_t height) const
 bool block_chain::get_height(size_t& out_height,
     const hash_digest& block_hash) const
 {
-    auto result = database_.blocks.get(block_hash);
+    auto result = database_.blocks().get(block_hash);
     if (!result)
         return false;
 
@@ -116,7 +116,7 @@ bool block_chain::get_height(size_t& out_height,
 
 bool block_chain::get_bits(uint32_t& out_bits, const size_t& height) const
 {
-    auto result = database_.blocks.get(height);
+    auto result = database_.blocks().get(height);
     if (!result)
         return false;
 
@@ -127,7 +127,7 @@ bool block_chain::get_bits(uint32_t& out_bits, const size_t& height) const
 bool block_chain::get_timestamp(uint32_t& out_timestamp,
     const size_t& height) const
 {
-    auto result = database_.blocks.get(height);
+    auto result = database_.blocks().get(height);
     if (!result)
         return false;
 
@@ -138,7 +138,7 @@ bool block_chain::get_timestamp(uint32_t& out_timestamp,
 bool block_chain::get_version(uint32_t& out_version,
     const size_t& height) const
 {
-    auto result = database_.blocks.get(height);
+    auto result = database_.blocks().get(height);
     if (!result)
         return false;
 
@@ -148,7 +148,7 @@ bool block_chain::get_version(uint32_t& out_version,
 
 bool block_chain::get_last_height(size_t& out_height) const
 {
-    return database_.blocks.top(out_height);
+    return database_.blocks().top(out_height);
 }
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
@@ -157,7 +157,7 @@ bool block_chain::get_output(chain::output& out_output, size_t& out_height,
 {
     // TODO: the fork_height parameter is not yet honored.
     // Get the highest tx with matching hash, at or below the fork height.
-    auto result = database_.transactions.get(outpoint.hash(), fork_height);
+    auto result = database_.transactions().get(outpoint.hash(), fork_height);
 
     // TODO: remove this when tx.get(..., fork_height) is honored.
     // BUGBUG: insufficient as there may be a match below the tx returned.
@@ -178,14 +178,14 @@ bool block_chain::get_output(chain::output& out_output, size_t& out_height,
 bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
     size_t fork_height) const
 {
-    const auto result = database_.transactions.get(hash, fork_height);
+    const auto result = database_.transactions().get(hash, fork_height);
     return result && !result.is_spent(fork_height);
 }
 
 transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     const hash_digest& hash) const
 {
-    const auto result = database_.transactions.get(hash, max_size_t);
+    const auto result = database_.transactions().get(hash, max_size_t);
     if (!result)
         return nullptr;
 
@@ -322,7 +322,7 @@ void block_chain::fetch_block_header(uint64_t height,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.blocks.get(height);
+        const auto result = database_.blocks().get(height);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -346,7 +346,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.blocks.get(hash);
+        const auto result = database_.blocks().get(hash);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -370,7 +370,7 @@ void block_chain::fetch_merkle_block(uint64_t height,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.blocks.get(height);
+        const auto result = database_.blocks().get(height);
 
         if (!result)
             finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -397,7 +397,7 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.blocks.get(hash);
+        const auto result = database_.blocks().get(hash);
 
         if (!result)
             finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -423,7 +423,7 @@ void block_chain::fetch_block_height(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.blocks.get(hash);
+        const auto result = database_.blocks().get(hash);
         return result ?
             finish_read(slock, handler, error::success, result.height()) :
             finish_read(slock, handler, error::not_found, 0);
@@ -443,7 +443,7 @@ void block_chain::fetch_last_height(
     const auto do_fetch = [&](size_t slock)
     {
         size_t last_height;
-        return database_.blocks.top(last_height) ?
+        return database_.blocks().top(last_height) ?
             finish_read(slock, handler, error::success, last_height) :
             finish_read(slock, handler, error::not_found, 0);
     };
@@ -461,7 +461,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(hash, max_size_t);
+        const auto result = database_.transactions().get(hash, max_size_t);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
@@ -485,7 +485,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions.get(hash, max_size_t);
+        const auto result = database_.transactions().get(hash, max_size_t);
         return result ?
             finish_read(slock, handler, error::success, result.position(),
                 result.height()) :
@@ -505,7 +505,8 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
 
     const auto do_fetch = [&](size_t slock)
     {
-        auto result = database_.transactions.get(outpoint.hash(), max_size_t);
+        const auto result = database_.transactions().get(outpoint.hash(),
+            max_size_t);
 
         if (!result)
             return finish_read(slock, handler, error::not_found,
@@ -529,7 +530,7 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto point = database_.spends.get(outpoint);
+        const auto point = database_.spends().get(outpoint);
         return point.hash() != null_hash ?
             finish_read(slock, handler, error::success, point) :
             finish_read(slock, handler, error::not_found, point);
@@ -549,7 +550,7 @@ void block_chain::fetch_history(const wallet::payment_address& address,
     const auto do_fetch = [&](size_t slock)
     {
         return finish_read(slock, handler, error::success,
-            database_.history.get(address.hash(), limit, from_height));
+            database_.history().get(address.hash(), limit, from_height));
     };
     read_serial(do_fetch);
 }
@@ -566,7 +567,7 @@ void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
     const auto do_fetch = [&](size_t slock)
     {
         return finish_read(slock, handler, error::success,
-            database_.stealth.scan(filter, from_height));
+            database_.stealth().scan(filter, from_height));
     };
     read_serial(do_fetch);
 }
@@ -586,7 +587,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         size_t top;
         code ec(error::operation_failed);
 
-        if (!database_.blocks.top(top))
+        if (!database_.blocks().top(top))
             return finish_read(slock, handler, ec, nullptr);
 
         auto get_blocks = std::make_shared<message::get_blocks>();
@@ -596,7 +597,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
 
         for (const auto height: heights)
         {
-            const auto result = database_.blocks.get(height);
+            const auto result = database_.blocks().get(height);
 
             if (!result)
             {
@@ -634,7 +635,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         size_t start = 0;
         for (const auto& hash: locator->start_hashes())
         {
-            const auto result = database_.blocks.get(hash);
+            const auto result = database_.blocks().get(hash);
             if (result)
             {
                 start = result.height();
@@ -649,7 +650,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks.get(locator->stop_hash());
+            const auto stop_result = database_.blocks().get(locator->stop_hash());
             if (stop_result)
                 stop = std::min(stop_result.height(), stop);
         }
@@ -658,7 +659,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         // If the threshold is above the start it becomes the new start.
         if (threshold != null_hash)
         {
-            const auto start_result = database_.blocks.get(threshold);
+            const auto start_result = database_.blocks().get(threshold);
             if (start_result)
                 start = std::max(start_result.height(), start);
         }
@@ -669,7 +670,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         // Build the hash list until we hit last or the blockchain top.
         for (size_t index = start + 1; index < stop; ++index)
         {
-            const auto result = database_.blocks.get(index);
+            const auto result = database_.blocks().get(index);
             if (result)
             {
                 const auto& header = result.header();
@@ -707,7 +708,7 @@ void block_chain::fetch_locator_block_headers(
         size_t start = 0;
         for (const auto& hash: locator->start_hashes())
         {
-            const auto result = database_.blocks.get(hash);
+            const auto result = database_.blocks().get(hash);
             if (result)
             {
                 start = result.height();
@@ -722,7 +723,9 @@ void block_chain::fetch_locator_block_headers(
         if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks.get(locator->stop_hash());
+            const auto stop_result = database_.blocks().get(
+                locator->stop_hash());
+
             if (stop_result)
                 stop = std::min(stop_result.height(), stop);
         }
@@ -731,7 +734,7 @@ void block_chain::fetch_locator_block_headers(
         // If the threshold is above the start it becomes the new start.
         if (threshold != null_hash)
         {
-            const auto start_result = database_.blocks.get(threshold);
+            const auto start_result = database_.blocks().get(threshold);
             if (start_result)
                 start = std::max(start_result.height(), start);
         }
@@ -743,7 +746,7 @@ void block_chain::fetch_locator_block_headers(
         // Build the hash list until we hit last or the blockchain top.
         for (size_t index = start + 1; index < stop; ++index)
         {
-            const auto result = database_.blocks.get(index);
+            const auto result = database_.blocks().get(index);
             if (result)
             {
                 headers->elements().push_back(result.header());
@@ -782,7 +785,7 @@ void block_chain::filter_blocks(get_data_ptr message,
     const auto do_fetch = [this, message, handler](size_t slock)
     {
         auto& inventories = message->inventories();
-        const auto& blocks = database_.blocks;
+        const auto& blocks = database_.blocks();
 
         for (auto it = inventories.begin(); it != inventories.end();)
             if (it->is_block_type() && blocks.get(it->hash()))
@@ -807,7 +810,7 @@ void block_chain::filter_transactions(get_data_ptr message,
     const auto do_fetch = [this, message, handler](size_t slock)
     {
         auto& inventories = message->inventories();
-        const auto& transactions = database_.transactions;
+        const auto& transactions = database_.transactions();
 
         for (auto it = inventories.begin(); it != inventories.end();)
         {
