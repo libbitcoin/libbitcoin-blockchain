@@ -196,12 +196,13 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // Writers.
 // ----------------------------------------------------------------------------
 
-// Insert a block to the blockchain, height is checked for existence.
+// This is used by parallel block download. Insert a block to the blockchain,
+// height is checked for existence. The crash lock is managed by the caller.
 bool block_chain::insert(block_const_ptr block, size_t height)
 {
     return write_serial(
         std::bind(&block_chain::do_insert,
-            this, std::ref(*block), height));
+            this, std::ref(*block), height), false);
 }
 
 bool block_chain::do_insert(const chain::block& block, size_t height)
@@ -888,18 +889,31 @@ bool block_chain::stopped() const
 
 // Sequential locking helpers.
 // ----------------------------------------------------------------------------
-// private
 
+// Use to create crash lock scope around multiple closely-spaced inserts.
+// This is a performance optimization that requires write_serial(..., false).
+bool block_chain::insert_begin()
+{
+    return database_.crash_lock();
+}
+
+bool block_chain::insert_end()
+{
+    return database_.crash_unlock();
+}
+
+// private
 template <typename Writer>
-bool block_chain::write_serial(Writer&& writer)
+bool block_chain::write_serial(Writer&& writer, bool crash_lock)
 {
     // End must be paried with read, regardless of result.
-    const auto begin = database_.begin_write();
+    const auto begin = database_.begin_write(crash_lock);
     const auto write = begin && writer();
-    const auto end = database_.end_write();
+    const auto end = database_.end_write(crash_lock);
     return begin && write && end;
 }
 
+// private
 template <typename Reader>
 void block_chain::read_serial(Reader&& reader) const
 {
@@ -917,6 +931,7 @@ void block_chain::read_serial(Reader&& reader) const
     }
 }
 
+// private
 template <typename Handler, typename... Args>
 bool block_chain::finish_read(handle sequence, Handler handler,
     Args&&... args) const

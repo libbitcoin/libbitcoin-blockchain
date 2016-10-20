@@ -107,6 +107,12 @@ public:
     // ------------------------------------------------------------------------
     // Not thread safe except as noted.
 
+    /// Set the crash lock scope (for use only with insert).
+    bool insert_begin();
+
+    /// Reset the crash lock scope (for use only with insert).
+    bool insert_end();
+
     /// Insert a block to the blockchain, height is checked for existence.
     /// This is safe for concurrent execution with itself (only).
     bool insert(block_const_ptr block, size_t height);
@@ -276,7 +282,7 @@ private:
     // ----------------------------------------------------------------------------
 
     template <typename Writeer>
-    bool write_serial(Writeer&& writer);
+    bool write_serial(Writeer&& writer, bool crash_lock=true);
 
     template <typename Reader>
     void read_serial(Reader&& reader) const;

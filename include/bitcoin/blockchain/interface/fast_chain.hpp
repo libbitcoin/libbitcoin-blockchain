@@ -84,7 +84,13 @@ public:
         const hash_digest& hash) const = 0;
 
     // Writers.
-    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------ 
+    
+    /// Set the crash lock scope (for use only with insert).
+    virtual bool insert_begin() = 0;
+
+    /// Reset the crash lock scope (for use only with insert).
+    virtual bool insert_end() = 0;
 
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height) = 0;
