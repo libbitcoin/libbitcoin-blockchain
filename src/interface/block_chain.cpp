@@ -904,7 +904,7 @@ bool block_chain::insert_end()
 
 // private
 template <typename Writer>
-bool block_chain::write_serial(Writer&& writer, bool crash_lock)
+bool block_chain::write_serial(Writer& writer, bool crash_lock)
 {
     // End must be paried with read, regardless of result.
     const auto begin = database_.begin_write(crash_lock);
@@ -915,7 +915,7 @@ bool block_chain::write_serial(Writer&& writer, bool crash_lock)
 
 // private
 template <typename Reader>
-void block_chain::read_serial(Reader&& reader) const
+void block_chain::read_serial(const Reader& reader) const
 {
     while (true)
     {
