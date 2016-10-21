@@ -85,22 +85,28 @@ public:
 
     // Writers.
     // ------------------------------------------------------------------------ 
-    
+
     /// Set the crash lock scope (for use only with insert).
-    virtual bool insert_begin() = 0;
+    virtual bool begin_writes() = 0;
 
     /// Reset the crash lock scope (for use only with insert).
-    virtual bool insert_end() = 0;
+    virtual bool end_writes() = 0;
 
     /// Insert a block to the blockchain, height is checked for existence.
-    virtual bool insert(block_const_ptr block, size_t height) = 0;
+    virtual bool insert(block_const_ptr block, size_t height, bool flush) = 0;
 
     /// Append the blocks to the top of the chain, height is validated.
-    virtual bool push(const block_const_ptr_list& blocks, size_t height) = 0;
+    virtual bool push(const block_const_ptr_list& blocks, size_t height,
+        bool flush) = 0;
 
     /// Remove blocks from above the given hash, returning them in order.
     virtual bool pop(block_const_ptr_list& out_blocks,
-        const hash_digest& fork_hash) = 0;
+        const hash_digest& fork_hash, bool flush) = 0;
+
+    /// Swap incoming and outgoing blocks, height is validated.
+    virtual bool swap(block_const_ptr_list& out_blocks,
+        const block_const_ptr_list& in_blocks, size_t fork_height,
+        const hash_digest& fork_hash, bool flush) = 0;
 };
 
 } // namespace blockchain

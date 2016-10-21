@@ -28,6 +28,7 @@ settings::settings()
     priority(true),
     use_libconsensus(false),
     use_testnet_rules(false),
+    flush_reorganizations(false),
     transaction_pool_consistency(false),
     transaction_pool_capacity(1000),
     block_pool_capacity(50)
