@@ -197,12 +197,12 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // ----------------------------------------------------------------------------
 
 // This is used by parallel block download. Insert a block to the blockchain,
-// height is checked for existence. The crash lock is managed by the caller.
-bool block_chain::insert(block_const_ptr block, size_t height)
+// height is checked for existence.
+bool block_chain::insert(block_const_ptr block, size_t height, bool flush)
 {
     return write_serial(
         std::bind(&block_chain::do_insert,
-            this, std::ref(*block), height), false);
+            this, std::ref(*block), height), flush);
 }
 
 bool block_chain::do_insert(const chain::block& block, size_t height)
@@ -212,12 +212,13 @@ bool block_chain::do_insert(const chain::block& block, size_t height)
 
 // This is used by ordered block download. Height is used by the database to
 // validate the intended height. Hash chaining is also verified.
-bool block_chain::push(const block_const_ptr_list& blocks, size_t height)
+bool block_chain::push(const block_const_ptr_list& blocks, size_t height,
+    bool flush)
 {
     for (const auto block: blocks)
         if (!write_serial(
             std::bind(&block_chain::do_push,
-                this, std::ref(*block), height)))
+                this, std::ref(*block), height), flush))
             return false;
 
     return true;
@@ -231,13 +232,13 @@ bool block_chain::do_push(const chain::block& block, size_t height)
 // This is used by reorganization, removing a set of connected blocks from
 // above the specified hash to the top.
 bool block_chain::pop(block_const_ptr_list& out_blocks,
-    const hash_digest& fork_hash)
+    const hash_digest& fork_hash, bool flush)
 {
     block::list blocks;
 
     if (!write_serial(
         std::bind(&block_chain::do_pop,
-            this, std::ref(blocks), std::ref(fork_hash))))
+            this, std::ref(blocks), std::ref(fork_hash)), flush))
         return false;
 
     const auto map = [](block& block)
@@ -258,6 +259,20 @@ bool block_chain::do_pop(block::list& out_blocks, const hash_digest& fork_hash)
     return database_.pop_above(out_blocks, fork_hash);
 }
 
+/// Swap incoming and outgoing blocks, height is validated.
+/// This is NOT safe for concurrent execution with another write.
+/// This is safe for concurrent execution with safe_chain reads.
+bool block_chain::swap(block_const_ptr_list& out_blocks,
+    const block_const_ptr_list& in_blocks, size_t fork_height,
+    const hash_digest& fork_hash, bool flush)
+{
+    return
+        (!flush || begin_writes()) &&
+        pop(out_blocks, fork_hash, false) &&
+        push(in_blocks, safe_increment(fork_height), false) &&
+        (!flush || end_writes());
+}
+
 // ============================================================================
 // SAFE CHAIN
 // ============================================================================
@@ -272,17 +287,22 @@ bool block_chain::start()
         return false;
 
     stopped_ = false;
-    orphan_manager_.start();
-    transaction_pool_.start();
     return true;
+}
+
+// Pool start is deferred so that we don't overlap locks between initial block
+// download and catch-up sync. The latter spans orphan pool lifetime.
+bool block_chain::start_pools()
+{
+    transaction_pool_.start();
+    return orphan_manager_.start();
 }
 
 bool block_chain::stop()
 {
     stopped_ = true;
-    orphan_manager_.stop();
     transaction_pool_.stop();
-    return true;
+    return orphan_manager_.stop();
 }
 
 bool block_chain::close()
@@ -892,24 +912,24 @@ bool block_chain::stopped() const
 
 // Use to create crash lock scope around multiple closely-spaced inserts.
 // This is a performance optimization that requires write_serial(..., false).
-bool block_chain::insert_begin()
+bool block_chain::begin_writes()
 {
     return database_.crash_lock();
 }
 
-bool block_chain::insert_end()
+bool block_chain::end_writes()
 {
     return database_.crash_unlock();
 }
 
 // private
 template <typename Writer>
-bool block_chain::write_serial(Writer&& writer, bool crash_lock)
+bool block_chain::write_serial(Writer&& writer, bool flush)
 {
     // End must be paried with read, regardless of result.
-    const auto begin = database_.begin_write(crash_lock);
+    const auto begin = database_.begin_write(flush);
     const auto write = begin && std::forward<Writer>(writer)();
-    const auto end = database_.end_write(crash_lock);
+    const auto end = database_.end_write(flush);
     return begin && write && end;
 }
 

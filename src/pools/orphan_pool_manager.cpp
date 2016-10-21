@@ -52,6 +52,7 @@ orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
+    flush_(settings.flush_reorganizations),
     orphan_pool_(orphan_pool),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
@@ -62,18 +63,26 @@ orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-void orphan_pool_manager::start()
+bool orphan_pool_manager::start()
 {
     stopped_ = false;
     subscriber_->start();
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Begin crash lock.
+    return flush_ || fast_chain_.begin_writes();
 }
 
-void orphan_pool_manager::stop()
+bool orphan_pool_manager::stop()
 {
     stopped_ = true;
     validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
+
+    return flush_ || fast_chain_.end_writes();
+    // End crash lock.
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool orphan_pool_manager::stopped() const
@@ -300,19 +309,18 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    list outgoing;
+    list outgoing_blocks;
     const auto start_time = asio::steady_clock::now();
 
     // Replace! Switch!
     //#########################################################################
-    const auto reorganized = 
-        fast_chain_.pop(outgoing, fork->hash()) &&
-        fast_chain_.push(fork->blocks(), first_height);
+    const auto swap = fast_chain_.swap(outgoing_blocks, fork->blocks(),
+        fork->height(), fork->hash(), flush_);
     //#########################################################################
 
     validate_block::report(fork->blocks().back(), start_time, "deposited");
 
-    if (!reorganized)
+    if (!swap)
     {
         LOG_ERROR(LOG_BLOCKCHAIN)
             << "Failure reorganizing from [" << first_height << "]";
@@ -322,17 +330,17 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     // Remove before add so that we don't overflow the pool and lose blocks.
     orphan_pool_.remove(fork->blocks());
-    orphan_pool_.add(outgoing);
+    orphan_pool_.add(outgoing_blocks);
 
-    if (!outgoing.empty())
+    if (!outgoing_blocks.empty())
     {
         LOG_INFO(LOG_BLOCKCHAIN)
             << "Reorganized from block " << first_height << " to "
-            << safe_add(first_height, outgoing.size()) << "]";
+            << safe_add(first_height, outgoing_blocks.size()) << "]";
     }
 
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
-    notify_reorganize(fork->height(), fork->blocks(), outgoing);
+    notify_reorganize(fork->height(), fork->blocks(), outgoing_blocks);
     handler(error::success);
 }
 

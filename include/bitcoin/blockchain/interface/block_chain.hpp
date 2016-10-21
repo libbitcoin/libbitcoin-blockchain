@@ -108,24 +108,32 @@ public:
     // Not thread safe except as noted.
 
     /// Set the crash lock scope (for use only with insert).
-    bool insert_begin();
+    bool begin_writes();
 
     /// Reset the crash lock scope (for use only with insert).
-    bool insert_end();
+    bool end_writes();
 
     /// Insert a block to the blockchain, height is checked for existence.
     /// This is safe for concurrent execution with itself (only).
-    bool insert(block_const_ptr block, size_t height);
+    bool insert(block_const_ptr block, size_t height, bool flush);
 
     /// Append the blocks to the top of the chain, height is validated.
     /// This is NOT safe for concurrent execution with another write.
     /// This is safe for concurrent execution with safe_chain reads.
-    bool push(const block_const_ptr_list& block, size_t height);
+    bool push(const block_const_ptr_list& block, size_t height, bool flush);
 
     /// Remove blocks from above the given hash, returning them in order.
     /// This is NOT safe for concurrent execution with another write.
     /// This is safe for concurrent execution with safe_chain reads.
-    bool pop(block_const_ptr_list& out_blocks, const hash_digest& fork_hash);
+    bool pop(block_const_ptr_list& out_blocks, const hash_digest& fork_hash,
+        bool flush);
+
+    /// Swap incoming and outgoing blocks, height is validated.
+    /// This is NOT safe for concurrent execution with another write.
+    /// This is safe for concurrent execution with safe_chain reads.
+    bool swap(block_const_ptr_list& out_blocks,
+        const block_const_ptr_list& in_blocks, size_t fork_height,
+        const hash_digest& fork_hash, bool flush);
 
     // ========================================================================
     // SAFE CHAIN
@@ -137,6 +145,9 @@ public:
 
     /// Start or restart the blockchain.
     virtual bool start();
+
+    /// Start the orphan pool and the transaction pool.
+    virtual bool start_pools();
 
     /// Optional signal work stop, speeds shutdown with multiple threads.
     virtual bool stop();
@@ -282,7 +293,7 @@ private:
     // ----------------------------------------------------------------------------
 
     template <typename Writer>
-    bool write_serial(Writer&& writer, bool crash_lock=true);
+    bool write_serial(Writer&& writer, bool flush);
 
     template <typename Reader>
     void read_serial(Reader&& reader) const;

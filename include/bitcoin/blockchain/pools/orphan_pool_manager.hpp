@@ -52,8 +52,8 @@ public:
     orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
         orphan_pool& orphan_pool, const settings& settings);
 
-    virtual void start();
-    virtual void stop();
+    virtual bool start();
+    virtual bool stop();
 
     virtual void organize(block_const_ptr block, result_handler handler);
     virtual void subscribe_reorganize(reorganize_handler handler);
@@ -82,6 +82,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const bool flush_;
     orphan_pool& orphan_pool_;
     threadpool thread_pool_;
     validate_block validator_;
