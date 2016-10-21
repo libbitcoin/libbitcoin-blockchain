@@ -904,18 +904,18 @@ bool block_chain::insert_end()
 
 // private
 template <typename Writer>
-bool block_chain::write_serial(Writer& writer, bool crash_lock)
+bool block_chain::write_serial(Writer&& writer, bool crash_lock)
 {
     // End must be paried with read, regardless of result.
     const auto begin = database_.begin_write(crash_lock);
-    const auto write = begin && writer();
+    const auto write = begin && std::forward<Writer>(writer)();
     const auto end = database_.end_write(crash_lock);
     return begin && write && end;
 }
 
 // private
 template <typename Reader>
-void block_chain::read_serial(const Reader& reader) const
+void block_chain::read_serial(Reader&& reader) const
 {
     while (true)
     {
@@ -923,7 +923,8 @@ void block_chain::read_serial(const Reader& reader) const
         const auto sequence = database_.begin_read();
 
         // If read handle indicates write and reader finishes false, wait.
-        if (!database_.is_write_locked(sequence) && reader(sequence))
+        if (!database_.is_write_locked(sequence) &&
+            std::forward<Reader>(reader)(sequence))
             break;
 
         // Sleep while waiting for write to complete.
