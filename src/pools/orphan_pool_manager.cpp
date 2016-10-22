@@ -69,7 +69,7 @@ bool orphan_pool_manager::start()
     subscriber_->start();
 
     ///////////////////////////////////////////////////////////////////////////
-    // Begin crash lock.
+    // Begin flush lock.
     return flush_ || fast_chain_.begin_writes();
 }
 
@@ -81,7 +81,7 @@ bool orphan_pool_manager::stop()
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
     return flush_ || fast_chain_.end_writes();
-    // End crash lock.
+    // End flush lock.
     ///////////////////////////////////////////////////////////////////////////
 }
 

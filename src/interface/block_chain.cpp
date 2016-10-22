@@ -910,16 +910,16 @@ bool block_chain::stopped() const
 // Sequential locking helpers.
 // ----------------------------------------------------------------------------
 
-// Use to create crash lock scope around multiple closely-spaced inserts.
+// Use to create flush lock scope around multiple closely-spaced inserts.
 // This is a performance optimization that requires write_serial(..., false).
 bool block_chain::begin_writes()
 {
-    return database_.crash_lock();
+    return database_.flush_lock();
 }
 
 bool block_chain::end_writes()
 {
-    return database_.crash_unlock();
+    return database_.flush_unlock();
 }
 
 // private

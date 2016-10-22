@@ -86,10 +86,10 @@ public:
     // Writers.
     // ------------------------------------------------------------------------ 
 
-    /// Set the crash lock scope (for use only with insert).
+    /// Set the flush lock scope (for use only with insert).
     virtual bool begin_writes() = 0;
 
-    /// Reset the crash lock scope (for use only with insert).
+    /// Reset the flush lock scope (for use only with insert).
     virtual bool end_writes() = 0;
 
     /// Insert a block to the blockchain, height is checked for existence.
