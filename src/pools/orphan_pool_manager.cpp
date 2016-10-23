@@ -52,7 +52,7 @@ orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    flush_(settings.flush_reorganizations),
+    flush_reorganizations_(settings.flush_reorganizations),
     orphan_pool_(orphan_pool),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
@@ -68,9 +68,11 @@ bool orphan_pool_manager::start()
     stopped_ = false;
     subscriber_->start();
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Begin flush lock.
-    return flush_ || fast_chain_.begin_writes();
+    // Don't begin flush lock if flushing on each reorganization.
+    if (flush_reorganizations_)
+        return true;
+
+    return fast_chain_.begin_writes();
 }
 
 bool orphan_pool_manager::stop()
@@ -80,8 +82,15 @@ bool orphan_pool_manager::stop()
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
-    return flush_ || fast_chain_.end_writes();
-    // End flush lock.
+    // Don't end flush lock if flushing on each reorganization.
+    if (flush_reorganizations_)
+        return true;
+
+    // Ensure no reorganization is in process when the flush lock is cleared.
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section
+    shared_lock lock(mutex_);
+    return fast_chain_.end_writes();
     ///////////////////////////////////////////////////////////////////////////
 }
 
@@ -114,10 +123,8 @@ void orphan_pool_manager::organize(block_const_ptr block,
 
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section.
-    //
-    //  Use scope lock to protect the fast chain from concurrent organizations.
-    // This has no impact on direct use of either blockchain interface.
-    //
+    // Use scope lock to guard the chain against concurrent organizations.
+    // If a reorganization started after stop it will stop before writing.
     const auto lock = std::make_shared<scope_lock>(mutex_);
 
     const result_handler locked_handler =
@@ -150,7 +157,6 @@ void orphan_pool_manager::complete(const code& ec, scope_lock::ptr lock,
     result_handler handler)
 {
     lock.reset();
-    //
     // End Critical Section.
     ///////////////////////////////////////////////////////////////////////////
 
@@ -315,7 +321,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     // Replace! Switch!
     //#########################################################################
     const auto swap = fast_chain_.swap(outgoing_blocks, fork->blocks(),
-        fork->height(), fork->hash(), flush_);
+        fork->height(), fork->hash(), flush_reorganizations_);
     //#########################################################################
 
     validate_block::report(fork->blocks().back(), start_time, "deposited");

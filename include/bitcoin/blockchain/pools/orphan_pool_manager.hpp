@@ -82,7 +82,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool flush_;
+    const bool flush_reorganizations_;
     orphan_pool& orphan_pool_;
     threadpool thread_pool_;
     validate_block validator_;
