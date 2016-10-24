@@ -70,7 +70,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_stack_size:
         case verify_result_type::verify_result_sig_count:
         case verify_result_type::verify_result_pubkey_count:
-            return error::size_limits;
+            return error::block_size_limit;
 
         // Failed verify operations.
         case verify_result_type::verify_result_verify:
@@ -88,7 +88,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_unbalanced_conditional:
             return error::validate_inputs_failed;
 
-        // BIP62 errors (should not see these unless requsted).
+        // BIP62 errors (should not see these unless requested).
         case verify_result_type::verify_result_sig_hashtype:
         case verify_result_type::verify_result_sig_der:
         case verify_result_type::verify_result_minimaldata:

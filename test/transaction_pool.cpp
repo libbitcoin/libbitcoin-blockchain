@@ -377,8 +377,8 @@ BOOST_AUTO_TEST_CASE(transaction_pool__add__empty__one)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__add__overflow_two__oldest_two_removed_expected_callbacks)
 {
-    DECLARE_TRANSACTION(0, error::pool_filled);
-    DECLARE_TRANSACTION(1, error::pool_filled);
+    DECLARE_TRANSACTION(0, error::transaction_pool_filled);
+    DECLARE_TRANSACTION(1, error::transaction_pool_filled);
     DECLARE_TRANSACTION(2, error::service_stopped);
     transaction_pool_fixture::buffer buffer(1);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
@@ -395,9 +395,9 @@ BOOST_AUTO_TEST_CASE(transaction_pool__add__overflow_two__oldest_two_removed_exp
 
 BOOST_AUTO_TEST_CASE(transaction_pool__add__overflow_with_dependencies__removes_oldest_and_dependencies)
 {
-    DECLARE_TRANSACTION(0, error::pool_filled);
-    DECLARE_TRANSACTION(1, error::pool_filled);
-    DECLARE_TRANSACTION(2, error::pool_filled);
+    DECLARE_TRANSACTION(0, error::transaction_pool_filled);
+    DECLARE_TRANSACTION(1, error::transaction_pool_filled);
+    DECLARE_TRANSACTION(2, error::transaction_pool_filled);
     DECLARE_TRANSACTION(3, error::service_stopped);
     ADD_INPUT_TO_TX_NUMBER(1, hash0, 42);
     ADD_INPUT_TO_TX_NUMBER(2, hash1, 24);
@@ -409,9 +409,9 @@ BOOST_AUTO_TEST_CASE(transaction_pool__add__overflow_with_dependencies__removes_
     mempool.add(tx3, handle_confirm3);
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 1u);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx3_id);
-    REQUIRE_CALLBACK(0, error::pool_filled);
-    REQUIRE_CALLBACK(1, error::pool_filled);
-    REQUIRE_CALLBACK(2, error::pool_filled);
+    REQUIRE_CALLBACK(0, error::transaction_pool_filled);
+    REQUIRE_CALLBACK(1, error::transaction_pool_filled);
+    REQUIRE_CALLBACK(2, error::transaction_pool_filled);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

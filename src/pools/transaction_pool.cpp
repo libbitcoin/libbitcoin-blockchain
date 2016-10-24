@@ -142,6 +142,7 @@ void transaction_pool::do_validate(transaction_const_ptr tx,
 
     handler(error::operation_failed, {});
 
+    // TODO: restore
     ////validator_->validate(tx,
     ////    std::bind(&transaction_pool::handle_validated,
     ////        this, _1, _2, tx, validator, handler));
@@ -157,7 +158,7 @@ void transaction_pool::handle_validated(const code& ec,
         return;
     }
 
-    if (ec == error::input_not_found || ec == error::validate_inputs_failed)
+    if (ec == error::missing_input || ec == error::validate_inputs_failed)
     {
         BITCOIN_ASSERT(unconfirmed.size() == 1);
         handler(ec, unconfirmed);
@@ -203,7 +204,7 @@ void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
     // Recheck for existence under lock, as a duplicate may have been added.
     if (is_in_pool(tx->hash()))
     {
-        handle_validate(error::duplicate, {});
+        handle_validate(error::duplicate_pool_transaction, {});
         return;
     }
 
@@ -381,7 +382,7 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
     if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
-        delete_package(error::pool_filled);
+        delete_package(error::transaction_pool_filled);
 
     tx->validation.confirm = handler;
     buffer_.push_back(tx);

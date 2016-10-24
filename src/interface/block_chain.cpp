@@ -914,12 +914,14 @@ bool block_chain::stopped() const
 // This is a performance optimization that requires write_serial(..., false).
 bool block_chain::begin_writes()
 {
+    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     return database_.flush_lock();
 }
 
 bool block_chain::end_writes()
 {
     return database_.flush_unlock();
+    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 }
 
 // private

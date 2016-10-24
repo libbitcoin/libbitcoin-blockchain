@@ -71,7 +71,7 @@ block_const_ptr_list fork::pop(size_t index, const code& reason)
         const auto block = *it;
         block->header().validation.height = header::validation::orphan_height;
         block->validation.result = it == start ? reason :
-            error::previous_block_invalid;
+            error::invalid_previous_block;
         out.push_back(block);
     }
 
