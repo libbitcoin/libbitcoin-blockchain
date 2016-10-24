@@ -135,7 +135,7 @@ void orphan_pool_manager::organize(block_const_ptr block,
     if (fast_chain_.get_block_exists(block->hash()) ||
         !orphan_pool_.add(block))
     {
-        locked_handler(error::duplicate);
+        locked_handler(error::duplicate_block);
         return;
     }
 
@@ -145,7 +145,7 @@ void orphan_pool_manager::organize(block_const_ptr block,
     if (fork->empty())
     {
         // There is no link so the block is currently an orphan.
-        locked_handler(error::orphan);
+        locked_handler(error::orphan_block);
         return;
     }
 

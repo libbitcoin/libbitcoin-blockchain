@@ -207,7 +207,7 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 
         if (!input.previous_output().validation.cache.is_valid())
         {
-            ec = error::input_not_found;
+            ec = error::missing_input;
             break;
         }
 
