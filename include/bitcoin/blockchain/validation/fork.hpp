@@ -97,13 +97,13 @@ public:
     block_const_ptr block_at(size_t index) const;
 
     /// The bits of the block at the given height in the fork.
-    bool get_bits(uint32_t out_bits, size_t height) const;
+    bool get_bits(uint32_t& out_bits, size_t height) const;
 
     /// The bits of the block at the given height in the fork.
-    bool get_version(uint32_t out_version, size_t height) const;
+    bool get_version(uint32_t& out_version, size_t height) const;
 
     /// The bits of the block at the given height in the fork.
-    bool get_timestamp(uint32_t out_timestamp, size_t height) const;
+    bool get_timestamp(uint32_t& out_timestamp, size_t height) const;
 
 private:
     size_t height_;

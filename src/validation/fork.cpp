@@ -211,7 +211,7 @@ void fork::populate_spent(size_t index, const output_point& outpoint) const
 void fork::populate_prevout(size_t index, const output_point& outpoint) const
 {
     auto& prevout = outpoint.validation;
-    struct result { size_t height; size_t position;  output out; };
+    struct result { size_t height; size_t position; output out; };
 
     const auto get_output = [this, &outpoint, index]() -> result
     {
@@ -269,7 +269,7 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
 }
 
 /// The bits of the block at the given height in the fork.
-bool fork::get_bits(uint32_t out_bits, size_t height) const
+bool fork::get_bits(uint32_t& out_bits, size_t height) const
 {
     if (height <= height_)
         return false;
@@ -284,7 +284,7 @@ bool fork::get_bits(uint32_t out_bits, size_t height) const
 }
 
 /// The version of the block at the given height in the fork.
-bool fork::get_version(uint32_t out_version, size_t height) const
+bool fork::get_version(uint32_t& out_version, size_t height) const
 {
     if (height <= height_)
         return false;
@@ -299,7 +299,7 @@ bool fork::get_version(uint32_t out_version, size_t height) const
 }
 
 /// The timestamp of the block at the given height in the fork.
-bool fork::get_timestamp(uint32_t out_timestamp, size_t height) const
+bool fork::get_timestamp(uint32_t& out_timestamp, size_t height) const
 {
     if (height <= height_)
         return false;
