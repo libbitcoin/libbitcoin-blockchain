@@ -110,7 +110,7 @@ bool populate_block::populate_bits(chain_state::data& data,
 {
     auto low = map.bits.low;
     auto& bits = data.bits.ordered;
-    bits.resize(map.bits.high - low + 1u);
+    bits.resize(map.bits.high - low + 1);
 
     for (auto& bit: bits)
         if (!get_bits(bit, low++, fork))
@@ -124,10 +124,10 @@ bool populate_block::populate_versions(chain_state::data& data,
 {
     auto low = map.version.low;
     auto& versions = data.version.unordered;
-    versions.resize(map.version.high - low + 1u);
+    versions.resize(map.version.high - low + 1);
 
-    for (auto& bit: versions)
-        if (!get_version(bit, low++, fork))
+    for (auto& version: versions)
+        if (!get_version(version, low++, fork))
             return false;
 
     return true;
@@ -138,7 +138,7 @@ bool populate_block::populate_timestamps(chain_state::data& data,
 {
     auto low = map.timestamp.low;
     auto& timestamps = data.timestamp.ordered;
-    timestamps.resize(map.timestamp.high - low + 1u);
+    timestamps.resize(map.timestamp.high - low + 1);
 
     for (auto& timestamp: timestamps)
         if (!get_timestamp(timestamp, low++, fork))
