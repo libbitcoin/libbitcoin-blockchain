@@ -154,7 +154,7 @@ bool populate_block::populate_timestamps(chain_state::data& data,
 }
 
 // TODO: populate data.activated by caching full activation height.
-// The hight must be tied to block push/pop and invalidated on failure.
+// The height must be tied to block push/pop and invalidated on failure.
 void populate_block::populate_chain_state(fork::const_ptr fork,
     size_t index) const
 {
