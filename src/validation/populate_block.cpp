@@ -108,12 +108,12 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
 bool populate_block::populate_bits(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto low = map.bits.low;
     auto& bits = data.bits.ordered;
-    bits.resize(map.bits.high - low + 1);
+    bits.resize(map.bits.count);
+    auto height = map.bits.high - map.bits.count;
 
     for (auto& bit: bits)
-        if (!get_bits(bit, low++, fork))
+        if (!get_bits(bit, ++height, fork))
             return false;
 
     return true;
@@ -122,12 +122,12 @@ bool populate_block::populate_bits(chain_state::data& data,
 bool populate_block::populate_versions(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto low = map.version.low;
     auto& versions = data.version.unordered;
-    versions.resize(map.version.high - low + 1);
+    versions.resize(map.version.count);
+    auto height = map.version.high - map.version.count;
 
     for (auto& version: versions)
-        if (!get_version(version, low++, fork))
+        if (!get_version(version, ++height, fork))
             return false;
 
     return true;
@@ -136,25 +136,25 @@ bool populate_block::populate_versions(chain_state::data& data,
 bool populate_block::populate_timestamps(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
-    auto low = map.timestamp.low;
+    data.timestamp.retarget = unspecified;
     auto& timestamps = data.timestamp.ordered;
-    timestamps.resize(map.timestamp.high - low + 1);
+    timestamps.resize(map.timestamp.count);
+    auto height = map.timestamp.high - map.timestamp.count;
 
     for (auto& timestamp: timestamps)
-        if (!get_timestamp(timestamp, low++, fork))
+        if (!get_timestamp(timestamp, ++height, fork))
             return false;
 
     if (!get_timestamp(data.timestamp.self, map.timestamp_self, fork))
         return false;
 
-    // Retarget not required if timestamp_retarget == high.
-    data.timestamp.retarget = unspecified;
-    return map.timestamp_retarget == map.timestamp.high ||
+    // Retarget not required if timestamp_retarget is zero.
+    return map.timestamp_retarget == 0 ||
         get_timestamp(data.timestamp.retarget, map.timestamp_retarget, fork);
 }
 
 // TODO: populate data.activated by caching full activation height.
-// The hight must be tied to block push/pop and invalidated on failure.
+// The height must be tied to block push/pop and invalidated on failure.
 void populate_block::populate_chain_state(fork::const_ptr fork,
     size_t index) const
 {

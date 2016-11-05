@@ -61,7 +61,7 @@ code validate_input::convert_result(verify_result_type result)
 
         // Logical false result.
         case verify_result_type::verify_result_eval_false:
-            return error::validate_inputs_failed;
+            return error::stack_false;
 
         // Max size errors.
         case verify_result_type::verify_result_script_size:
@@ -70,7 +70,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_stack_size:
         case verify_result_type::verify_result_sig_count:
         case verify_result_type::verify_result_pubkey_count:
-            return error::block_size_limit;
+            return error::operation_failed;
 
         // Failed verify operations.
         case verify_result_type::verify_result_verify:
@@ -78,7 +78,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_checkmultisigverify:
         case verify_result_type::verify_result_checksigverify:
         case verify_result_type::verify_result_numequalverify:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // Logical/Format/Canonical errors.
         case verify_result_type::verify_result_bad_opcode:
@@ -86,7 +86,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_invalid_stack_operation:
         case verify_result_type::verify_result_invalid_altstack_operation:
         case verify_result_type::verify_result_unbalanced_conditional:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // BIP62 errors (should not see these unless requested).
         case verify_result_type::verify_result_sig_hashtype:
@@ -97,30 +97,30 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_sig_nulldummy:
         case verify_result_type::verify_result_pubkeytype:
         case verify_result_type::verify_result_cleanstack:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // Softfork safeness
         case verify_result_type::verify_result_discourage_upgradable_nops:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // Other
         case verify_result_type::verify_result_op_return:
         case verify_result_type::verify_result_unknown_error:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // augmention codes for tx deserialization
         case verify_result_type::verify_result_tx_invalid:
         case verify_result_type::verify_result_tx_size_invalid:
         case verify_result_type::verify_result_tx_input_invalid:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         // BIP65 errors
         case verify_result_type::verify_result_negative_locktime:
         case verify_result_type::verify_result_unsatisfied_locktime:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
 
         default:
-            return error::validate_inputs_failed;
+            return error::operation_failed;
     }
 }
 
