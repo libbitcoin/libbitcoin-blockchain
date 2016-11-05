@@ -158,21 +158,21 @@ void transaction_pool::handle_validated(const code& ec,
         return;
     }
 
-    if (ec == error::missing_input || ec == error::validate_inputs_failed)
-    {
-        BITCOIN_ASSERT(unconfirmed.size() == 1);
-        handler(ec, unconfirmed);
-        return;
-    }
+    ////if (ec == error::missing_input || ec == error::validate_inputs_failed)
+    ////{
+    ////    BITCOIN_ASSERT(unconfirmed.size() == 1);
+    ////    handler(ec, unconfirmed);
+    ////    return;
+    ////}
 
-    if (ec)
-    {
-        BITCOIN_ASSERT(unconfirmed.empty());
-        handler(ec, {});
-        return;
-    }
+    ////if (ec)
+    ////{
+    ////    BITCOIN_ASSERT(unconfirmed.empty());
+    ////    handler(ec, unconfirmed);
+    ////    return;
+    ////}
 
-    handler(error::success, unconfirmed);
+    handler(ec, unconfirmed);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
