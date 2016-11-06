@@ -70,7 +70,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_stack_size:
         case verify_result_type::verify_result_sig_count:
         case verify_result_type::verify_result_pubkey_count:
-            return error::operation_failed;
+            return error::invalid_script;
 
         // Failed verify operations.
         case verify_result_type::verify_result_verify:
@@ -78,7 +78,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_checkmultisigverify:
         case verify_result_type::verify_result_checksigverify:
         case verify_result_type::verify_result_numequalverify:
-            return error::operation_failed;
+            return error::invalid_script;
 
         // Logical/Format/Canonical errors.
         case verify_result_type::verify_result_bad_opcode:
@@ -86,9 +86,13 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_invalid_stack_operation:
         case verify_result_type::verify_result_invalid_altstack_operation:
         case verify_result_type::verify_result_unbalanced_conditional:
+            return error::invalid_script;
+
+        // Softfork safeness (should not see).
+        case verify_result_type::verify_result_discourage_upgradable_nops:
             return error::operation_failed;
 
-        // BIP62 errors (should not see these unless requested).
+        // BIP62 errors (should not see).
         case verify_result_type::verify_result_sig_hashtype:
         case verify_result_type::verify_result_sig_der:
         case verify_result_type::verify_result_minimaldata:
@@ -99,28 +103,24 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_cleanstack:
             return error::operation_failed;
 
-        // Softfork safeness
-        case verify_result_type::verify_result_discourage_upgradable_nops:
-            return error::operation_failed;
+        // BIP65 errors.
+        case verify_result_type::verify_result_negative_locktime:
+        case verify_result_type::verify_result_unsatisfied_locktime:
+            return error::invalid_script;
 
-        // Other
+        // Other errors.
         case verify_result_type::verify_result_op_return:
         case verify_result_type::verify_result_unknown_error:
-            return error::operation_failed;
+            return error::invalid_script;
 
-        // augmention codes for tx deserialization
+        // Augmention codes for tx deserialization.
         case verify_result_type::verify_result_tx_invalid:
         case verify_result_type::verify_result_tx_size_invalid:
         case verify_result_type::verify_result_tx_input_invalid:
-            return error::operation_failed;
-
-        // BIP65 errors
-        case verify_result_type::verify_result_negative_locktime:
-        case verify_result_type::verify_result_unsatisfied_locktime:
-            return error::operation_failed;
+            return error::invalid_script;
 
         default:
-            return error::operation_failed;
+            return error::invalid_script;
     }
 }
 
