@@ -219,8 +219,12 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
         return;
     }
 
-    // Populate non-coinbase tx data.
-    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
+    // Populate tx data and verify not unspent duplicate.
+    //*************************************************************************
+    // CONSENSUS: Coinbase prevouts are null but the tx duplicate check must
+    // apply to coinbase txs as well, so we cannot skip coinbases here.
+    //*************************************************************************
+    for (auto tx = txs.begin(); tx != txs.end(); ++tx)
     {
         populate_transaction(fork->height(), *tx);
         populate_transaction(fork, index, *tx);
