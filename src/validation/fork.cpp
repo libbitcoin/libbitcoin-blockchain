@@ -150,9 +150,9 @@ block_const_ptr fork::block_at(size_t index) const
     return index < size() ? blocks_[index] : nullptr;
 }
 
-hash_number fork::difficulty() const
+uint256_t fork::difficulty() const
 {
-    hash_number total;
+    uint256_t total;
 
     for (auto& block: blocks_)
         total += block->difficulty();

@@ -69,7 +69,7 @@ public:
     bool get_block_exists(const hash_digest& block_hash) const;
 
     /// Get the difficulty of the fork starting at the given height.
-    bool get_fork_difficulty(hash_number& out_difficulty,
+    bool get_fork_difficulty(uint256_t& out_difficulty,
         size_t height) const;
 
     /// Get the header of the block at the given height.

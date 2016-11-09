@@ -297,7 +297,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     }
 
     const auto first_height = safe_add(fork->height(), size_t(1));
-    hash_number original_difficulty;
+    uint256_t original_difficulty;
 
     if (!fast_chain_.get_fork_difficulty(original_difficulty, first_height))
     {

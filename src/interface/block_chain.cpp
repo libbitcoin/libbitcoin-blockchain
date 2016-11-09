@@ -73,7 +73,7 @@ bool block_chain::get_block_exists(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash);
 }
 
-bool block_chain::get_fork_difficulty(hash_number& out_difficulty,
+bool block_chain::get_fork_difficulty(uint256_t& out_difficulty,
     size_t from_height) const
 {
     size_t top;
