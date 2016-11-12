@@ -40,7 +40,7 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
-// These values should not be used, but are helpful in the debugger.
+// This value should not be used but may be useful in debugging.
 static constexpr uint32_t unspecified = 0xbaadf00d;
 
 // Constant for log report calculations.
@@ -148,8 +148,8 @@ bool populate_block::populate_timestamps(chain_state::data& data,
     if (!get_timestamp(data.timestamp.self, map.timestamp_self, fork))
         return false;
 
-    // Retarget not required if timestamp_retarget is zero.
-    return map.timestamp_retarget == 0 ||
+    // Retarget not required if timestamp_retarget is unrequested.
+    return map.timestamp_retarget == chain_state::map::timestamp_unrequested ||
         get_timestamp(data.timestamp.retarget, map.timestamp_retarget, fork);
 }
 
