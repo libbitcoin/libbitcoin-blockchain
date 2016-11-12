@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(fork__set_verified__first__round_trips)
 BOOST_AUTO_TEST_CASE(fork__difficulty__default__zero)
 {
     blockchain::fork instance;
-    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
+    BOOST_REQUIRE(instance.difficulty() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
     ///////////////////////////////////////////////////////////////////////////
     // TODO: devise value tests.
     ///////////////////////////////////////////////////////////////////////////
-    BOOST_REQUIRE_EQUAL(instance.difficulty().compact(), 0);
+    BOOST_REQUIRE(instance.difficulty() == 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -79,7 +79,7 @@ public:
     size_t size() const;
 
     /// Summarize the difficulty of the fork.
-    hash_number difficulty() const;
+    uint256_t difficulty() const;
 
     /// The hash of the parent of this fork (fork point).
     hash_digest hash() const;

@@ -45,7 +45,7 @@ public:
     virtual bool get_block_exists(const hash_digest& block_hash) const = 0;
 
     /// Get the difficulty of the fork starting at the given height.
-    virtual bool get_fork_difficulty(hash_number& out_difficulty,
+    virtual bool get_fork_difficulty(uint256_t& out_difficulty,
         size_t from_height) const = 0;
 
     /// Get the header of the block at the given height.
