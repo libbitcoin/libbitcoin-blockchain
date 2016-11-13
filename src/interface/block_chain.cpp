@@ -36,7 +36,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
 using namespace bc::database;
 using namespace bc::message;
 using namespace bc::database;
@@ -87,13 +86,13 @@ bool block_chain::get_fork_difficulty(uint256_t& out_difficulty,
         if (!result)
             return false;
 
-        out_difficulty += block::difficulty(result.bits());
+        out_difficulty += chain::block::difficulty(result.bits());
     }
 
     return true;
 }
 
-bool block_chain::get_header(header& out_header, size_t height) const
+bool block_chain::get_header(chain::header& out_header, size_t height) const
 {
     auto result = database_.blocks().get(height);
     if (!result)
@@ -190,7 +189,7 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
         return nullptr;
 
     out_block_height = result.height();
-    return std::make_shared<transaction_message>(result.transaction());
+    return std::make_shared<transaction>(result.transaction());
 }
 
 // Writers.
@@ -234,17 +233,17 @@ bool block_chain::do_push(const chain::block& block, size_t height)
 bool block_chain::pop(block_const_ptr_list& out_blocks,
     const hash_digest& fork_hash, bool flush)
 {
-    block::list blocks;
+    chain::block::list blocks;
 
     if (!write_serial(
         std::bind(&block_chain::do_pop,
             this, std::ref(blocks), std::ref(fork_hash)), flush))
         return false;
 
-    const auto map = [](block& block)
+    const auto map = [](chain::block& block)
     {
-        // This uses the block_message move constructor to limit copying.
-        return std::make_shared<const block_message>(std::move(block));
+        // This uses the block move constructor to limit copying.
+        return std::make_shared<const message::block>(std::move(block));
     };
 
     // Transform the list of blocks into a list of block message const ptrs.
@@ -487,7 +486,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto tx = std::make_shared<transaction_message>(
+        const auto tx = std::make_shared<transaction>(
             result.transaction());
         return finish_read(slock, handler, error::success, tx,
             result.height());

@@ -30,6 +30,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
+using namespace bc::machine;
 
 #ifdef WITH_CONSENSUS
 

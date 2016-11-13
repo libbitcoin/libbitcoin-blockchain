@@ -23,15 +23,15 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::chain;
+////using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::blockchain;
 
 BOOST_AUTO_TEST_SUITE(fork_tests)
 
-#define DECLARE_BLOCK(block, number) \
-    const auto block##number = std::make_shared<block_message>(); \
-    block##number->header().set_bits(number);
+#define DECLARE_BLOCK(name, number) \
+    const auto name##number = std::make_shared<block>(); \
+    name##number->header().set_bits(number);
 
 // construct
 
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__one_of_two__first_remains)
     const auto first = list.front();
     BOOST_REQUIRE(first == block1);
     BOOST_REQUIRE_EQUAL(first->validation.result, error::invalid_proof_of_work);
-    BOOST_REQUIRE_EQUAL(first->header().validation.height, header::validation::orphan_height);
+    BOOST_REQUIRE_EQUAL(first->header().validation.height, chain::header::validation::orphan_height);
 }
 
 BOOST_AUTO_TEST_CASE(fork__pop__two_of_two__none_remain)

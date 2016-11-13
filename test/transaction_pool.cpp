@@ -309,7 +309,7 @@ public:
     transaction_pool_fixture pool(memory_pool_, safe_chain_, txs)
 
 #define DECLARE_TRANSACTION(number, code_) \
-    auto tx##number = std::make_shared<message::transaction_message>(); \
+    auto tx##number = std::make_shared<message::transaction>(); \
     tx##number->set_locktime(number); \
     auto hash##number = tx##number->hash(); \
     const size_t tx##number##_id = number; \
@@ -997,7 +997,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__empty_block__
 {
     block_const_ptr_list blocks;
     block block1;
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block1));
     transaction_pool_fixture::buffer buffer(1);
     DECLARE_TRANSACTION(0, error::service_stopped);
     buffer.push_back(tx0);
@@ -1018,7 +1018,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__one_block_no_
     block1.transactions().push_back(*tx1);
     block1.transactions().push_back(*tx2);
     block1.transactions().push_back(*tx3);
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
     buffer.push_back(tx2);
@@ -1043,8 +1043,8 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_confirmed_in_blocks__two_blocks_de
     block1.transactions().push_back(*tx0);
     block2.transactions().push_back(*tx1);
     block2.transactions().push_back(*tx2);
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
-    blocks.push_back(std::make_shared<const message::block_message>(block2));
+    blocks.push_back(std::make_shared<const message::block>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block2));
     transaction_pool_fixture::buffer buffer(8);
     DECLARE_TRANSACTION(3, error::service_stopped);
     DECLARE_TRANSACTION(4, error::service_stopped);
@@ -1081,7 +1081,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__empty_block__expe
 {
     block_const_ptr_list blocks;
     block block1;
-    blocks.push_back(std::make_shared<message::block_message>(block1));
+    blocks.push_back(std::make_shared<message::block>(block1));
     transaction_pool_fixture::buffer buffer(1);
     DECLARE_TRANSACTION(0, error::service_stopped);
     buffer.push_back(tx0);
@@ -1112,7 +1112,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__delete_spent_in_blocks__two_blocks_no_dup
     block1.transactions().push_back(*tx1);
     block1.transactions().push_back(*tx2);
     block1.transactions().push_back(*tx3);
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);
     DECLARE_TRANSACTION(5, error::service_stopped);
@@ -1150,7 +1150,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
     block1.transactions().push_back(*tx1);
     block1.transactions().push_back(*tx2);
     block1.transactions().push_back(*tx3);
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::service_stopped);
     DECLARE_TRANSACTION(5, error::service_stopped);
@@ -1192,7 +1192,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__
     block1.transactions().push_back(*tx1);
     block1.transactions().push_back(*tx2);
     block1.transactions().push_back(*tx3);
-    blocks.push_back(std::make_shared<const message::block_message>(block1));
+    blocks.push_back(std::make_shared<const message::block>(block1));
     transaction_pool_fixture::buffer buffer(5);
     DECLARE_TRANSACTION(4, error::double_spend);
     DECLARE_TRANSACTION(5, error::double_spend);
