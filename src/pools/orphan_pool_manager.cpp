@@ -131,7 +131,13 @@ void orphan_pool_manager::organize(block_const_ptr block,
         std::bind(&orphan_pool_manager::complete,
             this, _1, lock, handler);
 
-    // CONSENSUS: check database and orphan pool for duplicate block hash.
+    //*************************************************************************
+    // CONSENSUS: This is the same check performed by satoshi, yet it will
+    // produce a chain split in the case of a hash coliision. This is because
+    // it is not applied at the fork point, so some nodes will not see the
+    // collision block and others will, depending on block order of arrival.
+    //*************************************************************************
+    // check database and orphan pool for duplicate block hash.
     if (fast_chain_.get_block_exists(block->hash()) ||
         !orphan_pool_.add(block))
     {
@@ -139,6 +145,10 @@ void orphan_pool_manager::organize(block_const_ptr block,
         return;
     }
 
+    //=========================================================================
+    // TODO: compare the work of this fork to the work above the fork point
+    // and dismiss here if insufficient to reorganize.
+    //=========================================================================
     // Find longest fork of blocks that connects the block to the blockchain.
     const auto fork = find_connected_fork(block);
 
@@ -265,6 +275,9 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
         fork->set_verified(index);
     }
 
+    //=========================================================================
+    // TODO: check totoal difficulty against the fork point here.
+    //=========================================================================
     // If we just cleared out the entire fork, return the guilty block's ec.
     if (fork->empty())
     {
@@ -296,8 +309,10 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    const auto first_height = safe_add(fork->height(), size_t(1));
+    //=========================================================================
+    // TODO: move this to earlier in the process so we don't waste validation.
     uint256_t original_difficulty;
+    const auto first_height = safe_add(fork->height(), size_t(1));
 
     if (!fast_chain_.get_fork_difficulty(original_difficulty, first_height))
     {
@@ -314,6 +329,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         handler(error::insufficient_work);
         return;
     }
+    //=========================================================================
 
     list outgoing_blocks;
     const auto start_time = asio::steady_clock::now();
