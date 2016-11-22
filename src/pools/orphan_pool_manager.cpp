@@ -133,7 +133,7 @@ void orphan_pool_manager::organize(block_const_ptr block,
 
     //*************************************************************************
     // CONSENSUS: This is the same check performed by satoshi, yet it will
-    // produce a chain split in the case of a hash coliision. This is because
+    // produce a chain split in the case of a hash collision. This is because
     // it is not applied at the fork point, so some nodes will not see the
     // collision block and others will, depending on block order of arrival.
     //*************************************************************************
