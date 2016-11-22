@@ -299,7 +299,7 @@ private:
     void read_serial(Reader&& reader) const;
 
     template <typename Handler, typename... Args>
-    bool finish_read(handle sequence, Handler handler, Args&&... args) const;
+    bool finish_read(handle sequence, Handler handler, Args... args) const;
 
     // Utilities.
     //-----------------------------------------------------------------------------
