@@ -61,7 +61,7 @@ public:
         transaction_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
-    typedef std::function<void(const code&, get_blocks_ptr)>
+    typedef std::function<void(const code&, get_headers_ptr)>
         block_locator_fetch_handler;
     typedef std::function<void(const code&, inventory_ptr)>
         inventory_fetch_handler;

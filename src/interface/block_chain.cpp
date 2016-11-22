@@ -610,8 +610,9 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         if (!database_.blocks().top(top))
             return finish_read(slock, handler, ec, nullptr);
 
-        auto get_blocks = std::make_shared<message::get_blocks>();
-        auto& hashes = get_blocks->start_hashes();
+        // Caller can cast down to get_blocks.
+        auto get_headers = std::make_shared<message::get_headers>();
+        auto& hashes = get_headers->start_hashes();
         hashes.reserve(heights.size());
         ec = error::success;
 
@@ -630,7 +631,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         }
 
         hashes.shrink_to_fit();
-        return finish_read(slock, handler, ec, get_blocks);
+        return finish_read(slock, handler, ec, get_headers);
     };
     read_serial(do_fetch);
 }
@@ -956,14 +957,15 @@ void block_chain::read_serial(Reader&& reader) const
 // private
 template <typename Handler, typename... Args>
 bool block_chain::finish_read(handle sequence, Handler handler,
-    Args&&... args) const
+    Args... args) const
 {
     // If the read sequence was interrupted by a write, return false (wait). 
     if (!database_.is_read_valid(sequence))
         return false;
 
     // Handle the read (done).
-    handler(std::forward<Args>(args)...);
+    // Do not forward args, callers using smart pointer returns.
+    handler(args...);
     return true;
 }
 
