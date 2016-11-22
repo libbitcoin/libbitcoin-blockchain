@@ -40,7 +40,7 @@ namespace blockchain {
 
 /// The fast_chain interface portion of this class is not thread safe.
 class BCB_API block_chain
-  : public safe_chain, public fast_chain
+  : public safe_chain, public fast_chain, noncopyable
 {
 public:
     block_chain(threadpool& pool, 
@@ -49,10 +49,6 @@ public:
 
     /// The database is closed on destruct, threads must be joined.
     ~block_chain();
-
-    /// This class is not copyable.
-    block_chain(const block_chain&) = delete;
-    void operator=(const block_chain&) = delete;
 
     // ========================================================================
     // FAST CHAIN
