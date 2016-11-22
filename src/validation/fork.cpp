@@ -154,7 +154,7 @@ uint256_t fork::difficulty() const
 {
     uint256_t total;
 
-    for (auto& block: blocks_)
+    for (auto block: blocks_)
         total += block->difficulty();
 
     return total;
@@ -174,7 +174,7 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
         return total + std::count_if(txs.begin(), txs.end(), hashes);
     };
 
-    const auto& end = blocks_.begin() + index + 1u;
+    const auto end = blocks_.begin() + index + 1u;
     const auto count = std::accumulate(blocks_.begin(), end, size_t(0), outer);
 
     tx.validation.duplicate = count > 1u;
@@ -200,7 +200,7 @@ void fork::populate_spent(size_t index, const output_point& outpoint) const
         return total + std::accumulate(txs.begin(), txs.end(), total, inner);
     };
 
-    const auto& end = blocks_.begin() + index + 1u;
+    const auto end = blocks_.begin() + index + 1u;
     const auto spent = std::accumulate(blocks_.begin(), end, size_t(0), outer);
 
     auto& prevout = outpoint.validation;
