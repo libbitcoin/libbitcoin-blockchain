@@ -270,6 +270,11 @@ void populate_block::populate_coinbase(block_const_ptr block) const
 void populate_block::populate_transaction(size_t fork_height,
     const chain::transaction& tx) const
 {
+    //*************************************************************************
+    // CONSENSUS: Satoshi stopped implementing this check in Nov 2015. This was
+    // a hard fork that will produce catostrophic results in the case of a hash
+    // collision. This check has a real cost but cannot be skipped.
+    //*************************************************************************
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
         tx.hash(), fork_height);
 }

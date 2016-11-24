@@ -177,6 +177,11 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
     const auto end = blocks_.begin() + index + 1u;
     const auto count = std::accumulate(blocks_.begin(), end, size_t(0), outer);
 
+    //*************************************************************************
+    // CONSENSUS: Satoshi stopped implementing this check in Nov 2015. This was
+    // a hard fork that will produce catostrophic results in the case of a hash
+    // collision. This check has a real cost but cannot be skipped.
+    //*************************************************************************
     tx.validation.duplicate = count > 1u;
 }
 
