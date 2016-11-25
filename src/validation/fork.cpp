@@ -87,6 +87,16 @@ void fork::clear()
     height_ = 0;
 }
 
+void fork::set_threshold(uint256_t&& difficulty)
+{
+    threshold_ = std::move(difficulty);
+}
+
+bool fork::is_sufficient() const
+{
+    return difficulty() > threshold_;
+}
+
 // Index is unguarded, caller must verify or access violation will result.
 void fork::set_verified(size_t index) const
 {
@@ -150,12 +160,23 @@ block_const_ptr fork::block_at(size_t index) const
     return index < size() ? blocks_[index] : nullptr;
 }
 
+// The fork difficulty check is both a consensus check and denial of service
+// protection. It is necessary here that total claimed work exceeds that of the
+// competing chain segment (consensus), and that the work has actually been
+// expended (denial of service protection). The latter ensures we don't query
+// the chain for total segment difficulty path the fork competetiveness.
+// Once work is poven sufficient the blocks are validated, requiring each to
+// have the work required by the header accept check. It is possible that a
+// longer chain of lower work blocks could meet both above criteria. However
+// this requires the same amount of work as a shorter segment, so an attacker
+// gains no advantage from that option, and it will be caught in validation.
 uint256_t fork::difficulty() const
 {
     uint256_t total;
 
     for (auto block: blocks_)
-        total += block->difficulty();
+        if (block->header().is_valid_proof_of_work())
+            total += block->difficulty();
 
     return total;
 }
@@ -176,12 +197,6 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
 
     const auto end = blocks_.begin() + index + 1u;
     const auto count = std::accumulate(blocks_.begin(), end, size_t(0), outer);
-
-    //*************************************************************************
-    // CONSENSUS: Satoshi stopped implementing this check in Nov 2015. This was
-    // a hard fork that will produce catostrophic results in the case of a hash
-    // collision. This check has a real cost but cannot be skipped.
-    //*************************************************************************
     tx.validation.duplicate = count > 1u;
 }
 
@@ -255,9 +270,7 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     if (outpoint.is_null())
         return;
 
-    ///////////////////////////////////////////////////////////////////////////
     // We continue even if prevout spent and/or missing.
-    ///////////////////////////////////////////////////////////////////////////
 
     // Get the script and value for the prevout.
     const auto finder = get_output();
@@ -288,7 +301,7 @@ bool fork::get_bits(uint32_t& out_bits, size_t height) const
     return true;
 }
 
-/// The version of the block at the given height in the fork.
+// The version of the block at the given height in the fork.
 bool fork::get_version(uint32_t& out_version, size_t height) const
 {
     if (height <= height_)
@@ -303,7 +316,7 @@ bool fork::get_version(uint32_t& out_version, size_t height) const
     return true;
 }
 
-/// The timestamp of the block at the given height in the fork.
+// The timestamp of the block at the given height in the fork.
 bool fork::get_timestamp(uint32_t& out_timestamp, size_t height) const
 {
     if (height <= height_)
@@ -315,6 +328,21 @@ bool fork::get_timestamp(uint32_t& out_timestamp, size_t height) const
         return false;
 
     out_timestamp = block->header().timestamp();
+    return true;
+}
+
+// The hash of the block at the given height if it exists in the fork.
+bool fork::get_block_hash(hash_digest& out_hash, size_t height) const
+{
+    if (height <= height_)
+        return false;
+
+    const auto block = block_at(index_of(height));
+
+    if (!block)
+        return false;
+
+    out_hash = block->hash();
     return true;
 }
 

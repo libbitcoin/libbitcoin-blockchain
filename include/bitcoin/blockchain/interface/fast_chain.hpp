@@ -44,9 +44,13 @@ public:
     /// Get a determination of whether the block hash exists in the store.
     virtual bool get_block_exists(const hash_digest& block_hash) const = 0;
 
+    /// Get the hash of the block if it exists.
+    virtual bool get_block_hash(hash_digest& out_hash,
+        size_t height) const = 0;
+
     /// Get the difficulty of the fork starting at the given height.
     virtual bool get_fork_difficulty(uint256_t& out_difficulty,
-        size_t from_height) const = 0;
+        const uint256_t& maximum, size_t from_height) const = 0;
 
     /// Get the header of the block at the given height.
     virtual bool get_header(chain::header& out_header,

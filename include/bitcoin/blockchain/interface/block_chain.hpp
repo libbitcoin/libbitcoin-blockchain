@@ -64,9 +64,12 @@ public:
     /// Get a determination of whether the block hash exists in the store.
     bool get_block_exists(const hash_digest& block_hash) const;
 
+    /// Get the hash of the block if it exists.
+    bool get_block_hash(hash_digest& out_hash, size_t height) const;
+
     /// Get the difficulty of the fork starting at the given height.
     bool get_fork_difficulty(uint256_t& out_difficulty,
-        size_t height) const;
+        const uint256_t& maximum, size_t height) const;
 
     /// Get the header of the block at the given height.
     bool get_header(chain::header& out_header, size_t height) const;

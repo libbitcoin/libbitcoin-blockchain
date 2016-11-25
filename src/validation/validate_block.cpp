@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cmath>
 #include <functional>
+#include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -47,19 +48,25 @@ static constexpr size_t micro_per_milliseconds = 1000;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-// bool activated = activatedheight >= full_activation_height_;
+static inline size_t cores(const settings& settings)
+{
+    const auto configured = settings.threads;
+    const auto hardware = std::max(std::thread::hardware_concurrency(), 1u);
+    return configured == 0 ? hardware : std::min(configured, hardware);
+}
 
-// TODO: look into threadpool fallback initialization order (pool empty).
-// Fall back to the metwork pool if zero threads in priority pool.
+static inline thread_priority priority(const settings& settings)
+{
+    return settings.priority ? thread_priority::high : thread_priority::normal;
+}
+
 validate_block::validate_block(threadpool& pool, const fast_chain& chain,
     const settings& settings)
   : stopped_(false),
     use_libconsensus_(settings.use_libconsensus),
-    priority_pool_(settings.threads, settings.priority ?
-        thread_priority::high : thread_priority::normal),
-    thread_pool_(/*settings.threads == 0 ? pool : */ priority_pool_),
-    dispatch_(thread_pool_, NAME "_dispatch"),
-    populator_(thread_pool_, chain, settings)
+    priority_pool_(cores(settings), priority(settings)),
+    dispatch_(priority_pool_, NAME "_dispatch"),
+    populator_(priority_pool_, chain, settings)
 {
 }
 
@@ -85,11 +92,13 @@ bool validate_block::stopped() const
 
 code validate_block::check(block_const_ptr block) const
 {
-    ////// Static checks are never skipped.
-    ////const auto start_time = asio::steady_clock::now();
-    ////const auto ec = block->check();
-    ////report(block, start_time, ec ? "UNCHECKED" : "checked  ");
-    ////return ec;
+    const auto start_time = asio::steady_clock::now();
+
+    // Run context free checks.
+    const auto ec = block->check();
+
+    report(block, start_time, ec ? "UNCHECKED" : "checked  ");
+    return ec;
 
     // The above includes no height and the cost is tiny, so not reporting.
     return block->check();
@@ -97,8 +106,8 @@ code validate_block::check(block_const_ptr block) const
 
 // Accept sequence.
 //-----------------------------------------------------------------------------
-// These checks require height or other chain context.
 
+// These checks require chain state, and block state if not under checkpoint.
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
@@ -106,45 +115,47 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
+    const auto checkpointed = block->validation.state->is_under_checkpoint();
 
-    const result_handler complete_handler =
-        std::bind(&validate_block::handle_accepted,
+    const result_handler populated_handler =
+        std::bind(&validate_block::handle_accept,
             this, _1, block, height, asio::steady_clock::now(), handler);
 
-    // Skip data and set population if both are populated.
-    if (block->validation.state && block->validation.sets)
-    {
-        complete_handler(error::success);
-        return;
-    }
+    // Skip chain state population if already populated.
+    if (!block->validation.state)
+        populator_.populate_chain_state(fork, index);
 
-    populator_.populate(fork, index, complete_handler);
+    // Skip block state population if not needed or already populated.
+    if (checkpointed || block->validation.sets)
+        populated_handler(error::success);
+    else
+        populator_.populate_block_state(fork, index, populated_handler);
 }
 
-void validate_block::handle_accepted(const code& ec, block_const_ptr block,
-    size_t height, asio::time_point start_time, result_handler handler) const
+void validate_block::handle_accept(const code& ec, block_const_ptr block,
+    size_t height, const asio::time_point& start_time,
+    result_handler handler) const
 {
-    // If population errs there may not be validation state.
-    const auto skipped = ec || !block->validation.state->use_full_validation();
-
-    if (skipped)
+    if (ec)
     {
         handler(ec);
         return;
     }
 
     report(block, start_time, ec ? "UNPOPULATED" : "populated");
-
-    // Since population was successful and not skipped run the accept checks.
     const auto accept_start_time = asio::steady_clock::now();
+
+    // Run contextual non-script checks.
+    // TODO: parallelize block accept by transaction.
     const auto error_code = block->accept();
+
     report(block, accept_start_time, error_code ? "REJECTED  " : "accepted ");
     handler(error_code);
 }
 
 // Connect sequence.
 //-----------------------------------------------------------------------------
-// These checks require output traversal and validation.
+// These checks require chain state, block state and perform script validation.
 
 void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
@@ -153,24 +164,28 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
-    const auto& txs = block->transactions();
+
+    const result_handler complete_handler =
+        std::bind(&validate_block::handle_connected,
+            this, _1, block, height, asio::steady_clock::now(), handler);
+
+    if (block->validation.state->is_under_checkpoint())
+    {
+        complete_handler(error::success);
+        return;
+    }
+
     const auto sets = block->validation.sets;
     const auto state = block->validation.state;
 
-    // Data and set population must be completed via a prior call to accept.
-    // If !use_full_validation are to be skipped this should not be called.
     if (!sets || !state)
     {
         handler(error::operation_failed);
         return;
     }
 
-    const result_handler complete_handler =
-        std::bind(&validate_block::handle_connected,
-            this, _1, block, height, asio::steady_clock::now(), handler);
-
     // Sets will be empty if there is only a coinbase tx.
-    if (sets->empty() || !state->use_full_validation())
+    if (sets->empty())
     {
         handler(error::success);
         return;
@@ -220,11 +235,10 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 }
 
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
-    size_t height, asio::time_point start_time, result_handler handler) const
+    size_t height, const asio::time_point& start_time,
+    result_handler handler) const
 {
-    const auto skipped = ec || !block->validation.state->use_full_validation();
-
-    if (skipped)
+    if (ec)
     {
         handler(ec);
         return;
@@ -239,6 +253,7 @@ void validate_block::handle_connected(const code& ec, block_const_ptr block,
 
 inline bool enabled(size_t height)
 {
+    // Vary the reporting performance reporting interval by height.
     const auto modulus =
         (height < 100000 ? 1000 :
         (height < 200000 ? 100 :
@@ -247,8 +262,8 @@ inline bool enabled(size_t height)
     return height % modulus == 0;
 }
 
-void validate_block::report(block_const_ptr block, asio::time_point start_time,
-    const std::string& token)
+void validate_block::report(block_const_ptr block,
+    const asio::time_point& start_time, const std::string& token)
 {
     BITCOIN_ASSERT(block->validation.state);
     const auto height = block->validation.state->height();

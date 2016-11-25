@@ -106,6 +106,8 @@ bool orphan_pool_manager::stopped() const
 void orphan_pool_manager::organize(block_const_ptr block,
     result_handler handler)
 {
+    code error_code;
+
     if (stopped())
     {
         handler(error::service_stopped);
@@ -113,11 +115,9 @@ void orphan_pool_manager::organize(block_const_ptr block,
     }
 
     // Checks that are independent of chain state.
-    const auto ec = validator_.check(block);
-
-    if (ec)
+    if ((error_code = validator_.check(block)))
     {
-        handler(ec);
+        handler(error_code);
         return;
     }
 
@@ -136,6 +136,9 @@ void orphan_pool_manager::organize(block_const_ptr block,
     // produce a chain split in the case of a hash collision. This is because
     // it is not applied at the fork point, so some nodes will not see the
     // collision block and others will, depending on block order of arrival.
+    // TODO: The hash check should start at the fork point. The duplicate check
+    // is a conflated network denial of service protection mechanism and cannot
+    // be allowed to reject blocks based on collisions not in the actual chain.
     //*************************************************************************
     // check database and orphan pool for duplicate block hash.
     if (fast_chain_.get_block_exists(block->hash()) ||
@@ -145,21 +148,36 @@ void orphan_pool_manager::organize(block_const_ptr block,
         return;
     }
 
-    //=========================================================================
-    // TODO: compare the work of this fork to the work above the fork point
-    // and dismiss here if insufficient to reorganize.
-    //=========================================================================
     // Find longest fork of blocks that connects the block to the blockchain.
     const auto fork = find_connected_fork(block);
 
     if (fork->empty())
     {
-        // There is no link so the block is currently an orphan.
+        // There is no link to the chain so the block is currently an orphan.
         locked_handler(error::orphan_block);
         return;
     }
 
-    // Start the loop by verifying the first block.
+    const auto first_height = safe_add(fork->height(), size_t(1));
+    const auto maximum = fork->difficulty();
+    uint256_t threshold;
+
+    if (!fast_chain_.get_fork_difficulty(threshold, maximum, first_height))
+    {
+        locked_handler(error::operation_failed);
+        return;
+    }
+
+    // Store required difficulty to overcome the main chain above fork point.
+    fork->set_threshold(std::move(threshold));
+
+    if (!fork->is_sufficient())
+    {
+        locked_handler(error::insufficient_work);
+        return;
+    }
+
+    // Start the loop by verifying the first fork block.
     verify(fork, 0, locked_handler);
 }
 
@@ -186,7 +204,6 @@ void orphan_pool_manager::verify(fork::ptr fork, size_t index,
         return;
     }
 
-    // TODO: want concurrent delegate here but it's failing.
     // Preserve validation priority pool by returning on a network thread.
     const result_handler accept_handler = 
         dispatch_.bound_delegate(&orphan_pool_manager::handle_accept,
@@ -224,7 +241,6 @@ void orphan_pool_manager::handle_accept(const code& ec, fork::ptr fork,
         return;
     }
 
-    // TODO: want concurrent delegate here but it's failing.
     // Preserve validation priority pool by returning on a network thread.
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
@@ -268,6 +284,20 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
     {
         // The index block failed to verify, remove it and descendants.
         orphan_pool_.remove(fork->pop(index, ec));
+
+        // If we just cleared out the entire fork, return bad block's code.
+        if (fork->empty())
+        {
+            handler(ec);
+            return;
+        }
+
+        // Reverify that there is sufficient work in the fork to reorganize.
+        if (!fork->is_sufficient())
+        {
+            handler(error::insufficient_work);
+            return;
+        }
     }
     else
     {
@@ -275,16 +305,7 @@ void orphan_pool_manager::handle_connect(const code& ec, fork::ptr fork,
         fork->set_verified(index);
     }
 
-    //=========================================================================
-    // TODO: check totoal difficulty against the fork point here.
-    //=========================================================================
-    // If we just cleared out the entire fork, return the guilty block's ec.
-    if (fork->empty())
-    {
-        handler(ec);
-        return;
-    }
-
+    // Move to next block in the fork.
     const auto next = safe_increment(index);
 
     if (next < fork->size())
@@ -309,28 +330,6 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    //=========================================================================
-    // TODO: move this to earlier in the process so we don't waste validation.
-    uint256_t original_difficulty;
-    const auto first_height = safe_add(fork->height(), size_t(1));
-
-    if (!fast_chain_.get_fork_difficulty(original_difficulty, first_height))
-    {
-        LOG_ERROR(LOG_BLOCKCHAIN)
-            << "Failure getting difficulty from [" << first_height << "]";
-        handler(error::operation_failed);
-        return;
-    }
-
-    if (fork->difficulty() <= original_difficulty)
-    {
-        LOG_DEBUG(LOG_BLOCKCHAIN)
-            << "Insufficient work to reorganize from [" << first_height << "]";
-        handler(error::insufficient_work);
-        return;
-    }
-    //=========================================================================
-
     list outgoing_blocks;
     const auto start_time = asio::steady_clock::now();
 
@@ -340,12 +339,11 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         fork->height(), fork->hash(), flush_reorganizations_);
     //#########################################################################
 
-    validate_block::report(fork->blocks().back(), start_time, "deposited");
+    validate_block::report(fork->blocks().back(), start_time, swap ?
+        "STRANDED " : "deposited");
 
     if (!swap)
     {
-        LOG_ERROR(LOG_BLOCKCHAIN)
-            << "Failure reorganizing from [" << first_height << "]";
         handler(error::operation_failed);
         return;
     }
@@ -353,13 +351,6 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
     // Remove before add so that we don't overflow the pool and lose blocks.
     orphan_pool_.remove(fork->blocks());
     orphan_pool_.add(outgoing_blocks);
-
-    if (!outgoing_blocks.empty())
-    {
-        LOG_INFO(LOG_BLOCKCHAIN)
-            << "Reorganized from block " << first_height << " to "
-            << safe_add(first_height, outgoing_blocks.size()) << "]";
-    }
 
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
     notify_reorganize(fork->height(), fork->blocks(), outgoing_blocks);

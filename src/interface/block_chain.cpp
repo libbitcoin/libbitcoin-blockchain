@@ -72,15 +72,27 @@ bool block_chain::get_block_exists(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash);
 }
 
+bool block_chain::get_block_hash(hash_digest& out_hash, size_t height) const
+{
+    const auto result = database_.blocks().get(height);
+
+    if (!result)
+        return false;
+
+    out_hash = result.hash();
+    return true;
+}
+
 bool block_chain::get_fork_difficulty(uint256_t& out_difficulty,
-    size_t from_height) const
+    const uint256_t& maximum, size_t from_height) const
 {
     size_t top;
     if (!database_.blocks().top(top))
         return false;
 
     out_difficulty = 0;
-    for (size_t height = from_height; height <= top; ++height)
+    for (auto height = from_height; height <= top && out_difficulty < maximum;
+        ++height)
     {
         const auto result = database_.blocks().get(height);
         if (!result)

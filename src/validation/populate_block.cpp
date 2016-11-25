@@ -40,8 +40,8 @@ using namespace std::placeholders;
 
 #define NAME "populate_block"
 
-// This value should not be used but may be useful in debugging.
-static constexpr uint32_t unspecified = 0xbaadf00d;
+// This value should never be read, but may be useful in debugging.
+static constexpr uint32_t unspecified = max_uint32;
 
 // Constant for log report calculations.
 static constexpr size_t micro_per_milliseconds = 1000;
@@ -56,8 +56,8 @@ static constexpr size_t micro_per_milliseconds = 1000;
 populate_block::populate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
   : stopped_(false),
-    priority_threads_(priority_pool.size()),
-    use_testnet_rules_(settings.use_testnet_rules),
+    buckets_(priority_pool.size()),
+    configured_forks_(settings.enabled_forks),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     dispatch_(priority_pool, NAME "_dispatch"),
     fast_chain_(chain)
@@ -105,6 +105,13 @@ bool populate_block::get_timestamp(uint32_t& out_timestamp, size_t height,
         fast_chain_.get_timestamp(out_timestamp, height);
 }
 
+bool populate_block::get_block_hash(hash_digest& out_hash, size_t height,
+    fork::const_ptr fork) const
+{
+    return fork->get_block_hash(out_hash, height) ||
+        fast_chain_.get_block_hash(out_hash, height);
+}
+
 bool populate_block::populate_bits(chain_state::data& data,
     const chain_state::map& map, fork::const_ptr fork) const
 {
@@ -149,37 +156,60 @@ bool populate_block::populate_timestamps(chain_state::data& data,
         return false;
 
     // Retarget not required if timestamp_retarget is unrequested.
-    return map.timestamp_retarget == chain_state::map::timestamp_unrequested ||
+    return map.timestamp_retarget == chain_state::map::unrequested ||
         get_timestamp(data.timestamp.retarget, map.timestamp_retarget, fork);
 }
 
-// TODO: populate data.activated by caching full activation height.
-// The height must be tied to block push/pop and invalidated on failure.
+bool populate_block::populate_checkpoint(chain_state::data& data,
+    const chain_state::map& map, fork::const_ptr fork) const
+{
+    if (map.allowed_duplicates_height == chain_state::map::unrequested)
+    {
+        // The allowed_duplicates_hash must be null_hash if unrequested.
+        data.allowed_duplicates_hash = null_hash;
+        return true;
+    }
+
+    return get_block_hash(data.allowed_duplicates_hash,
+        map.allowed_duplicates_height, fork);
+}
+
+// TODO: populate next state from preceding block state.
 void populate_block::populate_chain_state(fork::const_ptr fork,
     size_t index) const
 {
     BITCOIN_ASSERT(index < fork->size());
+    const auto& block = fork->block_at(index);
+    const auto height = fork->height_at(index);
 
     chain_state::data data;
-    data.enabled = false;
-    data.testnet = use_testnet_rules_;
-    data.height = fork->height_at(index);
-    data.hash = fork->block_at(index)->hash();
-    auto map = chain_state::get_map(data.height, data.enabled, data.testnet);
+    data.height = height;
+    data.hash = block->hash();
 
-    // At most 11 redundant mainnet header queries, so we don't combine them.
-    // Cache-based construction of the data set will eliminate most redundancy.
+    // Construct a map to inform chain state data population.
+    const auto map = chain_state::get_map(data.height, checkpoints_,
+        configured_forks_);
+
+    // Populate state and attach to block member.
     if (populate_bits(data, map, fork) &&
         populate_versions(data, map, fork) &&
-        populate_timestamps(data, map, fork))
+        populate_timestamps(data, map, fork) &&
+        populate_checkpoint(data, map, fork))
     {
-        auto& state = fork->block_at(index)->validation.state;
-        state = std::make_shared<chain_state>(std::move(data), checkpoints_);
+        block->validation.state = std::make_shared<chain_state>(
+            std::move(data), checkpoints_, configured_forks_);
     }
 }
 
-// Populate input sets utility.
+// Populate block state sequence.
 //-----------------------------------------------------------------------------
+
+void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
+    result_handler handler) const
+{
+    populate_input_sets(fork, index);
+    populate_transactions(fork, index, handler);
+}
 
 void populate_block::populate_input_sets(fork::const_ptr fork,
     size_t index) const
@@ -189,25 +219,13 @@ void populate_block::populate_input_sets(fork::const_ptr fork,
 
     // TODO: balance by sigop count when used for script validation.
     // Balanced by input count, which is optimal for data population.
-    block->validation.sets = block->to_input_sets(priority_threads_, false);
-}
-
-// Populate block state sequence.
-//-----------------------------------------------------------------------------
-
-void populate_block::populate(fork::const_ptr fork, size_t index,
-    result_handler handler) const
-{
-    populate_input_sets(fork, index);
-    populate_chain_state(fork, index);
-    populate_transactions(fork, index, handler);
+    block->validation.sets = block->to_input_sets(buckets_, false);
 }
 
 void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
     const auto block = fork->block_at(index);
-    const auto& txs = block->transactions();
     const auto sets = block->validation.sets;
 
     populate_coinbase(block);
@@ -219,23 +237,33 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
         return;
     }
 
-    // Populate tx data and verify not unspent duplicate.
-    //*************************************************************************
-    // CONSENSUS: Coinbase prevouts are null but the tx duplicate check must
-    // apply to coinbase txs as well, so we cannot skip coinbases here.
-    //*************************************************************************
-    for (auto tx = txs.begin(); tx != txs.end(); ++tx)
+    if (!block->validation.state)
     {
-        populate_transaction(fork->height(), *tx);
-        populate_transaction(fork, index, *tx);
+        handler(error::operation_failed);
+        return;
+    }
+
+    //*************************************************************************
+    // CONSENSUS: Satoshi implemented this change in Nov 2015. This was a hard 
+    // fork that will produce catostrophic results in the case of a hash
+    // collision. Unspent duplicate check has cost but should not be skipped.
+    //*************************************************************************
+    if (!block->validation.state->is_enabled(
+        machine::rule_fork::allowed_duplicates))
+    {
+        //*********************************************************************
+        // CONSENSUS: Coinbase prevouts are null but the tx duplicate check
+        // must apply to coinbase txs as well, so cannot skip coinbases here.
+        //*********************************************************************
+        for (auto& tx: block->transactions())
+        {
+            populate_transaction(fork->height(), tx);
+            populate_transaction(fork, index, tx);
+        }
     }
 
     const result_handler join_handler = synchronize(handler, sets->size(),
         NAME "_populate");
-
-    ////// Sequential implementation.
-    ////for (size_t set = 0; set < sets->size(); ++set)
-    ////    populate_inputs(fork, index, sets, set, join_handler);
 
     // Concurrent implementation.
     for (size_t set = 0; set < sets->size(); ++set)
@@ -266,20 +294,13 @@ void populate_block::populate_coinbase(block_const_ptr block) const
     prevout.height = output_point::validation::not_specified;
 }
 
-// Returns false only when transaction is duplicate on chain.
 void populate_block::populate_transaction(size_t fork_height,
     const chain::transaction& tx) const
 {
-    //*************************************************************************
-    // CONSENSUS: Satoshi stopped implementing this check in Nov 2015. This was
-    // a hard fork that will produce catostrophic results in the case of a hash
-    // collision. This check has a real cost but cannot be skipped.
-    //*************************************************************************
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
         tx.hash(), fork_height);
 }
 
-// Returns false only when transaction is duplicate on fork.
 void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
     const chain::transaction& tx) const
 {
