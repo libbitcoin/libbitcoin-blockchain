@@ -27,11 +27,11 @@ settings::settings()
   : threads(8),
     priority(true),
     use_libconsensus(false),
-    use_testnet_rules(false),
     flush_reorganizations(false),
     transaction_pool_consistency(false),
     transaction_pool_capacity(1000),
-    block_pool_capacity(50)
+    block_pool_capacity(50),
+    enabled_forks(machine::rule_fork::consensus)
 {
 }
 
@@ -72,7 +72,7 @@ settings::settings(config::settings context)
 
         case config::settings::testnet:
         {
-            use_testnet_rules = true;
+            enabled_forks |= machine::rule_fork::easy_blocks;
 
             checkpoints.reserve(7);
             checkpoints.push_back({ "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 });

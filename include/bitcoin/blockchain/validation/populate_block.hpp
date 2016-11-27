@@ -44,8 +44,11 @@ public:
     /// Stop the population (thread safe).
     void stop();
 
-    /// Populate all validation state for block[index] and to on the block.
-    void populate(fork::const_ptr fork, size_t index,
+    /// Populate chain state for the block at index.
+    void populate_chain_state(fork::const_ptr fork, size_t index) const;
+
+    /// Populate block validation state for the block at index.
+    void populate_block_state(fork::const_ptr fork, size_t index,
         result_handler handler) const;
 
 protected:
@@ -60,19 +63,19 @@ private:
     typedef chain::transaction::sets_const_ptr sets_ptr;
 
     // Chain State
-    void populate_chain_state(fork_ptr fork, size_t index) const;
     bool populate_bits(data& data, const map& map, fork_ptr fork) const;
     bool populate_versions(data& data, const map& map, fork_ptr fork) const;
     bool populate_timestamps(data& data, const map& map, fork_ptr fork) const;
+    bool populate_checkpoint(data& data, const map& map, fork_ptr fork) const;
     bool get_bits(uint32_t& out_bits, size_t height, fork_ptr fork) const;
     bool get_version(uint32_t& out_version, size_t height, fork_ptr fork) const;
     bool get_timestamp(uint32_t& out_timestamp, size_t height,
         fork_ptr fork) const;
+    bool get_block_hash(hash_digest& out_hash, size_t height,
+        fork_ptr fork) const;
 
-    // Input Sets
+    // Block State
     void populate_input_sets(fork::const_ptr fork, size_t index) const;
-
-    // Previous Outputs
     void populate_transactions(fork_ptr fork, size_t index,
         result_handler handler) const;
     void populate_coinbase(block_const_ptr block) const;
@@ -88,8 +91,8 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const size_t priority_threads_;
-    const bool use_testnet_rules_;
+    const size_t buckets_;
+    const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
     mutable dispatcher dispatch_;
 

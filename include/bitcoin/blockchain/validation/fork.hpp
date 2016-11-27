@@ -49,6 +49,12 @@ public:
     /// Pop the block and set the code, and all after to parent invalid.
     block_const_ptr_list pop(size_t index, const code& reason);
 
+    /// Set the difficulty level that must be exceeded in order to reorganize.
+    void set_threshold(uint256_t&& difficulty);
+
+    /// Determine if the fork difficulty exceeds the threshold.
+    bool is_sufficient() const;
+
     /// Set validation result metadata on the block. 
     void set_verified(size_t index) const;
 
@@ -105,8 +111,12 @@ public:
     /// The bits of the block at the given height in the fork.
     bool get_timestamp(uint32_t& out_timestamp, size_t height) const;
 
+    /// The hash of the block at the given height if it exists in the fork.
+    bool get_block_hash(hash_digest& out_hash, size_t height) const;
+
 private:
     size_t height_;
+    uint256_t threshold_;
 
     /// The chain of blocks in the fork.
     block_const_ptr_list blocks_;

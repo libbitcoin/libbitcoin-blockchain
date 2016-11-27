@@ -39,11 +39,11 @@ public:
     uint32_t threads;
     bool priority;
     bool use_libconsensus;
-    bool use_testnet_rules;
     bool flush_reorganizations;
     bool transaction_pool_consistency;
     uint32_t transaction_pool_capacity;
     uint32_t block_pool_capacity;
+    uint32_t enabled_forks;
     config::checkpoint::list checkpoints;
 };
 
