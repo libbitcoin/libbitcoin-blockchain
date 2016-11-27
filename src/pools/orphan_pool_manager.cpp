@@ -339,7 +339,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         fork->height(), fork->hash(), flush_reorganizations_);
     //#########################################################################
 
-    validate_block::report(fork->blocks().back(), start_time, swap ?
+    validate_block::report(fork->blocks().back(), start_time, !swap ?
         "STRANDED " : "deposited");
 
     if (!swap)
