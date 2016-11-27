@@ -137,6 +137,9 @@ bool populate_block::populate_versions(chain_state::data& data,
         if (!get_version(version, ++height, fork))
             return false;
 
+    if (!get_version(data.version.self, map.version_self, fork))
+        return false;
+
     return true;
 }
 
@@ -198,6 +201,14 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
     {
         block->validation.state = std::make_shared<chain_state>(
             std::move(data), checkpoints_, configured_forks_);
+
+        const auto height = block->validation.state->height();
+        const auto enabled_forks = block->validation.state->enabled_forks();
+        const auto min_version = block->validation.state->minimum_version();
+
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << "Forks (" << enabled_forks << ") version ("
+            << min_version << ") height [" << height << "].";
     }
 }
 
