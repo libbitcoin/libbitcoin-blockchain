@@ -92,22 +92,19 @@ bool validate_block::stopped() const
 
 code validate_block::check(block_const_ptr block) const
 {
-    const auto start_time = asio::steady_clock::now();
+    ////const auto start_time = asio::steady_clock::now();
 
     // Run context free checks.
     const auto ec = block->check();
 
-    report(block, start_time, ec ? "UNCHECKED" : "checked  ");
+    ////report(block, start_time, ec ? "UNCHECKED" : "checked  ");
     return ec;
-
-    // The above includes no height and the cost is tiny, so not reporting.
-    return block->check();
 }
 
 // Accept sequence.
 //-----------------------------------------------------------------------------
-
 // These checks require chain state, and block state if not under checkpoint.
+
 void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
@@ -115,7 +112,6 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 
     const auto block = fork->block_at(index);
     const auto height = fork->height_at(index);
-    const auto checkpointed = block->validation.state->is_under_checkpoint();
 
     const result_handler populated_handler =
         std::bind(&validate_block::handle_accept,
@@ -126,7 +122,8 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
         populator_.populate_chain_state(fork, index);
 
     // Skip block state population if not needed or already populated.
-    if (checkpointed || block->validation.sets)
+    if (block->validation.state->is_under_checkpoint() ||
+        block->validation.sets)
         populated_handler(error::success);
     else
         populator_.populate_block_state(fork, index, populated_handler);
@@ -180,14 +177,14 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
 
     if (!sets || !state)
     {
-        handler(error::operation_failed);
+        complete_handler(error::operation_failed);
         return;
     }
 
     // Sets will be empty if there is only a coinbase tx.
     if (sets->empty())
     {
-        handler(error::success);
+        complete_handler(error::success);
         return;
     }
 
@@ -244,7 +241,9 @@ void validate_block::handle_connected(const code& ec, block_const_ptr block,
         return;
     }
 
-    report(block, start_time, ec ? "INVALIDATED" : "validated");
+    if (!block->validation.state->is_under_checkpoint())
+        report(block, start_time, ec ? "INVALIDATED" : "validated");
+
     handler(ec);
 }
 
@@ -281,7 +280,7 @@ void validate_block::report(block_const_ptr block,
         LOG_INFO(LOG_BLOCKCHAIN)
             << "Block [" << height << "] " << token << " (" << transactions
             << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
-            << ") μs/input";
+            << ") μs/input.";
     }
 }
 
