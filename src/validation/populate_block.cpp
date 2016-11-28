@@ -364,29 +364,37 @@ void populate_block::populate_prevout(size_t fork_height,
     if (outpoint.is_null())
         return;
 
-    size_t height;
-    size_t position;
+    size_t output_height;
+    size_t output_position;
 
     // Get the script, value and spender height (if any) for the prevout.
     // The output (prevout.cache) is populated only if the return is true.
-    if (!fast_chain_.get_output(prevout.cache, height, position, outpoint,
-        fork_height))
+    if (!fast_chain_.get_output(prevout.cache, output_height, output_position,
+        outpoint, fork_height))
         return;
 
-    // Set height only if prevout is coinbase (first position tx is coinbase).
-    if (position == 0)
-        prevout.height = height;
+    //*************************************************************************
+    // CONSENSUS: The genesis block coinbase may not be spent. This is the
+    // consequence of satoshi not including it in the utxo set for block
+    // database initialization. Only he knows why, probably an oversight.
+    //*************************************************************************
+    if (output_height == 0)
+        return;
+
+    // Set height only if the prevout is a coinbase tx (for maturity).
+    if (output_position == 0)
+        prevout.height = output_height;
 
     // The output is spent only if by a spend at or below the fork height.
     const auto spend_height = prevout.cache.validation.spender_height;
 
+    // The previous output has already been spent.
     if ((spend_height <= fork_height) &&
         (spend_height != output::validation::not_spent))
     {
         prevout.spent = true;
         prevout.confirmed = true;
         prevout.cache = chain::output{};
-        return;
     }
 }
 
