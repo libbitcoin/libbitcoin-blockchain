@@ -196,9 +196,28 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
             this, sets, set, state->enabled_forks(), join_handler);
 }
 
+void validate_block::dump(const code& ec, const transaction& tx,
+    uint32_t input_index, uint32_t forks, bool use_libconsensus)
+{
+    const auto libconsensus = use_libconsensus ? "true" : "false";
+    const auto& prevout = tx.inputs()[input_index].previous_output();
+    const auto script = prevout.validation.cache.script().to_data(false);
+    const auto hash = encode_hash(prevout.hash());
+    const auto tx_hash = encode_hash(tx.hash());
+
+    LOG_DEBUG(LOG_BLOCKCHAIN)
+        << "Input validation failed (" << ec.message() << ")" << std::endl
+        << " lib         : " << libconsensus << std::endl
+        << " forks       : " << forks << std::endl
+        << " outpoint    : " << hash << ":" << prevout.index() << std::endl
+        << " script      : " << encode_base16(script) << std::endl
+        << " inpoint     : " << tx_hash << ":" << input_index << std::endl
+        << " transaction : " << encode_base16(tx.to_data());
+}
+
 // TODO: move to validate_input.hpp/cpp (static methods only).
 void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
-    size_t sets_index, uint32_t flags, result_handler handler) const
+    size_t sets_index, uint32_t forks, result_handler handler) const
 {
     BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
 
@@ -223,9 +242,12 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
             break;
         }
 
-        if ((ec = validate_input::verify_script(set.tx, set.input_index, flags,
+        if ((ec = validate_input::verify_script(set.tx, set.input_index, forks,
             use_libconsensus_)))
+        {
+            dump(ec, set.tx, set.input_index, forks, use_libconsensus_);
             break;
+        }
     }
 
     handler(ec);
