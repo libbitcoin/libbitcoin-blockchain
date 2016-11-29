@@ -20,10 +20,12 @@
 #include <bitcoin/blockchain/validation/validate_block.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
 #include <functional>
+#include <memory>
 #include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -36,6 +38,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
+using namespace bc::machine;
 using namespace std::placeholders;
 
 #define NAME "validate_block"
@@ -92,13 +95,8 @@ bool validate_block::stopped() const
 
 code validate_block::check(block_const_ptr block) const
 {
-    ////const auto start_time = asio::steady_clock::now();
-
     // Run context free checks.
-    const auto ec = block->check();
-
-    ////report(block, start_time, ec ? "UNCHECKED" : "checked  ");
-    return ec;
+    return block->check();
 }
 
 // Accept sequence.
@@ -109,13 +107,11 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
     BITCOIN_ASSERT(index < fork->size());
-
     const auto block = fork->block_at(index);
-    const auto height = fork->height_at(index);
 
     const result_handler populated_handler =
-        std::bind(&validate_block::handle_accept,
-            this, _1, block, height, asio::steady_clock::now(), handler);
+        std::bind(&validate_block::handle_populated,
+            this, _1, block, asio::steady_clock::now(), handler);
 
     // Skip chain state population if already populated.
     if (!block->validation.state)
@@ -129,24 +125,72 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
         populator_.populate_block_state(fork, index, populated_handler);
 }
 
-void validate_block::handle_accept(const code& ec, block_const_ptr block,
-    size_t height, const asio::time_point& start_time,
-    result_handler handler) const
+void validate_block::handle_populated(const code& ec, block_const_ptr block,
+    const asio::time_point& start_time, result_handler handler) const
 {
+    report(block, start_time, ec ? "UNPOPULATED" : "populated");
+
     if (ec)
     {
         handler(ec);
         return;
     }
 
-    report(block, start_time, ec ? "UNPOPULATED" : "populated");
-    const auto accept_start_time = asio::steady_clock::now();
+    const auto sigops = std::make_shared<atomic_counter>(0);
 
-    // Run contextual non-script checks.
-    // TODO: parallelize block accept by transaction.
-    const auto error_code = block->accept();
+    const result_handler complete_handler =
+        std::bind(&validate_block::handle_accepted,
+            this, _1, block, asio::steady_clock::now(), sigops, handler);
 
-    report(block, accept_start_time, error_code ? "REJECTED  " : "accepted ");
+    // Run contextual block non-tx checks.
+    const auto error_code = block->accept(false);
+
+    if (error_code)
+    {
+        handler(error_code);
+        return;
+    }
+
+    const auto buckets = priority_pool_.size();
+    const auto& state = block->validation.state;
+    const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
+
+    const result_handler join_handler = synchronize(complete_handler, buckets,
+        NAME "_accept");
+
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
+        dispatch_.concurrent(&validate_block::accept_transactions,
+            this, block, bucket, sigops, bip16, join_handler);
+}
+
+void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
+    atomic_counter_ptr sigops, bool bip16, result_handler handler) const
+{
+    const auto buckets = priority_pool_.size();
+    const auto& state = *block->validation.state;
+    const auto& transactions = block->transactions();
+    const auto size = transactions.size();
+    code ec(error::success);
+
+    // Run contextual tx non-script checks (not in tx order).
+    for (auto tx = bucket; tx < size && !ec; tx = ceiling_add(tx, buckets))
+    {
+        const auto& transaction = transactions[tx];
+        ec = transaction.accept(state, false);
+        *sigops += transaction.signature_operations(bip16);
+    }
+
+    handler(ec);
+}
+
+void validate_block::handle_accepted(const code& ec, block_const_ptr block,
+    const asio::time_point& start_time, atomic_counter_ptr sigops,
+    result_handler handler) const
+{
+    const auto exceeded = *sigops > max_block_sigops;
+    const auto error_code = exceeded ? error::block_embedded_sigop_limit : ec;
+
+    report(block, start_time, error_code ? "REJECTED  " : "accepted ");
     handler(error_code);
 }
 
@@ -164,7 +208,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
 
     const result_handler complete_handler =
         std::bind(&validate_block::handle_connected,
-            this, _1, block, height, asio::steady_clock::now(), handler);
+            this, _1, block, asio::steady_clock::now(), handler);
 
     if (block->validation.state->is_under_checkpoint())
     {
@@ -194,24 +238,6 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     for (size_t set = 0; set < sets->size(); ++set)
         dispatch_.concurrent(&validate_block::connect_inputs,
             this, sets, set, state->enabled_forks(), height, join_handler);
-}
-
-void validate_block::dump(const code& ec, const transaction& tx,
-    uint32_t input_index, uint32_t forks, size_t height, bool use_libconsensus)
-{
-    const auto& prevout = tx.inputs()[input_index].previous_output();
-    const auto script = prevout.validation.cache.script().to_data(false);
-    const auto hash = encode_hash(prevout.hash());
-    const auto tx_hash = encode_hash(tx.hash());
-
-    LOG_DEBUG(LOG_BLOCKCHAIN)
-        << "Verify failed [" << height << "] : " << ec.message() << std::endl
-        << " libconsensus : " << use_libconsensus << std::endl
-        << " forks        : " << forks << std::endl
-        << " outpoint     : " << hash << ":" << prevout.index() << std::endl
-        << " script       : " << encode_base16(script) << std::endl
-        << " inpoint      : " << tx_hash << ":" << input_index << std::endl
-        << " transaction  : " << encode_base16(tx.to_data());
 }
 
 // TODO: move to validate_input.hpp/cpp (static methods only).
@@ -254,15 +280,8 @@ void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
 }
 
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
-    size_t height, const asio::time_point& start_time,
-    result_handler handler) const
+    const asio::time_point& start_time, result_handler handler) const
 {
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
     if (!block->validation.state->is_under_checkpoint())
         report(block, start_time, ec ? "INVALIDATED" : "validated");
 
@@ -304,6 +323,24 @@ void validate_block::report(block_const_ptr block,
             << ") txs in (" << milli_per_block << ") ms or (" << micro_per_input
             << ") μs/input.";
     }
+}
+
+void validate_block::dump(const code& ec, const transaction& tx,
+    uint32_t input_index, uint32_t forks, size_t height, bool use_libconsensus)
+{
+    const auto& prevout = tx.inputs()[input_index].previous_output();
+    const auto script = prevout.validation.cache.script().to_data(false);
+    const auto hash = encode_hash(prevout.hash());
+    const auto tx_hash = encode_hash(tx.hash());
+
+    LOG_DEBUG(LOG_BLOCKCHAIN)
+        << "Verify failed [" << height << "] : " << ec.message() << std::endl
+        << " libconsensus : " << use_libconsensus << std::endl
+        << " forks        : " << forks << std::endl
+        << " outpoint     : " << hash << ":" << prevout.index() << std::endl
+        << " script       : " << encode_base16(script) << std::endl
+        << " inpoint      : " << tx_hash << ":" << input_index << std::endl
+        << " transaction  : " << encode_base16(tx.to_data());
 }
 
 } // namespace blockchain
