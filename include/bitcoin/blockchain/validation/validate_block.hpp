@@ -58,13 +58,15 @@ protected:
 
 private:
     static void dump(const code& ec, const chain::transaction& tx,
-        uint32_t input_index, uint32_t forks, bool use_libconsensus);
+        uint32_t input_index, uint32_t forks, size_t height,
+        bool use_libconsensus);
 
     void handle_accept(const code& ec, block_const_ptr block, size_t height,
         const asio::time_point& start_time, result_handler handler) const;
 
     void connect_inputs(chain::transaction::sets_const_ptr input_sets,
-        size_t sets_index, uint32_t forks, result_handler handler) const;
+        size_t sets_index, uint32_t forks, size_t height,
+        result_handler handler) const;
 
     void handle_connected(const code& ec, block_const_ptr block, size_t height,
         const asio::time_point& start_time, result_handler handler) const;
