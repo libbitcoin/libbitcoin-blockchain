@@ -75,8 +75,7 @@ private:
         const asio::time_point& start_time, atomic_counter_ptr sigops,
         result_handler handler) const;
 
-    void connect_inputs(chain::transaction::sets_const_ptr input_sets,
-        size_t sets_index, uint32_t forks, size_t height,
+    void connect_inputs(block_const_ptr block, size_t bucket,
         result_handler handler) const;
 
     void handle_connected(const code& ec, block_const_ptr block,
