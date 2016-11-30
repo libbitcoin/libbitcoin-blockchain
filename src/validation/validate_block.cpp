@@ -108,13 +108,12 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
 {
     BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
-
-    const result_handler populated_handler =
+    const result_handler complete_handler =
         std::bind(&validate_block::handle_populated,
             this, _1, block, asio::steady_clock::now(), handler);
 
     // Populate chain state and block state as required.
-    populator_.populate_block_state(fork, index, populated_handler);
+    populator_.populate_block_state(fork, index, complete_handler);
 }
 
 void validate_block::handle_populated(const code& ec, block_const_ptr block,
@@ -139,17 +138,24 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
+    const auto state = block->validation.state;
     const auto sigops = std::make_shared<atomic_counter>(0);
     const result_handler complete_handler =
         std::bind(&validate_block::handle_accepted,
             this, _1, block, asio::steady_clock::now(), sigops, handler);
 
+    if (state->is_under_checkpoint())
+    {
+        complete_handler(error::success);
+        return;
+    }
+
     const auto count = block->transactions().size();
+    auto bip16 = state->is_enabled(rule_fork::bip16_rule);
     const auto buckets = std::min(priority_pool_.size(), count);
     const result_handler join_handler = synchronize(complete_handler, buckets,
         NAME "_accept");
 
-    auto bip16 = block->validation.state->is_enabled(rule_fork::bip16_rule);
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
@@ -255,10 +261,9 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
                 continue;
 
             const auto& prevout = inputs[input_index].previous_output();
-
             if (!prevout.validation.cache.is_valid())
             {
-                ec = error::missing_input;
+                ec = error::missing_previous_output;
                 break;
             }
 
