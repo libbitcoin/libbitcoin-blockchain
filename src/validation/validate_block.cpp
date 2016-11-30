@@ -113,21 +113,15 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
         std::bind(&validate_block::handle_populated,
             this, _1, block, asio::steady_clock::now(), handler);
 
-    // Skip chain state population if already populated.
-    if (!block->validation.state)
-        populator_.populate_chain_state(fork, index);
-
-    // Skip block state population if not needed or already populated.
-    if (block->validation.state->is_under_checkpoint() ||
-        block->validation.sets)
-        populated_handler(error::success);
-    else
-        populator_.populate_block_state(fork, index, populated_handler);
+    // Populate chain state and block state as required.
+    populator_.populate_block_state(fork, index, populated_handler);
 }
 
 void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const asio::time_point& start_time, result_handler handler) const
 {
+    BITCOIN_ASSERT(block->validation.state);
+
     report(block, start_time, ec ? "UNPOPULATED" : "populated");
 
     if (ec)
@@ -135,12 +129,6 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         handler(ec);
         return;
     }
-
-    const auto sigops = std::make_shared<atomic_counter>(0);
-
-    const result_handler complete_handler =
-        std::bind(&validate_block::handle_accepted,
-            this, _1, block, asio::steady_clock::now(), sigops, handler);
 
     // Run contextual block non-tx checks.
     const auto error_code = block->accept(false);
@@ -151,13 +139,17 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
-    const auto buckets = priority_pool_.size();
-    const auto& state = block->validation.state;
-    const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
+    const auto sigops = std::make_shared<atomic_counter>(0);
+    const result_handler complete_handler =
+        std::bind(&validate_block::handle_accepted,
+            this, _1, block, asio::steady_clock::now(), sigops, handler);
 
+    const auto count = block->transactions().size();
+    const auto buckets = std::min(priority_pool_.size(), count);
     const result_handler join_handler = synchronize(complete_handler, buckets,
         NAME "_accept");
 
+    auto bip16 = block->validation.state->is_enabled(rule_fork::bip16_rule);
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
@@ -166,16 +158,16 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
 void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     atomic_counter_ptr sigops, bool bip16, result_handler handler) const
 {
+    code ec(error::success);
     const auto buckets = priority_pool_.size();
     const auto& state = *block->validation.state;
-    const auto& transactions = block->transactions();
-    const auto size = transactions.size();
-    code ec(error::success);
+    const auto& txs = block->transactions();
+    const auto count = txs.size();
 
     // Run contextual tx non-script checks (not in tx order).
-    for (auto tx = bucket; tx < size && !ec; tx = ceiling_add(tx, buckets))
+    for (auto tx = bucket; tx < count && !ec; tx = ceiling_add(tx, buckets))
     {
-        const auto& transaction = transactions[tx];
+        const auto& transaction = txs[tx];
         ec = transaction.accept(state, false);
         *sigops += transaction.signature_operations(bip16);
     }
@@ -202,9 +194,8 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
     BITCOIN_ASSERT(index < fork->size());
-
     const auto block = fork->block_at(index);
-    const auto height = fork->height_at(index);
+    BITCOIN_ASSERT(block->validation.state);
 
     const result_handler complete_handler =
         std::bind(&validate_block::handle_connected,
@@ -216,62 +207,72 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto sets = block->validation.sets;
-    const auto state = block->validation.state;
+    const auto non_coinbase_inputs = block->total_inputs(false);
 
-    if (!sets || !state)
-    {
-        complete_handler(error::operation_failed);
-        return;
-    }
-
-    // Sets will be empty if there is only a coinbase tx.
-    if (sets->empty())
+    // Return if there are no non-coinbase inputs to validate.
+    if (non_coinbase_inputs == 0)
     {
         complete_handler(error::success);
         return;
     }
 
-    const result_handler join_handler = synchronize(complete_handler,
-        sets->size(), NAME "_validate");
+    const auto buckets = std::min(priority_pool_.size(), non_coinbase_inputs);
+    const result_handler join_handler = synchronize(complete_handler, buckets,
+        NAME "_validate");
 
-    for (size_t set = 0; set < sets->size(); ++set)
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&validate_block::connect_inputs,
-            this, sets, set, state->enabled_forks(), height, join_handler);
+            this, block, bucket, join_handler);
 }
 
 // TODO: move to validate_input.hpp/cpp (static methods only).
-void validate_block::connect_inputs(transaction::sets_const_ptr input_sets,
-    size_t sets_index, uint32_t forks, size_t height,
+void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(!input_sets->empty() && sets_index < input_sets->size());
-
     code ec(error::success);
-    const auto& sets = (*input_sets)[sets_index];
+    const auto buckets = priority_pool_.size();
+    const auto forks = block->validation.state->enabled_forks();
+    const auto& txs = block->transactions();
+    size_t position = 0;
 
-    for (auto& set: sets)
+    // Must skip coinbase here as it is already accounted for.
+    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
-        const auto& input = set.tx.inputs()[set.input_index];
-
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
 
-        if (!input.previous_output().validation.cache.is_valid())
+        size_t input_index;
+        const auto& inputs = tx->inputs();
+
+        // TODO: eliminate the wasteful iterations by using smart step.
+        for (input_index = 0; input_index < inputs.size();
+            ++input_index, ++position)
         {
-            ec = error::missing_input;
-            break;
+            if (position % buckets != bucket)
+                continue;
+
+            const auto& prevout = inputs[input_index].previous_output();
+
+            if (!prevout.validation.cache.is_valid())
+            {
+                ec = error::missing_input;
+                break;
+            }
+
+            if ((ec = validate_input::verify_script(*tx, input_index, forks,
+                use_libconsensus_)))
+            {
+                break;
+            }
         }
 
-        if ((ec = validate_input::verify_script(set.tx, set.input_index, forks,
-            use_libconsensus_)))
+        if (ec)
         {
-            dump(ec, set.tx, set.input_index, forks, height, use_libconsensus_);
+            const auto height = block->validation.state->height();
+            dump(ec, *tx, input_index, forks, height, use_libconsensus_);
             break;
         }
     }

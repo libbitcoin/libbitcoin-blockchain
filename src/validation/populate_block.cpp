@@ -218,49 +218,30 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
 void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
     result_handler handler) const
 {
-    populate_input_sets(fork, index);
-    populate_transactions(fork, index, handler);
-}
-
-void populate_block::populate_input_sets(fork::const_ptr fork,
-    size_t index) const
-{
-    BITCOIN_ASSERT(index < fork->size());
     const auto block = fork->block_at(index);
 
-    // TODO: balance by sigop count when used for script validation.
-    // Balanced by input count, which is optimal for data population.
-    block->validation.sets = block->to_input_sets(buckets_, false);
-}
+    // Populate chain state if not already populated, always required.
+    if (!block->validation.state)
+        populate_chain_state(fork, index);
 
-void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
-    result_handler handler) const
-{
-    const auto block = fork->block_at(index);
-    const auto sets = block->validation.sets;
+    BITCOIN_ASSERT(block->validation.state);
+    const auto state = block->validation.state;
 
-    populate_coinbase(block);
-
-    // Sets will be empty if there is only a coinbase tx.
-    if (sets->empty())
+    // Return if this blocks is under a checkpoint, block state not requried.
+    if (state->is_under_checkpoint())
     {
         handler(error::success);
         return;
     }
 
-    if (!block->validation.state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
+    populate_coinbase(block);
 
     //*************************************************************************
     // CONSENSUS: Satoshi implemented this change in Nov 2015. This was a hard 
     // fork that will produce catostrophic results in the case of a hash
     // collision. Unspent duplicate check has cost but should not be skipped.
     //*************************************************************************
-    if (!block->validation.state->is_enabled(
-        machine::rule_fork::allowed_duplicates))
+    if (!state->is_enabled(machine::rule_fork::allowed_duplicates))
     {
         //*********************************************************************
         // CONSENSUS: Coinbase prevouts are null but the tx duplicate check
@@ -273,13 +254,22 @@ void populate_block::populate_transactions(fork::const_ptr fork, size_t index,
         }
     }
 
-    const result_handler join_handler = synchronize(handler, sets->size(),
+    const auto non_coinbase_inputs = block->total_inputs(false);
+
+    // Return if there are no non-coinbase inputs to validate.
+    if (non_coinbase_inputs == 0)
+    {
+        handler(error::success);
+        return;
+    }
+
+    const auto buckets = std::min(buckets_, non_coinbase_inputs);
+    const result_handler join_handler = synchronize(handler, buckets,
         NAME "_populate");
 
-    // Concurrent implementation.
-    for (size_t set = 0; set < sets->size(); ++set)
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_inputs,
-            this, fork, index, sets, set, join_handler);
+            this, fork, index, bucket, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
@@ -320,30 +310,38 @@ void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
 }
 
 void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
-    transaction::sets_const_ptr input_sets, size_t sets_index,
-    result_handler handler) const
+    size_t bucket, result_handler handler) const
 {
-    BITCOIN_ASSERT(!input_sets->empty());
-    BITCOIN_ASSERT(sets_index < input_sets->size());
-
     code ec(error::success);
+    const auto block = fork->block_at(index);
     const auto fork_height = fork->height();
-    const auto& sets = (*input_sets)[sets_index];
+    const auto& txs = block->transactions();
+    size_t position = 0;
 
-    for (auto& set: sets)
+    // Must skip coinbase here as it is already accounted for.
+    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        BITCOIN_ASSERT(!set.tx.is_coinbase());
-        BITCOIN_ASSERT(set.input_index < set.tx.inputs().size());
-        const auto& input = set.tx.inputs()[set.input_index];
-
         if (stopped())
         {
             ec = error::service_stopped;
             break;
         }
 
-        populate_prevout(fork_height, input.previous_output());
-        populate_prevout(fork, index, input.previous_output());
+        const auto& inputs = tx->inputs();
+
+        // TODO: eliminate the wasteful iterations by using smart step.
+        for (size_t input_index = 0; input_index < inputs.size();
+            ++input_index, ++position)
+        {
+            if (position % buckets_ != bucket)
+                continue;
+
+            const auto& input = inputs[input_index];
+            const auto& output = input.previous_output();
+
+            populate_prevout(fork_height, output);
+            populate_prevout(fork, index, output);
+        }
     }
 
     handler(ec);
