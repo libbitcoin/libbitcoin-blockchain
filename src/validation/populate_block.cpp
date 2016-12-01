@@ -255,11 +255,11 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto buckets = std::min(buckets_, non_coinbase_inputs);
-    const auto join_handler = synchronize(handler, buckets,
+    const auto threads = std::min(buckets_, non_coinbase_inputs);
+    const result_handler join_handler = synchronize(handler, threads,
         NAME "_populate");
 
-    for (size_t bucket = 0; bucket < buckets; ++bucket)
+    for (size_t bucket = 0; bucket < threads; ++bucket)
         dispatch_.concurrent(&populate_block::populate_inputs,
             this, fork, index, bucket, join_handler);
 }

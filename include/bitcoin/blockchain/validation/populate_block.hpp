@@ -92,7 +92,7 @@ private:
     const config::checkpoint::list checkpoints_;
     mutable dispatcher dispatch_;
 
-    // This is protected by caller not invoking populate concurrently.
+    // The store is protected by caller not invoking populate concurrently.
     const fast_chain& fast_chain_;
 };
 

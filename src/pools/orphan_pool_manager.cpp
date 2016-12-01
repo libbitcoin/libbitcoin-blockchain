@@ -24,6 +24,7 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/orphan_pool.hpp>
@@ -47,6 +48,18 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
+static inline size_t cores(const settings& settings)
+{
+    const auto configured = settings.threads;
+    const auto hardware = std::max(std::thread::hardware_concurrency(), 1u);
+    return configured == 0 ? hardware : std::min(configured, hardware);
+}
+
+static inline thread_priority priority(const settings& settings)
+{
+    return settings.priority ? thread_priority::high : thread_priority::normal;
+}
+
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     fast_chain& chain, orphan_pool& orphan_pool,
     const settings& settings)
@@ -54,9 +67,10 @@ orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
     stopped_(true),
     flush_reorganizations_(settings.flush_reorganizations),
     orphan_pool_(orphan_pool),
-    validator_(thread_pool, fast_chain_, settings),
+    priority_pool_(cores(settings), priority(settings)),
+    validator_(priority_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
-    dispatch_(thread_pool_, NAME "_dispatch")
+    dispatch_(thread_pool, NAME "_dispatch")
 {
 }
 

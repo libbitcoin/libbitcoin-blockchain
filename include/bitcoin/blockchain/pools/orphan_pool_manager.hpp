@@ -83,7 +83,7 @@ private:
     std::atomic<bool> stopped_;
     const bool flush_reorganizations_;
     orphan_pool& orphan_pool_;
-    threadpool thread_pool_;
+    threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;

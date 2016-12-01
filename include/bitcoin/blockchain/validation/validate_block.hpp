@@ -43,7 +43,7 @@ public:
     static void report(block_const_ptr block,
         const asio::time_point& start_time, const std::string& token);
 
-    validate_block(threadpool& pool, const fast_chain& chain,
+    validate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
     void stop();
@@ -83,8 +83,8 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const size_t buckets_;
     const bool use_libconsensus_;
-    threadpool priority_pool_;
     mutable dispatcher dispatch_;
 
     // Caller must not invoke accept/connect concurrently.
