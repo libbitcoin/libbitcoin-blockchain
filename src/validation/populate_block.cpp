@@ -314,12 +314,6 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        if (stopped())
-        {
-            ec = error::service_stopped;
-            break;
-        }
-
         const auto& inputs = tx->inputs();
 
         // TODO: eliminate the wasteful iterations by using smart step.

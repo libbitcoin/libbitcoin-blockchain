@@ -229,12 +229,6 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        if (stopped())
-        {
-            ec = error::service_stopped;
-            break;
-        }
-
         size_t input_index;
         const auto& inputs = tx->inputs();
 
