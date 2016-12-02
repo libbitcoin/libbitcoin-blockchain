@@ -145,8 +145,11 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
 #else
 
 code validate_input::verify_script(const transaction& tx,
-    uint32_t input_index, uint32_t flags, bool)
+    uint32_t input_index, uint32_t flags, bool use_libconsensus)
 {
+    if (use_libconsensus)
+        return error::operation_failed;
+
     return script::verify(tx, input_index, flags);
 }
 
