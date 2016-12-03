@@ -51,15 +51,13 @@ static constexpr size_t micro_per_milliseconds = 1000;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-// TODO: allow priority pool to be empty and fall back the network pool:
-// dispatch_(priority_pool.size() == 0 ? network_pool : priority_pool)
 populate_block::populate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
   : stopped_(false),
     buckets_(priority_pool.size()),
     configured_forks_(settings.enabled_forks),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    dispatch_(priority_pool, NAME "_dispatch"),
+    priority_dispatch_(priority_pool, NAME "_dispatch"),
     fast_chain_(chain)
 {
 }
@@ -257,11 +255,11 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
     }
 
     const auto threads = std::min(buckets_, non_coinbase_inputs);
-    const result_handler join_handler = synchronize(handler, threads,
+    const auto join_handler = synchronize(handler, threads,
         NAME "_populate");
 
     for (size_t bucket = 0; bucket < threads; ++bucket)
-        dispatch_.concurrent(&populate_block::populate_inputs,
+        priority_dispatch_.concurrent(&populate_block::populate_inputs,
             this, fork, index, bucket, join_handler);
 }
 

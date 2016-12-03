@@ -55,7 +55,7 @@ validate_block::validate_block(threadpool& priority_pool,
   : stopped_(false),
     buckets_(priority_pool.size()),
     use_libconsensus_(settings.use_libconsensus),
-    dispatch_(priority_pool, NAME "_dispatch"),
+    priority_dispatch_(priority_pool, NAME "_dispatch"),
     populator_(priority_pool, chain, settings)
 {
 }
@@ -140,11 +140,11 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto count = block->transactions().size();
     auto bip16 = state->is_enabled(rule_fork::bip16_rule);
     const auto threads = std::min(buckets_, count);
-    const result_handler join_handler = synchronize(complete_handler, threads,
+    const auto join_handler = synchronize(complete_handler, threads,
         NAME "_accept");
 
     for (size_t bucket = 0; bucket < threads; ++bucket)
-        dispatch_.concurrent(&validate_block::accept_transactions,
+        priority_dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
 }
 
@@ -209,11 +209,11 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     }
 
     const auto buckets = std::min(buckets_, non_coinbase_inputs);
-    const result_handler join_handler = synchronize(complete_handler, buckets,
+    const auto join_handler = synchronize(complete_handler, buckets,
         NAME "_validate");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
-        dispatch_.concurrent(&validate_block::connect_inputs,
+        priority_dispatch_.concurrent(&validate_block::connect_inputs,
             this, block, bucket, join_handler);
 }
 

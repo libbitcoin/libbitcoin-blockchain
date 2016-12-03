@@ -85,7 +85,7 @@ private:
     std::atomic<bool> stopped_;
     const size_t buckets_;
     const bool use_libconsensus_;
-    mutable dispatcher dispatch_;
+    mutable dispatcher priority_dispatch_;
 
     // Caller must not invoke accept/connect concurrently.
     populate_block populator_;
