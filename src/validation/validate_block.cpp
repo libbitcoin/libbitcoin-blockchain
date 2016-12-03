@@ -153,7 +153,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto count = block->transactions().size();
     auto bip16 = state->is_enabled(rule_fork::bip16_rule);
     const auto buckets = std::min(priority_pool_.size(), count);
-    const result_handler join_handler = synchronize(complete_handler, buckets,
+    const auto join_handler = synchronize(complete_handler, buckets,
         NAME "_accept");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
@@ -223,7 +223,7 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
     }
 
     const auto buckets = std::min(priority_pool_.size(), non_coinbase_inputs);
-    const result_handler join_handler = synchronize(complete_handler, buckets,
+    const auto join_handler = synchronize(complete_handler, buckets,
         NAME "_validate");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)

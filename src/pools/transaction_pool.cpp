@@ -364,8 +364,7 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 void transaction_pool::subscribe_transaction(
     transaction_handler handle_transaction)
 {
-    subscriber_->subscribe(handle_transaction, error::service_stopped, {},
-        nullptr);
+    subscriber_->subscribe(handle_transaction, error::service_stopped, {}, {});
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,

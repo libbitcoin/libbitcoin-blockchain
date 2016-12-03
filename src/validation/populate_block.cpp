@@ -256,7 +256,7 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
     }
 
     const auto buckets = std::min(buckets_, non_coinbase_inputs);
-    const result_handler join_handler = synchronize(handler, buckets,
+    const auto join_handler = synchronize(handler, buckets,
         NAME "_populate");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
