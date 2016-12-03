@@ -49,7 +49,8 @@ public:
         fetch_inventory_handler;
     typedef std::function<bool(const code&, const indexes&,
         transaction_const_ptr)> transaction_handler;
-    typedef resubscriber<const code&, const indexes&, transaction_const_ptr>
+
+    typedef resubscriber<code, indexes, transaction_const_ptr>
         transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,

@@ -45,8 +45,7 @@ public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<orphan_pool_manager> ptr;
     typedef safe_chain::reorganize_handler reorganize_handler;
-    typedef resubscriber<const code&, size_t, const list&, const list&>
-        reorganize_subscriber;
+    typedef resubscriber<code, size_t, list, list> reorganize_subscriber;
 
     /// Construct an instance.
     orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
