@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -204,84 +205,70 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     return std::make_shared<transaction>(result.transaction());
 }
 
-// Writers.
+// Synchronous write sequence.
 // ----------------------------------------------------------------------------
 
-// This is used by parallel block download. Insert a block to the blockchain,
-// height is checked for existence.
 bool block_chain::insert(block_const_ptr block, size_t height, bool flush)
 {
-    return write_serial(
-        std::bind(&block_chain::do_insert,
-            this, std::ref(*block), height), flush);
+    // End must be paired with read, regardless of result.
+    const auto begin = database_.begin_write(flush);
+    const auto write = begin && do_insert(*block, height);
+    const auto end = database_.end_write(flush);
+    return begin && write && end;
 }
 
 bool block_chain::do_insert(const chain::block& block, size_t height)
 {
-    return database_.insert(block, height);
+    return database_.insert(block, height) == error::success;
 }
 
-// This is used by ordered block download. Height is used by the database to
-// validate the intended height. Hash chaining is also verified.
-bool block_chain::push(const block_const_ptr_list& blocks, size_t height,
-    bool flush)
+// Asynchronous write sequence.
+// ------------------------------------------------------------------------ 
+
+void block_chain::reorganize(const block_const_ptr_list& in_blocks,
+    size_t fork_height, const hash_digest& fork_hash, bool flush,
+    dispatcher& dispatch, result_handler handler)
 {
-    for (const auto block: blocks)
-        if (!write_serial(
-            std::bind(&block_chain::do_push,
-                this, std::ref(*block), height), flush))
-            return false;
+    const result_handler pop_handler =
+        std::bind(&block_chain::handle_pop,
+            this, _1, std::ref(in_blocks), fork_height, flush,
+                std::ref(dispatch), handler);
 
-    return true;
-}
-
-bool block_chain::do_push(const chain::block& block, size_t height)
-{
-    return database_.push(block, height);
-}
-
-// This is used by reorganization, removing a set of connected blocks from
-// above the specified hash to the top.
-bool block_chain::pop(block_const_ptr_list& out_blocks,
-    const hash_digest& fork_hash, bool flush)
-{
-    chain::block::list blocks;
-
-    if (!write_serial(
-        std::bind(&block_chain::do_pop,
-            this, std::ref(blocks), std::ref(fork_hash)), flush))
-        return false;
-
-    const auto map = [](chain::block& block)
+    if (!database_.begin_write(flush))
     {
-        // This uses the block move constructor to limit copying.
-        return std::make_shared<const message::block>(std::move(block));
-    };
+        pop_handler(error::operation_failed);
+        return;
+    }
 
-    // Transform the list of blocks into a list of block message const ptrs.
-    out_blocks.clear();
-    out_blocks.resize(blocks.size());
-    std::transform(blocks.begin(), blocks.end(), out_blocks.begin(), map);
-    return true;
+    block_const_ptr_list out_blocks;
+    database_.pop_above(out_blocks, fork_hash, dispatch, pop_handler);
 }
 
-bool block_chain::do_pop(block::list& out_blocks, const hash_digest& fork_hash)
+void block_chain::handle_pop(const code& ec,
+    const block_const_ptr_list& in_blocks, size_t fork_height, bool flush,
+    dispatcher& dispatch, result_handler handler)
 {
-    return database_.pop_above(out_blocks, fork_hash);
+    const result_handler push_handler =
+        std::bind(&block_chain::handle_push,
+            this, _1, flush, handler);
+
+    if (ec)
+    {
+        push_handler(ec);
+        return;
+    }
+
+    database_.push_all(in_blocks, safe_increment(fork_height), dispatch,
+        push_handler);
 }
 
-/// Swap incoming and outgoing blocks, height is validated.
-/// This is NOT safe for concurrent execution with another write.
-/// This is safe for concurrent execution with safe_chain reads.
-bool block_chain::swap(block_const_ptr_list& out_blocks,
-    const block_const_ptr_list& in_blocks, size_t fork_height,
-    const hash_digest& fork_hash, bool flush)
+void block_chain::handle_push(const code& ec, bool flush,
+    result_handler handler)
 {
-    return
-        (!flush || begin_writes()) &&
-        pop(out_blocks, fork_hash, false) &&
-        push(in_blocks, safe_increment(fork_height), false) &&
-        (!flush || end_writes());
+    const auto end_code = database_.end_write(flush) ?
+        error::success : error::operation_failed;
+
+    handler(ec ? ec : end_code);
 }
 
 // ============================================================================
@@ -923,7 +910,6 @@ bool block_chain::stopped() const
 // ----------------------------------------------------------------------------
 
 // Use to create flush lock scope around multiple closely-spaced inserts.
-// This is a performance optimization that requires write_serial(..., false).
 bool block_chain::begin_writes()
 {
     //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -937,19 +923,8 @@ bool block_chain::end_writes()
 }
 
 // private
-template <typename Writer>
-bool block_chain::write_serial(Writer&& writer, bool flush)
-{
-    // End must be paried with read, regardless of result.
-    const auto begin = database_.begin_write(flush);
-    const auto write = begin && std::forward<Writer>(writer)();
-    const auto end = database_.end_write(flush);
-    return begin && write && end;
-}
-
-// private
 template <typename Reader>
-void block_chain::read_serial(Reader&& reader) const
+void block_chain::read_serial(const Reader& reader) const
 {
     while (true)
     {
@@ -957,8 +932,7 @@ void block_chain::read_serial(Reader&& reader) const
         const auto sequence = database_.begin_read();
 
         // If read handle indicates write and reader finishes false, wait.
-        if (!database_.is_write_locked(sequence) &&
-            std::forward<Reader>(reader)(sequence))
+        if (!database_.is_write_locked(sequence) && reader(sequence))
             break;
 
         // Sleep while waiting for write to complete.

@@ -61,13 +61,13 @@ static inline thread_priority priority(const settings& settings)
 }
 
 orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
-    fast_chain& chain, orphan_pool& orphan_pool,
-    const settings& settings)
+    fast_chain& chain, orphan_pool& orphan_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     flush_reorganizations_(settings.flush_reorganizations),
     orphan_pool_(orphan_pool),
     priority_pool_(cores(settings), priority(settings)),
+    priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
     dispatch_(thread_pool, NAME "_dispatch")
@@ -344,31 +344,41 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
-    list outgoing_blocks;
-    const auto start_time = asio::steady_clock::now();
+    const auto complete =
+        std::bind(&orphan_pool_manager::handle_reorganized,
+            this, _1, fork, asio::steady_clock::now(), handler);
 
     // Replace! Switch!
     //#########################################################################
-    const auto swap = fast_chain_.swap(outgoing_blocks, fork->blocks(),
-        fork->height(), fork->hash(), flush_reorganizations_);
+    fast_chain_.reorganize(fork->blocks(), fork->height(), fork->hash(),
+        flush_reorganizations_, priority_dispatch_, complete);
     //#########################################################################
+}
 
-    validate_block::report(fork->blocks().back(), start_time, !swap ?
+void orphan_pool_manager::handle_reorganized(const code& ec, fork::ptr fork,
+    const asio::time_point& start_time, result_handler handler)
+{
+    validate_block::report(fork->blocks().back(), start_time, ec ?
         "STRANDED " : "deposited");
 
-    if (!swap)
+    // TODO: a failure here implies database corruption, handle accordingly.
+    if (ec)
     {
-        handler(error::operation_failed);
+        handler(ec);
         return;
     }
+
+    block_const_ptr_list outgoing_blocks;
 
     // Remove before add so that we don't overflow the pool and lose blocks.
     orphan_pool_.remove(fork->blocks());
     orphan_pool_.add(outgoing_blocks);
 
+    // We can allow the next block before broadcasting the notification.
+    handler(error::success);
+
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
     notify_reorganize(fork->height(), fork->blocks(), outgoing_blocks);
-    handler(error::success);
 }
 
 // Subscription.

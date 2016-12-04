@@ -34,6 +34,8 @@ namespace blockchain {
 class BCB_API fast_chain
 {
 public:
+    typedef handle0 complete_handler;
+
     // Readers.
     // ------------------------------------------------------------------------
 
@@ -87,7 +89,7 @@ public:
     virtual transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& hash) const = 0;
 
-    // Writers.
+    // Synchronous writers.
     // ------------------------------------------------------------------------ 
 
     /// Set the flush lock scope (for use only with insert).
@@ -99,18 +101,13 @@ public:
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height, bool flush) = 0;
 
-    /// Append the blocks to the top of the chain, height is validated.
-    virtual bool push(const block_const_ptr_list& blocks, size_t height,
-        bool flush) = 0;
-
-    /// Remove blocks from above the given hash, returning them in order.
-    virtual bool pop(block_const_ptr_list& out_blocks,
-        const hash_digest& fork_hash, bool flush) = 0;
+    // Asynchronous writers.
+    // ------------------------------------------------------------------------ 
 
     /// Swap incoming and outgoing blocks, height is validated.
-    virtual bool swap(block_const_ptr_list& out_blocks,
-        const block_const_ptr_list& in_blocks, size_t fork_height,
-        const hash_digest& fork_hash, bool flush) = 0;
+    virtual void reorganize(const block_const_ptr_list& in_blocks,
+        size_t fork_height, const hash_digest& fork_hash, bool flush,
+        dispatcher& dispatch, complete_handler handler) = 0;
 };
 
 } // namespace blockchain
