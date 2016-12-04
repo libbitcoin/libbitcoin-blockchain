@@ -26,7 +26,6 @@
 #include <cmath>
 #include <functional>
 #include <memory>
-#include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -51,25 +50,13 @@ static constexpr size_t micro_per_milliseconds = 1000;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-static inline size_t cores(const settings& settings)
-{
-    const auto configured = settings.threads;
-    const auto hardware = std::max(std::thread::hardware_concurrency(), 1u);
-    return configured == 0 ? hardware : std::min(configured, hardware);
-}
-
-static inline thread_priority priority(const settings& settings)
-{
-    return settings.priority ? thread_priority::high : thread_priority::normal;
-}
-
-validate_block::validate_block(threadpool& pool, const fast_chain& chain,
-    const settings& settings)
+validate_block::validate_block(threadpool& priority_pool,
+    const fast_chain& chain, const settings& settings)
   : stopped_(false),
+    buckets_(priority_pool.size()),
     use_libconsensus_(settings.use_libconsensus),
-    priority_pool_(cores(settings), priority(settings)),
-    dispatch_(priority_pool_, NAME "_dispatch"),
-    populator_(priority_pool_, chain, settings)
+    priority_dispatch_(priority_pool, NAME "_dispatch"),
+    populator_(priority_pool, chain, settings)
 {
 }
 
@@ -152,12 +139,12 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
 
     const auto count = block->transactions().size();
     auto bip16 = state->is_enabled(rule_fork::bip16_rule);
-    const auto buckets = std::min(priority_pool_.size(), count);
-    const auto join_handler = synchronize(complete_handler, buckets,
+    const auto threads = std::min(buckets_, count);
+    const auto join_handler = synchronize(complete_handler, threads,
         NAME "_accept");
 
-    for (size_t bucket = 0; bucket < buckets; ++bucket)
-        dispatch_.concurrent(&validate_block::accept_transactions,
+    for (size_t bucket = 0; bucket < threads; ++bucket)
+        priority_dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
 }
 
@@ -165,13 +152,12 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     atomic_counter_ptr sigops, bool bip16, result_handler handler) const
 {
     code ec(error::success);
-    const auto buckets = priority_pool_.size();
     const auto& state = *block->validation.state;
     const auto& txs = block->transactions();
     const auto count = txs.size();
 
     // Run contextual tx non-script checks (not in tx order).
-    for (auto tx = bucket; tx < count && !ec; tx = ceiling_add(tx, buckets))
+    for (auto tx = bucket; tx < count && !ec; tx = ceiling_add(tx, buckets_))
     {
         const auto& transaction = txs[tx];
         ec = transaction.accept(state, false);
@@ -222,12 +208,12 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto buckets = std::min(priority_pool_.size(), non_coinbase_inputs);
+    const auto buckets = std::min(buckets_, non_coinbase_inputs);
     const auto join_handler = synchronize(complete_handler, buckets,
         NAME "_validate");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
-        dispatch_.concurrent(&validate_block::connect_inputs,
+        priority_dispatch_.concurrent(&validate_block::connect_inputs,
             this, block, bucket, join_handler);
 }
 
@@ -236,7 +222,6 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     result_handler handler) const
 {
     code ec(error::success);
-    const auto buckets = priority_pool_.size();
     const auto forks = block->validation.state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
@@ -244,12 +229,6 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        if (stopped())
-        {
-            ec = error::service_stopped;
-            break;
-        }
-
         size_t input_index;
         const auto& inputs = tx->inputs();
 
@@ -257,7 +236,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         for (input_index = 0; input_index < inputs.size();
             ++input_index, ++position)
         {
-            if (position % buckets != bucket)
+            if (position % buckets_ != bucket)
                 continue;
 
             const auto& prevout = inputs[input_index].previous_output();

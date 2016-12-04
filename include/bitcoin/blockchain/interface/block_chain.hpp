@@ -102,9 +102,9 @@ public:
     transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& hash) const;
 
-    // Writers.
+    // Synchronous writer.
     // ------------------------------------------------------------------------
-    // Not thread safe except as noted.
+    // Safe for concurrent execution with self (only).
 
     /// Set the flush lock scope (for use only with insert).
     bool begin_writes();
@@ -113,26 +113,17 @@ public:
     bool end_writes();
 
     /// Insert a block to the blockchain, height is checked for existence.
-    /// This is safe for concurrent execution with itself (only).
     bool insert(block_const_ptr block, size_t height, bool flush);
 
-    /// Append the blocks to the top of the chain, height is validated.
-    /// This is NOT safe for concurrent execution with another write.
-    /// This is safe for concurrent execution with safe_chain reads.
-    bool push(const block_const_ptr_list& block, size_t height, bool flush);
-
-    /// Remove blocks from above the given hash, returning them in order.
-    /// This is NOT safe for concurrent execution with another write.
-    /// This is safe for concurrent execution with safe_chain reads.
-    bool pop(block_const_ptr_list& out_blocks, const hash_digest& fork_hash,
-        bool flush);
+    // Asynchronous writer.
+    // ------------------------------------------------------------------------
+    // Safe for concurrent execution with safe_chain reads.
+    // Not safe for concurrent execution with other writes.
 
     /// Swap incoming and outgoing blocks, height is validated.
-    /// This is NOT safe for concurrent execution with another write.
-    /// This is safe for concurrent execution with safe_chain reads.
-    bool swap(block_const_ptr_list& out_blocks,
-        const block_const_ptr_list& in_blocks, size_t fork_height,
-        const hash_digest& fork_hash, bool flush);
+    void reorganize(const block_const_ptr_list& in_blocks, size_t fork_height,
+        const hash_digest& fork_hash, bool flush, dispatcher& dispatch,
+        complete_handler handler);
 
     // ========================================================================
     // SAFE CHAIN
@@ -275,7 +266,6 @@ public:
 
     // Properties.
     //-----------------------------------------------------------------------------
-    // Thread safe.
 
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
@@ -291,11 +281,8 @@ private:
     // Sequential locking helpers.
     // ----------------------------------------------------------------------------
 
-    template <typename Writer>
-    bool write_serial(Writer&& writer, bool flush);
-
     template <typename Reader>
-    void read_serial(Reader&& reader) const;
+    void read_serial(const Reader& reader) const;
 
     template <typename Handler, typename... Args>
     bool finish_read(handle sequence, Handler handler, Args... args) const;
@@ -306,8 +293,11 @@ private:
     static hash_list to_hashes(const database::block_result& result);
 
     bool do_insert(const chain::block& block, size_t height);
-    bool do_push(const chain::block& block, size_t height);
-    bool do_pop(chain::block::list& out_blocks, const hash_digest& fork_hash);
+
+    void handle_push(const code& ec, bool flush, result_handler handler);
+    void handle_pop(const code& ec, const block_const_ptr_list& in_blocks,
+        size_t fork_height, bool flush, dispatcher& dispatch,
+        result_handler handler);
 
     // These are thread safe.
     std::atomic<bool> stopped_;

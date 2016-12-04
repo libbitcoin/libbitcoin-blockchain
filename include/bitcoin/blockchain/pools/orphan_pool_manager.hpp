@@ -68,10 +68,11 @@ private:
         result_handler handler);
     void handle_connect(const code& ec, fork::ptr fork, size_t index,
         result_handler handler);
-
-    void organized(fork::ptr fork, result_handler handler);
     void notify_reorganize(size_t fork_height, const list& fork,
         const list& original);
+    void organized(fork::ptr fork, result_handler handler);
+    void handle_reorganized(const code& ec, fork::ptr fork,
+        const asio::time_point& start_time, result_handler handler);
     void complete(const code& ec, scope_lock::ptr lock,
         result_handler handler);
 
@@ -83,10 +84,11 @@ private:
     std::atomic<bool> stopped_;
     const bool flush_reorganizations_;
     orphan_pool& orphan_pool_;
-    threadpool thread_pool_;
+    threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
+    mutable dispatcher priority_dispatch_;
 
 };
 

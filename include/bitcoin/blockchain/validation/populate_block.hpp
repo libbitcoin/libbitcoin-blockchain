@@ -90,9 +90,9 @@ private:
     const size_t buckets_;
     const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
-    mutable dispatcher dispatch_;
+    mutable dispatcher priority_dispatch_;
 
-    // This is protected by caller not invoking populate concurrently.
+    // The store is protected by caller not invoking populate concurrently.
     const fast_chain& fast_chain_;
 };
 

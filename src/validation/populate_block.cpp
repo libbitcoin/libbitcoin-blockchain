@@ -51,15 +51,13 @@ static constexpr size_t micro_per_milliseconds = 1000;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-// TODO: allow priority pool to be empty and fall back the network pool:
-// dispatch_(priority_pool.size() == 0 ? network_pool : priority_pool)
 populate_block::populate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
   : stopped_(false),
     buckets_(priority_pool.size()),
     configured_forks_(settings.enabled_forks),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    dispatch_(priority_pool, NAME "_dispatch"),
+    priority_dispatch_(priority_pool, NAME "_dispatch"),
     fast_chain_(chain)
 {
 }
@@ -177,7 +175,6 @@ bool populate_block::populate_checkpoint(chain_state::data& data,
         map.allowed_duplicates_height, fork);
 }
 
-// TODO: populate next state from preceding block state.
 void populate_block::populate_chain_state(fork::const_ptr fork,
     size_t index) const
 {
@@ -189,6 +186,7 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
     data.height = height;
     data.hash = block->hash();
 
+    // TODO: generate from cache using preceding block's map and data.
     // Construct a map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_,
         configured_forks_);
@@ -239,6 +237,7 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         // CONSENSUS: Coinbase prevouts are null but the tx duplicate check
         // must apply to coinbase txs as well, so cannot skip coinbases here.
         //*********************************************************************
+        // TODO: paralellize by transaction.
         for (auto& tx: block->transactions())
         {
             populate_transaction(fork->height(), tx);
@@ -255,12 +254,12 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto buckets = std::min(buckets_, non_coinbase_inputs);
-    const auto join_handler = synchronize(handler, buckets,
+    const auto threads = std::min(buckets_, non_coinbase_inputs);
+    const auto join_handler = synchronize(handler, threads,
         NAME "_populate");
 
-    for (size_t bucket = 0; bucket < buckets; ++bucket)
-        dispatch_.concurrent(&populate_block::populate_inputs,
+    for (size_t bucket = 0; bucket < threads; ++bucket)
+        priority_dispatch_.concurrent(&populate_block::populate_inputs,
             this, fork, index, bucket, join_handler);
 }
 
@@ -270,7 +269,7 @@ void populate_block::populate_coinbase(block_const_ptr block) const
     const auto& txs = block->transactions();
     BITCOIN_ASSERT(!txs.empty() && txs.front().is_coinbase());
 
-    // A coinbase tx guarnatees exactly one input.
+    // A coinbase tx guarantees exactly one input.
     const auto& input = txs.front().inputs().front();
     auto& prevout = input.previous_output().validation;
 
@@ -313,12 +312,6 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
-        if (stopped())
-        {
-            ec = error::service_stopped;
-            break;
-        }
-
         const auto& inputs = tx->inputs();
 
         // TODO: eliminate the wasteful iterations by using smart step.
