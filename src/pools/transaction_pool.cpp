@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <system_error>
+#include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
@@ -318,8 +318,8 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
 bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
-    const block_const_ptr_list& new_blocks,
-    const block_const_ptr_list& replaced_blocks)
+    block_const_ptr_list_const_ptr new_blocks,
+    block_const_ptr_list_const_ptr replaced_blocks)
 {
     if (ec == error::service_stopped)
     {
@@ -338,10 +338,10 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Reorganize: tx pool size (" << buffer_.size()
         << ") forked at (" << fork_point
-        << ") new blocks (" << new_blocks.size()
-        << ") replace blocks (" << replaced_blocks.size() << ")";
+        << ") new blocks (" << new_blocks->size()
+        << ") replace blocks (" << replaced_blocks->size() << ")";
 
-    if (replaced_blocks.empty())
+    if (replaced_blocks->empty())
     {
         // Remove memory pool transactions that also exist in new blocks.
         dispatch_.ordered(
@@ -362,9 +362,10 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 }
 
 void transaction_pool::subscribe_transaction(
-    transaction_handler handle_transaction)
+    transaction_handler&& handle_transaction)
 {
-    subscriber_->subscribe(handle_transaction, error::service_stopped, {}, {});
+    subscriber_->subscribe(std::move(handle_transaction),
+        error::service_stopped, {}, {});
 }
 
 void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
@@ -398,14 +399,14 @@ void transaction_pool::clear(const code& ec)
 }
 
 // Delete memory pool txs that are obsoleted by a new block acceptance.
-void transaction_pool::remove(const block_const_ptr_list& blocks)
+void transaction_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
     // Delete by hash sets a success code.
-    delete_confirmed_in_blocks(blocks);
+    delete_confirmed_in_blocks(*blocks);
 
     // Delete by spent sets a double-spend error.
     if (maintain_consistency_)
-        delete_spent_in_blocks(blocks);
+        delete_spent_in_blocks(*blocks);
 }
 
 // Consistency methods.

@@ -180,11 +180,11 @@ public:
     //-------------------------------------------------------------------------
 
     virtual void subscribe_reorganize(
-        orphan_pool_manager::reorganize_handler handler)
+        orphan_pool_manager::reorganize_handler&& handler)
     {
     }
 
-    virtual void subscribe_transaction(transaction_handler handler)
+    virtual void subscribe_transaction(transaction_handler&& handler)
     {
     }
 
@@ -239,7 +239,7 @@ public:
         transaction_pool::add(tx, handler);
     }
 
-    void remove(const block_const_ptr_list& blocks)
+    void remove(block_const_ptr_list_const_ptr blocks)
     {
         transaction_pool::remove(blocks);
     }
@@ -1161,7 +1161,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__one_block_duplicates_no_spends__r
     buffer.push_back(tx4);
     buffer.push_back(tx5);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
-    mempool.remove(blocks);
+    mempool.remove(std::make_shared<const block_const_ptr_list>(blocks));
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 2u);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx4_id);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 1), tx5_id);
@@ -1207,7 +1207,7 @@ BOOST_AUTO_TEST_CASE(transaction_pool__remove__two_blocks_spends_no_duplicates__
     buffer.push_back(tx6);
     buffer.push_back(tx7);
     DECLARE_TRANSACTION_POOL(mempool, buffer);
-    mempool.remove(blocks);
+    mempool.remove(std::make_shared<const block_const_ptr_list>(blocks));
     BOOST_REQUIRE_EQUAL(mempool.transactions().size(), 1u);
     BOOST_REQUIRE_EQUAL(TX_ID_AT_POSITION(mempool, 0), tx6_id);
     REQUIRE_CALLBACK(4, error::double_spend);

@@ -24,6 +24,7 @@
 #include <functional>
 #include <memory>
 #include <numeric>
+#include <utility>
 #include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -74,6 +75,14 @@ orphan_pool_manager::orphan_pool_manager(threadpool& thread_pool,
 {
 }
 
+// Properties.
+//-----------------------------------------------------------------------------
+
+bool orphan_pool_manager::stopped() const
+{
+    return stopped_;
+}
+
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
@@ -83,34 +92,28 @@ bool orphan_pool_manager::start()
     subscriber_->start();
 
     // Don't begin flush lock if flushing on each reorganization.
-    if (flush_reorganizations_)
-        return true;
-
-    return fast_chain_.begin_writes();
+    return flush_reorganizations_ || fast_chain_.begin_writes();
 }
 
 bool orphan_pool_manager::stop()
 {
-    stopped_ = true;
     validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
-    // Don't end flush lock if flushing on each reorganization.
-    if (flush_reorganizations_)
-        return true;
-
+    // Ensure that this call blocks until database writes are complete.
     // Ensure no reorganization is in process when the flush lock is cleared.
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     shared_lock lock(mutex_);
-    return fast_chain_.end_writes();
-    ///////////////////////////////////////////////////////////////////////////
-}
 
-bool orphan_pool_manager::stopped() const
-{
-    return stopped_;
+    // Ensure that a new validation will not begin after this stop. Otherwise
+    // termination of the threadpool will corrupt the database.
+    stopped_ = true;
+
+    // Don't end flush lock if flushing on each reorganization.
+    return flush_reorganizations_ || fast_chain_.end_writes();
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // Organize sequence.
@@ -122,7 +125,13 @@ void orphan_pool_manager::organize(block_const_ptr block,
 {
     code error_code;
 
-    if (stopped())
+    ///////////////////////////////////////////////////////////////////////////
+    // Critical Section.
+    // Use scope lock to guard the chain against concurrent organizations.
+    // If a reorganization started after stop it will stop before writing.
+    const auto lock = std::make_shared<scope_lock>(mutex_);
+
+    if (stopped_)
     {
         handler(error::service_stopped);
         return;
@@ -134,12 +143,6 @@ void orphan_pool_manager::organize(block_const_ptr block,
         handler(error_code);
         return;
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section.
-    // Use scope lock to guard the chain against concurrent organizations.
-    // If a reorganization started after stop it will stop before writing.
-    const auto lock = std::make_shared<scope_lock>(mutex_);
 
     const result_handler locked_handler =
         std::bind(&orphan_pool_manager::complete,
@@ -205,6 +208,9 @@ void orphan_pool_manager::complete(const code& ec, scope_lock::ptr lock,
     // This is the end of the organize sequence.
     handler(ec);
 }
+
+// Verify sub-sequence.
+//-----------------------------------------------------------------------------
 
 // Verify the block at the given index in the fork.
 void orphan_pool_manager::verify(fork::ptr fork, size_t index,
@@ -344,21 +350,31 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
+    // Capture the outgoing blocks and forward to reorg handler.
+    const auto out_blocks = std::make_shared<block_const_ptr_list>();
+
+    // Protect the fork from the blockchain.
+    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
+
     const auto complete =
         std::bind(&orphan_pool_manager::handle_reorganized,
-            this, _1, fork, asio::steady_clock::now(), handler);
+            this, _1, const_fork, out_blocks, asio::steady_clock::now(),
+                handler);
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(fork->blocks(), fork->height(), fork->hash(),
-        flush_reorganizations_, priority_dispatch_, complete);
+    fast_chain_.reorganize(const_fork, out_blocks, flush_reorganizations_,
+        priority_dispatch_, complete);
     //#########################################################################
 }
 
-void orphan_pool_manager::handle_reorganized(const code& ec, fork::ptr fork,
+void orphan_pool_manager::handle_reorganized(const code& ec,
+    fork::const_ptr fork, block_const_ptr_list_ptr outgoing_blocks,
     const asio::time_point& start_time, result_handler handler)
 {
-    validate_block::report(fork->blocks().back(), start_time, ec ?
+    BITCOIN_ASSERT(!fork->blocks()->empty());
+
+    validate_block::report(fork->blocks()->back(), start_time, ec ?
         "STRANDED " : "deposited");
 
     // TODO: a failure here implies database corruption, handle accordingly.
@@ -368,29 +384,34 @@ void orphan_pool_manager::handle_reorganized(const code& ec, fork::ptr fork,
         return;
     }
 
-    block_const_ptr_list outgoing_blocks;
-
     // Remove before add so that we don't overflow the pool and lose blocks.
     orphan_pool_.remove(fork->blocks());
     orphan_pool_.add(outgoing_blocks);
 
+    // This is the end of the verify sub-sequence.
     // We can allow the next block before broadcasting the notification.
     handler(error::success);
 
+    // Protect the outgoing blocks from subscribers.
+    auto old_blocks = std::const_pointer_cast<const block_const_ptr_list>(
+        outgoing_blocks);
+
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
-    notify_reorganize(fork->height(), fork->blocks(), outgoing_blocks);
+    notify_reorganize(fork->height(), fork->blocks(), old_blocks);
 }
 
 // Subscription.
 //-----------------------------------------------------------------------------
 
-void orphan_pool_manager::subscribe_reorganize(reorganize_handler handler)
+void orphan_pool_manager::subscribe_reorganize(reorganize_handler&& handler)
 {
-    subscriber_->subscribe(handler, error::service_stopped, 0, {}, {});
+    subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
 }
 
 void orphan_pool_manager::notify_reorganize(size_t fork_height,
-    const list& fork, const list& original)
+    block_const_ptr_list_const_ptr fork,
+    block_const_ptr_list_const_ptr original)
 {
     subscriber_->relay(error::success, fork_height, fork, original);
 }

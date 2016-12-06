@@ -40,12 +40,11 @@ namespace blockchain {
 class BCB_API orphan_pool_manager
 {
 public:
-    typedef block_const_ptr_list list;
-
     typedef handle0 result_handler;
     typedef std::shared_ptr<orphan_pool_manager> ptr;
     typedef safe_chain::reorganize_handler reorganize_handler;
-    typedef resubscriber<code, size_t, list, list> reorganize_subscriber;
+    typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
+        block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
     orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
@@ -55,26 +54,34 @@ public:
     virtual bool stop();
 
     virtual void organize(block_const_ptr block, result_handler handler);
-    virtual void subscribe_reorganize(reorganize_handler handler);
+    virtual void subscribe_reorganize(reorganize_handler&& handler);
 
 protected:
     virtual bool stopped() const;
 
 private:
+    // Utility.
     fork::ptr find_connected_fork(block_const_ptr block);
 
+    // Organize sequence.
+    void complete(const code& ec, scope_lock::ptr lock,
+        result_handler handler);
+
+    // Verify sub-sequence.
     void verify(fork::ptr fork, size_t index, result_handler handler);
     void handle_accept(const code& ec, fork::ptr fork, size_t index,
         result_handler handler);
     void handle_connect(const code& ec, fork::ptr fork, size_t index,
         result_handler handler);
-    void notify_reorganize(size_t fork_height, const list& fork,
-        const list& original);
     void organized(fork::ptr fork, result_handler handler);
-    void handle_reorganized(const code& ec, fork::ptr fork,
+    void handle_reorganized(const code& ec, fork::const_ptr fork,
+        block_const_ptr_list_ptr outgoing_blocks,
         const asio::time_point& start_time, result_handler handler);
-    void complete(const code& ec, scope_lock::ptr lock,
-        result_handler handler);
+
+    // Subscription.
+    void notify_reorganize(size_t fork_height,
+        block_const_ptr_list_const_ptr fork,
+        block_const_ptr_list_const_ptr original);
 
     // This is protected by mutex.
     fast_chain& fast_chain_;

@@ -36,6 +36,8 @@ class BCB_API orphan_pool
 {
 public:
     typedef std::shared_ptr<orphan_pool> ptr;
+    typedef std::shared_ptr<const block_const_ptr_list>
+        block_const_ptr_list_const_ptr;
 
     orphan_pool(size_t capacity);
 
@@ -43,13 +45,13 @@ public:
     bool add(block_const_ptr block);
 
     /// Add a set of blocks to the pool.
-    bool add(const block_const_ptr_list& blocks);
+    bool add(block_const_ptr_list_const_ptr blocks);
 
     /// Remove a block from the pool.
     void remove(block_const_ptr block);
 
     /// Remove a set of blocks from the pool.
-    void remove(const block_const_ptr_list& blocks);
+    void remove(block_const_ptr_list_const_ptr blocks);
 
     /// Remove from the message all vectors that match orphans.
     void filter(get_data_ptr message) const;

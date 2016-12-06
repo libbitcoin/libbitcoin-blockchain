@@ -74,10 +74,10 @@ bool orphan_pool::add(block_const_ptr block)
 }
 
 // These are blocks arriving from the blockchain, so should be prevalidated.
-bool orphan_pool::add(const block_const_ptr_list& blocks)
+bool orphan_pool::add(block_const_ptr_list_const_ptr blocks)
 {
     auto success = true;
-    for (const auto block: blocks)
+    for (const auto block: *blocks)
         success &= add(block);
 
     return success;
@@ -110,10 +110,10 @@ void orphan_pool::remove(block_const_ptr block)
     ////    << "] old size (" << old_size << ").";
 }
 
-void orphan_pool::remove(const block_const_ptr_list& blocks)
+void orphan_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
     auto remover = [this](const block_const_ptr& block) { remove(block); };
-    std::for_each(blocks.begin(), blocks.end(), remover);
+    std::for_each(blocks->begin(), blocks->end(), remover);
 }
 
 // TODO: use hash table pool to eliminate this O(n^2) search.

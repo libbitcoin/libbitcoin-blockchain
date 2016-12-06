@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -105,8 +106,8 @@ public:
     // ------------------------------------------------------------------------ 
 
     /// Swap incoming and outgoing blocks, height is validated.
-    virtual void reorganize(const block_const_ptr_list& in_blocks,
-        size_t fork_height, const hash_digest& fork_hash, bool flush,
+    virtual void reorganize(fork::const_ptr fork,
+        block_const_ptr_list_ptr outgoing_blocks, bool flush,
         dispatcher& dispatch, complete_handler handler) = 0;
 };
 

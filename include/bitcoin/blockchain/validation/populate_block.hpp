@@ -87,7 +87,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const size_t buckets_;
     const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
     mutable dispatcher priority_dispatch_;

@@ -54,7 +54,6 @@ static constexpr size_t micro_per_milliseconds = 1000;
 populate_block::populate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
   : stopped_(false),
-    buckets_(priority_pool.size()),
     configured_forks_(settings.enabled_forks),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
@@ -254,7 +253,8 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto threads = std::min(buckets_, non_coinbase_inputs);
+    const auto buckets = priority_dispatch_.size();
+    const auto threads = std::min(buckets, non_coinbase_inputs);
     const auto join_handler = synchronize(handler, threads,
         NAME "_populate");
 
@@ -304,6 +304,7 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
     size_t bucket, result_handler handler) const
 {
     code ec(error::success);
+    const auto buckets = priority_dispatch_.size();
     const auto block = fork->block_at(index);
     const auto fork_height = fork->height();
     const auto& txs = block->transactions();
@@ -318,7 +319,7 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
         for (size_t input_index = 0; input_index < inputs.size();
             ++input_index, ++position)
         {
-            if (position % buckets_ != bucket)
+            if (position % buckets != bucket)
                 continue;
 
             const auto& input = inputs[input_index];
