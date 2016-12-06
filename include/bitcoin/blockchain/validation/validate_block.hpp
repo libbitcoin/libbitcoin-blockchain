@@ -83,7 +83,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const size_t buckets_;
     const bool use_libconsensus_;
     mutable dispatcher priority_dispatch_;
 

@@ -38,14 +38,14 @@ BOOST_AUTO_TEST_SUITE(fork_tests)
 BOOST_AUTO_TEST_CASE(fork__construct__default__zero)
 {
     blockchain::fork instance;
-    BOOST_REQUIRE_EQUAL(instance.blocks().capacity(), 0);
+    BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(fork__construct__value__expected)
 {
     static const size_t expected = 42;
     blockchain::fork instance(expected);
-    BOOST_REQUIRE_EQUAL(instance.blocks().capacity(), expected);
+    BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), expected);
 }
 
 // hash
@@ -179,9 +179,9 @@ BOOST_AUTO_TEST_CASE(fork__clear__capacity__zero)
 {
     static const size_t capacity = 42;
     blockchain::fork instance(capacity);
-    BOOST_REQUIRE_EQUAL(instance.blocks().capacity(), capacity);
+    BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), capacity);
     instance.clear();
-    BOOST_REQUIRE_EQUAL(instance.blocks().capacity(), 0);
+    BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), 0);
 }
 
 // blocks
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(fork__clear__capacity__zero)
 BOOST_AUTO_TEST_CASE(fork__blocks__default__empty)
 {
     blockchain::fork instance;
-    BOOST_REQUIRE(instance.blocks().empty());
+    BOOST_REQUIRE(instance.blocks()->empty());
 }
 
 BOOST_AUTO_TEST_CASE(fork__blocks__one__empty)
@@ -198,9 +198,9 @@ BOOST_AUTO_TEST_CASE(fork__blocks__one__empty)
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(!instance.empty());
-    BOOST_REQUIRE_EQUAL(instance.blocks().size(), 1u);
+    BOOST_REQUIRE_EQUAL(instance.blocks()->size(), 1u);
     instance.clear();
-    BOOST_REQUIRE(instance.blocks().empty());
+    BOOST_REQUIRE(instance.blocks()->empty());
 }
 
 // push
@@ -262,10 +262,10 @@ BOOST_AUTO_TEST_CASE(fork__pop__one_of_two__first_remains)
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     const auto list = instance.pop(1, error::invalid_proof_of_work);
-    BOOST_REQUIRE_EQUAL(list.size(), 1u);
+    BOOST_REQUIRE_EQUAL(list->size(), 1u);
     BOOST_REQUIRE(instance.block_at(0) == block0);
 
-    const auto first = list.front();
+    const auto first = list->front();
     BOOST_REQUIRE(first == block1);
     BOOST_REQUIRE_EQUAL(first->validation.result, error::invalid_proof_of_work);
     BOOST_REQUIRE_EQUAL(first->header().validation.height, chain::header::validation::orphan_height);
@@ -285,10 +285,10 @@ BOOST_AUTO_TEST_CASE(fork__pop__two_of_two__none_remain)
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     const auto list = instance.pop(0, error::invalid_proof_of_work);
-    BOOST_REQUIRE_EQUAL(list.size(), 2u);
+    BOOST_REQUIRE_EQUAL(list->size(), 2u);
     BOOST_REQUIRE(instance.empty());
-    BOOST_REQUIRE(list[0] == block0);
-    BOOST_REQUIRE(list[1] == block1);
+    BOOST_REQUIRE((*list)[0] == block0);
+    BOOST_REQUIRE((*list)[1] == block1);
 }
 
 BOOST_AUTO_TEST_CASE(fork__pop__three_of_two__unchanged_fork_empty_return)
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(fork__pop__three_of_two__unchanged_fork_empty_return)
     BOOST_REQUIRE(instance.push(block0));
     BOOST_REQUIRE(instance.push(block1));
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
-    BOOST_REQUIRE(instance.pop(2, error::invalid_proof_of_work).empty());
+    BOOST_REQUIRE(instance.pop(2, error::invalid_proof_of_work)->empty());
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 }
 

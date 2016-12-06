@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <numeric>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
@@ -33,9 +34,10 @@ using namespace bc::chain;
 using namespace bc::config;
 
 fork::fork(size_t capacity)
-  : height_(0)
+  : height_(0),
+    blocks_(std::make_shared<block_const_ptr_list>())
 {
-    blocks_.reserve(capacity);
+    blocks_->reserve(capacity);
 }
 
 void fork::set_height(size_t height)
@@ -47,10 +49,10 @@ void fork::set_height(size_t height)
 // The front block will always be first after the top of the chain.
 bool fork::push(block_const_ptr block)
 {
-    if (blocks_.empty() ||
-        blocks_.back()->hash() == block->header().previous_block_hash())
+    if (blocks_->empty() ||
+        blocks_->back()->hash() == block->header().previous_block_hash())
     {
-        blocks_.push_back(block);
+        blocks_->push_back(block);
         return true;
     }
 
@@ -58,13 +60,13 @@ bool fork::push(block_const_ptr block)
 }
 
 // Index is unguarded, caller must verify.
-block_const_ptr_list fork::pop(size_t index, const code& reason)
+block_const_ptr_list_ptr fork::pop(size_t index, const code& reason)
 {
-    const auto end = blocks_.end();
-    const auto start = blocks_.begin() + index;
+    const auto end = blocks_->end();
+    const auto start = blocks_->begin() + index;
 
-    block_const_ptr_list out;
-    out.reserve(std::distance(start, end));
+    const auto out = std::make_shared<block_const_ptr_list>();
+    out->reserve(std::distance(start, end));
 
     for (auto it = start; it != end; ++it)
     {
@@ -72,18 +74,18 @@ block_const_ptr_list fork::pop(size_t index, const code& reason)
         block->header().validation.height = header::validation::orphan_height;
         block->validation.result = it == start ? reason :
             error::invalid_previous_block;
-        out.push_back(block);
+        out->push_back(block);
     }
 
-    blocks_.erase(start, end);
-    blocks_.shrink_to_fit();
+    blocks_->erase(start, end);
+    blocks_->shrink_to_fit();
     return out;
 }
 
 void fork::clear()
 {
-    blocks_.clear();
-    blocks_.shrink_to_fit();
+    blocks_->clear();
+    blocks_->shrink_to_fit();
     height_ = 0;
 }
 
@@ -100,8 +102,8 @@ bool fork::is_sufficient() const
 // Index is unguarded, caller must verify or access violation will result.
 void fork::set_verified(size_t index) const
 {
-    BITCOIN_ASSERT(index < blocks_.size());
-    const auto block = blocks_[index];
+    BITCOIN_ASSERT(index < blocks_->size());
+    const auto block = (*blocks_)[index];
     block->header().validation.height = height_at(index);
     block->validation.result = error::success;
 }
@@ -109,25 +111,26 @@ void fork::set_verified(size_t index) const
 // Index is unguarded, caller must verify or access violation will result.
 bool fork::is_verified(size_t index) const
 {
-    BITCOIN_ASSERT(index < blocks_.size());
-    const auto block = blocks_[index];
+    BITCOIN_ASSERT(index < blocks_->size());
+    const auto block = (*blocks_)[index];
     return (block->validation.result == error::success &&
         block->header().validation.height == height_at(index));
 }
 
-const block_const_ptr_list& fork::blocks() const
+block_const_ptr_list_const_ptr fork::blocks() const
 {
-    return blocks_;
+    // Protect the blocks list from the caller.
+    return std::const_pointer_cast<const block_const_ptr_list>(blocks_);
 }
 
 bool fork::empty() const
 {
-    return blocks_.empty();
+    return blocks_->empty();
 }
 
 size_t fork::size() const
 {
-    return blocks_.size();
+    return blocks_->size();
 }
 
 size_t fork::height() const
@@ -137,8 +140,8 @@ size_t fork::height() const
 
 hash_digest fork::hash() const
 {
-    return blocks_.empty() ? null_hash :
-        blocks_.front()->header().previous_block_hash();
+    return blocks_->empty() ? null_hash :
+        blocks_->front()->header().previous_block_hash();
 }
 
 // The caller must ensure that the height is above the fork.
@@ -157,7 +160,7 @@ size_t fork::height_at(size_t index) const
 // Index is unguarded, caller must verify.
 block_const_ptr fork::block_at(size_t index) const
 {
-    return index < size() ? blocks_[index] : nullptr;
+    return index < size() ? (*blocks_)[index] : nullptr;
 }
 
 // The fork difficulty check is both a consensus check and denial of service
@@ -174,7 +177,7 @@ uint256_t fork::difficulty() const
 {
     uint256_t total;
 
-    for (auto block: blocks_)
+    for (auto block: *blocks_)
         if (block->header().is_valid_proof_of_work())
             total += block->difficulty();
 
@@ -195,8 +198,8 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
         return total + std::count_if(txs.begin(), txs.end(), hashes);
     };
 
-    const auto end = blocks_.begin() + index + 1u;
-    const auto count = std::accumulate(blocks_.begin(), end, size_t(0), outer);
+    const auto end = blocks_->begin() + index + 1u;
+    const auto count = std::accumulate(blocks_->begin(), end, size_t(0), outer);
     tx.validation.duplicate = count > 1u;
 }
 
@@ -220,8 +223,8 @@ void fork::populate_spent(size_t index, const output_point& outpoint) const
         return total + std::accumulate(txs.begin(), txs.end(), total, inner);
     };
 
-    const auto end = blocks_.begin() + index + 1u;
-    const auto spent = std::accumulate(blocks_.begin(), end, size_t(0), outer);
+    const auto end = blocks_->begin() + index + 1u;
+    const auto spent = std::accumulate(blocks_->begin(), end, size_t(0), outer);
 
     auto& prevout = outpoint.validation;
     prevout.spent = spent > 1u;

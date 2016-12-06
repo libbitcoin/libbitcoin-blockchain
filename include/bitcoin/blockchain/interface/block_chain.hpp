@@ -121,9 +121,9 @@ public:
     // Not safe for concurrent execution with other writes.
 
     /// Swap incoming and outgoing blocks, height is validated.
-    void reorganize(const block_const_ptr_list& in_blocks, size_t fork_height,
-        const hash_digest& fork_hash, bool flush, dispatcher& dispatch,
-        complete_handler handler);
+    void reorganize(fork::const_ptr fork,
+        block_const_ptr_list_ptr outgoing_blocks, bool flush,
+        dispatcher& dispatch, complete_handler handler);
 
     // ========================================================================
     // SAFE CHAIN
@@ -249,10 +249,10 @@ public:
     //-------------------------------------------------------------------------
 
     /// Subscribe to blockchain reorganizations, get forks/height.
-    virtual void subscribe_reorganize(reorganize_handler handler);
+    virtual void subscribe_reorganize(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
-    virtual void subscribe_transaction(transaction_handler handler);
+    virtual void subscribe_transaction(transaction_handler&& handler);
 
     // Organizers (pools).
     //-------------------------------------------------------------------------
@@ -295,9 +295,8 @@ private:
     bool do_insert(const chain::block& block, size_t height);
 
     void handle_push(const code& ec, bool flush, result_handler handler);
-    void handle_pop(const code& ec, const block_const_ptr_list& in_blocks,
-        size_t fork_height, bool flush, dispatcher& dispatch,
-        result_handler handler);
+    void handle_pop(const code& ec, fork::const_ptr fork, bool flush,
+        dispatcher& dispatch, result_handler handler);
 
     // These are thread safe.
     std::atomic<bool> stopped_;

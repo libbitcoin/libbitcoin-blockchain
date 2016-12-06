@@ -47,7 +47,7 @@ public:
     bool push(block_const_ptr block);
 
     /// Pop the block and set the code, and all after to parent invalid.
-    block_const_ptr_list pop(size_t index, const code& reason);
+    block_const_ptr_list_ptr pop(size_t index, const code& reason);
 
     /// Set the difficulty level that must be exceeded in order to reorganize.
     void set_threshold(uint256_t&& difficulty);
@@ -73,7 +73,7 @@ public:
         const chain::output_point& outpoint) const;
 
     /// The member block pointer list.
-    const block_const_ptr_list& blocks() const;
+    block_const_ptr_list_const_ptr blocks() const;
 
     /// Clear the fork and reset its height to zero.
     void clear();
@@ -119,7 +119,7 @@ private:
     uint256_t threshold_;
 
     /// The chain of blocks in the fork.
-    block_const_ptr_list blocks_;
+    block_const_ptr_list_ptr blocks_;
 };
 
 } // namespace blockchain

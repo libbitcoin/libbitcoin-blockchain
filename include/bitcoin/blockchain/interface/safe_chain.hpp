@@ -48,8 +48,6 @@ public:
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
     typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
 
-    // Smart pointer fetch handlers.
-    // Return non-const so that values can be safely swapped/moved.
     // Smart pointer parameters must not be passed by reference.
     typedef std::function<void(const code&, merkle_block_ptr, uint64_t)>
         transaction_hashes_fetch_handler;
@@ -67,10 +65,9 @@ public:
         inventory_fetch_handler;
 
     /// Subscription handlers.
-    typedef std::function<bool(const code&, size_t,
-        const block_const_ptr_list&, const block_const_ptr_list&)>
-        reorganize_handler;
-    typedef std::function<bool(const code&, const chain::point::indexes&,
+    typedef std::function<bool(code, size_t, block_const_ptr_list_const_ptr,
+        block_const_ptr_list_const_ptr)> reorganize_handler;
+    typedef std::function<bool(code, chain::point::indexes,
         transaction_const_ptr)> transaction_handler;
 
     /// Store handlers.
@@ -164,8 +161,8 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    virtual void subscribe_reorganize(reorganize_handler handler) = 0;
-    virtual void subscribe_transaction(transaction_handler handler) = 0;
+    virtual void subscribe_reorganize(reorganize_handler&& handler) = 0;
+    virtual void subscribe_transaction(transaction_handler&& handler) = 0;
 
     // Organizers (pools).
     //-------------------------------------------------------------------------

@@ -78,7 +78,7 @@ public:
         validate_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
-    void subscribe_transaction(transaction_handler handler);
+    void subscribe_transaction(transaction_handler&& handler);
 
 protected:
     typedef std::function<bool(const chain::input&)> input_compare;
@@ -89,8 +89,8 @@ protected:
     const_iterator find_iterator(const hash_digest& tx_hash) const;
 
     bool handle_reorganized(const code& ec, size_t fork_point,
-        const block_const_ptr_list& new_blocks,
-        const block_const_ptr_list& replaced_blocks);
+        block_const_ptr_list_const_ptr new_blocks,
+        block_const_ptr_list_const_ptr replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
         transaction_const_ptr tx, validate_handler handler) const;
 
@@ -105,7 +105,7 @@ protected:
         transaction_const_ptr tx);
 
     void add(transaction_const_ptr tx, result_handler handler);
-    void remove(const block_const_ptr_list& blocks);
+    void remove(block_const_ptr_list_const_ptr blocks);
     void clear(const code& ec);
 
     // These would be private but for test access.

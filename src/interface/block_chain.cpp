@@ -225,14 +225,14 @@ bool block_chain::do_insert(const chain::block& block, size_t height)
 // Asynchronous write sequence.
 // ------------------------------------------------------------------------ 
 
-void block_chain::reorganize(const block_const_ptr_list& in_blocks,
-    size_t fork_height, const hash_digest& fork_hash, bool flush,
-    dispatcher& dispatch, result_handler handler)
+void block_chain::reorganize(fork::const_ptr fork,
+    block_const_ptr_list_ptr outgoing_blocks, bool flush,
+    dispatcher& dispatch, complete_handler handler)
 {
+    // The pop handler closes the write operation.
     const result_handler pop_handler =
         std::bind(&block_chain::handle_pop,
-            this, _1, std::ref(in_blocks), fork_height, flush,
-                std::ref(dispatch), handler);
+            this, _1, fork, flush, std::ref(dispatch), handler);
 
     if (!database_.begin_write(flush))
     {
@@ -240,12 +240,10 @@ void block_chain::reorganize(const block_const_ptr_list& in_blocks,
         return;
     }
 
-    block_const_ptr_list out_blocks;
-    database_.pop_above(out_blocks, fork_hash, dispatch, pop_handler);
+    database_.pop_above(outgoing_blocks, fork->hash(), dispatch, pop_handler);
 }
 
-void block_chain::handle_pop(const code& ec,
-    const block_const_ptr_list& in_blocks, size_t fork_height, bool flush,
+void block_chain::handle_pop(const code& ec, fork::const_ptr fork, bool flush,
     dispatcher& dispatch, result_handler handler)
 {
     const result_handler push_handler =
@@ -258,7 +256,8 @@ void block_chain::handle_pop(const code& ec,
         return;
     }
 
-    database_.push_all(in_blocks, safe_increment(fork_height), dispatch,
+    auto fork_height = safe_add(fork->height(), size_t(1));
+    database_.push_all(fork->blocks(), fork_height, std::ref(dispatch),
         push_handler);
 }
 
@@ -300,6 +299,9 @@ bool block_chain::stop()
 {
     stopped_ = true;
     transaction_pool_.stop();
+
+    // This blocks until asynchronous write operations are complete, preventing
+    // premature suspension of dispatch by shutdown of the threadpool.
     return orphan_manager_.stop();
 }
 
@@ -862,16 +864,16 @@ void block_chain::filter_floaters(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe_reorganize(reorganize_handler handler)
+void block_chain::subscribe_reorganize(reorganize_handler&& handler)
 {
     // Pass this through to the manager, which issues the notifications.
-    orphan_manager_.subscribe_reorganize(handler);
+    orphan_manager_.subscribe_reorganize(std::move(handler));
 }
 
-void block_chain::subscribe_transaction(transaction_handler handler)
+void block_chain::subscribe_transaction(transaction_handler&& handler)
 {
     // Pass this through to the tx pool, which issues the notifications.
-    transaction_pool_.subscribe_transaction(handler);
+    transaction_pool_.subscribe_transaction(std::move(handler));
 }
 
 // Organizers (pools).
