@@ -278,10 +278,10 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
     // Get the script and value for the prevout.
     const auto finder = get_output();
 
-    // Found the prevout at or below the top of the fork.
     if (!finder.out.is_valid())
         return;
 
+    // Found the prevout at or below the indexed block.
     prevout.cache = finder.out;
 
     // Set height iff the prevout is coinbase (first tx is coinbase).
