@@ -377,9 +377,11 @@ void orphan_pool_manager::handle_reorganized(const code& ec,
     validate_block::report(fork->blocks()->back(), start_time, ec ?
         "STRANDED " : "deposited");
 
-    // TODO: a failure here implies database corruption, handle accordingly.
     if (ec)
     {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure writing block to store, is now corrupted: "
+            << ec.message();
         handler(ec);
         return;
     }
