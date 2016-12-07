@@ -253,14 +253,14 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto buckets = priority_dispatch_.size();
-    const auto threads = std::min(buckets, non_coinbase_inputs);
-    const auto join_handler = synchronize(handler, threads,
+    const auto threads = priority_dispatch_.size();
+    const auto buckets = std::min(threads, non_coinbase_inputs);
+    const auto join_handler = synchronize(handler, buckets,
         NAME "_populate");
 
-    for (size_t bucket = 0; bucket < threads; ++bucket)
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&populate_block::populate_inputs,
-            this, fork, index, bucket, join_handler);
+            this, fork, index, bucket, buckets, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
@@ -301,10 +301,10 @@ void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
 }
 
 void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
-    size_t bucket, result_handler handler) const
+    size_t bucket, size_t buckets, result_handler handler) const
 {
+    BITCOIN_ASSERT(bucket < buckets);
     code ec(error::success);
-    const auto buckets = priority_dispatch_.size();
     const auto block = fork->block_at(index);
     const auto fork_height = fork->height();
     const auto& txs = block->transactions();
