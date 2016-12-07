@@ -80,7 +80,7 @@ private:
     void populate_transaction(fork_ptr fork, size_t index,
         const chain::transaction& tx) const;
     void populate_inputs(fork::const_ptr fork, size_t index, size_t bucket,
-        result_handler handler) const;
+        size_t buckets, result_handler handler) const;
     void populate_prevout(size_t fork_height, const point& outpoint) const;
     void populate_prevout(fork_ptr fork, size_t index,
         const point& outpoint) const;

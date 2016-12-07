@@ -67,17 +67,13 @@ private:
 
     void handle_populated(const code& ec, block_const_ptr block,
         const asio::time_point& start_time, result_handler handler) const;
-
     void accept_transactions(block_const_ptr block, size_t bucket,
         atomic_counter_ptr sigops, bool bip16, result_handler handler) const;
-
     void handle_accepted(const code& ec, block_const_ptr block,
         const asio::time_point& start_time, atomic_counter_ptr sigops,
         result_handler handler) const;
-
     void connect_inputs(block_const_ptr block, size_t bucket,
-        result_handler handler) const;
-
+        size_t buckets, result_handler handler) const;
     void handle_connected(const code& ec, block_const_ptr block,
         const asio::time_point& start_time, result_handler handler) const;
 

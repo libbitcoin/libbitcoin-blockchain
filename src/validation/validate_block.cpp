@@ -208,22 +208,22 @@ void validate_block::connect(fork::const_ptr fork, size_t index,
         return;
     }
 
-    const auto buckets = priority_dispatch_.size();
-    const auto threads = std::min(buckets, non_coinbase_inputs);
-    const auto join_handler = synchronize(complete_handler, threads,
+    const auto threads = priority_dispatch_.size();
+    const auto buckets = std::min(threads, non_coinbase_inputs);
+    const auto join_handler = synchronize(complete_handler, buckets,
         NAME "_validate");
 
-    for (size_t bucket = 0; bucket < threads; ++bucket)
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::connect_inputs,
-            this, block, bucket, join_handler);
+            this, block, bucket, buckets, join_handler);
 }
 
 // TODO: move to validate_input.hpp/cpp (static methods only).
 void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
-    result_handler handler) const
+    size_t buckets, result_handler handler) const
 {
+    BITCOIN_ASSERT(bucket < buckets);
     code ec(error::success);
-    const auto buckets = priority_dispatch_.size();
     const auto forks = block->validation.state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
