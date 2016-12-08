@@ -40,9 +40,6 @@ class BCB_API validate_block
 public:
     typedef handle0 result_handler;
 
-    static void report(block_const_ptr block,
-        const asio::time_point& start_time, const std::string& token);
-
     validate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
@@ -66,16 +63,14 @@ private:
         bool use_libconsensus);
 
     void handle_populated(const code& ec, block_const_ptr block,
-        const asio::time_point& start_time, result_handler handler) const;
+        result_handler handler) const;
     void accept_transactions(block_const_ptr block, size_t bucket,
         atomic_counter_ptr sigops, bool bip16, result_handler handler) const;
     void handle_accepted(const code& ec, block_const_ptr block,
-        const asio::time_point& start_time, atomic_counter_ptr sigops,
+        atomic_counter_ptr sigops,
         result_handler handler) const;
     void connect_inputs(block_const_ptr block, size_t bucket,
         size_t buckets, result_handler handler) const;
-    void handle_connected(const code& ec, block_const_ptr block,
-        const asio::time_point& start_time, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

@@ -49,7 +49,7 @@ public:
 
     /// Populate block validation state for the block at index.
     void populate_block_state(fork::const_ptr fork, size_t index,
-        result_handler handler) const;
+        result_handler&& handler) const;
 
 protected:
     bool stopped() const;
