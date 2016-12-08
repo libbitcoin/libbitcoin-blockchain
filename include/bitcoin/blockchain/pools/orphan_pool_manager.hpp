@@ -75,8 +75,7 @@ private:
         result_handler handler);
     void organized(fork::ptr fork, result_handler handler);
     void handle_reorganized(const code& ec, fork::const_ptr fork,
-        block_const_ptr_list_ptr outgoing_blocks,
-        const asio::time_point& start_time, result_handler handler);
+        block_const_ptr_list_ptr outgoing_blocks, result_handler handler);
 
     // Subscription.
     void notify_reorganize(size_t fork_height,

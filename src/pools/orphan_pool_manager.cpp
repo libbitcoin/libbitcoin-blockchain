@@ -350,6 +350,10 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
         return;
     }
 
+    // The fork is valid and can now be used to notify subscribers.
+    const auto block = fork->blocks()->front();
+    block->validation.start_notify = asio::steady_clock::now();
+
     // Capture the outgoing blocks and forward to reorg handler.
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
 
@@ -358,8 +362,7 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
     const auto complete =
         std::bind(&orphan_pool_manager::handle_reorganized,
-            this, _1, const_fork, out_blocks, asio::steady_clock::now(),
-                handler);
+            this, _1, const_fork, out_blocks, handler);
 
     // Replace! Switch!
     //#########################################################################
@@ -370,12 +373,9 @@ void orphan_pool_manager::organized(fork::ptr fork, result_handler handler)
 
 void orphan_pool_manager::handle_reorganized(const code& ec,
     fork::const_ptr fork, block_const_ptr_list_ptr outgoing_blocks,
-    const asio::time_point& start_time, result_handler handler)
+    result_handler handler)
 {
     BITCOIN_ASSERT(!fork->blocks()->empty());
-
-    validate_block::report(fork->blocks()->back(), start_time, ec ?
-        "STRANDED " : "deposited");
 
     if (ec)
     {

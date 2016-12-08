@@ -20,7 +20,6 @@
 #include <bitcoin/blockchain/validation/populate_block.hpp>
 
 #include <algorithm>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -205,7 +204,7 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
 //-----------------------------------------------------------------------------
 
 void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
-    result_handler handler) const
+    result_handler&& handler) const
 {
     const auto block = fork->block_at(index);
 
@@ -255,7 +254,7 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
 
     const auto threads = priority_dispatch_.size();
     const auto buckets = std::min(threads, non_coinbase_inputs);
-    const auto join_handler = synchronize(handler, buckets,
+    const auto join_handler = synchronize(std::move(handler), buckets,
         NAME "_populate");
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
