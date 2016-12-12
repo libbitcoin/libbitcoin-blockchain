@@ -36,7 +36,7 @@ public:
     settings(config::settings context);
 
     /// Properties.
-    uint32_t threads;
+    uint32_t cores;
     bool priority;
     bool use_libconsensus;
     bool flush_reorganizations;

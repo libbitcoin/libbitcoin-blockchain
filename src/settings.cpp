@@ -19,12 +19,14 @@
  */
 #include <bitcoin/blockchain/settings.hpp>
 
+#include <algorithm>
+#include <thread>
+
 namespace libbitcoin {
 namespace blockchain {
 
-// TODO: default threads to number of cores.
 settings::settings()
-  : threads(8),
+  : cores(std::max(std::thread::hardware_concurrency(), 1u)),
     priority(true),
     use_libconsensus(false),
     flush_reorganizations(false),
