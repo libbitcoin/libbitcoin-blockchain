@@ -33,7 +33,6 @@ settings::settings()
     transaction_pool_consistency(false),
     transaction_pool_capacity(1000),
     block_pool_capacity(50),
-    cache_capacity(0),
     enabled_forks(machine::rule_fork::consensus)
 {
 }
