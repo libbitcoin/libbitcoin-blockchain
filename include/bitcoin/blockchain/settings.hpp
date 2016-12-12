@@ -43,7 +43,6 @@ public:
     bool transaction_pool_consistency;
     uint32_t transaction_pool_capacity;
     uint32_t block_pool_capacity;
-    uint32_t cache_capacity;
     uint32_t enabled_forks;
     config::checkpoint::list checkpoints;
 };
