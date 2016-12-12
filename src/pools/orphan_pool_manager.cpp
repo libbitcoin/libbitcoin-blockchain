@@ -51,7 +51,7 @@ using namespace std::placeholders;
 
 static inline size_t cores(const settings& settings)
 {
-    const auto configured = settings.threads;
+    const auto configured = settings.cores;
     const auto hardware = std::max(std::thread::hardware_concurrency(), 1u);
     return configured == 0 ? hardware : std::min(configured, hardware);
 }
