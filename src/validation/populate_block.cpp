@@ -42,9 +42,6 @@ using namespace std::placeholders;
 // This value should never be read, but may be useful in debugging.
 static constexpr uint32_t unspecified = max_uint32;
 
-// Constant for log report calculations.
-static constexpr size_t micro_per_milliseconds = 1000;
-
 // Database access is limited to:
 // spend: { spender }
 // block: { bits, version, timestamp }
