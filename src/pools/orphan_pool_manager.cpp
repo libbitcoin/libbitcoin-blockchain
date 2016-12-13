@@ -390,16 +390,16 @@ void orphan_pool_manager::handle_reorganized(const code& ec,
     orphan_pool_.remove(fork->blocks());
     orphan_pool_.add(outgoing_blocks);
 
-    // This is the end of the verify sub-sequence.
-    // We can allow the next block before broadcasting the notification.
-    handler(error::success);
-
     // Protect the outgoing blocks from subscribers.
     auto old_blocks = std::const_pointer_cast<const block_const_ptr_list>(
         outgoing_blocks);
 
+    // TODO: we can notify before reorg for mining scenario.
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
     notify_reorganize(fork->height(), fork->blocks(), old_blocks);
+
+    // This is the end of the verify sub-sequence.
+    handler(error::success);
 }
 
 // Subscription.
@@ -415,7 +415,9 @@ void orphan_pool_manager::notify_reorganize(size_t fork_height,
     block_const_ptr_list_const_ptr fork,
     block_const_ptr_list_const_ptr original)
 {
-    subscriber_->relay(error::success, fork_height, fork, original);
+    // Invoke is required here to prevent subscription parsing from creating a
+    // unsurmountable backlog during catch-up sync.
+    subscriber_->invoke(error::success, fork_height, fork, original);
 }
 
 // Utility.
