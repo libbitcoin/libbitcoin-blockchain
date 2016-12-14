@@ -91,7 +91,7 @@ public:
 
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
-        size_t& out_position, const chain::output_point& outpoint,
+        bool& out_coinbase, const chain::output_point& outpoint,
         size_t fork_height) const;
 
     /// Determine if an unspent transaction exists with the given hash.
