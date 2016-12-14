@@ -345,11 +345,11 @@ void populate_block::populate_prevout(size_t fork_height,
         return;
 
     size_t output_height;
-    size_t output_position;
+    bool output_coinbase;
 
     // Get the script, value and spender height (if any) for the prevout.
     // The output (prevout.cache) is populated only if the return is true.
-    if (!fast_chain_.get_output(prevout.cache, output_height, output_position,
+    if (!fast_chain_.get_output(prevout.cache, output_height, output_coinbase,
         outpoint, fork_height))
         return;
 
@@ -362,7 +362,7 @@ void populate_block::populate_prevout(size_t fork_height,
         return;
 
     // Set height only if the prevout is a coinbase tx (for maturity).
-    if (output_position == 0)
+    if (output_coinbase)
         prevout.height = output_height;
 
     // The output is spent only if by a spend at or below the fork height.

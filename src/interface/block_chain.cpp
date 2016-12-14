@@ -164,27 +164,13 @@ bool block_chain::get_last_height(size_t& out_height) const
 }
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
-    size_t& out_position, const chain::output_point& outpoint,
+    bool& out_coinbase, const chain::output_point& outpoint,
     size_t fork_height) const
 {
-    // TODO: the fork_height parameter is not yet honored.
-    // Get the highest tx with matching hash, at or below the fork height.
-    auto result = database_.transactions().get(outpoint.hash(), fork_height);
-
-    // TODO: remove this when tx.get(..., fork_height) is honored.
-    // BUGBUG: insufficient as there may be a match below the tx returned.
-    if (!result || result.height() > fork_height)
-        return false;
-
-    out_height = result.height();
-    out_position = result.position();
-
     // This includes a cached value for spender height (or not_spent).
-    // This should generally be checked against the fork height upon return.
-    out_output = result.output(outpoint.index());
-
-    // If the index is invalid the output will be as well.
-    return out_output.is_valid();
+    // Get the highest tx with matching hash, at or below the fork height.
+    return database_.transactions().get_output(out_output, out_height,
+        out_coinbase, outpoint, fork_height);
 }
 
 bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
