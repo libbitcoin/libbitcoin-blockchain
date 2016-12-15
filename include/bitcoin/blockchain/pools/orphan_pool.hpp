@@ -64,7 +64,6 @@ private:
     typedef buffer::const_iterator const_iterator;
 
     bool exists(const hash_digest& hash) const;
-    bool exists(const chain::header& header) const;
     const_iterator find(const hash_digest& hash) const;
 
     // The buffer is protected by mutex.

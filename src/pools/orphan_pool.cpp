@@ -39,14 +39,12 @@ orphan_pool::orphan_pool(size_t capacity)
 // There is no validation up to this point apart from deserialization.
 bool orphan_pool::add(block_const_ptr block)
 {
-    const auto& header = block->header();
-
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_upgrade();
 
-    // No duplicates allowed.
-    if (exists(header))
+    // No duplicates allowed by block hash.
+    if (exists(block->hash()))
     {
         mutex_.unlock_upgrade();
         //-----------------------------------------------------------------
@@ -168,16 +166,6 @@ bool orphan_pool::exists(const hash_digest& hash) const
     const auto match = [&hash](const block_const_ptr& entry)
     {
         return hash == entry->hash();
-    };
-
-    return std::any_of(buffer_.begin(), buffer_.end(), match);
-}
-
-bool orphan_pool::exists(const chain::header& header) const
-{
-    const auto match = [&header](const block_const_ptr& entry)
-    {
-        return header == entry->header();
     };
 
     return std::any_of(buffer_.begin(), buffer_.end(), match);
