@@ -31,20 +31,19 @@ namespace blockchain {
 using namespace std::placeholders;
 
 orphan_pool::orphan_pool(size_t capacity)
-  : capacity_(capacity == 0 ? 1 : capacity)
+  : capacity_(std::min(capacity, size_t(1))), sequence_(0)
 {
-    buffer_.reserve(capacity_);
 }
 
-// There is no validation up to this point apart from deserialization.
 bool orphan_pool::add(block_const_ptr block)
 {
+    // The block has passed static validation checks prior to this call.
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
     mutex_.lock_upgrade();
 
-    // No duplicates allowed by block hash.
-    if (exists(block->hash()))
+    // No pool duplicates allowed by block hash.
+    if (buffer_.left.find(block) != buffer_.left.end())
     {
         mutex_.unlock_upgrade();
         //-----------------------------------------------------------------
@@ -52,32 +51,37 @@ bool orphan_pool::add(block_const_ptr block)
     }
 
     const auto size = buffer_.size();
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    // Remove the front element, a circular buffer might be more efficient.
+    // It's been a very long time since the last restart.
+    if (sequence_ == max_size_t)
+        buffer_.clear();
+
+    // Remove the oldest entry if the buffer is at capacity.
     if (size == capacity_)
-        buffer_.erase(buffer_.begin());
+        buffer_.right.erase(buffer_.right.begin());
 
-    buffer_.push_back(block);
+    buffer_.insert({ block, ++sequence_ });
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
     ////LOG_DEBUG(LOG_BLOCKCHAIN)
     ////    << "Orphan pool added block [" << encode_hash(block->hash())
-    ////    << "] previous [" << encode_hash(header.previous_block_hash)
+    ////    << "] previous [" << encode_hash(header.previous_block_hash())
     ////    << "] old size (" << size << ").";
 
     return true;
 }
 
-// These are blocks arriving from the blockchain, so should be prevalidated.
 bool orphan_pool::add(block_const_ptr_list_const_ptr blocks)
 {
-    auto success = true;
-    for (const auto block: *blocks)
-        success &= add(block);
+    // TODO: Popped block prevalidation may not hold depending on collision.
+    // These are blocks arriving from the blockchain, so are already validated.
 
+    auto success = true;
+    auto adder = [&](const block_const_ptr& block) { success &= add(block); };
+    std::for_each(blocks->begin(), blocks->end(), adder);
     return success;
 }
 
@@ -87,9 +91,10 @@ void orphan_pool::remove(block_const_ptr block)
     // Critical Section
     mutex_.lock_upgrade();
 
-    const auto it = std::find(buffer_.begin(), buffer_.end(), block);
+    // Find the block entry based on the block hash function.
+    const auto it = buffer_.left.find(block);
 
-    if (it == buffer_.end())
+    if (it == buffer_.left.end())
     {
         mutex_.unlock_upgrade();
         //-----------------------------------------------------------------
@@ -97,9 +102,10 @@ void orphan_pool::remove(block_const_ptr block)
     }
 
     ////const auto old_size = buffer_.size();
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     mutex_.unlock_upgrade_and_lock();
-    buffer_.erase(it);
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    buffer_.left.erase(it);
+
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
@@ -110,11 +116,10 @@ void orphan_pool::remove(block_const_ptr block)
 
 void orphan_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
-    auto remover = [this](const block_const_ptr& block) { remove(block); };
+    auto remover = [&](const block_const_ptr& block) { remove(block); };
     std::for_each(blocks->begin(), blocks->end(), remover);
 }
 
-// TODO: use hash table pool to eliminate this O(n^2) search.
 void orphan_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
@@ -127,10 +132,19 @@ void orphan_pool::filter(get_data_ptr message) const
             continue;
         }
 
+        // Construct a block_const_ptr key using header hash injection.
+        const auto key = std::make_shared<const message::block>(message::block
+        {
+            chain::header{ chain::header{}, it->hash() },
+            chain::transaction::list{}
+        });
+
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         mutex_.lock_shared();
-        const auto found = exists(it->hash());
+
+        const auto found = (buffer_.left.find(key) != buffer_.left.end());
+
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
@@ -156,29 +170,6 @@ fork::ptr orphan_pool::trace(block_const_ptr block) const
     ///////////////////////////////////////////////////////////////////////////
 
     return trace;
-}
-
-// private
-//-----------------------------------------------------------------------------
-
-bool orphan_pool::exists(const hash_digest& hash) const
-{
-    const auto match = [&hash](const block_const_ptr& entry)
-    {
-        return hash == entry->hash();
-    };
-
-    return std::any_of(buffer_.begin(), buffer_.end(), match);
-}
-
-orphan_pool::const_iterator orphan_pool::find(const hash_digest& hash) const
-{
-    const auto match = [&hash](const block_const_ptr& entry)
-    {
-        return hash == entry->hash();
-    };
-
-    return std::find_if(buffer_.begin(), buffer_.end(), match);
 }
 
 } // namespace blockchain

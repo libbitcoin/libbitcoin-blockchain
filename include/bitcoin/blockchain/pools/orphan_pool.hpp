@@ -22,10 +22,30 @@
 
 #include <cstddef>
 #include <memory>
-#include <vector>
+#include <boost/bimap.hpp>
+#include <boost/bimap/set_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
+
+// Standard (boost) hash.
+//-----------------------------------------------------------------------------
+
+namespace boost
+{
+
+// Extend boost namespace with our block_const_ptr hash function.
+template <>
+struct hash<bc::blockchain::block_const_ptr>
+{
+    size_t operator()(const bc::blockchain::block_const_ptr& block) const
+    {
+        return boost::hash<bc::hash_digest>()(block->hash());
+    }
+};
+
+} // namespace boost
 
 namespace libbitcoin {
 namespace blockchain {
@@ -60,16 +80,19 @@ public:
     fork::ptr trace(block_const_ptr block) const;
 
 private:
-    typedef std::vector<block_const_ptr> buffer;
-    typedef buffer::const_iterator const_iterator;
+    // A bidirection map is used for efficient block and position retrieval.
+    // This produces the effect of a circular buffer hash table of blocks.
+    typedef boost::bimaps::bimap<
+        boost::bimaps::unordered_set_of<block_const_ptr>,
+        boost::bimaps::set_of<size_t>> orphan_blocks;
 
-    bool exists(const hash_digest& hash) const;
-    const_iterator find(const hash_digest& hash) const;
-
-    // The buffer is protected by mutex.
-    buffer buffer_;
-    mutable upgrade_mutex mutex_;
+    // This is thread safe.
     const size_t capacity_;
+
+    // These are protected by mutex.
+    size_t sequence_;
+    orphan_blocks buffer_;
+    mutable upgrade_mutex mutex_;
 };
 
 } // namespace blockchain
