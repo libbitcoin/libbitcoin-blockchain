@@ -21,15 +21,12 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <functional>
 #include <memory>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
-
-using namespace std::placeholders;
 
 orphan_pool::orphan_pool(size_t capacity)
   : capacity_(std::min(capacity, size_t(1))), sequence_(0)
