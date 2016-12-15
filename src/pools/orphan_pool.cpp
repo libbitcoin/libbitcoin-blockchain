@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
@@ -132,12 +133,7 @@ void orphan_pool::filter(get_data_ptr message) const
             continue;
         }
 
-        // Construct a block_const_ptr key using header hash injection.
-        const auto key = std::make_shared<const message::block>(message::block
-        {
-            chain::header{ chain::header{}, it->hash() },
-            chain::transaction::list{}
-        });
+        const auto key = create_key(it->hash());
 
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
@@ -170,6 +166,22 @@ fork::ptr orphan_pool::trace(block_const_ptr block) const
     ///////////////////////////////////////////////////////////////////////////
 
     return trace;
+}
+
+block_const_ptr orphan_pool::create_key(const hash_digest& hash)
+{
+    auto copy = hash;
+    return create_key(copy);
+}
+
+block_const_ptr orphan_pool::create_key(hash_digest&& hash)
+{
+    // Construct a block_const_ptr key using header hash injection.
+    return std::make_shared<const message::block>(message::block
+    {
+        chain::header{ chain::header{}, hash },
+        chain::transaction::list{}
+    });
 }
 
 } // namespace blockchain

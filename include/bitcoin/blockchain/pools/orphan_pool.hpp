@@ -86,6 +86,9 @@ private:
         boost::bimaps::unordered_set_of<block_const_ptr>,
         boost::bimaps::set_of<size_t>> orphan_blocks;
 
+    static block_const_ptr create_key(hash_digest&& hash);
+    static block_const_ptr create_key(const hash_digest& hash);
+
     // This is thread safe.
     const size_t capacity_;
 
