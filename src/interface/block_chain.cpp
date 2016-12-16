@@ -29,8 +29,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/interface/block_fetcher.hpp>
-#include <bitcoin/blockchain/pools/orphan_pool.hpp>
-#include <bitcoin/blockchain/pools/orphan_pool_manager.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
+#include <bitcoin/blockchain/pools/organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -48,8 +48,8 @@ block_chain::block_chain(threadpool& pool,
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    orphan_pool_(chain_settings.block_pool_capacity),
-    orphan_manager_(pool, *this, orphan_pool_, chain_settings),
+    block_pool_(chain_settings.block_pool_capacity),
+    block_manager_(pool, *this, block_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -278,7 +278,7 @@ bool block_chain::start()
 bool block_chain::start_pools()
 {
     transaction_pool_.start();
-    return orphan_manager_.start();
+    return block_manager_.start();
 }
 
 bool block_chain::stop()
@@ -288,7 +288,7 @@ bool block_chain::stop()
 
     // This blocks until asynchronous write operations are complete, preventing
     // premature suspension of dispatch by shutdown of the threadpool.
-    return orphan_manager_.stop();
+    return block_manager_.stop();
 }
 
 bool block_chain::close()
@@ -837,7 +837,7 @@ void block_chain::filter_transactions(get_data_ptr message,
 void block_chain::filter_orphans(get_data_ptr message,
     result_handler handler) const
 {
-    orphan_pool_.filter(message);
+    block_pool_.filter(message);
     handler(error::success);
 }
 
@@ -853,7 +853,7 @@ void block_chain::filter_floaters(get_data_ptr message,
 void block_chain::subscribe_reorganize(reorganize_handler&& handler)
 {
     // Pass this through to the manager, which issues the notifications.
-    orphan_manager_.subscribe_reorganize(std::move(handler));
+    block_manager_.subscribe_reorganize(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
@@ -867,7 +867,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    orphan_manager_.organize(block, handler);
+    block_manager_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr transaction,

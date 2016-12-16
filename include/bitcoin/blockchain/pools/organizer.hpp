@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_OORPHAN_POOL_MANAGER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_OORPHAN_POOL_MANAGER_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/orphan_pool.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 #include <bitcoin/blockchain/validation/validate_block.hpp>
@@ -37,18 +37,18 @@ namespace blockchain {
 
 /// This class is not thread safe.
 /// Organises blocks via the orphan pool to the blockchain.
-class BCB_API orphan_pool_manager
+class BCB_API organizer
 {
 public:
     typedef handle0 result_handler;
-    typedef std::shared_ptr<orphan_pool_manager> ptr;
+    typedef std::shared_ptr<organizer> ptr;
     typedef safe_chain::reorganize_handler reorganize_handler;
     typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
         block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
-    orphan_pool_manager(threadpool& thread_pool, fast_chain& chain,
-        orphan_pool& orphan_pool, const settings& settings);
+    organizer(threadpool& thread_pool, fast_chain& chain,
+        block_pool& block_pool, const settings& settings);
 
     virtual bool start();
     virtual bool stop();
@@ -89,7 +89,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool flush_reorganizations_;
-    orphan_pool& orphan_pool_;
+    block_pool& block_pool_;
     threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;

@@ -17,29 +17,49 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_ORPHAN_POOL_HPP
-#define LIBBITCOIN_BLOCKCHAIN_ORPHAN_POOL_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_POOL_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_POOL_HPP
 
 #include <cstddef>
 #include <memory>
-#include <vector>
+#include <boost/bimap.hpp>
+#include <boost/bimap/set_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
+
+// Standard (boost) hash.
+//-----------------------------------------------------------------------------
+
+namespace boost
+{
+
+// Extend boost namespace with our block_const_ptr hash function.
+template <>
+struct hash<bc::blockchain::block_const_ptr>
+{
+    size_t operator()(const bc::blockchain::block_const_ptr& block) const
+    {
+        return boost::hash<bc::hash_digest>()(block->hash());
+    }
+};
+
+} // namespace boost
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe.
 /// An unordered memory pool for orphan blocks.
-class BCB_API orphan_pool
+class BCB_API block_pool
 {
 public:
-    typedef std::shared_ptr<orphan_pool> ptr;
+    typedef std::shared_ptr<block_pool> ptr;
     typedef std::shared_ptr<const block_const_ptr_list>
         block_const_ptr_list_const_ptr;
 
-    orphan_pool(size_t capacity);
+    block_pool(size_t capacity);
 
     /// Add a block to the pool.
     bool add(block_const_ptr block);
@@ -60,17 +80,22 @@ public:
     fork::ptr trace(block_const_ptr block) const;
 
 private:
-    typedef std::vector<block_const_ptr> buffer;
-    typedef buffer::const_iterator const_iterator;
+    // A bidirection map is used for efficient block and position retrieval.
+    // This produces the effect of a circular buffer hash table of blocks.
+    typedef boost::bimaps::bimap<
+        boost::bimaps::unordered_set_of<block_const_ptr>,
+        boost::bimaps::set_of<size_t>> block_blocks;
 
-    bool exists(const hash_digest& hash) const;
-    bool exists(const chain::header& header) const;
-    const_iterator find(const hash_digest& hash) const;
+    static block_const_ptr create_key(hash_digest&& hash);
+    static block_const_ptr create_key(const hash_digest& hash);
 
-    // The buffer is protected by mutex.
-    buffer buffer_;
-    mutable upgrade_mutex mutex_;
+    // This is thread safe.
     const size_t capacity_;
+
+    // These are protected by mutex.
+    size_t sequence_;
+    block_blocks buffer_;
+    mutable upgrade_mutex mutex_;
 };
 
 } // namespace blockchain

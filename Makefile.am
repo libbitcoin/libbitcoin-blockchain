@@ -38,8 +38,9 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/settings.cpp \
     src/interface/block_chain.cpp \
     src/interface/block_fetcher.cpp \
-    src/pools/orphan_pool.cpp \
-    src/pools/orphan_pool_manager.cpp \
+    src/pools/block_graph.cpp \
+    src/pools/block_pool.cpp \
+    src/pools/organizer.cpp \
     src/pools/transaction_pool.cpp \
     src/pools/transaction_pool_index.cpp \
     src/validation/fork.cpp \
@@ -97,8 +98,9 @@ include_bitcoin_blockchain_interface_HEADERS = \
 
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
-    include/bitcoin/blockchain/pools/orphan_pool.hpp \
-    include/bitcoin/blockchain/pools/orphan_pool_manager.hpp \
+    include/bitcoin/blockchain/pools/block_graph.hpp \
+    include/bitcoin/blockchain/pools/block_pool.hpp \
+    include/bitcoin/blockchain/pools/organizer.hpp \
     include/bitcoin/blockchain/pools/transaction_pool.hpp \
     include/bitcoin/blockchain/pools/transaction_pool_index.hpp
 

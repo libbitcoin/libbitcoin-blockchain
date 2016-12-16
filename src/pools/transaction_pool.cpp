@@ -60,7 +60,7 @@ void transaction_pool::start()
     index_.start();
     subscriber_->start();
 
-    // Subscribe to blockchain (orphan_pool_manager) reorg notifications.
+    // Subscribe to blockchain (organizer) reorg notifications.
     safe_chain_.subscribe_reorganize(
         std::bind(&transaction_pool::handle_reorganized,
             this, _1, _2, _3, _4));
