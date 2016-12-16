@@ -17,23 +17,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/pools/orphan_pool.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <utility>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-orphan_pool::orphan_pool(size_t capacity)
+block_pool::block_pool(size_t capacity)
   : capacity_(std::min(capacity, size_t(1))), sequence_(0)
 {
 }
 
-bool orphan_pool::add(block_const_ptr block)
+bool block_pool::add(block_const_ptr block)
 {
     // The block has passed static validation checks prior to this call.
     ///////////////////////////////////////////////////////////////////////////
@@ -72,7 +73,7 @@ bool orphan_pool::add(block_const_ptr block)
     return true;
 }
 
-bool orphan_pool::add(block_const_ptr_list_const_ptr blocks)
+bool block_pool::add(block_const_ptr_list_const_ptr blocks)
 {
     // TODO: Popped block prevalidation may not hold depending on collision.
     // These are blocks arriving from the blockchain, so are already validated.
@@ -83,7 +84,7 @@ bool orphan_pool::add(block_const_ptr_list_const_ptr blocks)
     return success;
 }
 
-void orphan_pool::remove(block_const_ptr block)
+void block_pool::remove(block_const_ptr block)
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -112,13 +113,13 @@ void orphan_pool::remove(block_const_ptr block)
     ////    << "] old size (" << old_size << ").";
 }
 
-void orphan_pool::remove(block_const_ptr_list_const_ptr blocks)
+void block_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
     auto remover = [&](const block_const_ptr& block) { remove(block); };
     std::for_each(blocks->begin(), blocks->end(), remover);
 }
 
-void orphan_pool::filter(get_data_ptr message) const
+void block_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
 
@@ -145,7 +146,7 @@ void orphan_pool::filter(get_data_ptr message) const
     }
 }
 
-fork::ptr orphan_pool::trace(block_const_ptr block) const
+fork::ptr block_pool::trace(block_const_ptr block) const
 {
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section
@@ -165,13 +166,13 @@ fork::ptr orphan_pool::trace(block_const_ptr block) const
     return trace;
 }
 
-block_const_ptr orphan_pool::create_key(const hash_digest& hash)
+block_const_ptr block_pool::create_key(const hash_digest& hash)
 {
     auto copy = hash;
-    return create_key(copy);
+    return create_key(std::move(copy));
 }
 
-block_const_ptr orphan_pool::create_key(hash_digest&& hash)
+block_const_ptr block_pool::create_key(hash_digest&& hash)
 {
     // Construct a block_const_ptr key using header hash injection.
     return std::make_shared<const message::block>(message::block

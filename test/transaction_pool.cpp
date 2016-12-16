@@ -180,7 +180,7 @@ public:
     //-------------------------------------------------------------------------
 
     virtual void subscribe_reorganize(
-        orphan_pool_manager::reorganize_handler&& handler)
+        organizer::reorganize_handler&& handler)
     {
     }
 

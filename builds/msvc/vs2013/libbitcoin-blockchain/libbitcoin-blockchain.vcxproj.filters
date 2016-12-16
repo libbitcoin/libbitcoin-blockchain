@@ -45,16 +45,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool_manager.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_index.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\orphan_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_block.hpp">
@@ -84,6 +78,15 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_input.hpp">
       <Filter>include\bitcoin\blockchain\validation</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_graph.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\organizer.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
@@ -101,12 +104,6 @@
     <ClCompile Include="..\..\..\..\src\pools\transaction_pool_index.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\orphan_pool.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\orphan_pool_manager.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\validation\validate_block.cpp">
       <Filter>src\validation</Filter>
     </ClCompile>
@@ -118,6 +115,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\validation\validate_input.cpp">
       <Filter>src\validation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\block_graph.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\organizer.cpp">
+      <Filter>src\pools</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
