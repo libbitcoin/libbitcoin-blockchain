@@ -74,8 +74,8 @@ BOOST_AUTO_TEST_CASE(fork__hash__two_blocks__first_previous_block_hash)
     block0->header().set_previous_block_hash(expected);
     block1->header().set_previous_block_hash(block0->hash());
 
-    BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(instance.push_front(block1));
+    BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(instance.hash() == expected);
 }
 
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(fork__push__two_unlinked__link_failure)
     BOOST_REQUIRE(instance.push_front(block1));
     BOOST_REQUIRE(!instance.push_front(block0));
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
-    BOOST_REQUIRE(instance.block_at(0) == block0);
+    BOOST_REQUIRE(instance.block_at(0) == block1);
 }
 
 // difficulty
