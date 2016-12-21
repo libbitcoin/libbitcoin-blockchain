@@ -170,12 +170,11 @@ bool populate_block::populate_checkpoint(chain_state::data& data,
         map.allowed_duplicates_height, fork);
 }
 
-void populate_block::populate_chain_state(fork::const_ptr fork,
-    size_t index) const
+void populate_block::populate_chain_state(fork::const_ptr fork) const
 {
-    BITCOIN_ASSERT(index < fork->size());
-    const auto& block = fork->block_at(index);
-    const auto height = fork->height_at(index);
+    const auto block = fork->top();
+    const auto height = fork->top_height();
+    BITCOIN_ASSERT(block);
 
     chain_state::data data;
     data.height = height;
@@ -200,14 +199,15 @@ void populate_block::populate_chain_state(fork::const_ptr fork,
 // Populate block state sequence.
 //-----------------------------------------------------------------------------
 
-void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
+void populate_block::populate_block_state(fork::const_ptr fork,
     result_handler&& handler) const
 {
-    const auto block = fork->block_at(index);
+    const auto block = fork->top();
+    BITCOIN_ASSERT(block);
 
     // Populate chain state if not already populated, always required.
     if (!block->validation.state)
-        populate_chain_state(fork, index);
+        populate_chain_state(fork);
 
     BITCOIN_ASSERT(block->validation.state);
     const auto state = block->validation.state;
@@ -236,7 +236,7 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
         for (auto& tx: block->transactions())
         {
             populate_transaction(fork->height(), tx);
-            populate_transaction(fork, index, tx);
+            populate_transaction(fork, tx);
         }
     }
 
@@ -256,7 +256,7 @@ void populate_block::populate_block_state(fork::const_ptr fork, size_t index,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&populate_block::populate_inputs,
-            this, fork, index, bucket, buckets, join_handler);
+            this, fork, bucket, buckets, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
@@ -289,20 +289,20 @@ void populate_block::populate_transaction(size_t fork_height,
         tx.hash(), fork_height);
 }
 
-void populate_block::populate_transaction(fork::const_ptr fork, size_t index,
+void populate_block::populate_transaction(fork::const_ptr fork,
     const chain::transaction& tx) const
 {
     if (!tx.validation.duplicate)
-        fork->populate_tx(index, tx);
+        fork->populate_tx(tx);
 }
 
-void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
+void populate_block::populate_inputs(fork::const_ptr fork,
     size_t bucket, size_t buckets, result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
     code ec(error::success);
-    const auto block = fork->block_at(index);
-    const auto fork_height = fork->height();
+    const auto block = fork->top();
+    const auto fork_height = fork->top_height();
     const auto& txs = block->transactions();
     size_t position = 0;
 
@@ -322,7 +322,7 @@ void populate_block::populate_inputs(fork::const_ptr fork, size_t index,
             const auto& output = input.previous_output();
 
             populate_prevout(fork_height, output);
-            populate_prevout(fork, index, output);
+            populate_prevout(fork, output);
         }
     }
 
@@ -378,16 +378,16 @@ void populate_block::populate_prevout(size_t fork_height,
     }
 }
 
-void populate_block::populate_prevout(fork::const_ptr fork, size_t index,
+void populate_block::populate_prevout(fork::const_ptr fork,
     const output_point& outpoint) const
 {
     if (!outpoint.validation.spent)
-        fork->populate_spent(index, outpoint);
+        fork->populate_spent(outpoint);
 
     // We continue even if prevout is spent.
 
     if (!outpoint.validation.cache.is_valid())
-        fork->populate_prevout(index, outpoint);
+        fork->populate_prevout(outpoint);
 }
 
 } // namespace blockchain

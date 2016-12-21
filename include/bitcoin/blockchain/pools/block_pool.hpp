@@ -21,80 +21,60 @@
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_POOL_HPP
 
 #include <cstddef>
-#include <memory>
 #include <boost/bimap.hpp>
 #include <boost/bimap/set_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/pools/block_entry.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
-
-// Standard (boost) hash.
-//-----------------------------------------------------------------------------
-
-namespace boost
-{
-
-// Extend boost namespace with our block_const_ptr hash function.
-template <>
-struct hash<bc::blockchain::block_const_ptr>
-{
-    size_t operator()(const bc::blockchain::block_const_ptr& block) const
-    {
-        return boost::hash<bc::hash_digest>()(block->hash());
-    }
-};
-
-} // namespace boost
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
-/// An unordered memory pool for orphan blocks.
+/// This class is thread safe against concurrent filtering only.
+/// There is no search within blocks of the block pool (just hashes).
+/// The fork object contains chain query for new (leaf) block validation.
+/// All pool blocks are valid, lacking only sufficient work for reorganzation.
 class BCB_API block_pool
 {
 public:
-    typedef std::shared_ptr<block_pool> ptr;
-    typedef std::shared_ptr<const block_const_ptr_list>
-        block_const_ptr_list_const_ptr;
+    block_pool(size_t maximum_depth);
 
-    block_pool(size_t capacity);
+    /// Add newly-validated block (work insufficient to reorganize).
+    void add(block_const_ptr valid_block);
 
-    /// Add a block to the pool.
-    bool add(block_const_ptr block);
+    /// Add root path of reorganized blocks (no branches).
+    void add(block_const_ptr_list_const_ptr valid_blocks);
 
-    /// Add a set of blocks to the pool.
-    bool add(block_const_ptr_list_const_ptr blocks);
+    /// Remove path of accepted blocks (sub-branches moved to root).
+    void remove(block_const_ptr_list_const_ptr accepted_blocks);
 
-    /// Remove a block from the pool.
-    void remove(block_const_ptr block);
+    /// Purge branches rooted below top minus maximum depth.
+    void prune(size_t top_height);
 
-    /// Remove a set of blocks from the pool.
-    void remove(block_const_ptr_list_const_ptr blocks);
-
-    /// Remove from the message all vectors that match orphans.
+    /// Remove all message vectors that match block hashes.
     void filter(get_data_ptr message) const;
 
-    /// Get the longest connected chain of orphans to block.
-    fork::ptr trace(block_const_ptr block) const;
+    /// Get the root path to and including the new block.
+    /// This will be empty if the block already exists in the pool.
+    fork::ptr get_path(block_const_ptr candidate_block) const;
 
 private:
     // A bidirection map is used for efficient block and position retrieval.
     // This produces the effect of a circular buffer hash table of blocks.
     typedef boost::bimaps::bimap<
-        boost::bimaps::unordered_set_of<block_const_ptr>,
-        boost::bimaps::set_of<size_t>> block_blocks;
+        boost::bimaps::unordered_set_of<block_entry>,
+        boost::bimaps::set_of<size_t>> blocks;
 
-    static block_const_ptr create_key(hash_digest&& hash);
-    static block_const_ptr create_key(const hash_digest& hash);
+    void prune(block_entry::hashes&& hashes);
+    bool exists(block_const_ptr candidate_block) const;
+    block_const_ptr parent(block_const_ptr block) const;
 
-    // This is thread safe.
-    const size_t capacity_;
+    const size_t maximum_depth_;
 
-    // These are protected by mutex.
-    size_t sequence_;
-    block_blocks buffer_;
+    // This is guarded against filtering concurrent to writing.
+    blocks blocks_;
     mutable upgrade_mutex mutex_;
 };
 

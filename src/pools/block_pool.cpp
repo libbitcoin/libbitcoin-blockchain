@@ -21,102 +21,156 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <memory>
 #include <utility>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/validation/fork.hpp>
 
+// Atomicity is not required for these operations as each validation call is
+// sequenced. Locking is performed only to guard concurrent filtering.
+
 namespace libbitcoin {
 namespace blockchain {
+    
+using namespace boost;
 
-block_pool::block_pool(size_t capacity)
-  : capacity_(std::min(capacity, size_t(1))), sequence_(0)
+block_pool::block_pool(size_t maximum_depth)
+  : maximum_depth_(maximum_depth)
 {
 }
 
-bool block_pool::add(block_const_ptr block)
+void block_pool::add(block_const_ptr block)
 {
-    // The block has passed static validation checks prior to this call.
-    ///////////////////////////////////////////////////////////////////////////
-    // Critical Section
-    mutex_.lock_upgrade();
+    // The block must be successfully validated.
+    BITCOIN_ASSERT(!block->validation.error);
+    block_entry entry{ block };
 
-    // No pool duplicates allowed by block hash.
-    if (buffer_.left.find(block) != buffer_.left.end())
+    BITCOIN_ASSERT(block->validation.state);
+    auto height = block->header().validation.height;
+
+    // Caller must ensure the entry does not exist.
+    BITCOIN_ASSERT(blocks_.left.find(entry) == blocks_.left.end());
+
+    // Add a back pointer from the parent for clearing the path later.
+    const block_entry parent_entry{ block->header().previous_block_hash() };
+    const auto parent = blocks_.left.find(parent_entry);
+
+    if (parent != blocks_.left.end())
     {
-        mutex_.unlock_upgrade();
-        //-----------------------------------------------------------------
-        return false;
+        height = 0;
+        parent->first.add_child(block);
     }
 
-    const auto size = buffer_.size();
-    mutex_.unlock_upgrade_and_lock();
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    // It's been a very long time since the last restart.
-    if (sequence_ == max_size_t)
-        buffer_.clear();
-
-    // Remove the oldest entry if the buffer is at capacity.
-    if (size == capacity_)
-        buffer_.right.erase(buffer_.right.begin());
-
-    buffer_.insert({ block, ++sequence_ });
-    mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    ////LOG_DEBUG(LOG_BLOCKCHAIN)
-    ////    << "Orphan pool added block [" << encode_hash(block->hash())
-    ////    << "] previous [" << encode_hash(header.previous_block_hash())
-    ////    << "] old size (" << size << ").";
-
-    return true;
-}
-
-bool block_pool::add(block_const_ptr_list_const_ptr blocks)
-{
-    // TODO: Popped block prevalidation may not hold depending on collision.
-    // These are blocks arriving from the blockchain, so are already validated.
-
-    auto success = true;
-    auto adder = [&](const block_const_ptr& block) { success &= add(block); };
-    std::for_each(blocks->begin(), blocks->end(), adder);
-    return success;
-}
-
-void block_pool::remove(block_const_ptr block)
-{
-    ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    mutex_.lock_upgrade();
-
-    // Find the block entry based on the block hash function.
-    const auto it = buffer_.left.find(block);
-
-    if (it == buffer_.left.end())
-    {
-        mutex_.unlock_upgrade();
-        //-----------------------------------------------------------------
-        return;
-    }
-
-    ////const auto old_size = buffer_.size();
-    mutex_.unlock_upgrade_and_lock();
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    buffer_.left.erase(it);
-
-    mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+    blocks_.insert({ std::move(entry), height });
+    ///////////////////////////////////////////////////////////////////////////
+}
 
-    ////LOG_DEBUG(LOG_BLOCKCHAIN)
-    ////    << "Orphan pool removed block [" << encode_hash(block->hash())
-    ////    << "] old size (" << old_size << ").";
+void block_pool::add(block_const_ptr_list_const_ptr blocks)
+{
+    const auto insert = [&](const block_const_ptr& block) { add(block); };
+    std::for_each(blocks->begin(), blocks->end(), insert);
 }
 
 void block_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
-    auto remover = [&](const block_const_ptr& block) { remove(block); };
-    std::for_each(blocks->begin(), blocks->end(), remover);
+    // The blocks list is expected to end with the new block (not in the pool).
+    const auto last_pool_block = blocks->size() - 1u;
+
+    for (size_t block = 0; block < last_pool_block; ++block)
+    {
+        auto it = blocks_.left.find(block_entry{ (*blocks)[block]->hash() });
+        BITCOIN_ASSERT(it != blocks_.left.end());
+
+        // There must be no children if this is the last pool block.
+        // There must be at least one child if this is not the last pool block.
+        DEBUG_ONLY(const auto last = (block == last_pool_block - 1u);)
+        BITCOIN_ASSERT(last == it->first.children().empty());
+
+        // Copy the block to a root node after deleting its next block child.
+        if (it->first.children().size() > 1u)
+        {
+            auto entry_copy = it->first;
+            const auto height = entry_copy.block()->header().validation.height;
+            DEBUG_ONLY(const auto is_root_node = height != 0;)
+            BITCOIN_ASSERT(is_root_node);
+
+            // It cannot be the last block in blocks if there are children.
+            // Remove child hash so next delete doesn't have to search for it.
+            BITCOIN_ASSERT(block < entry_copy.children().size() - 1u);
+            entry_copy.remove_child((*blocks)[block + 1u]);
+
+            ///////////////////////////////////////////////////////////////////
+            // Critical Section
+            unique_lock lock(mutex_);
+            blocks_.left.erase(it);
+            blocks_.insert({ std::move(entry_copy), height });
+            ///////////////////////////////////////////////////////////////////
+        }
+        else
+        {
+            ///////////////////////////////////////////////////////////////////
+            // Critical Section
+            unique_lock lock(mutex_);
+            blocks_.left.erase(it);
+            ///////////////////////////////////////////////////////////////////
+        }
+    }
+}
+
+// private
+void block_pool::prune(block_entry::hashes&& hashes)
+{
+    block_entry::hashes child_hashes;
+    auto saver = [&](const hash_digest& hash){ child_hashes.push_back(hash); };
+
+    for (auto& hash: hashes)
+    {
+        const auto it = blocks_.left.find(block_entry{ std::move(hash) });
+        BITCOIN_ASSERT(it != blocks_.left.end());
+
+        // Save the children!
+        const auto& children = it->first.children();
+        std::for_each(children.begin(), children.end(), saver);
+
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        unique_lock lock(mutex_);
+        blocks_.left.erase(it);
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // Reuse the iteration pattern from the top level prune.
+    if (!child_hashes.empty())
+        prune(std::move(child_hashes));
+}
+
+void block_pool::prune(size_t top_height)
+{
+    block_entry::hashes child_hashes;
+    auto saver = [&](const hash_digest& hash){ child_hashes.push_back(hash); };
+
+    // Height minus maximum depth is the minimum unpruned height.
+    const auto minimum_height = floor_subtract(top_height, maximum_depth_);
+
+    for (auto it = blocks_.right.begin(); it != blocks_.right.end() &&
+        it->first != 0 && it->first < minimum_height;)
+    {
+        // Save the children!
+        const auto& children = it->second.children();
+        std::for_each(children.begin(), children.end(), saver);
+
+        ///////////////////////////////////////////////////////////////////////
+        // Critical Section
+        unique_lock lock(mutex_);
+        it = blocks_.right.erase(it);
+        ///////////////////////////////////////////////////////////////////////
+    }
+
+    // The prevennts recursize erase inside of the iterator.
+    if (!child_hashes.empty())
+        prune(std::move(child_hashes));
 }
 
 void block_pool::filter(get_data_ptr message) const
@@ -131,14 +185,12 @@ void block_pool::filter(get_data_ptr message) const
             continue;
         }
 
-        const auto key = create_key(it->hash());
+        const block_entry entry{ it->hash() };
 
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         mutex_.lock_shared();
-
-        const auto found = (buffer_.left.find(key) != buffer_.left.end());
-
+        const auto found = (blocks_.left.find(entry) != blocks_.left.end());
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
@@ -146,40 +198,49 @@ void block_pool::filter(get_data_ptr message) const
     }
 }
 
-fork::ptr block_pool::trace(block_const_ptr block) const
+// private
+bool block_pool::exists(block_const_ptr candidate_block) const
 {
-    ///////////////////////////////////////////////////////////////////////////
+    // The block must not yet be successfully validated.
+    BITCOIN_ASSERT(candidate_block->validation.error);
+
     // Critical Section
-    mutex_.lock_shared();
-
-    const auto capacity = buffer_.size();
-    const auto trace = std::make_shared<fork>(capacity);
-
     ///////////////////////////////////////////////////////////////////////////
-    // TODO: obtain longest possible chain containing the new block.
+    shared_lock lock(mutex_);
+    return blocks_.left.find(block_entry{ candidate_block })
+        != blocks_.left.end();
     ///////////////////////////////////////////////////////////////////////////
-    trace->push(block);
+}
 
-    mutex_.unlock_shared();
+// private
+block_const_ptr block_pool::parent(block_const_ptr block) const
+{
+    // The block must not yet be successfully validated.
+    BITCOIN_ASSERT(block->validation.error);
+    const block_entry parent_entry{ block->header().previous_block_hash() };
+
+    // Critical Section
     ///////////////////////////////////////////////////////////////////////////
+    shared_lock lock(mutex_);
+    const auto parent = blocks_.left.find(parent_entry);
+    return parent == blocks_.left.end() ? nullptr : parent->first.block();
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+fork::ptr block_pool::get_path(block_const_ptr block) const
+{
+    const auto trace = std::make_shared<fork>();
+
+    if (exists(block))
+        return trace;
+
+    while (block)
+    {
+        trace->push_front(block);
+        block = parent(block);
+    }
 
     return trace;
-}
-
-block_const_ptr block_pool::create_key(const hash_digest& hash)
-{
-    auto copy = hash;
-    return create_key(std::move(copy));
-}
-
-block_const_ptr block_pool::create_key(hash_digest&& hash)
-{
-    // Construct a block_const_ptr key using header hash injection.
-    return std::make_shared<const message::block>(message::block
-    {
-        chain::header{ chain::header{}, hash },
-        chain::transaction::list{}
-    });
 }
 
 } // namespace blockchain

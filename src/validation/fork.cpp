@@ -33,11 +33,11 @@ namespace blockchain {
 using namespace bc::chain;
 using namespace bc::config;
 
-fork::fork(size_t capacity)
+fork::fork()
   : height_(0),
     blocks_(std::make_shared<block_const_ptr_list>())
 {
-    blocks_->reserve(capacity);
+    blocks_->reserve(1);
 }
 
 void fork::set_height(size_t height)
@@ -45,76 +45,33 @@ void fork::set_height(size_t height)
     height_ = height;
 }
 
-// Push later blocks onto the back, pointing to parent/preceding blocks.
-// The front block will always be first after the top of the chain.
-bool fork::push(block_const_ptr block)
+// Front is the top of the chain plus one, back is the top of the fork.
+bool fork::push_front(block_const_ptr block)
 {
-    if (blocks_->empty() ||
-        blocks_->back()->hash() == block->header().previous_block_hash())
+    const auto linked = [this](block_const_ptr block)
     {
-        blocks_->push_back(block);
+        const auto& front = blocks_->front()->header();
+        return front.previous_block_hash() == block->hash();
+    };
+
+    if (empty() || linked(block))
+    {
+        // TODO: optimize.
+        blocks_->insert(blocks_->begin(), block);
         return true;
     }
 
     return false;
 }
 
-// Index is unguarded, caller must verify.
-block_const_ptr_list_ptr fork::pop(size_t index, const code& reason)
+block_const_ptr fork::top() const
 {
-    const auto end = blocks_->end();
-    const auto start = blocks_->begin() + index;
-
-    const auto out = std::make_shared<block_const_ptr_list>();
-    out->reserve(std::distance(start, end));
-
-    for (auto it = start; it != end; ++it)
-    {
-        const auto block = *it;
-        block->header().validation.height = header::validation::orphan_height;
-        block->validation.result = it == start ? reason :
-            error::invalid_previous_block;
-        out->push_back(block);
-    }
-
-    blocks_->erase(start, end);
-    blocks_->shrink_to_fit();
-    return out;
+    return empty() ? nullptr : blocks_->back();
 }
 
-void fork::clear()
+size_t fork::top_height() const
 {
-    blocks_->clear();
-    blocks_->shrink_to_fit();
-    height_ = 0;
-}
-
-void fork::set_threshold(uint256_t&& difficulty)
-{
-    threshold_ = std::move(difficulty);
-}
-
-bool fork::is_sufficient() const
-{
-    return difficulty() > threshold_;
-}
-
-// Index is unguarded, caller must verify or access violation will result.
-void fork::set_verified(size_t index) const
-{
-    BITCOIN_ASSERT(index < blocks_->size());
-    const auto block = (*blocks_)[index];
-    block->header().validation.height = height_at(index);
-    block->validation.result = error::success;
-}
-
-// Index is unguarded, caller must verify or access violation will result.
-bool fork::is_verified(size_t index) const
-{
-    BITCOIN_ASSERT(index < blocks_->size());
-    const auto block = (*blocks_)[index];
-    return (block->validation.result == error::success &&
-        block->header().validation.height == height_at(index));
+    return empty() ? 0 : height_ + size();
 }
 
 block_const_ptr_list_const_ptr fork::blocks() const
@@ -140,7 +97,7 @@ size_t fork::height() const
 
 hash_digest fork::hash() const
 {
-    return blocks_->empty() ? null_hash :
+    return empty() ? null_hash : 
         blocks_->front()->header().previous_block_hash();
 }
 
@@ -168,7 +125,7 @@ block_const_ptr fork::block_at(size_t index) const
 // competing chain segment (consensus), and that the work has actually been
 // expended (denial of service protection). The latter ensures we don't query
 // the chain for total segment difficulty path the fork competetiveness.
-// Once work is poven sufficient the blocks are validated, requiring each to
+// Once work is proven sufficient the blocks are validated, requiring each to
 // have the work required by the header accept check. It is possible that a
 // longer chain of lower work blocks could meet both above criteria. However
 // this requires the same amount of work as a shorter segment, so an attacker
@@ -178,14 +135,12 @@ uint256_t fork::difficulty() const
     uint256_t total;
 
     for (auto block: *blocks_)
-        if (block->header().is_valid_proof_of_work())
-            total += block->difficulty();
+        total += block->difficulty();
 
     return total;
 }
 
-// Excluding self and early termination is harder than just counting all.
-void fork::populate_tx(size_t index, const chain::transaction& tx) const
+void fork::populate_tx(const chain::transaction& tx) const
 {
     const auto outer = [&tx](size_t total, block_const_ptr block)
     {
@@ -198,13 +153,15 @@ void fork::populate_tx(size_t index, const chain::transaction& tx) const
         return total + std::count_if(txs.begin(), txs.end(), hashes);
     };
 
-    const auto end = blocks_->begin() + index + 1u;
-    const auto count = std::accumulate(blocks_->begin(), end, size_t(0), outer);
+    // Counting all is easier than excluding self and terminating early.
+    const auto count = std::accumulate(blocks_->begin(), blocks_->end(),
+        size_t(0), outer);
+
+    BITCOIN_ASSERT(count > 0);
     tx.validation.duplicate = count > 1u;
 }
 
-// Excluding self and early termination is harder than just counting all.
-void fork::populate_spent(size_t index, const output_point& outpoint) const
+void fork::populate_spent(const output_point& outpoint) const
 {
     const auto outer = [&outpoint](size_t total, block_const_ptr block)
     {
@@ -223,25 +180,29 @@ void fork::populate_spent(size_t index, const output_point& outpoint) const
         return total + std::accumulate(txs.begin(), txs.end(), total, inner);
     };
 
-    const auto end = blocks_->begin() + index + 1u;
-    const auto spent = std::accumulate(blocks_->begin(), end, size_t(0), outer);
+    // Counting all is easier than excluding self and terminating early.
+    const auto spent = std::accumulate(blocks_->begin(), blocks_->end(),
+        size_t(0), outer);
 
+    BITCOIN_ASSERT(spent > 0);
     auto& prevout = outpoint.validation;
     prevout.spent = spent > 1u;
     prevout.confirmed = prevout.spent;
 }
 
-void fork::populate_prevout(size_t index, const output_point& outpoint) const
+void fork::populate_prevout(const output_point& outpoint) const
 {
+    const auto count = size();
     auto& prevout = outpoint.validation;
     struct result { size_t height; size_t position; output out; };
 
-    const auto get_output = [this, &outpoint, index]() -> result
+    const auto get_output = [this, count, &outpoint]() -> result
     {
-        for (size_t forward = 0; forward <= index; ++forward)
+        // Reverse search because of BIP30.
+        for (size_t forward = 0; forward < count; ++forward)
         {
-            const auto reverse = index - forward;
-            const auto& txs = block_at(reverse)->transactions();
+            const size_t index = count - forward - 1u;
+            const auto& txs = block_at(index)->transactions();
 
             for (size_t position = 0; position < txs.size(); ++position)
             {
@@ -252,7 +213,7 @@ void fork::populate_prevout(size_t index, const output_point& outpoint) const
                 {
                     return
                     {
-                        height_at(reverse),
+                        height_at(index),
                         position,
                         tx.outputs()[outpoint.index()]
                     };

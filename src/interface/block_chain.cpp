@@ -49,7 +49,7 @@ block_chain::block_chain(threadpool& pool,
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
     block_pool_(chain_settings.block_pool_capacity),
-    block_manager_(pool, *this, block_pool_, chain_settings),
+    organizer_(pool, *this, block_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -242,8 +242,8 @@ void block_chain::handle_pop(const code& ec, fork::const_ptr fork, bool flush,
         return;
     }
 
-    auto fork_height = safe_add(fork->height(), size_t(1));
-    database_.push_all(fork->blocks(), fork_height, std::ref(dispatch),
+    const auto height = safe_add(fork->height(), size_t(1));
+    database_.push_all(fork->blocks(), height, std::ref(dispatch),
         push_handler);
 }
 
@@ -278,7 +278,7 @@ bool block_chain::start()
 bool block_chain::start_pools()
 {
     transaction_pool_.start();
-    return block_manager_.start();
+    return organizer_.start();
 }
 
 bool block_chain::stop()
@@ -288,7 +288,7 @@ bool block_chain::stop()
 
     // This blocks until asynchronous write operations are complete, preventing
     // premature suspension of dispatch by shutdown of the threadpool.
-    return block_manager_.stop();
+    return organizer_.stop();
 }
 
 bool block_chain::close()
@@ -853,7 +853,7 @@ void block_chain::filter_floaters(get_data_ptr message,
 void block_chain::subscribe_reorganize(reorganize_handler&& handler)
 {
     // Pass this through to the manager, which issues the notifications.
-    block_manager_.subscribe_reorganize(std::move(handler));
+    organizer_.subscribe_reorganize(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
@@ -867,7 +867,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    block_manager_.organize(block, handler);
+    organizer_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr transaction,

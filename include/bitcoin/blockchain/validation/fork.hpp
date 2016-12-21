@@ -38,45 +38,31 @@ public:
     typedef std::shared_ptr<const fork> const_ptr;
 
     /// Establish a fork with the given parent checkpoint.
-    fork(size_t capacity=0);
+    fork();
 
     /// Set the height of the parent of this fork (fork point).
     void set_height(size_t height);
 
     /// Push the block onto the fork, true if successfully chains to parent.
-    bool push(block_const_ptr block);
+    bool push_front(block_const_ptr block);
 
-    /// Pop the block and set the code, and all after to parent invalid.
-    block_const_ptr_list_ptr pop(size_t index, const code& reason);
+    /// The top block of the fork, if it exists.
+    block_const_ptr top() const;
 
-    /// Set the difficulty level that must be exceeded in order to reorganize.
-    void set_threshold(uint256_t&& difficulty);
+    /// The top block of the fork, if it exists.
+    size_t top_height() const;
 
-    /// Determine if the fork difficulty exceeds the threshold.
-    bool is_sufficient() const;
+    /// Populate transaction validation state in the context of the fork.
+    void populate_tx(const chain::transaction& tx) const;
 
-    /// Set validation result metadata on the block. 
-    void set_verified(size_t index) const;
+    /// Populate prevout validation spend state in the context of the fork.
+    void populate_spent(const chain::output_point& outpoint) const;
 
-    /// Determine if the block has been validated for the height of index.
-    bool is_verified(size_t index) const;
-
-    /// Populate transaction validation state using fork height to index.
-    void populate_tx(size_t index, const chain::transaction& tx) const;
-
-    /// Populate prevout validation spend state using fork height to index.
-    void populate_spent(size_t index,
-        const chain::output_point& outpoint) const;
-
-    /// Populate prevout validation output state using fork height to index.
-    void populate_prevout(size_t index,
-        const chain::output_point& outpoint) const;
+    /// Populate prevout validation output state in the context of the fork.
+    void populate_prevout(const chain::output_point& outpoint) const;
 
     /// The member block pointer list.
     block_const_ptr_list_const_ptr blocks() const;
-
-    /// Clear the fork and reset its height to zero.
-    void clear();
 
     /// Determine if there are any blocks in the fork.
     bool empty() const;
@@ -116,7 +102,6 @@ public:
 
 private:
     size_t height_;
-    uint256_t threshold_;
 
     /// The chain of blocks in the fork.
     block_const_ptr_list_ptr blocks_;
