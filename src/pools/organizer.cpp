@@ -119,34 +119,38 @@ bool organizer::stop()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
-// This is called from block_chain::do_store(), a critical section.
+// This is called from block_chain::organize.
 void organizer::organize(block_const_ptr block,
     result_handler handler)
 {
-    code error_code;
-
     ///////////////////////////////////////////////////////////////////////////
     // Critical Section.
     // Use scope lock to guard the chain against concurrent organizations.
     // If a reorganization started after stop it will stop before writing.
     const auto lock = std::make_shared<scope_lock>(mutex_);
 
-    if (stopped_)
+    if (stopped())
     {
         handler(error::service_stopped);
         return;
     }
 
+    // TODO: defer deserialization using network stream.
     // Checks that are independent of chain state.
-    if ((error_code = validator_.check(block)))
+    const auto ec = validator_.check(block);
+
+    if (ec)
     {
-        handler(error_code);
+        handler(ec);
         return;
     }
 
     const result_handler locked_handler =
         std::bind(&organizer::complete,
             this, _1, lock, handler);
+
+    // Get the path through the block forest to the new block.
+    const auto fork = block_pool_.get_path(block);
 
     //*************************************************************************
     // CONSENSUS: This is the same check performed by satoshi, yet it will
@@ -156,48 +160,33 @@ void organizer::organize(block_const_ptr block,
     // TODO: The hash check should start at the fork point. The duplicate check
     // is a conflated network denial of service protection mechanism and cannot
     // be allowed to reject blocks based on collisions not in the actual chain.
+    // The block pool must be modified to accomodate hash collision as well.
     //*************************************************************************
-    // check database and orphan pool for duplicate block hash.
-    if (fast_chain_.get_block_exists(block->hash()) ||
-        !block_pool_.add(block))
+    if (fork->empty() || fast_chain_.get_block_exists(block->hash()))
     {
         locked_handler(error::duplicate_block);
         return;
     }
 
-    // Find longest fork of blocks that connects the block to the blockchain.
-    const auto fork = find_connected_fork(block);
-
-    if (fork->empty())
+    if (!set_fork_height(fork))
     {
-        // There is no link to the chain so the block is currently an orphan.
         locked_handler(error::orphan_block);
         return;
     }
 
-    const auto first_height = safe_add(fork->height(), size_t(1));
-    const auto maximum = fork->difficulty();
-    uint256_t threshold;
+    // Verify the last fork block (all others are verified).
+    // Preserve validation priority pool by returning on a network thread.
+    const result_handler accept_handler =
+        dispatch_.bound_delegate(&organizer::handle_accept,
+            this, _1, fork, locked_handler);
 
-    if (!fast_chain_.get_fork_difficulty(threshold, maximum, first_height))
-    {
-        locked_handler(error::operation_failed);
-        return;
-    }
-
-    // Store required difficulty to overcome the main chain above fork point.
-    fork->set_threshold(std::move(threshold));
-
-    if (!fork->is_sufficient())
-    {
-        locked_handler(error::insufficient_work);
-        return;
-    }
-
-    // Start the loop by verifying the first fork block.
-    verify(fork, 0, locked_handler);
+    // Checks that are dependent on chain state and prevouts.
+    // The fork may not have sufficient work to reorganize at this point, but
+    // we must at least know if work required is sufficient in order to retain.
+    validator_.accept(to_const(fork), accept_handler);
 }
 
+// private
 void organizer::complete(const code& ec, scope_lock::ptr lock,
     result_handler handler)
 {
@@ -212,51 +201,18 @@ void organizer::complete(const code& ec, scope_lock::ptr lock,
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
 
-// Verify the block at the given index in the fork.
-void organizer::verify(fork::ptr fork, size_t index,
+// private
+void organizer::handle_accept(const code& ec, fork::ptr fork,
     result_handler handler)
 {
-    BITCOIN_ASSERT(index < fork->size());
-
     if (stopped())
     {
         handler(error::service_stopped);
         return;
     }
 
-    // Preserve validation priority pool by returning on a network thread.
-    const result_handler accept_handler = 
-        dispatch_.bound_delegate(&organizer::handle_accept,
-            this, _1, fork, index, handler);
-
-    if (fork->is_verified(index))
+    if (ec)
     {
-        // Validation already done, handle in accept.
-        accept_handler(error::success);
-        return;
-    }
-
-    // Protect the fork from the validator.
-    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
-
-    // Checks that are dependent on chain state and prevouts.
-    validator_.accept(const_fork, index, accept_handler);
-}
-
-void organizer::handle_accept(const code& ec, fork::ptr fork,
-    size_t index, result_handler handler)
-{
-    BITCOIN_ASSERT(index < fork->size());
-
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    if (ec == error::service_stopped || ec == error::operation_failed)
-    {
-        // This is not a validation failure, so no pool removal.
         handler(ec);
         return;
     }
@@ -265,118 +221,70 @@ void organizer::handle_accept(const code& ec, fork::ptr fork,
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
         dispatch_.bound_delegate(&organizer::handle_connect,
-            this, _1, fork, index, handler);
-
-    if (ec || fork->is_verified(index))
-    {
-        // Validation already done or failed, handle in connect.
-        connect_handler(ec);
-        return;
-    }
-
-    // Protect the fork from the validator.
-    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
+            this, _1, fork, handler);
 
     // Checks that include script validation.
-    validator_.connect(const_fork, index, connect_handler);
+    validator_.connect(to_const(fork), connect_handler);
 }
 
-// Call handler to stop, organized to continue.
+// private
 void organizer::handle_connect(const code& ec, fork::ptr fork,
-    size_t index, result_handler handler)
+    result_handler handler)
 {
-    BITCOIN_ASSERT(index < fork->size());
-
     if (stopped())
     {
         handler(error::service_stopped);
-        return;
-    }
-
-    if (ec == error::service_stopped || ec == error::operation_failed)
-    {
-        // This is not a validation failure, so no pool removal.
-        handler(ec);
         return;
     }
 
     if (ec)
     {
-        // The index block failed to verify, remove it and descendants.
-        block_pool_.remove(fork->pop(index, ec));
-
-        // If we just cleared out the entire fork, return bad block's code.
-        if (fork->empty())
-        {
-            handler(ec);
-            return;
-        }
-
-        // Reverify that there is sufficient work in the fork to reorganize.
-        if (!fork->is_sufficient())
-        {
-            handler(error::insufficient_work);
-            return;
-        }
-    }
-    else
-    {
-        // The index block is verified, ensure it is marked (may be already).
-        fork->set_verified(index);
-    }
-
-    // Move to next block in the fork.
-    const auto next = safe_increment(index);
-
-    if (next < fork->size())
-    {
-        // Recurse: this *requires* thread change to prevent stack exhaustion.
-        verify(fork, next, handler);
+        handler(ec);
         return;
     }
 
-    // If the loop is done (due to iteration or removal) attempt to reorg.
-    organized(fork, handler);
-}
+    const auto first_height = fork->height() + 1u;
+    const auto maximum = fork->difficulty();
+    uint256_t threshold;
 
-// Attempt to reorganize the blockchain using the remaining valid fork.
-void organizer::organized(fork::ptr fork, result_handler handler)
-{
-    BITCOIN_ASSERT(!fork->empty());
-
-    if (stopped())
+    // The chain query will stop if it reaches the maximum.
+    if (!fast_chain_.get_fork_difficulty(threshold, maximum, first_height))
     {
-        handler(error::service_stopped);
+        handler(error::operation_failed);
         return;
     }
 
-    // The fork is valid and can now be used to notify subscribers.
-    const auto block = fork->blocks()->front();
-    block->validation.start_notify = asio::steady_clock::now();
+    if (fork->difficulty() <= threshold)
+    {
+        block_pool_.add(fork->top());
+        handler(error::insufficient_work);
+        return;
+    }
 
-    // Capture the outgoing blocks and forward to reorg handler.
+    // The top block is valid.
+    const auto top = fork->top();
+    top->header().validation.height = fork->top_height();
+    top->validation.error = error::success;
+    top->validation.start_notify = asio::steady_clock::now();
+
+    // Get the outgoing blocks to forward to reorg handler.
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
-
-    // Protect the fork from the blockchain.
-    auto const_fork = std::const_pointer_cast<blockchain::fork>(fork);
-
+    
     const auto complete =
         std::bind(&organizer::handle_reorganized,
-            this, _1, const_fork, out_blocks, handler);
+            this, _1, to_const(fork), out_blocks, handler);
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(const_fork, out_blocks, flush_reorganizations_,
+    fast_chain_.reorganize(to_const(fork), out_blocks, flush_reorganizations_,
         priority_dispatch_, complete);
     //#########################################################################
 }
 
-void organizer::handle_reorganized(const code& ec,
-    fork::const_ptr fork, block_const_ptr_list_ptr outgoing_blocks,
-    result_handler handler)
+// private
+void organizer::handle_reorganized(const code& ec, fork::const_ptr fork,
+    block_const_ptr_list_ptr outgoing, result_handler handler)
 {
-    BITCOIN_ASSERT(!fork->blocks()->empty());
-
     if (ec)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
@@ -386,17 +294,13 @@ void organizer::handle_reorganized(const code& ec,
         return;
     }
 
-    // Remove before add so that we don't overflow the pool and lose blocks.
     block_pool_.remove(fork->blocks());
-    block_pool_.add(outgoing_blocks);
-
-    // Protect the outgoing blocks from subscribers.
-    auto old_blocks = std::const_pointer_cast<const block_const_ptr_list>(
-        outgoing_blocks);
+    block_pool_.prune(fork->top_height());
+    block_pool_.add(outgoing);
 
     // TODO: we can notify before reorg for mining scenario.
     // v3 reorg block order is reverse of v2, fork.back() is the new top.
-    notify_reorganize(fork->height(), fork->blocks(), old_blocks);
+    notify_reorganize(fork->height(), fork->blocks(), to_const(outgoing));
 
     // This is the end of the verify sub-sequence.
     handler(error::success);
@@ -411,6 +315,7 @@ void organizer::subscribe_reorganize(reorganize_handler&& handler)
         error::service_stopped, 0, {}, {});
 }
 
+// private
 void organizer::notify_reorganize(size_t fork_height,
     block_const_ptr_list_const_ptr fork,
     block_const_ptr_list_const_ptr original)
@@ -423,21 +328,22 @@ void organizer::notify_reorganize(size_t fork_height,
 // Utility.
 //-----------------------------------------------------------------------------
 
-// Once connected we can discard fork segments that fail validation at height.
-fork::ptr organizer::find_connected_fork(block_const_ptr block)
+// private
+bool organizer::set_fork_height(fork::ptr fork)
 {
-    // Get the longest possible chain containing this new block.
-    const auto fork = block_pool_.trace(block);
+    BITCOIN_ASSERT(!fork->empty());
 
-    size_t fork_height;
+    size_t height;
 
-    // Get blockchain parent of the oldest fork block and save to fork.
-    if (fast_chain_.get_height(fork_height, fork->hash()))
-        fork->set_height(fork_height);
-    else
-        fork->clear();
+    // Get blockchain parent of the oldest fork block (orphan if false).
+    if (!fast_chain_.get_height(height, fork->hash()))
+        return false;
 
-    return fork;
+    // Guard against chain size overflow.
+    safe_add(height, fork->size());
+
+    fork->set_height(height);
+    return true;
 }
 
 } // namespace blockchain

@@ -46,10 +46,8 @@ public:
     void stop();
 
     code check(block_const_ptr block) const;
-    void accept(fork::const_ptr fork, size_t index,
-        result_handler handler) const;
-    void connect(fork::const_ptr fork, size_t index,
-        result_handler handler) const;
+    void accept(fork::const_ptr fork, result_handler handler) const;
+    void connect(fork::const_ptr fork, result_handler handler) const;
 
 protected:
     bool stopped() const;

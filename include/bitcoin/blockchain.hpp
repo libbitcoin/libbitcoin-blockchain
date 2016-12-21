@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/interface/block_fetcher.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/block_graph.hpp>
+#include <bitcoin/blockchain/pools/block_entry.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>

@@ -78,13 +78,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validation\validate_input.hpp">
       <Filter>include\bitcoin\blockchain\validation</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_graph.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\organizer.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
   </ItemGroup>
@@ -116,13 +116,13 @@
     <ClCompile Include="..\..\..\..\src\validation\validate_input.cpp">
       <Filter>src\validation</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\block_graph.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\organizer.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
   </ItemGroup>

@@ -44,11 +44,11 @@ public:
     /// Stop the population (thread safe).
     void stop();
 
-    /// Populate chain state for the block at index.
-    void populate_chain_state(fork::const_ptr fork, size_t index) const;
+    /// Populate chain state for the top block.
+    void populate_chain_state(fork::const_ptr fork) const;
 
-    /// Populate block validation state for the block at index.
-    void populate_block_state(fork::const_ptr fork, size_t index,
+    /// Populate block validation state for the top block.
+    void populate_block_state(fork::const_ptr fork,
         result_handler&& handler) const;
 
 protected:
@@ -77,13 +77,12 @@ private:
     void populate_coinbase(block_const_ptr block) const;
     void populate_transaction(size_t fork_height,
         const chain::transaction& tx) const;
-    void populate_transaction(fork_ptr fork, size_t index,
+    void populate_transaction(fork_ptr fork,
         const chain::transaction& tx) const;
-    void populate_inputs(fork::const_ptr fork, size_t index, size_t bucket,
+    void populate_inputs(fork::const_ptr fork, size_t bucket,
         size_t buckets, result_handler handler) const;
     void populate_prevout(size_t fork_height, const point& outpoint) const;
-    void populate_prevout(fork_ptr fork, size_t index,
-        const point& outpoint) const;
+    void populate_prevout(fork_ptr fork, const point& outpoint) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

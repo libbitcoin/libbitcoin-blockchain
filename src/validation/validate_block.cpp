@@ -85,11 +85,10 @@ code validate_block::check(block_const_ptr block) const
 //-----------------------------------------------------------------------------
 // These checks require chain state, and block state if not under checkpoint.
 
-void validate_block::accept(fork::const_ptr fork, size_t index,
-    result_handler handler) const
+void validate_block::accept(fork::const_ptr fork, result_handler handler) const
 {
-    BITCOIN_ASSERT(index < fork->size());
-    const auto block = fork->block_at(index);
+    const auto block = fork->top();
+    BITCOIN_ASSERT(block);
 
     // The block has no population timer, so set externally.
     block->validation.start_populate = asio::steady_clock::now();
@@ -99,7 +98,7 @@ void validate_block::accept(fork::const_ptr fork, size_t index,
             this, _1, block, handler);
 
     // Populate chain state and block state as required.
-    populator_.populate_block_state(fork, index, std::move(complete_handler));
+    populator_.populate_block_state(fork, std::move(complete_handler));
 }
 
 void validate_block::handle_populated(const code& ec, block_const_ptr block,
@@ -183,12 +182,11 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 //-----------------------------------------------------------------------------
 // These checks require chain state, block state and perform script validation.
 
-void validate_block::connect(fork::const_ptr fork, size_t index,
+void validate_block::connect(fork::const_ptr fork,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(index < fork->size());
-    const auto block = fork->block_at(index);
-    BITCOIN_ASSERT(block->validation.state);
+    const auto block = fork->top();
+    BITCOIN_ASSERT(block && block->validation.state);
 
     // We are reimplemeting connect, so set must timer externally.
     block->validation.start_connect = asio::steady_clock::now();

@@ -303,7 +303,7 @@ private:
     const settings& settings_;
     asio::duration spin_lock_sleep_;
     block_pool block_pool_;
-    organizer block_manager_;
+    organizer organizer_;
     transaction_pool transaction_pool_;
     database::data_base database_;
 };

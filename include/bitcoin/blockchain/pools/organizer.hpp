@@ -60,22 +60,30 @@ protected:
     virtual bool stopped() const;
 
 private:
+    inline fork::const_ptr to_const(fork::ptr fork)
+    {
+        return std::const_pointer_cast<const blockchain::fork>(fork);
+    }
+
+    inline block_const_ptr_list_const_ptr to_const(
+        block_const_ptr_list_ptr blocks)
+    {
+        return std::const_pointer_cast<const block_const_ptr_list>(blocks);
+    }
+
     // Utility.
-    fork::ptr find_connected_fork(block_const_ptr block);
+    bool set_fork_height(fork::ptr fork);
 
     // Organize sequence.
     void complete(const code& ec, scope_lock::ptr lock,
         result_handler handler);
 
     // Verify sub-sequence.
-    void verify(fork::ptr fork, size_t index, result_handler handler);
-    void handle_accept(const code& ec, fork::ptr fork, size_t index,
-        result_handler handler);
-    void handle_connect(const code& ec, fork::ptr fork, size_t index,
-        result_handler handler);
+    void handle_accept(const code& ec, fork::ptr fork, result_handler handler);
+    void handle_connect(const code& ec, fork::ptr fork, result_handler handler);
     void organized(fork::ptr fork, result_handler handler);
     void handle_reorganized(const code& ec, fork::const_ptr fork,
-        block_const_ptr_list_ptr outgoing_blocks, result_handler handler);
+        block_const_ptr_list_ptr outgoing, result_handler handler);
 
     // Subscription.
     void notify_reorganize(size_t fork_height,
