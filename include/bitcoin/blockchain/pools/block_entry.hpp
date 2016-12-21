@@ -63,8 +63,9 @@ public:
     bool operator==(const block_entry& other) const;
 
 private:
-    const hash_digest hash_;
-    const block_const_ptr block_;
+    // These are non-const to allow for default copy construction.
+    hash_digest hash_;
+    block_const_ptr block_;
 
     // TODO: could save some bytes here by holding the pointer in place of the
     // hash. This would allow navigation to the hash saving 24 bytes per child.
