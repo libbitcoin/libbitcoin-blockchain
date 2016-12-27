@@ -228,7 +228,7 @@ void fork::populate_prevout(const output_point& outpoint) const
     prevout.cache = chain::output{};
 
     // The height of the prevout must be set iff the prevout is coinbase.
-    prevout.height = output_point::validation::not_specified;
+    prevout.height = output_point::validation_type::not_specified;
 
     // The input is a coinbase, so there is no prevout to populate.
     if (outpoint.is_null())
