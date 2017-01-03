@@ -44,7 +44,6 @@ using namespace std::placeholders;
 transaction_pool::transaction_pool(threadpool& pool, safe_chain& chain,
     const settings& settings)
   : stopped_(true),
-    maintain_consistency_(settings.transaction_pool_consistency),
     buffer_(settings.transaction_pool_capacity),
     safe_chain_(chain),
     index_(pool, chain),
@@ -381,7 +380,7 @@ void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
 void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
-    if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
+    if (false && buffer_.size() == buffer_.capacity())
         delete_package(error::transaction_pool_filled);
 
     tx->validation.confirm = handler;
@@ -405,7 +404,7 @@ void transaction_pool::remove(block_const_ptr_list_const_ptr blocks)
     delete_confirmed_in_blocks(*blocks);
 
     // Delete by spent sets a double-spend error.
-    if (maintain_consistency_)
+    if (false)
         delete_spent_in_blocks(*blocks);
 }
 

@@ -207,12 +207,10 @@ class transaction_pool_fixture
 public:
     typedef transaction_pool::buffer buffer;
 
-    static blockchain::settings settings_factory(size_t capacity,
-        bool consistency)
+    static blockchain::settings settings_factory(size_t capacity)
     {
         blockchain::settings value;
         value.transaction_pool_capacity = capacity;
-        value.transaction_pool_consistency = consistency;
         return value;
     }
 
@@ -223,7 +221,7 @@ public:
     }
 
     transaction_pool_fixture(threadpool& pool, safe_chain& chain, buffer& txs)
-      : transaction_pool(pool, chain, settings_factory(txs.capacity(), true))
+      : transaction_pool(pool, chain, settings_factory(txs.capacity()))
     {
         // Start by default, fill with our test buffer data.
         stopped_ = false;

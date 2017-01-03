@@ -137,7 +137,6 @@ private:
     ////validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
-    const bool maintain_consistency_;
 };
 
 } // namespace blockchain

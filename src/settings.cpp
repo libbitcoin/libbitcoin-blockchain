@@ -30,7 +30,6 @@ settings::settings()
     priority(true),
     use_libconsensus(false),
     flush_reorganizations(false),
-    transaction_pool_consistency(false),
     transaction_pool_capacity(1000),
     block_pool_capacity(50),
     enabled_forks(machine::rule_fork::consensus)
