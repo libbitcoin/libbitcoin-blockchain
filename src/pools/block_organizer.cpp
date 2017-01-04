@@ -69,8 +69,7 @@ block_organizer::block_organizer(threadpool& thread_pool,
     priority_pool_(cores(settings), priority(settings)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
-    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME)),
-    dispatch_(thread_pool, NAME "_dispatch")
+    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
 }
 
@@ -173,9 +172,8 @@ void block_organizer::organize(block_const_ptr block,
     }
 
     // Verify the last branch block (all others are verified).
-    // Preserve validation priority pool by returning on a network thread.
     const result_handler accept_handler =
-        dispatch_.bound_delegate(&block_organizer::handle_accept,
+        std::bind(&block_organizer::handle_accept,
             this, _1, branch, locked_handler);
 
     // Checks that are dependent on chain state and prevouts.
@@ -215,10 +213,9 @@ void block_organizer::handle_accept(const code& ec, branch::ptr branch,
         return;
     }
 
-    // Preserve validation priority pool by returning on a network thread.
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
-        dispatch_.bound_delegate(&block_organizer::handle_connect,
+        std::bind(&block_organizer::handle_connect,
             this, _1, branch, handler);
 
     // Checks that include script validation.
