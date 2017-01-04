@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/validation/fork.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -33,20 +33,20 @@ namespace blockchain {
 using namespace bc::chain;
 using namespace bc::config;
 
-fork::fork()
-  : height_(0),
+branch::branch(size_t height)
+  : height_(height),
     blocks_(std::make_shared<block_const_ptr_list>())
 {
     blocks_->reserve(1);
 }
 
-void fork::set_height(size_t height)
+void branch::set_height(size_t height)
 {
     height_ = height;
 }
 
-// Front is the top of the chain plus one, back is the top of the fork.
-bool fork::push_front(block_const_ptr block)
+// Front is the top of the chain plus one, back is the top of the branch.
+bool branch::push_front(block_const_ptr block)
 {
     const auto linked = [this](block_const_ptr block)
     {
@@ -64,73 +64,73 @@ bool fork::push_front(block_const_ptr block)
     return false;
 }
 
-block_const_ptr fork::top() const
+block_const_ptr branch::top() const
 {
     return empty() ? nullptr : blocks_->back();
 }
 
-size_t fork::top_height() const
+size_t branch::top_height() const
 {
-    return empty() ? 0 : height_ + size();
+    return height() + size();
 }
 
-block_const_ptr_list_const_ptr fork::blocks() const
+block_const_ptr_list_const_ptr branch::blocks() const
 {
     // Protect the blocks list from the caller.
     return std::const_pointer_cast<const block_const_ptr_list>(blocks_);
 }
 
-bool fork::empty() const
+bool branch::empty() const
 {
     return blocks_->empty();
 }
 
-size_t fork::size() const
+size_t branch::size() const
 {
     return blocks_->size();
 }
 
-size_t fork::height() const
+size_t branch::height() const
 {
     return height_;
 }
 
-hash_digest fork::hash() const
+hash_digest branch::hash() const
 {
     return empty() ? null_hash : 
         blocks_->front()->header().previous_block_hash();
 }
 
-// The caller must ensure that the height is above the fork.
-size_t fork::index_of(size_t height) const
+// The caller must ensure that the height is above the branch.
+size_t branch::index_of(size_t height) const
 {
     return safe_subtract(safe_subtract(height, height_), size_t(1));
 }
 
 // Index is unguarded, caller must verify.
-size_t fork::height_at(size_t index) const
+size_t branch::height_at(size_t index) const
 {
-    // The height of the blockchain fork point plus zero-based orphan index.
+    // The height of the blockchain branch point plus zero-based orphan index.
     return safe_add(safe_add(height_, index), size_t(1));
 }
 
 // Index is unguarded, caller must verify.
-block_const_ptr fork::block_at(size_t index) const
+block_const_ptr branch::block_at(size_t index) const
 {
     return index < size() ? (*blocks_)[index] : nullptr;
 }
 
-// The fork difficulty check is both a consensus check and denial of service
+// The branch difficulty check is both a consensus check and denial of service
 // protection. It is necessary here that total claimed work exceeds that of the
 // competing chain segment (consensus), and that the work has actually been
 // expended (denial of service protection). The latter ensures we don't query
-// the chain for total segment difficulty path the fork competetiveness.
+// the chain for total segment difficulty path the branch competetiveness.
 // Once work is proven sufficient the blocks are validated, requiring each to
 // have the work required by the header accept check. It is possible that a
 // longer chain of lower work blocks could meet both above criteria. However
 // this requires the same amount of work as a shorter segment, so an attacker
 // gains no advantage from that option, and it will be caught in validation.
-uint256_t fork::difficulty() const
+uint256_t branch::difficulty() const
 {
     uint256_t total;
 
@@ -140,7 +140,7 @@ uint256_t fork::difficulty() const
     return total;
 }
 
-void fork::populate_tx(const chain::transaction& tx) const
+void branch::populate_tx(const chain::transaction& tx) const
 {
     const auto outer = [&tx](size_t total, block_const_ptr block)
     {
@@ -161,7 +161,7 @@ void fork::populate_tx(const chain::transaction& tx) const
     tx.validation.duplicate = count > 1u;
 }
 
-void fork::populate_spent(const output_point& outpoint) const
+void branch::populate_spent(const output_point& outpoint) const
 {
     const auto outer = [&outpoint](size_t total, block_const_ptr block)
     {
@@ -190,7 +190,7 @@ void fork::populate_spent(const output_point& outpoint) const
     prevout.confirmed = prevout.spent;
 }
 
-void fork::populate_prevout(const output_point& outpoint) const
+void branch::populate_prevout(const output_point& outpoint) const
 {
     const auto count = size();
     auto& prevout = outpoint.validation;
@@ -250,8 +250,8 @@ void fork::populate_prevout(const output_point& outpoint) const
         prevout.height = finder.height;
 }
 
-/// The bits of the block at the given height in the fork.
-bool fork::get_bits(uint32_t& out_bits, size_t height) const
+/// The bits of the block at the given height in the branch.
+bool branch::get_bits(uint32_t& out_bits, size_t height) const
 {
     if (height <= height_)
         return false;
@@ -265,8 +265,8 @@ bool fork::get_bits(uint32_t& out_bits, size_t height) const
     return true;
 }
 
-// The version of the block at the given height in the fork.
-bool fork::get_version(uint32_t& out_version, size_t height) const
+// The version of the block at the given height in the branch.
+bool branch::get_version(uint32_t& out_version, size_t height) const
 {
     if (height <= height_)
         return false;
@@ -280,8 +280,8 @@ bool fork::get_version(uint32_t& out_version, size_t height) const
     return true;
 }
 
-// The timestamp of the block at the given height in the fork.
-bool fork::get_timestamp(uint32_t& out_timestamp, size_t height) const
+// The timestamp of the block at the given height in the branch.
+bool branch::get_timestamp(uint32_t& out_timestamp, size_t height) const
 {
     if (height <= height_)
         return false;
@@ -295,8 +295,8 @@ bool fork::get_timestamp(uint32_t& out_timestamp, size_t height) const
     return true;
 }
 
-// The hash of the block at the given height if it exists in the fork.
-bool fork::get_block_hash(hash_digest& out_hash, size_t height) const
+// The hash of the block at the given height if it exists in the branch.
+bool branch::get_block_hash(hash_digest& out_hash, size_t height) const
 {
     if (height <= height_)
         return false;

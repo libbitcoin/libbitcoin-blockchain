@@ -39,14 +39,18 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/interface/block_chain.cpp \
     src/interface/block_fetcher.cpp \
     src/pools/block_entry.cpp \
+    src/pools/block_organizer.cpp \
     src/pools/block_pool.cpp \
-    src/pools/organizer.cpp \
+    src/pools/branch.cpp \
     src/pools/transaction_pool.cpp \
     src/pools/transaction_pool_index.cpp \
-    src/validation/fork.cpp \
-    src/validation/populate_block.cpp \
-    src/validation/validate_block.cpp \
-    src/validation/validate_input.cpp
+    src/populate/populate_base.cpp \
+    src/populate/populate_block.cpp \
+    src/populate/populate_chain_state.cpp \
+    src/populate/populate_transaction.cpp \
+    src/validate/validate_block.cpp \
+    src/validate/validate_input.cpp \
+    src/validate/validate_transaction.cpp
 
 # local: test/libbitcoin_blockchain_test
 #------------------------------------------------------------------------------
@@ -58,7 +62,7 @@ check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
-    test/fork.cpp \
+    test/branch.cpp \
     test/main.cpp \
     test/transaction_pool.cpp \
     test/validate_block.cpp
@@ -99,17 +103,24 @@ include_bitcoin_blockchain_interface_HEADERS = \
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/block_entry.hpp \
+    include/bitcoin/blockchain/pools/block_organizer.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
-    include/bitcoin/blockchain/pools/organizer.hpp \
+    include/bitcoin/blockchain/pools/branch.hpp \
     include/bitcoin/blockchain/pools/transaction_pool.hpp \
     include/bitcoin/blockchain/pools/transaction_pool_index.hpp
 
-include_bitcoin_blockchain_validationdir = ${includedir}/bitcoin/blockchain/validation
-include_bitcoin_blockchain_validation_HEADERS = \
-    include/bitcoin/blockchain/validation/fork.hpp \
-    include/bitcoin/blockchain/validation/populate_block.hpp \
-    include/bitcoin/blockchain/validation/validate_block.hpp \
-    include/bitcoin/blockchain/validation/validate_input.hpp
+include_bitcoin_blockchain_populatedir = ${includedir}/bitcoin/blockchain/populate
+include_bitcoin_blockchain_populate_HEADERS = \
+    include/bitcoin/blockchain/populate/populate_base.hpp \
+    include/bitcoin/blockchain/populate/populate_block.hpp \
+    include/bitcoin/blockchain/populate/populate_chain_state.hpp \
+    include/bitcoin/blockchain/populate/populate_transaction.hpp
+
+include_bitcoin_blockchain_validatedir = ${includedir}/bitcoin/blockchain/validate
+include_bitcoin_blockchain_validate_HEADERS = \
+    include/bitcoin/blockchain/validate/validate_block.hpp \
+    include/bitcoin/blockchain/validate/validate_input.hpp \
+    include/bitcoin/blockchain/validate/validate_transaction.hpp
 
 
 # Custom make targets.

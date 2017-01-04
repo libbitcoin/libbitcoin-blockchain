@@ -180,7 +180,7 @@ public:
     //-------------------------------------------------------------------------
 
     virtual void subscribe_reorganize(
-        organizer::reorganize_handler&& handler)
+        block_organizer::reorganize_handler&& handler)
     {
     }
 
@@ -316,8 +316,8 @@ public:
     { \
         result##number = ec; \
         BOOST_CHECK_EQUAL(ec.value(), code_); \
-    }; \
-    tx##number->validation.confirm = handle_confirm##number;
+    };//// \
+    ////tx##number->validation.confirm = handle_confirm##number;
 
 #define REQUIRE_CALLBACK(number, code) \
     BOOST_CHECK_EQUAL(result##number, code)

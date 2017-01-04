@@ -42,6 +42,7 @@ public:
     bool flush_reorganizations;
     uint32_t transaction_pool_capacity;
     uint32_t block_pool_capacity;
+    uint32_t block_version;
     uint32_t enabled_forks;
     config::checkpoint::list checkpoints;
 };

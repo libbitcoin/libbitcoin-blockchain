@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <utility>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/validation/fork.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 
 // Atomicity is not required for these operations as each validation call is
 // sequenced. Locking is performed only to guard concurrent filtering.
@@ -227,9 +227,9 @@ block_const_ptr block_pool::parent(block_const_ptr block) const
     ///////////////////////////////////////////////////////////////////////////
 }
 
-fork::ptr block_pool::get_path(block_const_ptr block) const
+branch::ptr block_pool::get_path(block_const_ptr block) const
 {
-    const auto trace = std::make_shared<fork>();
+    const auto trace = std::make_shared<branch>();
 
     if (exists(block))
         return trace;

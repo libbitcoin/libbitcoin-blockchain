@@ -29,8 +29,8 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/interface/block_fetcher.hpp>
+#include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -49,7 +49,7 @@ block_chain::block_chain(threadpool& pool,
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
     block_pool_(chain_settings.block_pool_capacity),
-    organizer_(pool, *this, block_pool_, chain_settings),
+    block_organizer_(pool, *this, block_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
 {
@@ -84,7 +84,7 @@ bool block_chain::get_block_hash(hash_digest& out_hash, size_t height) const
     return true;
 }
 
-bool block_chain::get_fork_difficulty(uint256_t& out_difficulty,
+bool block_chain::get_branch_difficulty(uint256_t& out_difficulty,
     const uint256_t& maximum, size_t from_height) const
 {
     size_t top;
@@ -165,19 +165,19 @@ bool block_chain::get_last_height(size_t& out_height) const
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
     bool& out_coinbase, const chain::output_point& outpoint,
-    size_t fork_height) const
+    size_t branch_height) const
 {
     // This includes a cached value for spender height (or not_spent).
-    // Get the highest tx with matching hash, at or below the fork height.
+    // Get the highest tx with matching hash, at or below the branch height.
     return database_.transactions().get_output(out_output, out_height,
-        out_coinbase, outpoint, fork_height);
+        out_coinbase, outpoint, branch_height);
 }
 
 bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
-    size_t fork_height) const
+    size_t branch_height) const
 {
-    const auto result = database_.transactions().get(hash, fork_height);
-    return result && !result.is_spent(fork_height);
+    const auto result = database_.transactions().get(hash, branch_height);
+    return result && !result.is_spent(branch_height);
 }
 
 transaction_ptr block_chain::get_transaction(size_t& out_block_height,
@@ -211,14 +211,14 @@ bool block_chain::do_insert(const chain::block& block, size_t height)
 // Asynchronous write sequence.
 // ------------------------------------------------------------------------ 
 
-void block_chain::reorganize(fork::const_ptr fork,
+void block_chain::reorganize(branch::const_ptr branch,
     block_const_ptr_list_ptr outgoing_blocks, bool flush,
     dispatcher& dispatch, complete_handler handler)
 {
     // The pop handler closes the write operation.
     const result_handler pop_handler =
         std::bind(&block_chain::handle_pop,
-            this, _1, fork, flush, std::ref(dispatch), handler);
+            this, _1, branch, flush, std::ref(dispatch), handler);
 
     if (!database_.begin_write(flush))
     {
@@ -226,10 +226,10 @@ void block_chain::reorganize(fork::const_ptr fork,
         return;
     }
 
-    database_.pop_above(outgoing_blocks, fork->hash(), dispatch, pop_handler);
+    database_.pop_above(outgoing_blocks, branch->hash(), dispatch, pop_handler);
 }
 
-void block_chain::handle_pop(const code& ec, fork::const_ptr fork, bool flush,
+void block_chain::handle_pop(const code& ec, branch::const_ptr branch, bool flush,
     dispatcher& dispatch, result_handler handler)
 {
     const result_handler push_handler =
@@ -242,8 +242,8 @@ void block_chain::handle_pop(const code& ec, fork::const_ptr fork, bool flush,
         return;
     }
 
-    const auto height = safe_add(fork->height(), size_t(1));
-    database_.push_all(fork->blocks(), height, std::ref(dispatch),
+    const auto height = safe_add(branch->height(), size_t(1));
+    database_.push_all(branch->blocks(), height, std::ref(dispatch),
         push_handler);
 }
 
@@ -278,7 +278,7 @@ bool block_chain::start()
 bool block_chain::start_pools()
 {
     transaction_pool_.start();
-    return organizer_.start();
+    return block_organizer_.start();
 }
 
 bool block_chain::stop()
@@ -288,7 +288,7 @@ bool block_chain::stop()
 
     // This blocks until asynchronous write operations are complete, preventing
     // premature suspension of dispatch by shutdown of the threadpool.
-    return organizer_.stop();
+    return block_organizer_.stop();
 }
 
 bool block_chain::close()
@@ -852,8 +852,8 @@ void block_chain::filter_floaters(get_data_ptr message,
 
 void block_chain::subscribe_reorganize(reorganize_handler&& handler)
 {
-    // Pass this through to the manager, which issues the notifications.
-    organizer_.subscribe_reorganize(std::move(handler));
+    // Pass this through to the organizer, which issues the notifications.
+    block_organizer_.subscribe_reorganize(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
@@ -867,7 +867,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    organizer_.organize(block, handler);
+    block_organizer_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr transaction,

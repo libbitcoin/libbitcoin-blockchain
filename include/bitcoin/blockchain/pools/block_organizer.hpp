@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_ORGANIZER_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_ORGANIZER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BLOCK_ORGANIZER_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -28,26 +28,26 @@
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validation/fork.hpp>
-#include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validate/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is not thread safe.
 /// Organises blocks via the orphan pool to the blockchain.
-class BCB_API organizer
+class BCB_API block_organizer
 {
 public:
     typedef handle0 result_handler;
-    typedef std::shared_ptr<organizer> ptr;
+    typedef std::shared_ptr<block_organizer> ptr;
     typedef safe_chain::reorganize_handler reorganize_handler;
     typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
         block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
-    organizer(threadpool& thread_pool, fast_chain& chain,
+    block_organizer(threadpool& thread_pool, fast_chain& chain,
         block_pool& block_pool, const settings& settings);
 
     virtual bool start();
@@ -60,9 +60,9 @@ protected:
     virtual bool stopped() const;
 
 private:
-    inline fork::const_ptr to_const(fork::ptr fork)
+    inline branch::const_ptr to_const(branch::ptr branch)
     {
-        return std::const_pointer_cast<const blockchain::fork>(fork);
+        return std::const_pointer_cast<const blockchain::branch>(branch);
     }
 
     inline block_const_ptr_list_const_ptr to_const(
@@ -72,22 +72,22 @@ private:
     }
 
     // Utility.
-    bool set_fork_height(fork::ptr fork);
+    bool set_branch_height(branch::ptr branch);
 
     // Organize sequence.
     void complete(const code& ec, scope_lock::ptr lock,
         result_handler handler);
 
     // Verify sub-sequence.
-    void handle_accept(const code& ec, fork::ptr fork, result_handler handler);
-    void handle_connect(const code& ec, fork::ptr fork, result_handler handler);
-    void organized(fork::ptr fork, result_handler handler);
-    void handle_reorganized(const code& ec, fork::const_ptr fork,
+    void handle_accept(const code& ec, branch::ptr branch, result_handler handler);
+    void handle_connect(const code& ec, branch::ptr branch, result_handler handler);
+    void organized(branch::ptr branch, result_handler handler);
+    void handle_reorganized(const code& ec, branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing, result_handler handler);
 
     // Subscription.
-    void notify_reorganize(size_t fork_height,
-        block_const_ptr_list_const_ptr fork,
+    void notify_reorganize(size_t branch_height,
+        block_const_ptr_list_const_ptr branch,
         block_const_ptr_list_const_ptr original);
 
     // This is protected by mutex.

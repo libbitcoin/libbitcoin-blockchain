@@ -30,8 +30,8 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
+#include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -67,8 +67,8 @@ public:
     /// Get the hash of the block if it exists.
     bool get_block_hash(hash_digest& out_hash, size_t height) const;
 
-    /// Get the difficulty of the fork starting at the given height.
-    bool get_fork_difficulty(uint256_t& out_difficulty,
+    /// Get the difficulty of the branch starting at the given height.
+    bool get_branch_difficulty(uint256_t& out_difficulty,
         const uint256_t& maximum, size_t height) const;
 
     /// Get the header of the block at the given height.
@@ -92,11 +92,11 @@ public:
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
         bool& out_coinbase, const chain::output_point& outpoint,
-        size_t fork_height) const;
+        size_t branch_height) const;
 
     /// Determine if an unspent transaction exists with the given hash.
     bool get_is_unspent_transaction(const hash_digest& hash,
-        size_t fork_height) const;
+        size_t branch_height) const;
 
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,
@@ -121,7 +121,7 @@ public:
     // Not safe for concurrent execution with other writes.
 
     /// Swap incoming and outgoing blocks, height is validated.
-    void reorganize(fork::const_ptr fork,
+    void reorganize(branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing_blocks, bool flush,
         dispatcher& dispatch, complete_handler handler);
 
@@ -248,7 +248,7 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    /// Subscribe to blockchain reorganizations, get forks/height.
+    /// Subscribe to blockchain reorganizations, get branch/height.
     virtual void subscribe_reorganize(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
@@ -295,7 +295,7 @@ private:
     bool do_insert(const chain::block& block, size_t height);
 
     void handle_push(const code& ec, bool flush, result_handler handler);
-    void handle_pop(const code& ec, fork::const_ptr fork, bool flush,
+    void handle_pop(const code& ec, branch::const_ptr branch, bool flush,
         dispatcher& dispatch, result_handler handler);
 
     // These are thread safe.
@@ -303,8 +303,9 @@ private:
     const settings& settings_;
     asio::duration spin_lock_sleep_;
     block_pool block_pool_;
-    organizer organizer_;
+    block_organizer block_organizer_;
     transaction_pool transaction_pool_;
+    ////transaction_organizer transaction_organizer_;
     database::data_base database_;
 };
 

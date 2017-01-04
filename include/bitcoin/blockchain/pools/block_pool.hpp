@@ -27,14 +27,14 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/block_entry.hpp>
-#include <bitcoin/blockchain/validation/fork.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe against concurrent filtering only.
 /// There is no search within blocks of the block pool (just hashes).
-/// The fork object contains chain query for new (leaf) block validation.
+/// The branch object contains chain query for new (leaf) block validation.
 /// All pool blocks are valid, lacking only sufficient work for reorganzation.
 class BCB_API block_pool
 {
@@ -58,7 +58,7 @@ public:
 
     /// Get the root path to and including the new block.
     /// This will be empty if the block already exists in the pool.
-    fork::ptr get_path(block_const_ptr candidate_block) const;
+    branch::ptr get_path(block_const_ptr candidate_block) const;
 
 private:
     // A bidirection map is used for efficient block and position retrieval.

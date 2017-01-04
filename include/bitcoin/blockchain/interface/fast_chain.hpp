@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/validation/fork.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -51,8 +51,8 @@ public:
     virtual bool get_block_hash(hash_digest& out_hash,
         size_t height) const = 0;
 
-    /// Get the difficulty of the fork starting at the given height.
-    virtual bool get_fork_difficulty(uint256_t& out_difficulty,
+    /// Get the difficulty of the branch starting at the given height.
+    virtual bool get_branch_difficulty(uint256_t& out_difficulty,
         const uint256_t& maximum, size_t from_height) const = 0;
 
     /// Get the header of the block at the given height.
@@ -80,11 +80,11 @@ public:
     /// Get the output that is referenced by the outpoint.
     virtual bool get_output(chain::output& out_output, size_t& out_height,
         bool& out_coinbase, const chain::output_point& outpoint,
-        size_t fork_height) const = 0;
+        size_t branch_height) const = 0;
 
     /// Determine if an unspent transaction exists with the given hash.
     virtual bool get_is_unspent_transaction(const hash_digest& hash,
-        size_t fork_height) const = 0;
+        size_t branch_height) const = 0;
 
     /// Get the transaction of the given hash and its block height.
     virtual transaction_ptr get_transaction(size_t& out_block_height,
@@ -106,7 +106,7 @@ public:
     // ------------------------------------------------------------------------ 
 
     /// Swap incoming and outgoing blocks, height is validated.
-    virtual void reorganize(fork::const_ptr fork,
+    virtual void reorganize(branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing_blocks, bool flush,
         dispatcher& dispatch, complete_handler handler) = 0;
 };
