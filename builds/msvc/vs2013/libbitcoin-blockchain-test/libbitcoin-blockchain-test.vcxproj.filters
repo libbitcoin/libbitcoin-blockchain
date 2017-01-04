@@ -10,7 +10,7 @@
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\fork.cpp">
+    <ClCompile Include="..\..\..\..\test\branch.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

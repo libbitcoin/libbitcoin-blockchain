@@ -42,7 +42,7 @@ public:
 #endif
 
     static code verify_script(const chain::transaction& tx,
-        uint32_t input_index, uint32_t forks, bool use_libconsensus);
+        uint32_t input_index, uint32_t branches, bool use_libconsensus);
 };
 
 } // namespace blockchain

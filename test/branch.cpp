@@ -27,7 +27,7 @@ using namespace bc;
 using namespace bc::message;
 using namespace bc::blockchain;
 
-BOOST_AUTO_TEST_SUITE(fork_tests)
+BOOST_AUTO_TEST_SUITE(branch_tests)
 
 #define DECLARE_BLOCK(name, number) \
     const auto name##number = std::make_shared<block>(); \
@@ -35,21 +35,21 @@ BOOST_AUTO_TEST_SUITE(fork_tests)
 
 // construct
 
-BOOST_AUTO_TEST_CASE(fork__construct__always__capacity_1)
+BOOST_AUTO_TEST_CASE(branch__construct__always__capacity_1)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), 1u);
 }
 
 // hash
 
-BOOST_AUTO_TEST_CASE(fork__hash__default__null_hash)
+BOOST_AUTO_TEST_CASE(branch__hash__default__null_hash)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(instance.hash() == null_hash);
 }
 
-BOOST_AUTO_TEST_CASE(fork__hash__one_block__only_previous_block_hash)
+BOOST_AUTO_TEST_CASE(branch__hash__one_block__only_previous_block_hash)
 {
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
@@ -57,14 +57,14 @@ BOOST_AUTO_TEST_CASE(fork__hash__one_block__only_previous_block_hash)
     const auto expected = block0->hash();
     block1->header().set_previous_block_hash(expected);
 
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(instance.push_front(block1));
     BOOST_REQUIRE(instance.hash() == expected);
 }
 
-BOOST_AUTO_TEST_CASE(fork__hash__two_blocks__first_previous_block_hash)
+BOOST_AUTO_TEST_CASE(branch__hash__two_blocks__first_previous_block_hash)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(top, 42);
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
@@ -81,75 +81,75 @@ BOOST_AUTO_TEST_CASE(fork__hash__two_blocks__first_previous_block_hash)
 
 // height/set_height
 
-BOOST_AUTO_TEST_CASE(fork__height__default__zero)
+BOOST_AUTO_TEST_CASE(branch__height__default__zero)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE_EQUAL(instance.height(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(fork__set_height__round_trip__unchanged)
+BOOST_AUTO_TEST_CASE(branch__set_height__round_trip__unchanged)
 {
     static const size_t expected = 42;
-    blockchain::fork instance;
+    blockchain::branch instance;
     instance.set_height(expected);
     BOOST_REQUIRE_EQUAL(instance.height(), expected);
 }
 
 // height_at
 
-BOOST_AUTO_TEST_CASE(fork__height_at__zero__plus_one)
+BOOST_AUTO_TEST_CASE(branch__height_at__zero__plus_one)
 {
     static const size_t index = 0;
     static const size_t height = 42;
     static const size_t expected = height + index + 1;
-    blockchain::fork instance;
+    blockchain::branch instance;
     instance.set_height(height);
     BOOST_REQUIRE_EQUAL(instance.height_at(index), expected);
 }
 
-BOOST_AUTO_TEST_CASE(fork__height_at__value__expected)
+BOOST_AUTO_TEST_CASE(branch__height_at__value__expected)
 {
     static const size_t index = 10;
     static const size_t height = 42;
     static const size_t expected = height + index + 1;
-    blockchain::fork instance;
+    blockchain::branch instance;
     instance.set_height(height);
     BOOST_REQUIRE_EQUAL(instance.height_at(index), expected);
 }
 
 // block_at
 
-BOOST_AUTO_TEST_CASE(fork__block_at__default_zero__nullptr)
+BOOST_AUTO_TEST_CASE(branch__block_at__default_zero__nullptr)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(!instance.block_at(0));
 }
 
-BOOST_AUTO_TEST_CASE(fork__block_at__default_value__nullptr)
+BOOST_AUTO_TEST_CASE(branch__block_at__default_value__nullptr)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(!instance.block_at(42));
 }
 
 // size
 
-BOOST_AUTO_TEST_CASE(fork__size__empty__zero)
+BOOST_AUTO_TEST_CASE(branch__size__empty__zero)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE_EQUAL(instance.size(), 0);
 }
 
 // empty
 
-BOOST_AUTO_TEST_CASE(fork__empty__default__true)
+BOOST_AUTO_TEST_CASE(branch__empty__default__true)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(instance.empty());
 }
 
-BOOST_AUTO_TEST_CASE(fork__empty__push_one__false)
+BOOST_AUTO_TEST_CASE(branch__empty__push_one__false)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(!instance.empty());
@@ -157,15 +157,15 @@ BOOST_AUTO_TEST_CASE(fork__empty__push_one__false)
 
 // blocks
 
-BOOST_AUTO_TEST_CASE(fork__blocks__default__empty)
+BOOST_AUTO_TEST_CASE(branch__blocks__default__empty)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(instance.blocks()->empty());
 }
 
-BOOST_AUTO_TEST_CASE(fork__blocks__one__empty)
+BOOST_AUTO_TEST_CASE(branch__blocks__one__empty)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(!instance.empty());
@@ -174,9 +174,9 @@ BOOST_AUTO_TEST_CASE(fork__blocks__one__empty)
 
 // push_front
 
-BOOST_AUTO_TEST_CASE(fork__push__one__success)
+BOOST_AUTO_TEST_CASE(branch__push__one__success)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(!instance.empty());
@@ -184,9 +184,9 @@ BOOST_AUTO_TEST_CASE(fork__push__one__success)
     BOOST_REQUIRE(instance.block_at(0) == block0);
 }
 
-BOOST_AUTO_TEST_CASE(fork__push__two_linked__success)
+BOOST_AUTO_TEST_CASE(branch__push__two_linked__success)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
 
@@ -200,9 +200,9 @@ BOOST_AUTO_TEST_CASE(fork__push__two_linked__success)
     BOOST_REQUIRE(instance.block_at(1) == block1);
 }
 
-BOOST_AUTO_TEST_CASE(fork__push__two_unlinked__link_failure)
+BOOST_AUTO_TEST_CASE(branch__push__two_unlinked__link_failure)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
 
@@ -217,15 +217,15 @@ BOOST_AUTO_TEST_CASE(fork__push__two_unlinked__link_failure)
 
 // difficulty
 
-BOOST_AUTO_TEST_CASE(fork__difficulty__default__zero)
+BOOST_AUTO_TEST_CASE(branch__difficulty__default__zero)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     BOOST_REQUIRE(instance.difficulty() == 0);
 }
 
-BOOST_AUTO_TEST_CASE(fork__difficulty__two_blocks__expected)
+BOOST_AUTO_TEST_CASE(branch__difficulty__two_blocks__expected)
 {
-    blockchain::fork instance;
+    blockchain::branch instance;
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
 

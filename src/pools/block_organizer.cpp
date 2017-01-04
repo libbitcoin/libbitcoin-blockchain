@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/pools/organizer.hpp>
+#include <bitcoin/blockchain/pools/block_organizer.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -29,10 +29,9 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/organizer.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validation/fork.hpp>
-#include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validate/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -41,9 +40,9 @@ using namespace bc::chain;
 using namespace bc::config;
 using namespace std::placeholders;
 
-#define NAME "organizer"
+#define NAME "block_organizer"
 
-// Database access is limited to: push, pop, last-height, fork-difficulty,
+// Database access is limited to: push, pop, last-height, branch-difficulty,
 // validator->populator:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -61,7 +60,7 @@ static inline thread_priority priority(const settings& settings)
     return settings.priority ? thread_priority::high : thread_priority::normal;
 }
 
-organizer::organizer(threadpool& thread_pool,
+block_organizer::block_organizer(threadpool& thread_pool,
     fast_chain& chain, block_pool& block_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
@@ -78,7 +77,7 @@ organizer::organizer(threadpool& thread_pool,
 // Properties.
 //-----------------------------------------------------------------------------
 
-bool organizer::stopped() const
+bool block_organizer::stopped() const
 {
     return stopped_;
 }
@@ -86,7 +85,7 @@ bool organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-bool organizer::start()
+bool block_organizer::start()
 {
     stopped_ = false;
     subscriber_->start();
@@ -95,9 +94,8 @@ bool organizer::start()
     return flush_reorganizations_ || fast_chain_.begin_writes();
 }
 
-bool organizer::stop()
+bool block_organizer::stop()
 {
-    validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
@@ -120,7 +118,7 @@ bool organizer::stop()
 //-----------------------------------------------------------------------------
 
 // This is called from block_chain::organize.
-void organizer::organize(block_const_ptr block,
+void block_organizer::organize(block_const_ptr block,
     result_handler handler)
 {
     ///////////////////////////////////////////////////////////////////////////
@@ -146,48 +144,48 @@ void organizer::organize(block_const_ptr block,
     }
 
     const result_handler locked_handler =
-        std::bind(&organizer::complete,
+        std::bind(&block_organizer::complete,
             this, _1, lock, handler);
 
     // Get the path through the block forest to the new block.
-    const auto fork = block_pool_.get_path(block);
+    const auto branch = block_pool_.get_path(block);
 
     //*************************************************************************
     // CONSENSUS: This is the same check performed by satoshi, yet it will
     // produce a chain split in the case of a hash collision. This is because
-    // it is not applied at the fork point, so some nodes will not see the
+    // it is not applied at the branch point, so some nodes will not see the
     // collision block and others will, depending on block order of arrival.
-    // TODO: The hash check should start at the fork point. The duplicate check
+    // TODO: The hash check should start at the branch point. The duplicate check
     // is a conflated network denial of service protection mechanism and cannot
     // be allowed to reject blocks based on collisions not in the actual chain.
     // The block pool must be modified to accomodate hash collision as well.
     //*************************************************************************
-    if (fork->empty() || fast_chain_.get_block_exists(block->hash()))
+    if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
     {
         locked_handler(error::duplicate_block);
         return;
     }
 
-    if (!set_fork_height(fork))
+    if (!set_branch_height(branch))
     {
         locked_handler(error::orphan_block);
         return;
     }
 
-    // Verify the last fork block (all others are verified).
+    // Verify the last branch block (all others are verified).
     // Preserve validation priority pool by returning on a network thread.
     const result_handler accept_handler =
-        dispatch_.bound_delegate(&organizer::handle_accept,
-            this, _1, fork, locked_handler);
+        dispatch_.bound_delegate(&block_organizer::handle_accept,
+            this, _1, branch, locked_handler);
 
     // Checks that are dependent on chain state and prevouts.
-    // The fork may not have sufficient work to reorganize at this point, but
+    // The branch may not have sufficient work to reorganize at this point, but
     // we must at least know if work required is sufficient in order to retain.
-    validator_.accept(to_const(fork), accept_handler);
+    validator_.accept(to_const(branch), accept_handler);
 }
 
 // private
-void organizer::complete(const code& ec, scope_lock::ptr lock,
+void block_organizer::complete(const code& ec, scope_lock::ptr lock,
     result_handler handler)
 {
     lock.reset();
@@ -202,7 +200,7 @@ void organizer::complete(const code& ec, scope_lock::ptr lock,
 //-----------------------------------------------------------------------------
 
 // private
-void organizer::handle_accept(const code& ec, fork::ptr fork,
+void block_organizer::handle_accept(const code& ec, branch::ptr branch,
     result_handler handler)
 {
     if (stopped())
@@ -220,15 +218,15 @@ void organizer::handle_accept(const code& ec, fork::ptr fork,
     // Preserve validation priority pool by returning on a network thread.
     // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
-        dispatch_.bound_delegate(&organizer::handle_connect,
-            this, _1, fork, handler);
+        dispatch_.bound_delegate(&block_organizer::handle_connect,
+            this, _1, branch, handler);
 
     // Checks that include script validation.
-    validator_.connect(to_const(fork), connect_handler);
+    validator_.connect(to_const(branch), connect_handler);
 }
 
 // private
-void organizer::handle_connect(const code& ec, fork::ptr fork,
+void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     result_handler handler)
 {
     if (stopped())
@@ -243,27 +241,27 @@ void organizer::handle_connect(const code& ec, fork::ptr fork,
         return;
     }
 
-    const auto first_height = fork->height() + 1u;
-    const auto maximum = fork->difficulty();
+    const auto first_height = branch->height() + 1u;
+    const auto maximum = branch->difficulty();
     uint256_t threshold;
 
     // The chain query will stop if it reaches the maximum.
-    if (!fast_chain_.get_fork_difficulty(threshold, maximum, first_height))
+    if (!fast_chain_.get_branch_difficulty(threshold, maximum, first_height))
     {
         handler(error::operation_failed);
         return;
     }
 
-    if (fork->difficulty() <= threshold)
+    if (branch->difficulty() <= threshold)
     {
-        block_pool_.add(fork->top());
+        block_pool_.add(branch->top());
         handler(error::insufficient_work);
         return;
     }
 
     // The top block is valid.
-    const auto top = fork->top();
-    top->header().validation.height = fork->top_height();
+    const auto top = branch->top();
+    top->header().validation.height = branch->top_height();
     top->validation.error = error::success;
     top->validation.start_notify = asio::steady_clock::now();
 
@@ -271,18 +269,18 @@ void organizer::handle_connect(const code& ec, fork::ptr fork,
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
     
     const auto complete =
-        std::bind(&organizer::handle_reorganized,
-            this, _1, to_const(fork), out_blocks, handler);
+        std::bind(&block_organizer::handle_reorganized,
+            this, _1, to_const(branch), out_blocks, handler);
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(to_const(fork), out_blocks, flush_reorganizations_,
+    fast_chain_.reorganize(to_const(branch), out_blocks, flush_reorganizations_,
         priority_dispatch_, complete);
     //#########################################################################
 }
 
 // private
-void organizer::handle_reorganized(const code& ec, fork::const_ptr fork,
+void block_organizer::handle_reorganized(const code& ec, branch::const_ptr branch,
     block_const_ptr_list_ptr outgoing, result_handler handler)
 {
     if (ec)
@@ -294,13 +292,13 @@ void organizer::handle_reorganized(const code& ec, fork::const_ptr fork,
         return;
     }
 
-    block_pool_.remove(fork->blocks());
-    block_pool_.prune(fork->top_height());
+    block_pool_.remove(branch->blocks());
+    block_pool_.prune(branch->top_height());
     block_pool_.add(outgoing);
 
     // TODO: we can notify before reorg for mining scenario.
-    // v3 reorg block order is reverse of v2, fork.back() is the new top.
-    notify_reorganize(fork->height(), fork->blocks(), to_const(outgoing));
+    // v3 reorg block order is reverse of v2, branch.back() is the new top.
+    notify_reorganize(branch->height(), branch->blocks(), to_const(outgoing));
 
     // This is the end of the verify sub-sequence.
     handler(error::success);
@@ -309,40 +307,35 @@ void organizer::handle_reorganized(const code& ec, fork::const_ptr fork,
 // Subscription.
 //-----------------------------------------------------------------------------
 
-void organizer::subscribe_reorganize(reorganize_handler&& handler)
+void block_organizer::subscribe_reorganize(reorganize_handler&& handler)
 {
     subscriber_->subscribe(std::move(handler),
         error::service_stopped, 0, {}, {});
 }
 
 // private
-void organizer::notify_reorganize(size_t fork_height,
-    block_const_ptr_list_const_ptr fork,
+void block_organizer::notify_reorganize(size_t branch_height,
+    block_const_ptr_list_const_ptr branch,
     block_const_ptr_list_const_ptr original)
 {
     // Invoke is required here to prevent subscription parsing from creating a
     // unsurmountable backlog during catch-up sync.
-    subscriber_->invoke(error::success, fork_height, fork, original);
+    subscriber_->invoke(error::success, branch_height, branch, original);
 }
 
 // Utility.
 //-----------------------------------------------------------------------------
 
 // private
-bool organizer::set_fork_height(fork::ptr fork)
+bool block_organizer::set_branch_height(branch::ptr branch)
 {
-    BITCOIN_ASSERT(!fork->empty());
-
     size_t height;
 
-    // Get blockchain parent of the oldest fork block (orphan if false).
-    if (!fast_chain_.get_height(height, fork->hash()))
+    // Get blockchain parent of the oldest branch block.
+    if (!fast_chain_.get_height(height, branch->hash()))
         return false;
 
-    // Guard against chain size overflow.
-    safe_add(height, fork->size());
-
-    fork->set_height(height);
+    branch->set_height(height);
     return true;
 }
 

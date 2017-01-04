@@ -29,7 +29,7 @@
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool_index.hpp>
-#include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validate/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -88,7 +88,7 @@ protected:
     bool stopped() const;
     const_iterator find_iterator(const hash_digest& tx_hash) const;
 
-    bool handle_reorganized(const code& ec, size_t fork_point,
+    bool handle_reorganized(const code& ec, size_t branch_point,
         block_const_ptr_list_const_ptr new_blocks,
         block_const_ptr_list_const_ptr replaced_blocks);
     void handle_validated(const code& ec, const indexes& unconfirmed,
@@ -137,7 +137,6 @@ private:
     ////validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;
-    const bool maintain_consistency_;
 };
 
 } // namespace blockchain

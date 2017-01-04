@@ -27,7 +27,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validation/validate_block.hpp>
+#include <bitcoin/blockchain/validate/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -41,10 +41,26 @@ using namespace std::placeholders;
 
 // Database access is limited to: index->fetch_history.
 
+// TODO:
+// Must validate against the current chain, which requires chain state.
+// Chain state should be primed at startup for the next block and cached by the tx validator.
+// The tx pool validates only against the long chain, so the block pool is ignored.
+// The tx pool must provide unspent outputs for other pool txs (but not blocks).
+// The tx pool must contain only valid transactions (no orphans).
+// We must be able to find the best block template (by highest fee total).
+// The tx graph is a dag which is connected by inputs selecting outputs.
+// Acceptance of a tx into a block does not invalidate dependent txs.
+// When a transaction is deleted its subgraph is pruned.
+// Pruning is based on fees and capacity only.
+// Duplicate tx hashes are not allowed in a block and therefore not in the tx pool.
+// The rational policy is to accept the duplicate hash which provides the higher total fee.
+// It is acceptable to simply take the first hash and drop duplicates as invalid.
+// A transaction hash that exists in the chain is not acceptable even if the original becomes spent in the same block,
+// Because the BIP30 exmaple implementation simply tests all txs  in a new block against transactions in previous blocks.
+
 transaction_pool::transaction_pool(threadpool& pool, safe_chain& chain,
     const settings& settings)
   : stopped_(true),
-    maintain_consistency_(settings.transaction_pool_consistency),
     buffer_(settings.transaction_pool_capacity),
     safe_chain_(chain),
     index_(pool, chain),
@@ -317,7 +333,7 @@ void transaction_pool::exists(const hash_digest& tx_hash,
 
 // new blocks come in - remove txs in new
 // old blocks taken out - resubmit txs in old
-bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
+bool transaction_pool::handle_reorganized(const code& ec, size_t branch_point,
     block_const_ptr_list_const_ptr new_blocks,
     block_const_ptr_list_const_ptr replaced_blocks)
 {
@@ -337,7 +353,7 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t fork_point,
 
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Reorganize: tx pool size (" << buffer_.size()
-        << ") forked at (" << fork_point
+        << ") branched at (" << branch_point
         << ") new blocks (" << new_blocks->size()
         << ") replace blocks (" << replaced_blocks->size() << ")";
 
@@ -381,19 +397,19 @@ void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
 void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
-    if (maintain_consistency_ && buffer_.size() == buffer_.capacity())
+    if (false && buffer_.size() == buffer_.capacity())
         delete_package(error::transaction_pool_filled);
 
-    tx->validation.confirm = handler;
+    ////tx->validation.confirm = handler;
     buffer_.push_back(tx);
 }
 
 // There has been a reorg, clear the memory pool using the given reason code.
 void transaction_pool::clear(const code& ec)
 {
-    for (const auto tx: buffer_)
-        if (tx->validation.confirm != nullptr)
-            tx->validation.confirm(ec);
+    ////for (const auto tx: buffer_)
+    ////    if (tx->validation.confirm != nullptr)
+    ////        tx->validation.confirm(ec);
 
     buffer_.clear();
 }
@@ -405,7 +421,7 @@ void transaction_pool::remove(block_const_ptr_list_const_ptr blocks)
     delete_confirmed_in_blocks(*blocks);
 
     // Delete by spent sets a double-spend error.
-    if (maintain_consistency_)
+    if (false)
         delete_spent_in_blocks(*blocks);
 }
 
@@ -491,8 +507,8 @@ void transaction_pool::delete_package(const code& ec)
     // Must copy the entry because it is going to be deleted from the list.
     const auto oldest_tx = buffer_.front();
 
-    if (oldest_tx->validation.confirm != nullptr)
-        oldest_tx->validation.confirm(ec);
+    ////if (oldest_tx->validation.confirm != nullptr)
+    ////    oldest_tx->validation.confirm(ec);
 
     delete_package(oldest_tx, ec);
 }
@@ -518,10 +534,10 @@ bool transaction_pool::delete_single(const hash_digest& tx_hash, const code& ec)
     if (it == buffer_.end())
         return false;
 
-    const auto confirmation_callback = (*it)->validation.confirm;
+    ////const auto confirmation_callback = (*it)->validation.confirm;
 
-    if (confirmation_callback != nullptr)
-        confirmation_callback(ec);
+    ////if (confirmation_callback != nullptr)
+    ////    confirmation_callback(ec);
 
     buffer_.erase(it);
     return true;

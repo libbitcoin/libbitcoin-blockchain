@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/validation/validate_input.hpp>
+#include <bitcoin/blockchain/validate/validate_input.hpp>
 
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
@@ -89,7 +89,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_unbalanced_conditional:
             return error::invalid_script;
 
-        // Softfork safeness (should not see).
+        // Softbranch safeness (should not see).
         case verify_result_type::verify_result_discourage_upgradable_nops:
             return error::operation_failed;
 
@@ -126,7 +126,7 @@ code validate_input::convert_result(verify_result_type result)
 }
 
 code validate_input::verify_script(const transaction& tx, uint32_t input_index,
-    uint32_t forks, bool use_libconsensus)
+    uint32_t branches, bool use_libconsensus)
 {
     if (!use_libconsensus)
     {
@@ -138,8 +138,8 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
         ////auto clone = transaction::factory_from_data(tx_data);
         ////const auto input = clone.inputs()[input_index].script();
         ////const auto prevout = script::factory_from_data(script_data, false);
-        ////return script::verify(clone, input_index, forks, input, prevout);
-        return script::verify(tx, input_index, forks);
+        ////return script::verify(clone, input_index, branches, input, prevout);
+        return script::verify(tx, input_index, branches);
     }
 
     BITCOIN_ASSERT(input_index < tx.inputs().size());
@@ -150,18 +150,18 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
     // libconsensus
     return convert_result(consensus::verify_script(tx_data.data(),
         tx_data.size(), script_data.data(), script_data.size(), input_index,
-        convert_flags(forks)));
+        convert_flags(branches)));
 }
 
 #else
 
 code validate_input::verify_script(const transaction& tx,
-    uint32_t input_index, uint32_t forks, bool use_libconsensus)
+    uint32_t input_index, uint32_t branches, bool use_libconsensus)
 {
     if (use_libconsensus)
         return error::operation_failed;
 
-    return script::verify(tx, input_index, forks);
+    return script::verify(tx, input_index, branches);
 }
 
 #endif
