@@ -101,7 +101,6 @@ private:
     threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
-    mutable dispatcher dispatch_;
     mutable dispatcher priority_dispatch_;
 
 };
