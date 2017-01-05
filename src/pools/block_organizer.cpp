@@ -19,13 +19,11 @@
  */
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
 
-#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <utility>
-#include <thread>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
@@ -48,25 +46,13 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-static inline size_t cores(const settings& settings)
-{
-    const auto configured = settings.cores;
-    const auto hardware = std::max(std::thread::hardware_concurrency(), 1u);
-    return configured == 0 ? hardware : std::min(configured, hardware);
-}
-
-static inline thread_priority priority(const settings& settings)
-{
-    return settings.priority ? thread_priority::high : thread_priority::normal;
-}
-
 block_organizer::block_organizer(threadpool& thread_pool,
     fast_chain& chain, block_pool& block_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     flush_reorganizations_(settings.flush_reorganizations),
     block_pool_(block_pool),
-    priority_pool_(cores(settings), priority(settings)),
+    priority_pool_(threads(settings.cores), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
