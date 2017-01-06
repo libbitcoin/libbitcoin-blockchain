@@ -58,7 +58,7 @@ inline std::time_t now()
 
 inline bool is_transaction_pool(branch::const_ptr branch)
 {
-    return !branch->empty();
+    return branch->empty();
 }
 
 bool populate_chain_state::get_bits(uint32_t& out_bits, size_t height,
