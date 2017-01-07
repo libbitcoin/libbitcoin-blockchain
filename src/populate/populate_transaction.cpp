@@ -58,7 +58,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
 
     //*************************************************************************
     // CONSENSUS: Satoshi implemented this block validation change in Nov 2015.
-    // We must follow the same rules in the tx pool to support block tempaltes.
+    // We must follow the same rules in the tx pool to support block templates.
     //*************************************************************************
     if (!state->is_enabled(machine::rule_fork::allowed_duplicates))
         populate_duplicate(chain_height, *tx);
