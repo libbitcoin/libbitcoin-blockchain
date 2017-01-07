@@ -653,7 +653,8 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        auto stop = safe_add(safe_add(start, limit), size_t(1));
+        const auto begin = safe_add(start, size_t(1));
+        auto stop = safe_add(begin, limit);
 
         if (locator->stop_hash() != null_hash)
         {
@@ -673,10 +674,11 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
 
         auto hashes = std::make_shared<inventory>();
-        hashes->inventories().reserve(stop);
+        const auto size = floor_subtract(stop, begin);
+        hashes->inventories().reserve(size);
 
         // Build the hash list until we hit last or the blockchain top.
-        for (size_t index = start + 1; index < stop; ++index)
+        for (auto index = begin; index < stop; ++index)
         {
             const auto result = database_.blocks().get(index);
             if (result)
@@ -726,7 +728,8 @@ void block_chain::fetch_locator_block_headers(
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        auto stop = safe_add(safe_add(start, limit), size_t(1));
+        const auto begin = safe_add(start, size_t(1));
+        auto stop = safe_add(begin, limit);
 
         if (locator->stop_hash() != null_hash)
         {
@@ -746,13 +749,15 @@ void block_chain::fetch_locator_block_headers(
             if (start_result)
                 start = std::max(start_result.height(), start);
         }
+
         //---------------------------------------------------------------------
 
         const auto headers = std::make_shared<message::headers>();
-        headers->elements().reserve(stop);
+        const auto size = floor_subtract(stop, begin);
+        headers->elements().reserve(size);
 
         // Build the hash list until we hit last or the blockchain top.
-        for (size_t index = start + 1; index < stop; ++index)
+        for (auto index = begin; index < stop; ++index)
         {
             const auto result = database_.blocks().get(index);
             if (result)
