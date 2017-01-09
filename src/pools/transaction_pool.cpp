@@ -88,7 +88,7 @@ void transaction_pool::stop()
     stopped_ = true;
     index_.stop();
     subscriber_->stop();
-    subscriber_->invoke(error::service_stopped, {}, {});
+    subscriber_->invoke(error::service_stopped, {});
     clear(error::service_stopped);
 }
 
@@ -141,86 +141,69 @@ void transaction_pool::do_fetch_inventory(size_t limit,
 }
 
 void transaction_pool::validate(transaction_const_ptr tx,
-    validate_handler handler) const
+    result_handler handler) const
 {
     dispatch_.ordered(&transaction_pool::do_validate,
         this, tx, handler);
 }
 
 void transaction_pool::do_validate(transaction_const_ptr tx,
-    validate_handler handler) const
+    result_handler handler) const
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped);
         return;
     }
-
-    handler(error::operation_failed, {});
 
     // TODO: restore
     ////validator_->validate(tx,
     ////    std::bind(&transaction_pool::handle_validated,
-    ////        this, _1, _2, tx, validator, handler));
+    ////        this, _1, tx, validator, handler));
+    handler(error::operation_failed);
 }
 
 void transaction_pool::handle_validated(const code& ec,
-    const indexes& unconfirmed, transaction_const_ptr tx,
-    validate_handler handler) const
+    transaction_const_ptr tx, result_handler handler) const
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped);
         return;
     }
 
-    ////if (ec == error::missing_input || ec == error::validate_inputs_failed)
-    ////{
-    ////    BITCOIN_ASSERT(unconfirmed.size() == 1);
-    ////    handler(ec, unconfirmed);
-    ////    return;
-    ////}
-
-    ////if (ec)
-    ////{
-    ////    BITCOIN_ASSERT(unconfirmed.empty());
-    ////    handler(ec, unconfirmed);
-    ////    return;
-    ////}
-
-    handler(ec, unconfirmed);
+    handler(ec);
 }
 
 // handle_confirm will never fire if handle_validate returns a failure code.
 void transaction_pool::organize(transaction_const_ptr tx,
-    result_handler handle_confirm, validate_handler handle_validate)
+    result_handler handle_confirm, result_handler handle_validate)
 {
     if (stopped())
     {
-        handle_validate(error::service_stopped, {});
+        handle_validate(error::service_stopped);
         return;
     }
 
     validate(tx,
         std::bind(&transaction_pool::do_organize,
-            this, _1, _2, tx, handle_confirm, handle_validate));
+            this, _1, tx, handle_confirm, handle_validate));
 }
 
 // This is overly complex due to the transaction pool and index split.
-void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
-    transaction_const_ptr tx, result_handler handle_confirm,
-    validate_handler handle_validate)
+void transaction_pool::do_organize(const code& ec, transaction_const_ptr tx,
+    result_handler handle_confirm, result_handler handle_validate)
 {
     if (ec)
     {
-        handle_validate(ec, {});
+        handle_validate(ec);
         return;
     }
 
     // Recheck for existence under lock, as a duplicate may have been added.
     if (is_in_pool(tx->hash()))
     {
-        handle_validate(error::duplicate_pool_transaction, {});
+        handle_validate(error::operation_failed);
         return;
     }
 
@@ -239,17 +222,16 @@ void transaction_pool::do_organize(const code& ec, const indexes& unconfirmed,
     // Add to pool, save confirmation handler.
     add(tx, do_deindex);
 
-    const auto handle_indexed = [this, handle_validate, tx, unconfirmed](
-        code ec)
+    const auto handle_indexed = [this, handle_validate, tx](code ec)
     {
         // Notify subscribers that the tx has been validated and indexed.
-        notify_transaction(unconfirmed, tx);
+        notify_transaction(tx);
 
         LOG_DEBUG(LOG_BLOCKCHAIN)
             << "Transaction saved to mempool (" << buffer_.size() << ")";
 
         // Notify caller that the tx has been validated and indexed.
-        handle_validate(ec, unconfirmed);
+        handle_validate(ec);
     };
 
     // Add to index and invoke handler to indicate validation and indexing.
@@ -371,7 +353,7 @@ bool transaction_pool::handle_reorganized(const code& ec, size_t branch_point,
         // An alternative would be resubmit all tx from the cleared blocks.
         dispatch_.ordered(
             std::bind(&transaction_pool::clear,
-                this, error::blockchain_reorganized));
+                this, error::orphan_transaction));
     }
 
     return true;
@@ -381,13 +363,12 @@ void transaction_pool::subscribe_transaction(
     transaction_handler&& handle_transaction)
 {
     subscriber_->subscribe(std::move(handle_transaction),
-        error::service_stopped, {}, {});
+        error::service_stopped, {});
 }
 
-void transaction_pool::notify_transaction(const point::indexes& unconfirmed,
-    transaction_const_ptr tx)
+void transaction_pool::notify_transaction(transaction_const_ptr tx)
 {
-    subscriber_->relay(error::success, unconfirmed, tx);
+    subscriber_->relay(error::success, tx);
 }
 
 // Entry methods.
@@ -398,7 +379,7 @@ void transaction_pool::add(transaction_const_ptr tx, result_handler handler)
 {
     // When a new tx is added to the buffer drop the oldest.
     if (false && buffer_.size() == buffer_.capacity())
-        delete_package(error::transaction_pool_filled);
+        delete_package(error::operation_failed);
 
     ////tx->validation.confirm = handler;
     buffer_.push_back(tx);

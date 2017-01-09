@@ -876,7 +876,7 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
 }
 
 void block_chain::organize(transaction_const_ptr transaction,
-    transaction_store_handler handler)
+    result_handler handler)
 {
     // This is a simplification for the blockchain interface.
     const auto unhandled = [](code) {};

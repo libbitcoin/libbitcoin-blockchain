@@ -67,11 +67,8 @@ public:
     /// Subscription handlers.
     typedef std::function<bool(code, size_t, block_const_ptr_list_const_ptr,
         block_const_ptr_list_const_ptr)> reorganize_handler;
-    typedef std::function<bool(code, chain::point::indexes,
-        transaction_const_ptr)> transaction_handler;
-
-    /// Store handlers.
-    typedef handle1<const chain::point::indexes&> transaction_store_handler;
+    typedef std::function<bool(code, transaction_const_ptr)>
+        transaction_handler;
 
     // Startup and shutdown.
     // ------------------------------------------------------------------------
@@ -169,7 +166,7 @@ public:
 
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr transaction,
-        transaction_store_handler handler) = 0;
+        result_handler handler) = 0;
 };
 
 } // namespace blockchain
