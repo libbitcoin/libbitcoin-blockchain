@@ -38,19 +38,17 @@ namespace blockchain {
 class BCB_API transaction_pool
 {
 public:
-    typedef chain::point::indexes indexes;
     typedef handle0 result_handler;
-    typedef handle1<indexes> validate_handler;
 
     // Don't use const reference for smart pointer parameters.
     typedef std::function<void(const code&, transaction_const_ptr)>
         fetch_handler;
     typedef std::function<void(const code&, inventory_ptr)>
         fetch_inventory_handler;
-    typedef std::function<bool(const code&, const indexes&,
-        transaction_const_ptr)> transaction_handler;
+    typedef std::function<bool(const code&, transaction_const_ptr)>
+        transaction_handler;
 
-    typedef resubscriber<code, indexes, transaction_const_ptr>
+    typedef resubscriber<code, transaction_const_ptr>
         transaction_subscriber;
 
     static bool is_spent_by_tx(const chain::output_point& outpoint,
@@ -73,9 +71,9 @@ public:
         size_t from_height, safe_chain::history_fetch_handler handler) const;
     void exists(const hash_digest& tx_hash, result_handler handler) const;
     void filter(get_data_ptr message, result_handler handler) const;
-    void validate(transaction_const_ptr tx, validate_handler handler) const;
+    void validate(transaction_const_ptr tx, result_handler handler) const;
     void organize(transaction_const_ptr tx, result_handler confirm_handler,
-        validate_handler validate_handler);
+        result_handler validate_handler);
 
     /// Subscribe to transaction acceptance into the mempool.
     void subscribe_transaction(transaction_handler&& handler);
@@ -91,18 +89,16 @@ protected:
     bool handle_reorganized(const code& ec, size_t branch_point,
         block_const_ptr_list_const_ptr new_blocks,
         block_const_ptr_list_const_ptr replaced_blocks);
-    void handle_validated(const code& ec, const indexes& unconfirmed,
-        transaction_const_ptr tx, validate_handler handler) const;
+    void handle_validated(const code& ec, transaction_const_ptr tx,
+        result_handler handler) const;
 
     void do_fetch_inventory(size_t limit,
         fetch_inventory_handler handler) const;
-    void do_validate(transaction_const_ptr tx, validate_handler handler) const;
-    void do_organize(const code& ec, const indexes& unconfirmed,
-        transaction_const_ptr tx, result_handler handle_confirm,
-        validate_handler handle_validate);
+    void do_validate(transaction_const_ptr tx, result_handler handler) const;
+    void do_organize(const code& ec, transaction_const_ptr tx,
+        result_handler handle_confirm, result_handler handle_validate);
 
-    void notify_transaction(const indexes& unconfirmed,
-        transaction_const_ptr tx);
+    void notify_transaction(transaction_const_ptr tx);
 
     void add(transaction_const_ptr tx, result_handler handler);
     void remove(block_const_ptr_list_const_ptr blocks);

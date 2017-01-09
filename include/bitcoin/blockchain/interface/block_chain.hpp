@@ -251,7 +251,7 @@ public:
     /// Subscribe to blockchain reorganizations, get branch/height.
     virtual void subscribe_reorganize(reorganize_handler&& handler);
 
-    /// Subscribe to memory pool additions, get tx and unconfirmed outputs.
+    /// Subscribe to memory pool additions, get transaction.
     virtual void subscribe_transaction(transaction_handler&& handler);
 
     // Organizers (pools).
@@ -262,7 +262,7 @@ public:
 
     /// Store a transaction to the pool.
     virtual void organize(transaction_const_ptr transaction,
-        transaction_store_handler handler);
+        result_handler handler);
 
     // Properties.
     //-----------------------------------------------------------------------------

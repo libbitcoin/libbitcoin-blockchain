@@ -195,8 +195,7 @@
 ////    {
 ////    }
 ////
-////    virtual void organize(transaction_const_ptr block,
-////        transaction_store_handler handler)
+////    virtual void organize(transaction_const_ptr block, result_handler handler)
 ////    {
 ////    }
 ////};
