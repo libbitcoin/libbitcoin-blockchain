@@ -224,6 +224,12 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
+    // The top block is valid even if the branch has insufficient work.
+    const auto top = branch->top();
+    top->header().validation.height = branch->top_height();
+    top->validation.error = error::success;
+    top->validation.start_notify = asio::steady_clock::now();
+
     const auto first_height = branch->height() + 1u;
     const auto maximum = branch->difficulty();
     uint256_t threshold;
@@ -241,12 +247,6 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         handler(error::insufficient_work);
         return;
     }
-
-    // The top block is valid.
-    const auto top = branch->top();
-    top->header().validation.height = branch->top_height();
-    top->validation.error = error::success;
-    top->validation.start_notify = asio::steady_clock::now();
 
     // Get the outgoing blocks to forward to reorg handler.
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
