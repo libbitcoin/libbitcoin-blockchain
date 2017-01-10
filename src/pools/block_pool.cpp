@@ -215,8 +215,7 @@ bool block_pool::exists(block_const_ptr candidate_block) const
 // private
 block_const_ptr block_pool::parent(block_const_ptr block) const
 {
-    // The block must not yet be successfully validated.
-    BITCOIN_ASSERT(block->validation.error);
+    // The block may be validated (pool) or not (new).
     const block_entry parent_entry{ block->header().previous_block_hash() };
 
     // Critical Section

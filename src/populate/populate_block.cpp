@@ -132,7 +132,7 @@ void populate_block::populate_inputs(branch::const_ptr branch,
 {
     BITCOIN_ASSERT(bucket < buckets);
     const auto block = branch->top();
-    const auto branch_height = branch->top_height();
+    const auto branch_height = branch->height();
     const auto& txs = block->transactions();
     size_t position = 0;
 
