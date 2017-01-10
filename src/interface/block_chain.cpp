@@ -776,6 +776,8 @@ void block_chain::fetch_locator_block_headers(
 // Transaction Pool.
 //-----------------------------------------------------------------------------
 
+// TODO: maintain a cache of this inventory.
+// This exists only to satisfy the mempool message.
 void block_chain::fetch_floaters(size_t size,
     inventory_fetch_handler handler) const
 {
@@ -786,6 +788,7 @@ void block_chain::fetch_floaters(size_t size,
 //-----------------------------------------------------------------------------
 
 // This may execute up to 500 queries.
+// This filters against the block pool and then the block chain.
 void block_chain::filter_blocks(get_data_ptr message,
     result_handler handler) const
 {
@@ -797,6 +800,7 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     const auto do_fetch = [this, message, handler](size_t slock)
     {
+        block_pool_.filter(message);
         auto& inventories = message->inventories();
         const auto& blocks = database_.blocks();
 
@@ -806,11 +810,13 @@ void block_chain::filter_blocks(get_data_ptr message,
             else
                 ++it;
 
+
         return finish_read(slock, handler, error::success);
     };
     read_serial(do_fetch);
 }
 
+// This filters against all transactions (confirmed and unconfirmed).
 void block_chain::filter_transactions(get_data_ptr message,
     result_handler handler) const
 {
@@ -837,19 +843,6 @@ void block_chain::filter_transactions(get_data_ptr message,
         return finish_read(slock, handler, error::success);
     };
     read_serial(do_fetch);
-}
-
-void block_chain::filter_orphans(get_data_ptr message,
-    result_handler handler) const
-{
-    block_pool_.filter(message);
-    handler(error::success);
-}
-
-void block_chain::filter_floaters(get_data_ptr message,
-    result_handler handler) const
-{
-    transaction_pool_.filter(message, handler);
 }
 
 // Subscribers.

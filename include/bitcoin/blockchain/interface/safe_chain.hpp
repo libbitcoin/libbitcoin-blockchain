@@ -146,13 +146,7 @@ public:
     virtual void filter_blocks(get_data_ptr message,
         result_handler handler) const = 0;
 
-    virtual void filter_orphans(get_data_ptr message,
-        result_handler handler) const = 0;
-
     virtual void filter_transactions(get_data_ptr message,
-        result_handler handler) const = 0;
-
-    virtual void filter_floaters(get_data_ptr message,
         result_handler handler) const = 0;
 
     // Subscribers.

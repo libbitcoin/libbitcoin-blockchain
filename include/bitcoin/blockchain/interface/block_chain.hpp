@@ -223,26 +223,19 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
+    /// Fetch an inventory vector for all unconfirmed transactions.
     virtual void fetch_floaters(size_t limit,
         inventory_fetch_handler handler) const;
 
     // Filters.
     //-------------------------------------------------------------------------
 
-    /// filter out block hashes that exist in the store.
+    /// Filter out block by hash that exist in the block pool or store.
     virtual void filter_blocks(get_data_ptr message,
         result_handler handler) const;
 
-    /// filter out transaction hashes that exist in the store.
+    /// Filter out confirmed and unconfirmed transactions by hash.
     virtual void filter_transactions(get_data_ptr message,
-        result_handler handler) const;
-
-    /// filter out block hashes that exist in the orphan pool.
-    virtual void filter_orphans(get_data_ptr message,
-        result_handler handler) const;
-
-    /// filter out transaction hashes that exist in the store.
-    virtual void filter_floaters(get_data_ptr message,
         result_handler handler) const;
 
     // Subscribers.
