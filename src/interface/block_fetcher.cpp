@@ -39,7 +39,7 @@ using namespace std::placeholders;
 // This class is thread safe.
 // This class is local only, builds block from merkle block and transactions.
 class block_fetcher
-  : public std::enable_shared_from_this<block_fetcher>
+  : public enable_shared_from_base<block_fetcher>
 {
 public:
     block_fetcher(const safe_chain& chain)
