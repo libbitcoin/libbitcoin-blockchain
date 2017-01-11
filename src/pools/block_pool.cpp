@@ -46,15 +46,16 @@ void block_pool::add(block_const_ptr block)
 
     BITCOIN_ASSERT(block->validation.state);
     auto height = block->header().validation.height;
+    const auto& left = blocks_.left;
 
     // Caller must ensure the entry does not exist.
-    BITCOIN_ASSERT(blocks_.left.find(entry) == blocks_.left.end());
+    BITCOIN_ASSERT(left.find(entry) == left.end());
 
     // Add a back pointer from the parent for clearing the path later.
     const block_entry parent_entry{ block->header().previous_block_hash() };
-    const auto parent = blocks_.left.find(parent_entry);
+    const auto parent = left.find(parent_entry);
 
-    if (parent != blocks_.left.end())
+    if (parent != left.end())
     {
         height = 0;
         parent->first.add_child(block);
@@ -77,11 +78,12 @@ void block_pool::remove(block_const_ptr_list_const_ptr blocks)
 {
     // The blocks list is expected to end with the new block (not in the pool).
     const auto last_pool_block = blocks->size() - 1u;
+    auto& left = blocks_.left;
 
     for (size_t block = 0; block < last_pool_block; ++block)
     {
-        auto it = blocks_.left.find(block_entry{ (*blocks)[block]->hash() });
-        BITCOIN_ASSERT(it != blocks_.left.end());
+        auto it = left.find(block_entry{ (*blocks)[block]->hash() });
+        BITCOIN_ASSERT(it != left.end());
 
         // There must be no children if this is the last pool block.
         // There must be at least one child if this is not the last pool block.
@@ -104,7 +106,7 @@ void block_pool::remove(block_const_ptr_list_const_ptr blocks)
             ///////////////////////////////////////////////////////////////////
             // Critical Section
             unique_lock lock(mutex_);
-            blocks_.left.erase(it);
+            left.erase(it);
             blocks_.insert({ std::move(entry_copy), height });
             ///////////////////////////////////////////////////////////////////
         }
@@ -113,7 +115,7 @@ void block_pool::remove(block_const_ptr_list_const_ptr blocks)
             ///////////////////////////////////////////////////////////////////
             // Critical Section
             unique_lock lock(mutex_);
-            blocks_.left.erase(it);
+            left.erase(it);
             ///////////////////////////////////////////////////////////////////
         }
     }
@@ -124,11 +126,12 @@ void block_pool::prune(block_entry::hashes&& hashes)
 {
     block_entry::hashes child_hashes;
     auto saver = [&](const hash_digest& hash){ child_hashes.push_back(hash); };
+    auto& left = blocks_.left;
 
     for (auto& hash: hashes)
     {
-        const auto it = blocks_.left.find(block_entry{ std::move(hash) });
-        BITCOIN_ASSERT(it != blocks_.left.end());
+        const auto it = left.find(block_entry{ std::move(hash) });
+        BITCOIN_ASSERT(it != left.end());
 
         // Save the children!
         const auto& children = it->first.children();
@@ -137,7 +140,7 @@ void block_pool::prune(block_entry::hashes&& hashes)
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         unique_lock lock(mutex_);
-        blocks_.left.erase(it);
+        left.erase(it);
         ///////////////////////////////////////////////////////////////////////
     }
 
@@ -150,12 +153,13 @@ void block_pool::prune(size_t top_height)
 {
     block_entry::hashes child_hashes;
     auto saver = [&](const hash_digest& hash){ child_hashes.push_back(hash); };
+    auto& right = blocks_.right;
 
     // Height minus maximum depth is the minimum unpruned height.
     const auto minimum_height = floor_subtract(top_height, maximum_depth_);
 
-    for (auto it = blocks_.right.begin(); it != blocks_.right.end() &&
-        it->first != 0 && it->first < minimum_height;)
+    for (auto it = right.begin(); it != right.end() && it->first != 0 &&
+        it->first < minimum_height;)
     {
         // Save the children!
         const auto& children = it->second.children();
@@ -164,7 +168,7 @@ void block_pool::prune(size_t top_height)
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         unique_lock lock(mutex_);
-        it = blocks_.right.erase(it);
+        it = right.erase(it);
         ///////////////////////////////////////////////////////////////////////
     }
 
@@ -176,6 +180,7 @@ void block_pool::prune(size_t top_height)
 void block_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
+    const auto& left = blocks_.left;
 
     for (auto it = inventories.begin(); it != inventories.end();)
     {
@@ -190,7 +195,7 @@ void block_pool::filter(get_data_ptr message) const
         ///////////////////////////////////////////////////////////////////////
         // Critical Section
         mutex_.lock_shared();
-        const auto found = (blocks_.left.find(entry) != blocks_.left.end());
+        const auto found = (left.find(entry) != left.end());
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
@@ -203,12 +208,12 @@ bool block_pool::exists(block_const_ptr candidate_block) const
 {
     // The block must not yet be successfully validated.
     BITCOIN_ASSERT(candidate_block->validation.error);
+    const auto& left = blocks_.left;
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     shared_lock lock(mutex_);
-    return blocks_.left.find(block_entry{ candidate_block })
-        != blocks_.left.end();
+    return left.find(block_entry{ candidate_block }) != left.end();
     ///////////////////////////////////////////////////////////////////////////
 }
 
@@ -217,17 +222,20 @@ block_const_ptr block_pool::parent(block_const_ptr block) const
 {
     // The block may be validated (pool) or not (new).
     const block_entry parent_entry{ block->header().previous_block_hash() };
+    const auto& left = blocks_.left;
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     shared_lock lock(mutex_);
-    const auto parent = blocks_.left.find(parent_entry);
-    return parent == blocks_.left.end() ? nullptr : parent->first.block();
+    const auto parent = left.find(parent_entry);
+    return parent == left.end() ? nullptr : parent->first.block();
     ///////////////////////////////////////////////////////////////////////////
 }
 
 branch::ptr block_pool::get_path(block_const_ptr block) const
 {
+    ////dump();
+
     const auto trace = std::make_shared<branch>();
 
     if (exists(block))
@@ -240,6 +248,18 @@ branch::ptr block_pool::get_path(block_const_ptr block) const
     }
 
     return trace;
+}
+
+void block_pool::dump() const
+{
+    LOG_INFO(LOG_BLOCKCHAIN) << "pool: ";
+
+    // Dump in hash order with height suffix (roots have height).
+    for (const auto& entry: blocks_.left)
+    {
+        LOG_INFO(LOG_BLOCKCHAIN)
+            << entry.first << " " << entry.second;
+    }
 }
 
 } // namespace blockchain

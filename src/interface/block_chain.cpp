@@ -937,6 +937,7 @@ bool block_chain::finish_read(handle sequence, Handler handler,
 
     // Handle the read (done).
     // Do not forward args, callers using smart pointer returns.
+    // TODO: it should be fine to forward args as long as handler is bound.
     handler(args...);
     return true;
 }

@@ -70,6 +70,7 @@ private:
     void prune(block_entry::hashes&& hashes);
     bool exists(block_const_ptr candidate_block) const;
     block_const_ptr parent(block_const_ptr block) const;
+    void dump() const;
 
     const size_t maximum_depth_;
 

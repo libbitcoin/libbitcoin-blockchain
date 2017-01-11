@@ -79,15 +79,6 @@ public:
     /// The height of the parent of this branch (branch point).
     size_t height() const;
 
-    /// The branch index of the block at the given blockchain height.
-    size_t index_of(size_t height) const;
-
-    /// The blockchain height of the block at the given branch index.
-    size_t height_at(size_t index) const;
-
-    /// The block at the given index.
-    block_const_ptr block_at(size_t index) const;
-
     /// The bits of the block at the given height in the branch.
     bool get_bits(uint32_t& out_bits, size_t height) const;
 
@@ -99,6 +90,10 @@ public:
 
     /// The hash of the block at the given height if it exists in the branch.
     bool get_block_hash(hash_digest& out_hash, size_t height) const;
+
+protected:
+    size_t index_of(size_t height) const;
+    size_t height_at(size_t index) const;
 
 private:
     size_t height_;

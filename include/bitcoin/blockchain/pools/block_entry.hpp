@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
 
+#include <iostream>
 #include <vector>
 #include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/bitcoin.hpp>
@@ -58,6 +59,9 @@ public:
 
     /// Add block to the list of children of this block.
     void remove_child(block_const_ptr child) const;
+
+    /// Serializer for debugging (temporary).
+    friend std::ostream& operator<<(std::ostream& out, const block_entry& of);
 
     /// Operators.
     bool operator==(const block_entry& other) const;

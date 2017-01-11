@@ -101,23 +101,18 @@ hash_digest branch::hash() const
         blocks_->front()->header().previous_block_hash();
 }
 
-// The caller must ensure that the height is above the branch.
+// private
 size_t branch::index_of(size_t height) const
 {
+    // The member height_ is the height of the fork point, not the first block.
     return safe_subtract(safe_subtract(height, height_), size_t(1));
 }
 
-// Index is unguarded, caller must verify.
+// private
 size_t branch::height_at(size_t index) const
 {
     // The height of the blockchain branch point plus zero-based orphan index.
-    return safe_add(safe_add(height_, index), size_t(1));
-}
-
-// Index is unguarded, caller must verify.
-block_const_ptr branch::block_at(size_t index) const
-{
-    return index < size() ? (*blocks_)[index] : nullptr;
+    return safe_add(safe_add(index, height_), size_t(1));
 }
 
 // The branch difficulty check is both a consensus check and denial of service
@@ -198,11 +193,13 @@ void branch::populate_prevout(const output_point& outpoint) const
 
     const auto get_output = [this, count, &outpoint]() -> result
     {
+        const auto& blocks = *blocks_;
+
         // Reverse search because of BIP30.
         for (size_t forward = 0; forward < count; ++forward)
         {
             const size_t index = count - forward - 1u;
-            const auto& txs = block_at(index)->transactions();
+            const auto& txs = blocks[index]->transactions();
 
             for (size_t position = 0; position < txs.size(); ++position)
             {
@@ -256,7 +253,7 @@ bool branch::get_bits(uint32_t& out_bits, size_t height) const
     if (height <= height_)
         return false;
 
-    const auto block = block_at(index_of(height));
+    const auto block = (*blocks_)[index_of(height)];
 
     if (!block)
         return false;
@@ -271,7 +268,7 @@ bool branch::get_version(uint32_t& out_version, size_t height) const
     if (height <= height_)
         return false;
 
-    const auto block = block_at(index_of(height));
+    const auto block = (*blocks_)[index_of(height)];
 
     if (!block)
         return false;
@@ -286,7 +283,7 @@ bool branch::get_timestamp(uint32_t& out_timestamp, size_t height) const
     if (height <= height_)
         return false;
 
-    const auto block = block_at(index_of(height));
+    const auto block = (*blocks_)[index_of(height)];
 
     if (!block)
         return false;
@@ -301,7 +298,7 @@ bool branch::get_block_hash(hash_digest& out_hash, size_t height) const
     if (height <= height_)
         return false;
 
-    const auto block = block_at(index_of(height));
+    const auto block = (*blocks_)[index_of(height)];
 
     if (!block)
         return false;

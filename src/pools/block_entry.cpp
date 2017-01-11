@@ -20,6 +20,7 @@
 #include <bitcoin/blockchain/pools/block_entry.hpp>
 
 #include <algorithm>
+#include <iostream>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -74,6 +75,14 @@ void block_entry::remove_child(block_const_ptr child) const
 
     if (it != children_.end())
         children_.erase(it);
+}
+
+std::ostream& operator<<(std::ostream& out, const block_entry& of)
+{
+    out << encode_hash(of.hash_)
+        << " " << encode_hash(of.parent())
+        << " " << of.children_.size();
+    return out;
 }
 
 // For the purpose of bimap identity only the tx hash matters.
