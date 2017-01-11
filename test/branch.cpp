@@ -23,7 +23,6 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-////using namespace bc::chain;
 using namespace bc::message;
 using namespace bc::blockchain;
 
@@ -53,7 +52,7 @@ public:
 
 BOOST_AUTO_TEST_CASE(branch__construct__always__capacity_1)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), 1u);
 }
 
@@ -61,7 +60,7 @@ BOOST_AUTO_TEST_CASE(branch__construct__always__capacity_1)
 
 BOOST_AUTO_TEST_CASE(branch__hash__default__null_hash)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(instance.hash() == null_hash);
 }
 
@@ -73,14 +72,14 @@ BOOST_AUTO_TEST_CASE(branch__hash__one_block__only_previous_block_hash)
     const auto expected = block0->hash();
     block1->header().set_previous_block_hash(expected);
 
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(instance.push_front(block1));
     BOOST_REQUIRE(instance.hash() == expected);
 }
 
 BOOST_AUTO_TEST_CASE(branch__hash__two_blocks__first_previous_block_hash)
 {
-    blockchain::branch instance;
+    branch instance;
     DECLARE_BLOCK(top, 42);
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
@@ -99,14 +98,14 @@ BOOST_AUTO_TEST_CASE(branch__hash__two_blocks__first_previous_block_hash)
 
 BOOST_AUTO_TEST_CASE(branch__height__default__zero)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE_EQUAL(instance.height(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(branch__set_height__round_trip__unchanged)
 {
     static const size_t expected = 42;
-    blockchain::branch instance;
+    branch instance;
     instance.set_height(expected);
     BOOST_REQUIRE_EQUAL(instance.height(), expected);
 }
@@ -161,7 +160,7 @@ BOOST_AUTO_TEST_CASE(branch__height_at__value__expected)
 
 BOOST_AUTO_TEST_CASE(branch__size__empty__zero)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE_EQUAL(instance.size(), 0);
 }
 
@@ -169,13 +168,13 @@ BOOST_AUTO_TEST_CASE(branch__size__empty__zero)
 
 BOOST_AUTO_TEST_CASE(branch__empty__default__true)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(instance.empty());
 }
 
 BOOST_AUTO_TEST_CASE(branch__empty__push_one__false)
 {
-    blockchain::branch instance;
+    branch instance;
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(!instance.empty());
@@ -185,13 +184,13 @@ BOOST_AUTO_TEST_CASE(branch__empty__push_one__false)
 
 BOOST_AUTO_TEST_CASE(branch__blocks__default__empty)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(instance.blocks()->empty());
 }
 
 BOOST_AUTO_TEST_CASE(branch__blocks__one__empty)
 {
-    blockchain::branch instance;
+    branch instance;
     DECLARE_BLOCK(block, 0);
     BOOST_REQUIRE(instance.push_front(block0));
     BOOST_REQUIRE(!instance.empty());
@@ -245,7 +244,7 @@ BOOST_AUTO_TEST_CASE(branch__push_front__two_unlinked__link_failure)
 
 BOOST_AUTO_TEST_CASE(branch__top__default__nullptr)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(!instance.top());
 }
 
@@ -268,7 +267,7 @@ BOOST_AUTO_TEST_CASE(branch__top__two_blocks__expected)
 
 BOOST_AUTO_TEST_CASE(branch__top_height__default__0)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE_EQUAL(instance.top_height(), 0u);
 }
 
@@ -294,13 +293,13 @@ BOOST_AUTO_TEST_CASE(branch__top_height__two_blocks__expected)
 
 BOOST_AUTO_TEST_CASE(branch__difficulty__default__zero)
 {
-    blockchain::branch instance;
+    branch instance;
     BOOST_REQUIRE(instance.difficulty() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(branch__difficulty__two_blocks__expected)
 {
-    blockchain::branch instance;
+    branch instance;
     DECLARE_BLOCK(block, 0);
     DECLARE_BLOCK(block, 1);
 
