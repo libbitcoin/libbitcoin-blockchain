@@ -22,7 +22,7 @@
 
 #include <cstddef>
 #include <boost/bimap.hpp>
-#include <boost/bimap/set_of.hpp>
+#include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -40,6 +40,9 @@ class BCB_API block_pool
 {
 public:
     block_pool(size_t maximum_depth);
+
+    // The number of blocks in the pool.
+    size_t size() const;
 
     /// Add newly-validated block (work insufficient to reorganize).
     void add(block_const_ptr valid_block);
@@ -60,22 +63,23 @@ public:
     /// This will be empty if the block already exists in the pool.
     branch::ptr get_path(block_const_ptr candidate_block) const;
 
-private:
-    // A bidirection map is used for efficient block and position retrieval.
+protected:
+    // A bidirectional map is used for efficient block and position retrieval.
     // This produces the effect of a circular buffer hash table of blocks.
     typedef boost::bimaps::bimap<
         boost::bimaps::unordered_set_of<block_entry>,
-        boost::bimaps::set_of<size_t>> blocks;
+        boost::bimaps::multiset_of<size_t>> block_entries;
 
-    void prune(block_entry::hashes&& hashes);
+    void prune(const hash_list& hashes, size_t minimum_height);
     bool exists(block_const_ptr candidate_block) const;
     block_const_ptr parent(block_const_ptr block) const;
-    void dump() const;
+    ////void log_content() const;
 
+    // This is thread safe.
     const size_t maximum_depth_;
 
     // This is guarded against filtering concurrent to writing.
-    blocks blocks_;
+    block_entries blocks_;
     mutable upgrade_mutex mutex_;
 };
 
