@@ -33,8 +33,6 @@ namespace blockchain {
 class BCB_API block_entry
 {
 public:
-    typedef std::vector<hash_digest> hashes;
-
     /// Construct an entry for the pool.
     /// Never store an invalid block in the pool.
     block_entry(block_const_ptr block);
@@ -52,13 +50,13 @@ public:
     const hash_digest& parent() const;
 
     /// The hash table entry's child (succeeding block) hashes.
-    const hashes& children() const;
+    const hash_list& children() const;
 
     /// Add block to the list of children of this block.
     void add_child(block_const_ptr child) const;
 
-    /// Add block to the list of children of this block.
-    void remove_child(block_const_ptr child) const;
+    /////// Remove block from the list of children of this block.
+    ////void remove_child(block_const_ptr child) const;
 
     /// Serializer for debugging (temporary).
     friend std::ostream& operator<<(std::ostream& out, const block_entry& of);
@@ -74,7 +72,7 @@ private:
     // TODO: could save some bytes here by holding the pointer in place of the
     // hash. This would allow navigation to the hash saving 24 bytes per child.
     // Children do not pertain to entry hash, so can be mutable.
-    mutable hashes children_;
+    mutable hash_list children_;
 };
 
 } // namespace blockchain
