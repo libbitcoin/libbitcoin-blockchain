@@ -58,7 +58,7 @@ const hash_digest& block_entry::parent() const
 // Not valid if the entry is a search key.
 const hash_list& block_entry::children() const
 {
-    BITCOIN_ASSERT(block_);
+    ////BITCOIN_ASSERT(block_);
     return children_;
 }
 
