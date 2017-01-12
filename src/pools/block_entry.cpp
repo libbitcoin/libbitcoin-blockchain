@@ -56,9 +56,9 @@ const hash_digest& block_entry::parent() const
 }
 
 // Not valid if the entry is a search key.
-const block_entry::hashes& block_entry::children() const
+const hash_list& block_entry::children() const
 {
-    BITCOIN_ASSERT(block_);
+    ////BITCOIN_ASSERT(block_);
     return children_;
 }
 
@@ -68,14 +68,14 @@ void block_entry::add_child(block_const_ptr child) const
     children_.push_back(child->hash());
 }
 
-// This is not guarded against redundant entries.
-void block_entry::remove_child(block_const_ptr child) const
-{
-    auto it = std::find(children_.begin(), children_.end(), child->hash());
-
-    if (it != children_.end())
-        children_.erase(it);
-}
+////// This is not guarded against redundant entries.
+////void block_entry::remove_child(block_const_ptr child) const
+////{
+////    auto it = std::find(children_.begin(), children_.end(), child->hash());
+////
+////    if (it != children_.end())
+////        children_.erase(it);
+////}
 
 std::ostream& operator<<(std::ostream& out, const block_entry& of)
 {
