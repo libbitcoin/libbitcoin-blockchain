@@ -95,36 +95,6 @@ BOOST_AUTO_TEST_CASE(block_entry__add_child__two__expected_order)
     BOOST_REQUIRE(instance.children()[1] == child2->hash());
 }
 
-////// remove_child
-////
-////BOOST_AUTO_TEST_CASE(block_entry__remove_child__one__sempty)
-////{
-////    block_entry instance(null_hash);
-////    const auto child = std::make_shared<const message::block>();
-////    instance.add_child(child);
-////    BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
-////
-////    instance.remove_child(child);
-////    BOOST_REQUIRE(instance.children().empty());
-////}
-////
-////BOOST_AUTO_TEST_CASE(block_entry__remove_child__two_remove_one__expected_remaining)
-////{
-////    block_entry instance(null_hash);
-////
-////    const auto child1 = std::make_shared<const message::block>();
-////    instance.add_child(child1);
-////
-////    const auto child2 = std::make_shared<message::block>();
-////    child2->header().set_previous_block_hash(hash42);
-////    const auto const_child2 = std::const_pointer_cast<const message::block>(child2);
-////    instance.add_child(const_child2);
-////    BOOST_REQUIRE_EQUAL(instance.children().size(), 2u);
-////
-////    instance.remove_child(child1);
-////    BOOST_REQUIRE(instance.children()[0] == child2->hash());
-////}
-
 // equality
 
 BOOST_AUTO_TEST_CASE(block_entry__equality__same__true)

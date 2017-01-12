@@ -55,9 +55,6 @@ public:
     /// Add block to the list of children of this block.
     void add_child(block_const_ptr child) const;
 
-    /////// Remove block from the list of children of this block.
-    ////void remove_child(block_const_ptr child) const;
-
     /// Serializer for debugging (temporary).
     friend std::ostream& operator<<(std::ostream& out, const block_entry& of);
 
