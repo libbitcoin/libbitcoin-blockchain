@@ -20,6 +20,7 @@
 #include <bitcoin/blockchain/settings.hpp>
 
 #include <algorithm>
+#include <cstdint>
 #include <thread>
 
 namespace libbitcoin {
@@ -31,10 +32,33 @@ settings::settings()
     use_libconsensus(false),
     flush_reorganizations(false),
     transaction_pool_capacity(1000),
-    block_pool_capacity(50),
+    reorganization_limit(256),
     block_version(4),
-    enabled_forks(machine::rule_fork::consensus)
+    easy_blocks(false),
+    bip16(false),
+    bip30(true),
+    bip34(true),
+    bip66(true),
+    bip65(true),
+    allow_collisions(false),
+    deep_freeze(false)
 {
+}
+
+uint32_t settings::enabled_forks() const
+{
+    using namespace machine;
+
+    uint32_t forks = no_rules;
+    forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
+    forks |= (bip16 ? rule_fork::bip16_rule : 0);
+    forks |= (bip30 ? rule_fork::bip30_rule : 0);
+    forks |= (bip34 ? rule_fork::bip34_rule : 0);
+    forks |= (bip66 ? rule_fork::bip66_rule : 0);
+    forks |= (bip65 ? rule_fork::bip65_rule : 0);
+    forks |= (allow_collisions ? rule_fork::allow_collisions : 0);
+    forks |= (deep_freeze ? rule_fork::deep_freeze : 0);
+    return forks;
 }
 
 // Use push_back due to initializer_list bug:
@@ -74,7 +98,7 @@ settings::settings(config::settings context)
 
         case config::settings::testnet:
         {
-            enabled_forks |= machine::rule_fork::easy_blocks;
+            easy_blocks = true;
 
             checkpoints.reserve(7);
             checkpoints.push_back({ "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0 });

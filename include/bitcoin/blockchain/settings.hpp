@@ -35,16 +35,26 @@ public:
     settings();
     settings(config::settings context);
 
+    /// Fork flags combiner.
+    uint32_t enabled_forks() const;
+
     /// Properties.
     uint32_t cores;
     bool priority;
     bool use_libconsensus;
     bool flush_reorganizations;
     uint32_t transaction_pool_capacity;
-    uint32_t block_pool_capacity;
+    uint32_t reorganization_limit;
     uint32_t block_version;
-    uint32_t enabled_forks;
     config::checkpoint::list checkpoints;
+    bool easy_blocks;
+    bool bip16;
+    bool bip30;
+    bool bip34;
+    bool bip66;
+    bool bip65;
+    bool allow_collisions;
+    bool deep_freeze;
 };
 
 } // namespace blockchain

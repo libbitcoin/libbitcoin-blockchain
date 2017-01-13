@@ -48,7 +48,7 @@ block_chain::block_chain(threadpool& pool,
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    block_pool_(chain_settings.block_pool_capacity),
+    block_pool_(chain_settings.reorganization_limit),
     block_organizer_(pool, *this, block_pool_, chain_settings),
     transaction_pool_(pool, *this, chain_settings),
     database_(database_settings)
