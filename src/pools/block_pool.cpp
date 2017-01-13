@@ -30,11 +30,11 @@
 
 namespace libbitcoin {
 namespace blockchain {
-    
+
 using namespace boost;
 
 block_pool::block_pool(size_t maximum_depth)
-  : maximum_depth_(maximum_depth)
+  : maximum_depth_(maximum_depth == 0 ? max_size_t : maximum_depth)
 {
 }
 

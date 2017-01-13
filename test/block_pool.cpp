@@ -87,7 +87,13 @@ block_const_ptr make_block(uint32_t id, size_t height)
 
 // construct
 
-BOOST_AUTO_TEST_CASE(block_pool__construct__maximum_depth__is_set)
+BOOST_AUTO_TEST_CASE(block_pool__construct__zero_depth__sets__maximum_value)
+{
+    block_pool_fixture instance(0);
+    BOOST_REQUIRE_EQUAL(instance.maximum_depth(), max_size_t);
+}
+
+BOOST_AUTO_TEST_CASE(block_pool__construct__nonzero_depth__round_trips)
 {
     static const size_t expected = 42;
     block_pool_fixture instance(expected);

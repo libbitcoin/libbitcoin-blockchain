@@ -31,7 +31,7 @@ settings::settings()
     use_libconsensus(false),
     flush_reorganizations(false),
     transaction_pool_capacity(1000),
-    block_pool_capacity(50),
+    reorganization_limit(0),
     block_version(4),
     enabled_forks(machine::rule_fork::consensus)
 {
