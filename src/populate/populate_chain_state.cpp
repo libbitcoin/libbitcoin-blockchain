@@ -45,7 +45,7 @@ static constexpr uint32_t unspecified = max_uint32;
 populate_chain_state::populate_chain_state(const fast_chain& chain,
     const settings& settings)
   : block_version_(settings.block_version),
-    configured_forks_(settings.enabled_forks),    
+    configured_forks_(settings.enabled_forks()),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     fast_chain_(chain)
 {
@@ -157,15 +157,15 @@ bool populate_chain_state::populate_timestamps(chain_state::data& data,
 bool populate_chain_state::populate_checkpoint(chain_state::data& data,
     const chain_state::map& map, branch::const_ptr branch) const
 {
-    if (map.allowed_duplicates_height == chain_state::map::unrequested)
+    if (map.allow_collisions_height == chain_state::map::unrequested)
     {
-        // The allowed_duplicates_hash must be null_hash if unrequested.
-        data.allowed_duplicates_hash = null_hash;
+        // The allow_collisions_hash must be null_hash if unrequested.
+        data.allow_collisions_hash = null_hash;
         return true;
     }
 
-    return get_block_hash(data.allowed_duplicates_hash,
-        map.allowed_duplicates_height, branch);
+    return get_block_hash(data.allow_collisions_hash,
+        map.allow_collisions_height, branch);
 }
 
 bool populate_chain_state::populate_all(chain_state::data& data,

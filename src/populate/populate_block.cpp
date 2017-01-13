@@ -66,7 +66,7 @@ void populate_block::populate(branch::const_ptr branch,
     // branch that will produce catostrophic results in the case of a hash
     // collision. Unspent duplicate check has cost but should not be skipped.
     //*************************************************************************
-    if (!state->is_enabled(machine::rule_fork::allowed_duplicates))
+    if (!state->is_enabled(machine::rule_fork::allow_collisions))
     {
         //*********************************************************************
         // CONSENSUS: The tx duplicate check must apply to coinbase txs.
