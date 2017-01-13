@@ -68,15 +68,6 @@ void block_entry::add_child(block_const_ptr child) const
     children_.push_back(child->hash());
 }
 
-////// This is not guarded against redundant entries.
-////void block_entry::remove_child(block_const_ptr child) const
-////{
-////    auto it = std::find(children_.begin(), children_.end(), child->hash());
-////
-////    if (it != children_.end())
-////        children_.erase(it);
-////}
-
 std::ostream& operator<<(std::ostream& out, const block_entry& of)
 {
     out << encode_hash(of.hash_)
