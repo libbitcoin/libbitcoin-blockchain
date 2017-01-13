@@ -31,7 +31,6 @@ settings::settings()
     priority(true),
     use_libconsensus(false),
     flush_reorganizations(false),
-    transaction_pool_capacity(1000),
     reorganization_limit(256),
     block_version(4),
     easy_blocks(false),

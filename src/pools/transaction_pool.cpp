@@ -61,7 +61,7 @@ using namespace std::placeholders;
 transaction_pool::transaction_pool(threadpool& pool, safe_chain& chain,
     const settings& settings)
   : stopped_(true),
-    buffer_(settings.transaction_pool_capacity),
+    buffer_(0),
     safe_chain_(chain),
     index_(pool, chain),
     ////validator_(pool, chain, settings),

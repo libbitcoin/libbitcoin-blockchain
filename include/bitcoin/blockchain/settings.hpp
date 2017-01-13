@@ -43,7 +43,6 @@ public:
     bool priority;
     bool use_libconsensus;
     bool flush_reorganizations;
-    uint32_t transaction_pool_capacity;
     uint32_t reorganization_limit;
     uint32_t block_version;
     config::checkpoint::list checkpoints;
