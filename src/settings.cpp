@@ -19,15 +19,13 @@
  */
 #include <bitcoin/blockchain/settings.hpp>
 
-#include <algorithm>
 #include <cstdint>
-#include <thread>
 
 namespace libbitcoin {
 namespace blockchain {
 
 settings::settings()
-  : cores(std::max(std::thread::hardware_concurrency(), 1u)),
+  : cores(0),
     priority(true),
     use_libconsensus(false),
     flush_reorganizations(false),

@@ -52,7 +52,7 @@ block_organizer::block_organizer(threadpool& thread_pool,
     stopped_(true),
     flush_reorganizations_(settings.flush_reorganizations),
     block_pool_(block_pool),
-    priority_pool_(threads(settings.cores), priority(settings.priority)),
+    priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
