@@ -917,7 +917,7 @@ void block_chain::read_serial(const Reader& reader) const
         // Get a read handle.
         const auto sequence = database_.begin_read();
 
-        // If read handle indicates write and reader finishes false, wait.
+        // If read handle indicates write or reader finishes false, wait.
         if (!database_.is_write_locked(sequence) && reader(sequence))
             break;
 
