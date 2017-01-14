@@ -20,7 +20,6 @@
 #include <bitcoin/blockchain/validate/validate_block.hpp>
 
 #include <algorithm>
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
