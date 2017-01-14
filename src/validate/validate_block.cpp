@@ -49,11 +49,25 @@ using namespace std::placeholders;
 
 validate_block::validate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
-  : use_libconsensus_(settings.use_libconsensus),
+  : stopped_(true),
+    use_libconsensus_(settings.use_libconsensus),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
     block_populator_(priority_pool, chain),
     state_populator_(chain, settings)
 {
+}
+
+// Start/stop sequences.
+//-----------------------------------------------------------------------------
+
+void validate_block::start()
+{
+    stopped_ = false;
+}
+
+void validate_block::stop()
+{
+    stopped_ = true;
 }
 
 // Check.
@@ -97,7 +111,11 @@ void validate_block::accept(branch::const_ptr branch,
 void validate_block::handle_populated(const code& ec, block_const_ptr block,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(block->validation.state);
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
 
     if (ec)
     {
@@ -114,8 +132,9 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
-    const auto state = block->validation.state;
     const auto sigops = std::make_shared<atomic_counter>(0);
+    const auto state = block->validation.state;
+    BITCOIN_ASSERT(state);
 
     result_handler complete_handler =
         std::bind(&validate_block::handle_accepted,
@@ -141,6 +160,12 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
 void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     atomic_counter_ptr sigops, bool bip16, result_handler handler) const
 {
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
     code ec(error::success);
     const auto buckets = priority_dispatch_.size();
     const auto& state = *block->validation.state;
@@ -181,7 +206,7 @@ void validate_block::connect(branch::const_ptr branch,
     const auto block = branch->top();
     BITCOIN_ASSERT(block && block->validation.state);
 
-    // We are reimplemeting connect, so set must timer externally.
+    // We are reimplementing connect, so must set timer externally.
     block->validation.start_connect = asio::steady_clock::now();
 
     if (block->validation.state->is_under_checkpoint())
@@ -229,6 +254,12 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         {
             if (position % buckets != bucket)
                 continue;
+
+            if (stopped())
+            {
+                handler(error::service_stopped);
+                return;
+            }
 
             const auto& prevout = inputs[input_index].previous_output();
 

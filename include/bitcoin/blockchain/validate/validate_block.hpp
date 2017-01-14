@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_BLOCK_HPP
 #define LIBBITCOIN_BLOCKCHAIN_VALIDATE_BLOCK_HPP
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -43,9 +44,18 @@ public:
     validate_block(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
+    void start();
+    void stop();
+
     code check(block_const_ptr block) const;
     void accept(branch::const_ptr branch, result_handler handler) const;
     void connect(branch::const_ptr branch, result_handler handler) const;
+
+protected:
+    inline bool validate_block::stopped() const
+    {
+        return stopped_;
+    }
 
 private:
     typedef std::atomic<size_t> atomic_counter;
@@ -66,6 +76,7 @@ private:
         size_t buckets, result_handler handler) const;
 
     // These are thread safe.
+    std::atomic<bool> stopped_;
     const bool use_libconsensus_;
     mutable dispatcher priority_dispatch_;
 

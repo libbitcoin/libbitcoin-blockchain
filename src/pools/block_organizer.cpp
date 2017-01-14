@@ -52,7 +52,7 @@ block_organizer::block_organizer(threadpool& thread_pool,
     stopped_(true),
     flush_reorganizations_(settings.flush_reorganizations),
     block_pool_(block_pool),
-    priority_pool_(threads(settings.cores), priority(settings.priority)),
+    priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
@@ -74,6 +74,7 @@ bool block_organizer::start()
 {
     stopped_ = false;
     subscriber_->start();
+    validator_.start();
 
     // Don't begin flush lock if flushing on each reorganization.
     return flush_reorganizations_ || fast_chain_.begin_writes();
@@ -81,6 +82,7 @@ bool block_organizer::start()
 
 bool block_organizer::stop()
 {
+    validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
