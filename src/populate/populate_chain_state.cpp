@@ -181,7 +181,6 @@ bool populate_chain_state::populate_all(chain_state::data& data,
         populate_checkpoint(data, map, branch));
 }
 
-// TODO: create a branch subset of the orphan pool.
 chain_state::ptr populate_chain_state::populate() const
 {
     size_t last_height;

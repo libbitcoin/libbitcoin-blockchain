@@ -274,7 +274,7 @@ bool block_chain::start()
 }
 
 // Pool start is deferred so that we don't overlap locks between initial block
-// download and catch-up sync. The latter spans orphan pool lifetime.
+// download and catch-up sync. The latter spans block pool lifetime.
 bool block_chain::start_pools()
 {
     transaction_pool_.start();
