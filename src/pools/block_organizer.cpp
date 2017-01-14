@@ -74,6 +74,7 @@ bool block_organizer::start()
 {
     stopped_ = false;
     subscriber_->start();
+    validator_.start();
 
     // Don't begin flush lock if flushing on each reorganization.
     return flush_reorganizations_ || fast_chain_.begin_writes();
@@ -81,6 +82,7 @@ bool block_organizer::start()
 
 bool block_organizer::stop()
 {
+    validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
