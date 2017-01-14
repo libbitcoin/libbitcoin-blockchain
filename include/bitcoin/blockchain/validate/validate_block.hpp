@@ -52,7 +52,7 @@ public:
     void connect(branch::const_ptr branch, result_handler handler) const;
 
 protected:
-    inline bool validate_block::stopped() const
+    inline bool stopped() const
     {
         return stopped_;
     }
