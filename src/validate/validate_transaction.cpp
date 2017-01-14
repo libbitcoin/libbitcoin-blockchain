@@ -46,11 +46,25 @@ using namespace std::placeholders;
 
 validate_transaction::validate_transaction(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings)
-  : use_libconsensus_(settings.use_libconsensus),
+  : stopped_(true),
+    use_libconsensus_(settings.use_libconsensus),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
     transaction_populator_(priority_pool, chain),
     state_populator_(chain, settings)
 {
+}
+
+// Start/stop sequences.
+//-----------------------------------------------------------------------------
+
+void validate_transaction::start()
+{
+    stopped_ = false;
+}
+
+void validate_transaction::stop()
+{
+    stopped_ = true;
 }
 
 // Check.
@@ -87,10 +101,22 @@ void validate_transaction::accept(transaction_const_ptr tx,
 void validate_transaction::handle_populated(const code& ec,
     transaction_const_ptr tx, result_handler handler) const
 {
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
     BITCOIN_ASSERT(tx->validation.state);
 
     // Run contextual tx checks.
-    handler(ec ? ec : tx->accept());
+    handler(tx->accept());
 }
 
 // Connect sequence.
@@ -130,6 +156,12 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
     for (auto input_index = bucket; input_index < inputs.size();
         input_index = ceiling_add(input_index, bucket))
     {
+        if (stopped())
+        {
+            handler(error::service_stopped);
+            return;
+        }
+
         const auto& prevout = inputs[input_index].previous_output();
 
         if (!prevout.validation.cache.is_valid())
