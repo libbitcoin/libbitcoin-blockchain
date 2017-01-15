@@ -29,6 +29,8 @@ settings::settings()
     priority(true),
     use_libconsensus(false),
     flush_reorganizations(false),
+    reject_conflicts(true),
+    minimum_fee_satoshis(1),
     reorganization_limit(256),
     block_version(4),
     easy_blocks(false),
