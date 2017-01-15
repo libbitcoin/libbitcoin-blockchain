@@ -77,8 +77,8 @@ typedef message::inventory::const_ptr inventory_const_ptr;
 typedef message::headers::ptr headers_ptr;
 typedef message::headers::const_ptr headers_const_ptr;
 
-typedef message::header_message::ptr header_ptr;
-typedef message::header_message::const_ptr header_const_ptr;
+typedef message::header::ptr header_ptr;
+typedef message::header::const_ptr header_const_ptr;
 
 typedef message::merkle_block::ptr merkle_block_ptr;
 typedef message::merkle_block::const_ptr merkle_block_const_ptr;

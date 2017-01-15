@@ -38,7 +38,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::database;
 using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
@@ -338,7 +337,7 @@ void block_chain::fetch_block_header(uint64_t height,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto header = std::make_shared<header_message>(result.header());
+        const auto header = std::make_shared<message::header>(result.header());
 
         return finish_read(slock, handler, error::success, header,
             result.height());
@@ -362,7 +361,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        const auto header = std::make_shared<header_message>(result.header());
+        const auto header = std::make_shared<message::header>(result.header());
 
         return finish_read(slock, handler, error::success, header,
             result.height());
