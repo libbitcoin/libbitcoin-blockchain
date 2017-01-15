@@ -42,8 +42,8 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/pools/block_organizer.cpp \
     src/pools/block_pool.cpp \
     src/pools/branch.cpp \
+    src/pools/transaction_organizer.cpp \
     src/pools/transaction_pool.cpp \
-    src/pools/transaction_pool_index.cpp \
     src/populate/populate_base.cpp \
     src/populate/populate_block.cpp \
     src/populate/populate_chain_state.cpp \
@@ -108,8 +108,8 @@ include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/block_organizer.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/branch.hpp \
-    include/bitcoin/blockchain/pools/transaction_pool.hpp \
-    include/bitcoin/blockchain/pools/transaction_pool_index.hpp
+    include/bitcoin/blockchain/pools/transaction_organizer.hpp \
+    include/bitcoin/blockchain/pools/transaction_pool.hpp
 
 include_bitcoin_blockchain_populatedir = ${includedir}/bitcoin/blockchain/populate
 include_bitcoin_blockchain_populate_HEADERS = \
