@@ -80,23 +80,17 @@ private:
 
         // Synchronize transaction fetch calls to one completion call.
         const auto complete = synchronize(completion_handler, size, NAME);
-        size_t index = 0;
+        size_t position = 0;
 
         for (const auto& hash: merkle->hashes())
             safe_chain_.fetch_transaction(hash,
                 std::bind(&block_fetcher::handle_fetch_transaction,
-                    shared_from_this(), _1, _2, _3, index++, block, height,
+                    shared_from_this(), _1, _2, _3, position++, block, height,
                         complete));
     }
 
-    // Avoid tx copy by swapping chain:tx and (chain)message::tx.
-    inline void swapper(chain::transaction& left, chain::transaction& right)
-    {
-        std::swap(left, right);
-    }
-
     void handle_fetch_transaction(const code& ec, transaction_ptr transaction,
-        uint64_t DEBUG_ONLY(tx_height), size_t index, block_ptr block,
+        uint64_t DEBUG_ONLY(tx_height), size_t position, block_ptr block,
         uint64_t block_height, safe_chain::block_fetch_handler handler)
     {
         if (ec)
@@ -110,7 +104,7 @@ private:
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
         mutex_.lock();
-        swapper(block->transactions()[index], *transaction);
+        block->transactions().emplace_back(std::move(*transaction));
         mutex_.unlock();
         ///////////////////////////////////////////////////////////////////////
 
