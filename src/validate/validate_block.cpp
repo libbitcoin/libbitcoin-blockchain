@@ -20,7 +20,6 @@
 #include <bitcoin/blockchain/validate/validate_block.hpp>
 
 #include <algorithm>
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -248,10 +247,10 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         size_t input_index;
         const auto& inputs = tx->inputs();
 
-        // TODO: eliminate the wasteful iterations by using smart step.
         for (input_index = 0; input_index < inputs.size();
             ++input_index, ++position)
         {
+            // TODO: eliminate the wasteful iterations by using smart step.
             if (position % buckets != bucket)
                 continue;
 

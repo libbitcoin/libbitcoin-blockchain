@@ -36,7 +36,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is not thread safe.
-/// Organises blocks via the orphan pool to the blockchain.
+/// Organises blocks via the block pool to the blockchain.
 class BCB_API block_organizer
 {
 public:

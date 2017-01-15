@@ -274,7 +274,7 @@ bool block_chain::start()
 }
 
 // Pool start is deferred so that we don't overlap locks between initial block
-// download and catch-up sync. The latter spans orphan pool lifetime.
+// download and catch-up sync. The latter spans block pool lifetime.
 bool block_chain::start_pools()
 {
     transaction_pool_.start();
@@ -917,7 +917,7 @@ void block_chain::read_serial(const Reader& reader) const
         // Get a read handle.
         const auto sequence = database_.begin_read();
 
-        // If read handle indicates write and reader finishes false, wait.
+        // If read handle indicates write or reader finishes false, wait.
         if (!database_.is_write_locked(sequence) && reader(sequence))
             break;
 

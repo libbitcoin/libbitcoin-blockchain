@@ -136,7 +136,7 @@ public:
     /// Start or restart the blockchain.
     virtual bool start();
 
-    /// Start the orphan pool and the transaction pool.
+    /// Start the block pool and the transaction pool.
     virtual bool start_pools();
 
     /// Optional signal work stop, speeds shutdown with multiple threads.
@@ -250,7 +250,7 @@ public:
     // Organizers (pools).
     //-------------------------------------------------------------------------
 
-    /// Store a block in the orphan pool, triggers may trigger reorganization.
+    /// Store a block in the block pool, triggers may trigger reorganization.
     virtual void organize(block_const_ptr block, result_handler handler);
 
     /// Store a transaction to the pool.

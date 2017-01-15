@@ -20,6 +20,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_TRANSACTION_HPP
 #define LIBBITCOIN_BLOCKCHAIN_VALIDATE_TRANSACTION_HPP
 
+#include <atomic>
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -41,9 +42,18 @@ public:
     validate_transaction(threadpool& priority_pool, const fast_chain& chain,
         const settings& settings);
 
+    void start();
+    void stop();
+
     code check(transaction_const_ptr tx) const;
     void accept(transaction_const_ptr tx, result_handler handler) const;
     void connect(transaction_const_ptr tx, result_handler handler) const;
+
+protected:
+    inline bool stopped() const
+    {
+        return stopped_;
+    }
 
 private:
     void handle_populated(const code& ec, transaction_const_ptr tx,
@@ -52,6 +62,7 @@ private:
         size_t buckets, result_handler handler) const;
 
     // These are thread safe.
+    std::atomic<bool> stopped_;
     const bool use_libconsensus_;
     mutable dispatcher priority_dispatch_;
 

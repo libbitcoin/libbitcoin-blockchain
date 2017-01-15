@@ -111,7 +111,7 @@ size_t branch::index_of(size_t height) const
 // private
 size_t branch::height_at(size_t index) const
 {
-    // The height of the blockchain branch point plus zero-based orphan index.
+    // The height of the blockchain branch point plus zero-based index.
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
