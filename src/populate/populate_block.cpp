@@ -141,10 +141,10 @@ void populate_block::populate_inputs(branch::const_ptr branch,
     {
         const auto& inputs = tx->inputs();
 
-        // TODO: eliminate the wasteful iterations by using smart step.
         for (size_t input_index = 0; input_index < inputs.size();
             ++input_index, ++position)
         {
+            // TODO: eliminate the wasteful iterations by using smart step.
             if (position % buckets != bucket)
                 continue;
 
