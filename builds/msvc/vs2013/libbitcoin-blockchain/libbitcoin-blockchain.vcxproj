@@ -107,8 +107,8 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_organizer.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_index.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_base.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_chain_state.hpp" />
@@ -126,8 +126,8 @@
     <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\branch.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\block_organizer.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\transaction_organizer.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\transaction_pool_index.cpp" />
     <ClCompile Include="..\..\..\..\src\populate\populate_base.cpp" />
     <ClCompile Include="..\..\..\..\src\populate\populate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\populate\populate_chain_state.cpp" />

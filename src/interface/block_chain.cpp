@@ -31,6 +31,7 @@
 #include <bitcoin/blockchain/interface/block_fetcher.hpp>
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -42,6 +43,7 @@ using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
+// TODO: move block_pool and transaction_pool into their respective organizers.
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings)
@@ -50,7 +52,9 @@ block_chain::block_chain(threadpool& pool,
     spin_lock_sleep_(asio::milliseconds(1)),
     block_pool_(chain_settings.reorganization_limit),
     block_organizer_(pool, *this, block_pool_, chain_settings),
-    transaction_pool_(pool, *this, chain_settings),
+    transaction_pool_(chain_settings.reject_conflicts,
+        chain_settings.minimum_fee_satoshis),
+    transaction_organizer_(pool, *this, transaction_pool_, chain_settings),
     database_(database_settings)
 {
 }
@@ -277,17 +281,17 @@ bool block_chain::start()
 // download and catch-up sync. The latter spans block pool lifetime.
 bool block_chain::start_pools()
 {
-    transaction_pool_.start();
+    transaction_organizer_.start();
     return block_organizer_.start();
 }
 
 bool block_chain::stop()
 {
     stopped_ = true;
-    transaction_pool_.stop();
 
-    // This blocks until asynchronous write operations are complete, preventing
+    // These block until asynchronous write operations are complete, preventing
     // premature suspension of dispatch by shutdown of the threadpool.
+    transaction_organizer_.stop();
     return block_organizer_.stop();
 }
 
@@ -385,7 +389,7 @@ void block_chain::fetch_merkle_block(uint64_t height,
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
                 safe_unsigned<uint32_t>(result.transaction_count()),
-                to_hashes(result), {} });
+                    to_hashes(result), {} });
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -412,7 +416,8 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
                 safe_unsigned<uint32_t>(result.transaction_count()),
-                to_hashes(result), {} });
+                    to_hashes(result), {} });
+
         return finish_read(slock, handler, error::success, merkle,
             result.height());
     };
@@ -781,6 +786,7 @@ void block_chain::fetch_locator_block_headers(
 void block_chain::fetch_floaters(size_t size,
     inventory_fetch_handler handler) const
 {
+    // This is the only tx pool call in the chain.
     transaction_pool_.fetch_inventory(size, handler);
 }
 
@@ -800,7 +806,9 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     const auto do_fetch = [this, message, handler](size_t slock)
     {
+        // This is the only block pool call in the chain.
         block_pool_.filter(message);
+
         auto& inventories = message->inventories();
         const auto& blocks = database_.blocks();
 
@@ -857,7 +865,7 @@ void block_chain::subscribe_reorganize(reorganize_handler&& handler)
 void block_chain::subscribe_transaction(transaction_handler&& handler)
 {
     // Pass this through to the tx pool, which issues the notifications.
-    transaction_pool_.subscribe_transaction(std::move(handler));
+    transaction_organizer_.subscribe_transaction(std::move(handler));
 }
 
 // Organizers (pools).
@@ -871,11 +879,7 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
 void block_chain::organize(transaction_const_ptr transaction,
     result_handler handler)
 {
-    // This is a simplification for the blockchain interface.
-    const auto unhandled = [](code) {};
-
-    // Notify only on completion of validation and accept/reject in pool.
-    transaction_pool_.organize(transaction, unhandled, handler);
+    transaction_organizer_.organize(transaction, handler);
 }
 
 // Properties (thread safe).

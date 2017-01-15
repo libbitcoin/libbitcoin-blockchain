@@ -35,7 +35,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is not thread safe.
+/// This class is thread safe.
 /// Organises blocks via the block pool to the blockchain.
 class BCB_API block_organizer
 {
@@ -96,7 +96,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool flush_reorganizations_;
+    const bool flush_writes_;
     block_pool& block_pool_;
     threadpool priority_pool_;
     validate_block validator_;

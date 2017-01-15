@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <numeric>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -50,7 +49,7 @@ block_organizer::block_organizer(threadpool& thread_pool,
     fast_chain& chain, block_pool& block_pool, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    flush_reorganizations_(settings.flush_reorganizations),
+    flush_writes_(settings.flush_reorganizations),
     block_pool_(block_pool),
     priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
@@ -77,7 +76,7 @@ bool block_organizer::start()
     validator_.start();
 
     // Don't begin flush lock if flushing on each reorganization.
-    return flush_reorganizations_ || fast_chain_.begin_writes();
+    return flush_writes_ || fast_chain_.begin_writes();
 }
 
 bool block_organizer::stop()
@@ -97,7 +96,7 @@ bool block_organizer::stop()
     stopped_ = true;
 
     // Don't end flush lock if flushing on each reorganization.
-    return flush_reorganizations_ || fast_chain_.end_writes();
+    return flush_writes_ || fast_chain_.end_writes();
     ///////////////////////////////////////////////////////////////////////////
 }
 
@@ -259,7 +258,7 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(to_const(branch), out_blocks, flush_reorganizations_,
+    fast_chain_.reorganize(to_const(branch), out_blocks, flush_writes_,
         priority_dispatch_, complete);
     //#########################################################################
 }
