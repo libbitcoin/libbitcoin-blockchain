@@ -59,48 +59,4 @@
 // Log name.
 #define LOG_BLOCKCHAIN "blockchain"
 
-namespace libbitcoin {
-namespace blockchain {
-
-typedef message::get_data::ptr get_data_ptr;
-typedef message::get_data::const_ptr get_data_const_ptr;
-
-typedef message::get_blocks::ptr get_blocks_ptr;
-typedef message::get_blocks::const_ptr get_blocks_const_ptr;
-
-typedef message::get_headers::ptr get_headers_ptr;
-typedef message::get_headers::const_ptr get_headers_const_ptr;
-
-typedef message::inventory::ptr inventory_ptr;
-typedef message::inventory::const_ptr inventory_const_ptr;
-
-typedef message::headers::ptr headers_ptr;
-typedef message::headers::const_ptr headers_const_ptr;
-
-typedef message::header::ptr header_ptr;
-typedef message::header::const_ptr header_const_ptr;
-
-typedef message::merkle_block::ptr merkle_block_ptr;
-typedef message::merkle_block::const_ptr merkle_block_const_ptr;
-
-typedef message::block::ptr block_ptr;
-typedef message::block::const_ptr block_const_ptr;
-typedef message::block::ptr_list block_ptr_list;
-typedef message::block::const_ptr_list block_const_ptr_list;
-typedef message::block::const_ptr_list_ptr block_const_ptr_list_ptr;
-typedef message::block::const_ptr_list_const_ptr
-    block_const_ptr_list_const_ptr;
-
-typedef message::transaction::ptr transaction_ptr;
-typedef message::transaction::const_ptr transaction_const_ptr;
-typedef message::transaction::ptr_list transaction_ptr_list;
-typedef message::transaction::const_ptr_list transaction_const_ptr_list;
-////typedef message::transaction::const_ptr_list_ptr
-////    transaction_const_ptr_list_ptr;
-////typedef message::transaction::const_ptr_list_const_ptr
-////    transaction_const_ptr_list_const_ptr;
-
-} // namespace blockchain
-} // namespace libbitcoin
-
 #endif
