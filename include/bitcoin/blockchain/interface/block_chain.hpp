@@ -25,7 +25,6 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -152,15 +151,14 @@ public:
     // Thread safe.
 
     /// fetch a block by height.
-    virtual void fetch_block(uint64_t height,
-        block_fetch_handler handler) const;
+    virtual void fetch_block(size_t height, block_fetch_handler handler) const;
 
     /// fetch a block by hash.
     virtual void fetch_block(const hash_digest& hash,
         block_fetch_handler handler) const;
 
     /// fetch block header by height.
-    virtual void fetch_block_header(uint64_t height,
+    virtual void fetch_block_header(size_t height,
         block_header_fetch_handler handler) const;
 
     /// fetch block header by hash.
@@ -168,7 +166,7 @@ public:
         block_header_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
-    virtual void fetch_merkle_block(uint64_t height,
+    virtual void fetch_merkle_block(size_t height,
         transaction_hashes_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block hash.
@@ -200,11 +198,10 @@ public:
 
     /// fetch outputs, values and spends for an address.
     virtual void fetch_history(const wallet::payment_address& address,
-        uint64_t limit, uint64_t from_height,
-        history_fetch_handler handler) const;
+        size_t limit, size_t from_height, history_fetch_handler handler) const;
 
     /// fetch stealth results.
-    virtual void fetch_stealth(const binary& filter, uint64_t from_height,
+    virtual void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const;
 
     /// fetch a block locator relative to the current top and threshold.
@@ -292,6 +289,13 @@ private:
     void handle_pop(const code& ec, branch::const_ptr branch, bool flush,
         dispatcher& dispatch, result_handler handler);
 
+    void handle_fetch_merkle_block(const code& ec, merkle_block_ptr merkle,
+        size_t height, block_fetch_handler handler) const;
+
+    void handle_fetch_transaction(const code& ec, transaction_ptr transaction,
+        size_t height, size_t position, shared_mutex_ptr locker,
+        block_ptr block, block_fetch_handler handler) const;
+
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
@@ -301,6 +305,7 @@ private:
     transaction_pool transaction_pool_;
     transaction_organizer transaction_organizer_;
     database::data_base database_;
+    mutable dispatcher dispatch_;
 };
 
 } // namespace blockchain
