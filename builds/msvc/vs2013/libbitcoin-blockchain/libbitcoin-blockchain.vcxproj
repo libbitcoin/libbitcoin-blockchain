@@ -100,7 +100,6 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_fetcher.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp" />
@@ -121,7 +120,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\block_fetcher.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\src\pools\branch.cpp" />
