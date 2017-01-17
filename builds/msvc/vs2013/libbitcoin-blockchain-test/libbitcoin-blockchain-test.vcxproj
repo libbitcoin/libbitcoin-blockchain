@@ -94,6 +94,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\block_chain.cpp" />
     <ClCompile Include="..\..\..\..\test\block_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\branch.cpp" />

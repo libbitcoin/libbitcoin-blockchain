@@ -37,7 +37,6 @@ src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consens
 src_libbitcoin_blockchain_la_SOURCES = \
     src/settings.cpp \
     src/interface/block_chain.cpp \
-    src/interface/block_fetcher.cpp \
     src/pools/block_entry.cpp \
     src/pools/block_organizer.cpp \
     src/pools/block_pool.cpp \
@@ -62,6 +61,7 @@ check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
+    test/block_chain.cpp \
     test/block_entry.cpp \
     test/block_pool.cpp \
     test/branch.cpp \
@@ -98,7 +98,6 @@ include_bitcoin_blockchain_HEADERS = \
 include_bitcoin_blockchain_interfacedir = ${includedir}/bitcoin/blockchain/interface
 include_bitcoin_blockchain_interface_HEADERS = \
     include/bitcoin/blockchain/interface/block_chain.hpp \
-    include/bitcoin/blockchain/interface/block_fetcher.hpp \
     include/bitcoin/blockchain/interface/fast_chain.hpp \
     include/bitcoin/blockchain/interface/safe_chain.hpp
 

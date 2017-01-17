@@ -28,7 +28,6 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
-#include <bitcoin/blockchain/interface/block_fetcher.hpp>
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_organizer.hpp>
@@ -42,6 +41,8 @@ using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
+#define NAME "block_chain"
+
 // TODO: move block_pool and transaction_pool into their respective organizers.
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
@@ -54,7 +55,8 @@ block_chain::block_chain(threadpool& pool,
     transaction_pool_(chain_settings.reject_conflicts,
         chain_settings.minimum_fee_satoshis),
     transaction_organizer_(pool, *this, transaction_pool_, chain_settings),
-    database_(database_settings)
+    database_(database_settings),
+    dispatch_(pool, NAME "_disptch")
 {
 }
 
@@ -307,21 +309,79 @@ block_chain::~block_chain()
 // Queries.
 // ----------------------------------------------------------------------------
 
-void block_chain::fetch_block(uint64_t height,
+// Fetch a block by its height.
+void block_chain::fetch_block(size_t height,
     block_fetch_handler handler) const
 {
-    // This is big so it is implemented in a helper class.
-    blockchain::fetch_block(*this, height, handler);
+    fetch_merkle_block(height,
+        std::bind(&block_chain::handle_fetch_merkle_block,
+            this, _1, _2, _3, handler));
 }
 
+// Fetch a block by its hash.
 void block_chain::fetch_block(const hash_digest& hash,
     block_fetch_handler handler) const
 {
-    // This is big so it is implemented in a helper class.
-    blockchain::fetch_block(*this, hash, handler);
+    fetch_merkle_block(hash,
+        std::bind(&block_chain::handle_fetch_merkle_block,
+            this, _1, _2, _3, handler));
 }
 
-void block_chain::fetch_block_header(uint64_t height,
+void block_chain::handle_fetch_merkle_block(const code& ec,
+    merkle_block_ptr merkle, size_t height, block_fetch_handler handler) const
+{
+    if (ec)
+    {
+        handler(ec, nullptr, 0);
+        return;
+    }
+
+    const auto& hashes = merkle->hashes();
+    const auto size = hashes.size();
+    const auto message = std::make_shared<block>(block
+    {
+        std::move(merkle->header()),
+        transaction::list(size)
+    });
+
+    BITCOIN_ASSERT(size == merkle->total_transactions());
+    const auto join_handler = synchronize(handler, size, NAME);
+    const auto locker = std::make_shared<shared_mutex>();
+
+    const transaction_fetch_handler transaction_handler =
+        std::bind(&block_chain::handle_fetch_transaction,
+            this, _1, _2, _3, _4, locker, message, join_handler);
+
+    for (size_t position = 0; position < size; ++position)
+        dispatch_.concurrent(&block_chain::fetch_transaction,
+            this, hashes[position], transaction_handler);
+}
+
+// TODO: this uses deprecated/unsafe access to transaction collection.
+void block_chain::handle_fetch_transaction(const code& ec,
+    transaction_ptr transaction, size_t height, size_t position,
+    shared_mutex_ptr locker, block_ptr block,
+    block_fetch_handler handler) const
+{
+    if (ec)
+    {
+        handler(ec, nullptr, 0);
+        return;
+    }
+
+    BITCOIN_ASSERT(position < block->transactions().size());
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    locker->lock();
+    block->transactions()[position] = std::move(*transaction);
+    locker->unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    handler(error::success, block, height);
+}
+
+void block_chain::fetch_block_header(size_t height,
     block_header_fetch_handler handler) const
 {
     if (stopped())
@@ -369,7 +429,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
     read_serial(do_fetch);
 }
 
-void block_chain::fetch_merkle_block(uint64_t height,
+void block_chain::fetch_merkle_block(size_t height,
     transaction_hashes_fetch_handler handler) const
 {
     if (stopped())
@@ -442,8 +502,7 @@ void block_chain::fetch_block_height(const hash_digest& hash,
     read_serial(do_fetch);
 }
 
-void block_chain::fetch_last_height(
-    last_height_fetch_handler handler) const
+void block_chain::fetch_last_height(last_height_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -466,7 +525,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 {
     if (stopped())
     {
-        handler(error::service_stopped, nullptr, 0);
+        handler(error::service_stopped, nullptr, 0, 0);
         return;
     }
 
@@ -475,16 +534,16 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         const auto result = database_.transactions().get(hash, max_size_t);
 
         if (!result)
-            return finish_read(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0, 0);
 
-        const auto tx = std::make_shared<transaction>(
-            result.transaction());
-        return finish_read(slock, handler, error::success, tx,
-            result.height());
+        const auto tx = std::make_shared<transaction>(result.transaction());
+        return finish_read(slock, handler, error::success, tx, result.height(),
+            result.position());
     };
     read_serial(do_fetch);
 }
 
+// same as fetch_transaction but skips the tx payload.
 void block_chain::fetch_transaction_position(const hash_digest& hash,
     transaction_index_fetch_handler handler) const
 {
@@ -550,7 +609,7 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
 }
 
 void block_chain::fetch_history(const wallet::payment_address& address,
-    uint64_t limit, uint64_t from_height, history_fetch_handler handler) const
+    size_t limit, size_t from_height, history_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -566,7 +625,7 @@ void block_chain::fetch_history(const wallet::payment_address& address,
     read_serial(do_fetch);
 }
 
-void block_chain::fetch_stealth(const binary& filter, uint64_t from_height,
+void block_chain::fetch_stealth(const binary& filter, size_t from_height,
     stealth_fetch_handler handler) const
 {
     if (stopped())

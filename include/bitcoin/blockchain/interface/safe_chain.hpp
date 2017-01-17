@@ -40,22 +40,22 @@ public:
     typedef handle0 result_handler;
 
     /// Object fetch handlers.
-    typedef handle1<uint64_t> last_height_fetch_handler;
-    typedef handle1<uint64_t> block_height_fetch_handler;
+    typedef handle1<size_t> last_height_fetch_handler;
+    typedef handle1<size_t> block_height_fetch_handler;
     typedef handle1<chain::output> output_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
     typedef handle1<chain::history_compact::list> history_fetch_handler;
     typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
-    typedef handle2<uint64_t, uint64_t> transaction_index_fetch_handler;
+    typedef handle2<size_t, size_t> transaction_index_fetch_handler;
 
     // Smart pointer parameters must not be passed by reference.
-    typedef std::function<void(const code&, merkle_block_ptr, uint64_t)>
+    typedef std::function<void(const code&, merkle_block_ptr, size_t)>
         transaction_hashes_fetch_handler;
-    typedef std::function<void(const code&, block_ptr, uint64_t)>
+    typedef std::function<void(const code&, block_ptr, size_t)>
         block_fetch_handler;
-    typedef std::function<void(const code&, header_ptr, uint64_t)>
+    typedef std::function<void(const code&, header_ptr, size_t)>
         block_header_fetch_handler;
-    typedef std::function<void(const code&, transaction_ptr, uint64_t)>
+    typedef std::function<void(const code&, transaction_ptr, size_t, size_t)>
         transaction_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
@@ -80,19 +80,19 @@ public:
     // Queries.
     // ------------------------------------------------------------------------
 
-    virtual void fetch_block(uint64_t height,
+    virtual void fetch_block(size_t height,
         block_fetch_handler handler) const = 0;
 
     virtual void fetch_block(const hash_digest& hash,
         block_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_header(uint64_t height,
+    virtual void fetch_block_header(size_t height,
         block_header_fetch_handler handler) const = 0;
 
     virtual void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_merkle_block(uint64_t height,
+    virtual void fetch_merkle_block(size_t height,
         transaction_hashes_fetch_handler handler) const = 0;
 
     virtual void fetch_merkle_block(const hash_digest& hash,
@@ -117,10 +117,10 @@ public:
         spend_fetch_handler handler) const = 0;
 
     virtual void fetch_history(const wallet::payment_address& address,
-        uint64_t limit, uint64_t from_height,
+        size_t limit, size_t from_height,
         history_fetch_handler handler) const = 0;
 
-    virtual void fetch_stealth(const binary& filter, uint64_t from_height,
+    virtual void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const = 0;
 
     virtual void fetch_block_locator(const chain::block::indexes& heights,
