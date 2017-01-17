@@ -352,6 +352,7 @@ void block_chain::handle_fetch_merkle_block(const code& ec,
         std::bind(&block_chain::handle_fetch_transaction,
             this, _1, _2, _3, _4, locker, message, join_handler);
 
+    // The hash is copied because merkle goes out of scope.
     for (size_t position = 0; position < size; ++position)
         dispatch_.concurrent(&block_chain::fetch_transaction,
             this, hashes[position], transaction_handler);
