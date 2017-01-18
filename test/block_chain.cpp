@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__found__true)
     BOOST_REQUIRE(hash == block1->hash());
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__false)
+BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__true)
 {
     threadpool pool;
     database::settings database_settings;
@@ -221,8 +221,9 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__false)
     uint256_t work;
     uint256_t maximum(0xffffffffffffffff);
 
-    // This should fail due to not being connected to the current chain.
-    BOOST_REQUIRE(!instance.get_branch_work(work, maximum, 1));
+    // This is allowed and just returns zero (standard new single block).
+    BOOST_REQUIRE(instance.get_branch_work(work, maximum, 1));
+    BOOST_REQUIRE_EQUAL(work, 0);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_zero__true)
