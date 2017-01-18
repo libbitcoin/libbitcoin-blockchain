@@ -289,13 +289,6 @@ private:
     void handle_pop(const code& ec, branch::const_ptr branch, bool flush,
         dispatcher& dispatch, result_handler handler);
 
-    void handle_fetch_merkle_block(const code& ec, merkle_block_ptr merkle,
-        size_t height, block_fetch_handler handler) const;
-
-    void handle_fetch_transaction(const code& ec, transaction_ptr transaction,
-        size_t height, size_t position, shared_mutex_ptr locker,
-        block_ptr block, block_fetch_handler handler) const;
-
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
@@ -305,7 +298,6 @@ private:
     transaction_pool transaction_pool_;
     transaction_organizer transaction_organizer_;
     database::data_base database_;
-    mutable dispatcher dispatch_;
 };
 
 } // namespace blockchain

@@ -41,8 +41,6 @@ using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
-#define NAME "block_chain"
-
 // TODO: move block_pool and transaction_pool into their respective organizers.
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
@@ -55,8 +53,7 @@ block_chain::block_chain(threadpool& pool,
     transaction_pool_(chain_settings.reject_conflicts,
         chain_settings.minimum_fee_satoshis),
     transaction_organizer_(pool, *this, transaction_pool_, chain_settings),
-    database_(database_settings),
-    dispatch_(pool, NAME "_disptch")
+    database_(database_settings)
 {
 }
 
@@ -310,76 +307,88 @@ block_chain::~block_chain()
 // ----------------------------------------------------------------------------
 
 // Fetch a block by its height.
-void block_chain::fetch_block(size_t height,
-    block_fetch_handler handler) const
+void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
 {
-    fetch_merkle_block(height,
-        std::bind(&block_chain::handle_fetch_merkle_block,
-            this, _1, _2, _3, handler));
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    const auto do_fetch = [&](size_t slock)
+    {
+        const auto block_result = database_.blocks().get(height);
+
+        if (!block_result)
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
+
+        const auto high = block_result.height();
+        const auto count = block_result.transaction_count();
+        transaction::list transactions;
+        transactions.reserve(count);
+
+        for (size_t position = 0; position < count; ++position)
+        {
+            const auto tx_result = database_.transactions().get(
+                block_result.transaction_hash(position), max_size_t);
+
+            if (!tx_result)
+                return finish_read(slock, handler, error::operation_failed,
+                nullptr, 0);
+
+            BITCOIN_ASSERT(tx_result.height() == high);
+            BITCOIN_ASSERT(tx_result.position() == position);
+            transactions.emplace_back(tx_result.transaction());
+        }
+
+        const auto block = std::make_shared<message::block>(
+            block_result.header(), std::move(transactions));
+        return finish_read(slock, handler, error::success, block, high);
+    };
+    read_serial(do_fetch);
 }
 
 // Fetch a block by its hash.
 void block_chain::fetch_block(const hash_digest& hash,
     block_fetch_handler handler) const
 {
-    fetch_merkle_block(hash,
-        std::bind(&block_chain::handle_fetch_merkle_block,
-            this, _1, _2, _3, handler));
-}
-
-void block_chain::handle_fetch_merkle_block(const code& ec,
-    merkle_block_ptr merkle, size_t height, block_fetch_handler handler) const
-{
-    if (ec)
+    if (stopped())
     {
-        handler(ec, nullptr, 0);
+        handler(error::service_stopped, nullptr, 0);
         return;
     }
 
-    const auto& hashes = merkle->hashes();
-    const auto size = hashes.size();
-    const auto message = std::make_shared<block>(block
+    const auto do_fetch = [&](size_t slock)
     {
-        std::move(merkle->header()),
-        transaction::list(size)
-    });
+        const auto block_result = database_.blocks().get(hash);
 
-    BITCOIN_ASSERT(size == merkle->total_transactions());
-    const auto join_handler = synchronize(handler, size, NAME);
-    const auto locker = std::make_shared<shared_mutex>();
+        if (!block_result)
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-    const transaction_fetch_handler transaction_handler =
-        std::bind(&block_chain::handle_fetch_transaction,
-            this, _1, _2, _3, _4, locker, message, join_handler);
+        const auto high = block_result.height();
+        const auto count = block_result.transaction_count();
+        transaction::list transactions;
+        transactions.reserve(count);
 
-    // The hash is copied because merkle goes out of scope.
-    for (size_t position = 0; position < size; ++position)
-        dispatch_.concurrent(&block_chain::fetch_transaction,
-            this, hashes[position], transaction_handler);
-}
+        for (size_t position = 0; position < count; ++position)
+        {
+            const auto tx_result = database_.transactions().get(
+                block_result.transaction_hash(position), max_size_t);
 
-// TODO: this uses deprecated/unsafe access to transaction collection.
-void block_chain::handle_fetch_transaction(const code& ec,
-    transaction_ptr transaction, size_t height, size_t position,
-    shared_mutex_ptr locker, block_ptr block,
-    block_fetch_handler handler) const
-{
-    if (ec)
-    {
-        handler(ec, nullptr, 0);
-        return;
-    }
+            if (!tx_result)
+                return finish_read(slock, handler, error::operation_failed,
+                    nullptr, 0);
 
-    BITCOIN_ASSERT(position < block->transactions().size());
+            BITCOIN_ASSERT(tx_result.height() == high);
+            BITCOIN_ASSERT(tx_result.position() == position);
+            transactions.emplace_back(tx_result.transaction());
+        }
 
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    locker->lock();
-    block->transactions()[position] = std::move(*transaction);
-    locker->unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(error::success, block, height);
+        const auto block = std::make_shared<message::block>(
+            block_result.header(), std::move(transactions));
+        return finish_read(slock, handler, error::success, block, high);
+    };
+    read_serial(do_fetch);
 }
 
 void block_chain::fetch_block_header(size_t height,
