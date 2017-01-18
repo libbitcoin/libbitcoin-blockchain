@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(validate_block__native__block_438513_tx__valid)
 {
     ////06:21:05.532171 DEBUG [blockchain] Input validation failed (stack false)
     //// lib         : false
-    //// branches       : 62
+    //// branches    : 62
     //// outpoint    : 8e51d775e0896e03149d585c0655b3001da0c55068b0885139ac6ec34cf76ba0:0
     //// script      : a914faa558780a5767f9e3be14992a578fc1cbcf483087
     //// inpoint     : 6b7f50afb8448c39f4714a73d2b181d3e3233e84670bdfda8f141db668226c54:0
