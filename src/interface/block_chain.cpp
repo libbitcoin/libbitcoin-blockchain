@@ -28,10 +28,6 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
-#include <bitcoin/blockchain/pools/block_organizer.hpp>
-#include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/transaction_organizer.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -41,18 +37,14 @@ using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
-// TODO: move block_pool and transaction_pool into their respective organizers.
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    block_pool_(chain_settings.reorganization_limit),
-    block_organizer_(pool, *this, block_pool_, chain_settings),
-    transaction_pool_(chain_settings.reject_conflicts,
-        chain_settings.minimum_fee_satoshis),
-    transaction_organizer_(pool, *this, transaction_pool_, chain_settings),
+    block_organizer_(pool, *this, chain_settings),
+    transaction_organizer_(pool, *this, chain_settings),
     database_(database_settings)
 {
 }
@@ -854,8 +846,7 @@ void block_chain::fetch_locator_block_headers(
 void block_chain::fetch_floaters(size_t size,
     inventory_fetch_handler handler) const
 {
-    // This is the only tx pool call in the chain.
-    transaction_pool_.fetch_inventory(size, handler);
+    transaction_organizer_.fetch_inventory(size, handler);
 }
 
 // Filters.
@@ -874,8 +865,7 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     const auto do_fetch = [this, message, handler](size_t slock)
     {
-        // This is the only block pool call in the chain.
-        block_pool_.filter(message);
+        block_organizer_.filter(message);
 
         auto& inventories = message->inventories();
         const auto& blocks = database_.blocks();
@@ -1023,8 +1013,8 @@ hash_list block_chain::to_hashes(const block_result& result)
     hash_list hashes;
     hashes.reserve(count);
 
-    for (size_t index = 0; index < count; ++index)
-        hashes.push_back(result.transaction_hash(index));
+    for (size_t position = 0; position < count; ++position)
+        hashes.push_back(result.transaction_hash(position));
 
     return hashes;
 }

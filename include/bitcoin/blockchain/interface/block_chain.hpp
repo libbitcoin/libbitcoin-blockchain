@@ -30,9 +30,7 @@
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
-#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_organizer.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -293,9 +291,7 @@ private:
     std::atomic<bool> stopped_;
     const settings& settings_;
     asio::duration spin_lock_sleep_;
-    block_pool block_pool_;
     block_organizer block_organizer_;
-    transaction_pool transaction_pool_;
     transaction_organizer transaction_organizer_;
     database::data_base database_;
 };

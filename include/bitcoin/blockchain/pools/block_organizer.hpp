@@ -48,13 +48,16 @@ public:
 
     /// Construct an instance.
     block_organizer(threadpool& thread_pool, fast_chain& chain,
-        block_pool& block_pool, const settings& settings);
+        const settings& settings);
 
     virtual bool start();
     virtual bool stop();
 
     virtual void organize(block_const_ptr block, result_handler handler);
     virtual void subscribe_reorganize(reorganize_handler&& handler);
+
+    /// Remove all message vectors that match block hashes.
+    virtual void filter(get_data_ptr message) const;
 
 protected:
     virtual bool stopped() const;
@@ -97,7 +100,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool flush_writes_;
-    block_pool& block_pool_;
+    block_pool block_pool_;
     threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;

@@ -40,7 +40,7 @@ transaction_pool::transaction_pool(bool reject_conflicts, uint64_t minimum_fee)
 }
 
 void transaction_pool::fetch_inventory(size_t size,
-    inventory_fetch_handler handler) const
+    safe_chain::inventory_fetch_handler handler) const
 {
     // TODO:
     handler(error::not_implemented, nullptr);

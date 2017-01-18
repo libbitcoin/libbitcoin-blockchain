@@ -32,11 +32,10 @@ namespace blockchain {
 class BCB_API transaction_pool
 {
 public:
-    typedef safe_chain::inventory_fetch_handler inventory_fetch_handler;
-
     transaction_pool(bool reject_conflicts, uint64_t minimum_fee);
 
-    void fetch_inventory(size_t size, inventory_fetch_handler handler) const;
+    void fetch_inventory(size_t size,
+        safe_chain::inventory_fetch_handler handler) const;
 
 private:
     const bool reject_conflicts_;
