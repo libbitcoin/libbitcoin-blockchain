@@ -19,6 +19,7 @@
  */
 #include <boost/test/unit_test.hpp>
 
+#include <future>
 #include <string>
 #include <bitcoin/blockchain.hpp>
 
@@ -655,5 +656,107 @@ BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
 }
 
 // safe_chain
+
+static int block_fetch_height_result(block_chain& instance,
+    block_const_ptr block, size_t height)
+{
+    std::promise<code> promise;
+    const auto handler = [=, &promise](code ec, block_ptr result_block,
+        size_t result_height)
+    {
+        if (ec)
+        {
+            promise.set_value(ec);
+            return;
+        }
+
+        const auto match = result_height == height && *result_block == *block;
+        promise.set_value(match ? error::success : error::operation_failed);
+    };
+    instance.fetch_block(height, handler);
+    return promise.get_future().get().value();
+}
+
+static int block_fetch_hash_result(block_chain& instance, block_const_ptr block,
+    size_t height)
+{
+    std::promise<code> promise;
+    const auto handler = [=, &promise](code ec, block_ptr result_block,
+        size_t result_height)
+    {
+        if (ec)
+        {
+            promise.set_value(ec);
+            return;
+        }
+
+        const auto match = result_height == height && *result_block == *block;
+        promise.set_value(match ? error::success : error::operation_failed);
+    };
+    instance.fetch_block(block->hash(), handler);
+    return promise.get_future().get().value();
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__exists__true)
+{
+    threadpool pool;
+    database::settings database_settings;
+    database_settings.directory = TEST_NAME;
+    BOOST_REQUIRE(create_database(database_settings));
+
+    blockchain::settings blockchain_settings;
+    block_chain instance(pool, blockchain_settings, database_settings);
+    BOOST_REQUIRE(instance.start());
+
+    const auto block1 = std::make_shared<const message::block>(read_block(MAINNET_BLOCK1));
+    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE_EQUAL(block_fetch_height_result(instance, block1, 1), error::success);
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__not_exists__error_not_found)
+{
+    threadpool pool;
+    database::settings database_settings;
+    database_settings.directory = TEST_NAME;
+    BOOST_REQUIRE(create_database(database_settings));
+
+    blockchain::settings blockchain_settings;
+    block_chain instance(pool, blockchain_settings, database_settings);
+    BOOST_REQUIRE(instance.start());
+
+    const auto block1 = std::make_shared<const message::block>(read_block(MAINNET_BLOCK1));
+    BOOST_REQUIRE_EQUAL(block_fetch_height_result(instance, block1, 1), error::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__exists__true)
+{
+    threadpool pool;
+    database::settings database_settings;
+    database_settings.directory = TEST_NAME;
+    BOOST_REQUIRE(create_database(database_settings));
+
+    blockchain::settings blockchain_settings;
+    block_chain instance(pool, blockchain_settings, database_settings);
+    BOOST_REQUIRE(instance.start());
+
+    const auto block1 = std::make_shared<const message::block>(read_block(MAINNET_BLOCK1));
+    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE_EQUAL(block_fetch_hash_result(instance, block1, 1), error::success);
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__not_exists__error_not_found)
+{
+    threadpool pool;
+    database::settings database_settings;
+    database_settings.directory = TEST_NAME;
+    BOOST_REQUIRE(create_database(database_settings));
+
+    blockchain::settings blockchain_settings;
+    block_chain instance(pool, blockchain_settings, database_settings);
+    BOOST_REQUIRE(instance.start());
+
+    const auto block1 = std::make_shared<const message::block>(read_block(MAINNET_BLOCK1));
+    BOOST_REQUIRE_EQUAL(block_fetch_hash_result(instance, block1, 1), error::not_found);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
