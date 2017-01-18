@@ -78,22 +78,22 @@ bool block_chain::get_block_hash(hash_digest& out_hash, size_t height) const
     return true;
 }
 
-bool block_chain::get_branch_difficulty(uint256_t& out_difficulty,
+bool block_chain::get_branch_work(uint256_t& out_work,
     const uint256_t& maximum, size_t from_height) const
 {
     size_t top;
-    if (!database_.blocks().top(top))
+    if (!database_.blocks().top(top) || from_height > top)
         return false;
 
-    out_difficulty = 0;
-    for (auto height = from_height; height <= top && out_difficulty < maximum;
+    out_work = 0;
+    for (auto height = from_height; height <= top && out_work < maximum;
         ++height)
     {
         const auto result = database_.blocks().get(height);
         if (!result)
             return false;
 
-        out_difficulty += chain::block::difficulty(result.bits());
+        out_work += chain::block::proof(result.bits());
     }
 
     return true;

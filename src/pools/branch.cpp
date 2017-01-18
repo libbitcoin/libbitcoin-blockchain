@@ -115,22 +115,22 @@ size_t branch::height_at(size_t index) const
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
-// The branch difficulty check is both a consensus check and denial of service
+// The branch work check is both a consensus check and denial of service
 // protection. It is necessary here that total claimed work exceeds that of the
 // competing chain segment (consensus), and that the work has actually been
 // expended (denial of service protection). The latter ensures we don't query
-// the chain for total segment difficulty path the branch competetiveness.
-// Once work is proven sufficient the blocks are validated, requiring each to
-// have the work required by the header accept check. It is possible that a
-// longer chain of lower work blocks could meet both above criteria. However
-// this requires the same amount of work as a shorter segment, so an attacker
-// gains no advantage from that option, and it will be caught in validation.
-uint256_t branch::difficulty() const
+// the chain for total segment work path the branch competetiveness. Once work
+// is proven sufficient the blocks are validated, requiring each to have the
+// work required by the header accept check. It is possible that a longer chain
+// of lower work blocks could meet both above criteria. However this requires
+// the same amount of work as a shorter segment, so an attacker gains no
+// advantage from that option, and it will be caught in validation.
+uint256_t branch::work() const
 {
     uint256_t total;
 
     for (auto block: *blocks_)
-        total += block->difficulty();
+        total += block->proof();
 
     return total;
 }

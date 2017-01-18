@@ -70,8 +70,8 @@ public:
     /// The number of blocks in the branch.
     size_t size() const;
 
-    /// Summarize the difficulty of the branch.
-    uint256_t difficulty() const;
+    /// Summarize the work of the branch.
+    uint256_t work() const;
 
     /// The hash of the parent of this branch (branch point).
     hash_digest hash() const;

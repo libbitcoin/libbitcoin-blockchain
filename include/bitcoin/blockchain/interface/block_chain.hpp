@@ -65,9 +65,9 @@ public:
     /// Get the hash of the block if it exists.
     bool get_block_hash(hash_digest& out_hash, size_t height) const;
 
-    /// Get the difficulty of the branch starting at the given height.
-    bool get_branch_difficulty(uint256_t& out_difficulty,
-        const uint256_t& maximum, size_t height) const;
+    /// Get the work of the branch starting at the given height.
+    bool get_branch_work(uint256_t& out_work, const uint256_t& maximum,
+        size_t height) const;
 
     /// Get the header of the block at the given height.
     bool get_header(chain::header& out_header, size_t height) const;

@@ -39,7 +39,7 @@ using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
-// Database access is limited to: push, pop, last-height, branch-difficulty,
+// Database access is limited to: push, pop, last-height, branch-work,
 // validator->populator:
 // spend: { spender }
 // block: { bits, version, timestamp }
@@ -232,17 +232,17 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     top->validation.start_notify = asio::steady_clock::now();
 
     const auto first_height = branch->height() + 1u;
-    const auto maximum = branch->difficulty();
+    const auto maximum = branch->work();
     uint256_t threshold;
 
     // The chain query will stop if it reaches the maximum.
-    if (!fast_chain_.get_branch_difficulty(threshold, maximum, first_height))
+    if (!fast_chain_.get_branch_work(threshold, maximum, first_height))
     {
         handler(error::operation_failed);
         return;
     }
 
-    if (branch->difficulty() <= threshold)
+    if (branch->work() <= threshold)
     {
         block_pool_.add(branch->top());
         handler(error::insufficient_work);
