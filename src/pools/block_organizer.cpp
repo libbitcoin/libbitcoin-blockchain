@@ -45,12 +45,12 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-block_organizer::block_organizer(threadpool& thread_pool,
-    fast_chain& chain, block_pool& block_pool, const settings& settings)
+block_organizer::block_organizer(threadpool& thread_pool, fast_chain& chain,
+    const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     flush_writes_(settings.flush_reorganizations),
-    block_pool_(block_pool),
+    block_pool_(settings.reorganization_limit),
     priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
     validator_(priority_pool_, fast_chain_, settings),
@@ -321,6 +321,11 @@ bool block_organizer::set_branch_height(branch::ptr branch)
 
     branch->set_height(height);
     return true;
+}
+
+void block_organizer::filter(get_data_ptr message) const
+{
+    block_pool_.filter(message);
 }
 
 } // namespace blockchain

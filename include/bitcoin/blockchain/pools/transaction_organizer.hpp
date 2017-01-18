@@ -26,6 +26,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_transaction.hpp>
@@ -45,13 +46,16 @@ public:
 
     /// Construct an instance.
     transaction_organizer(threadpool& thread_pool, fast_chain& chain,
-        transaction_pool& transaction_pool, const settings& settings);
+        const settings& settings);
 
     virtual bool start();
     virtual bool stop();
 
     virtual void organize(transaction_const_ptr tx, result_handler handler);
     virtual void subscribe_transaction(transaction_handler&& handler);
+
+    virtual void fetch_inventory(size_t size,
+        safe_chain::inventory_fetch_handler handler) const;
 
 protected:
     virtual bool stopped() const;
@@ -62,7 +66,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool flush_writes_;
-    transaction_pool& transaction_pool_;
+    transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
     mutable dispatcher dispatch_;

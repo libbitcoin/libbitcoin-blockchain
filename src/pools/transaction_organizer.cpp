@@ -26,6 +26,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_transaction.hpp>
 
@@ -37,17 +38,27 @@ using namespace std::placeholders;
 #define NAME "transaction_organizer"
 
 transaction_organizer::transaction_organizer(threadpool& thread_pool,
-    fast_chain& chain, transaction_pool& transaction_pool,
-    const settings& settings)
+    fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     flush_writes_(settings.flush_reorganizations),
-    transaction_pool_(transaction_pool),
+    transaction_pool_(settings.reject_conflicts, settings.minimum_fee_satoshis),
     dispatch_(thread_pool, NAME "_dispatch"),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
 {
 }
+
+// Properties.
+//-----------------------------------------------------------------------------
+
+bool transaction_organizer::stopped() const
+{
+    return stopped_;
+}
+
+// Start/stop sequences.
+//-----------------------------------------------------------------------------
 
 bool transaction_organizer::start()
 {
@@ -60,6 +71,9 @@ bool transaction_organizer::stop()
     stopped_ = true;
     return true;
 }
+
+// Organize sequence.
+//-----------------------------------------------------------------------------
 
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)
@@ -75,9 +89,10 @@ void transaction_organizer::subscribe_transaction(
     handler(error::not_implemented, nullptr);
 }
 
-bool transaction_organizer::stopped() const
+void transaction_organizer::fetch_inventory(size_t size,
+    safe_chain::inventory_fetch_handler handler) const
 {
-    return stopped_;
+    transaction_pool_.fetch_inventory(size, handler);
 }
 
 } // namespace blockchain
