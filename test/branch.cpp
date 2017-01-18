@@ -289,15 +289,15 @@ BOOST_AUTO_TEST_CASE(branch__top_height__two_blocks__expected)
     BOOST_REQUIRE_EQUAL(instance.top_height(), expected);
 }
 
-// difficulty
+// work
 
-BOOST_AUTO_TEST_CASE(branch__difficulty__default__zero)
+BOOST_AUTO_TEST_CASE(branch__work__default__zero)
 {
     branch instance;
-    BOOST_REQUIRE(instance.difficulty() == 0);
+    BOOST_REQUIRE(instance.work() == 0);
 }
 
-BOOST_AUTO_TEST_CASE(branch__difficulty__two_blocks__expected)
+BOOST_AUTO_TEST_CASE(branch__work__two_blocks__expected)
 {
     branch instance;
     DECLARE_BLOCK(block, 0);
@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE(branch__difficulty__two_blocks__expected)
     ///////////////////////////////////////////////////////////////////////////
     // TODO: devise value tests.
     ///////////////////////////////////////////////////////////////////////////
-    BOOST_REQUIRE(instance.difficulty() == 0);
+    BOOST_REQUIRE(instance.work() == 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
