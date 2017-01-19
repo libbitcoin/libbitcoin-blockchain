@@ -165,11 +165,11 @@ public:
 
     /// fetch hashes of transactions for a block, by block height.
     virtual void fetch_merkle_block(size_t height,
-        transaction_hashes_fetch_handler handler) const;
+        merkle_block_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block hash.
     virtual void fetch_merkle_block(const hash_digest& hash,
-        transaction_hashes_fetch_handler handler) const;
+        merkle_block_fetch_handler handler) const;
 
     /// fetch height of block by hash.
     virtual void fetch_block_height(const hash_digest& hash,
