@@ -298,7 +298,6 @@ block_chain::~block_chain()
 // Queries.
 // ----------------------------------------------------------------------------
 
-// Fetch a block by its height.
 void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
 {
     if (stopped())
@@ -340,7 +339,6 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
     read_serial(do_fetch);
 }
 
-// Fetch a block by its hash.
 void block_chain::fetch_block(const hash_digest& hash,
     block_fetch_handler handler) const
 {
@@ -432,7 +430,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
 }
 
 void block_chain::fetch_merkle_block(size_t height,
-    transaction_hashes_fetch_handler handler) const
+    merkle_block_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -445,8 +443,9 @@ void block_chain::fetch_merkle_block(size_t height,
         const auto result = database_.blocks().get(height);
 
         if (!result)
-            finish_read(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
+        // Hack: see safe_unsigned comments in bc::merkle_block.
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
                 safe_unsigned<uint32_t>(result.transaction_count()),
@@ -459,7 +458,7 @@ void block_chain::fetch_merkle_block(size_t height,
 }
 
 void block_chain::fetch_merkle_block(const hash_digest& hash,
-    transaction_hashes_fetch_handler handler) const
+    merkle_block_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -472,8 +471,9 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         const auto result = database_.blocks().get(hash);
 
         if (!result)
-            finish_read(slock, handler, error::not_found, nullptr, 0);
+            return finish_read(slock, handler, error::not_found, nullptr, 0);
 
+        // Hack: see safe_unsigned comments in bc::merkle_block.
         auto merkle = std::make_shared<merkle_block>(
             merkle_block{ result.header(),
                 safe_unsigned<uint32_t>(result.transaction_count()),
