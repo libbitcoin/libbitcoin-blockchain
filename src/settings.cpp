@@ -40,7 +40,7 @@ settings::settings()
     bip66(true),
     bip65(true),
     allow_collisions(false),
-    deep_freeze(false)
+    bip90(true)
 {
 }
 
@@ -56,7 +56,7 @@ uint32_t settings::enabled_forks() const
     forks |= (bip66 ? rule_fork::bip66_rule : 0);
     forks |= (bip65 ? rule_fork::bip65_rule : 0);
     forks |= (allow_collisions ? rule_fork::allow_collisions : 0);
-    forks |= (deep_freeze ? rule_fork::deep_freeze : 0);
+    forks |= (bip90 ? rule_fork::bip90_rule : 0);
     return forks;
 }
 
