@@ -55,7 +55,7 @@ public:
     bool bip66;
     bool bip65;
     bool allow_collisions;
-    bool deep_freeze;
+    bool bip90;
 };
 
 } // namespace blockchain
