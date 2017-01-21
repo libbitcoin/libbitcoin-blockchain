@@ -188,28 +188,31 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
 // Synchronous write sequence.
 // ----------------------------------------------------------------------------
 
+// This does not use the sequence lock so concurrent reading is unsafe.
+// Any failure will leave the flush lock and prevent writes (if flush is true).
 bool block_chain::insert(block_const_ptr block, size_t height, bool flush)
 {
-    // End must be paired with read, regardless of result.
-    const auto begin = database_.begin_write(flush);
-    const auto write = begin && do_insert(*block, height);
-    const auto end = database_.end_write(flush);
-    return begin && write && end;
-}
+    if (!database_.flush_lock(flush))
+        return false;
 
-bool block_chain::do_insert(const chain::block& block, size_t height)
-{
-    return database_.insert(block, height) == error::success;
+    if (database_.insert(*block, height) != error::success)
+        return false;
+
+    return database_.flush_unlock(flush);
 }
 
 // Asynchronous write sequence.
-// ------------------------------------------------------------------------ 
+// ----------------------------------------------------------------------------
 
+// This is part of safe_chain despite being async and sequence locked.
+// Any failure will leave the flush lock and prevent writes (if flush is true).
+// Regardless of flush lock status the sequence lock will prevent all reads if
+// there is a failure, leaving the sequence in a write state.
 void block_chain::reorganize(branch::const_ptr branch,
     block_const_ptr_list_ptr outgoing_blocks, bool flush,
     dispatcher& dispatch, complete_handler handler)
 {
-    // The pop handler closes the write operation.
+    // handle_push closes the write operation.
     const result_handler pop_handler =
         std::bind(&block_chain::handle_pop,
             this, _1, branch, flush, std::ref(dispatch), handler);
@@ -220,11 +223,12 @@ void block_chain::reorganize(branch::const_ptr branch,
         return;
     }
 
-    database_.pop_above(outgoing_blocks, branch->hash(), dispatch, pop_handler);
+    database_.pop_above(outgoing_blocks, branch->hash(), dispatch,
+        pop_handler);
 }
 
-void block_chain::handle_pop(const code& ec, branch::const_ptr branch, bool flush,
-    dispatcher& dispatch, result_handler handler)
+void block_chain::handle_pop(const code& ec, branch::const_ptr branch,
+    bool flush, dispatcher& dispatch, result_handler handler)
 {
     const result_handler push_handler =
         std::bind(&block_chain::handle_push,
@@ -241,13 +245,24 @@ void block_chain::handle_pop(const code& ec, branch::const_ptr branch, bool flus
         push_handler);
 }
 
+// Does not clear the flush lock on fail, in the case where flush is true.
+// If flush lock is not true the caller must prevent store use after fail.
 void block_chain::handle_push(const code& ec, bool flush,
     result_handler handler)
 {
-    const auto end_code = database_.end_write(flush) ?
-        error::success : error::operation_failed;
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
 
-    handler(ec ? ec : end_code);
+    if (!database_.end_write(flush))
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    handler(error::success);
 }
 
 // ============================================================================
@@ -256,38 +271,43 @@ void block_chain::handle_push(const code& ec, bool flush,
 
 // Startup and shutdown.
 // ----------------------------------------------------------------------------
-// TODO: make start thread safe, protect start with mutex.
+
+bool block_chain::open()
+{
+    return database_.open();
+}
 
 bool block_chain::start()
 {
-    if (!stopped() || !database_.open())
-        return false;
+    if (!stopped_)
+        return true;
 
+    // Enable pools and safe queries.
     stopped_ = false;
-    return true;
-}
 
-// Pool start is deferred so that we don't overlap locks between initial block
-// download and catch-up sync. The latter spans block pool lifetime.
-bool block_chain::start_pools()
-{
-    transaction_organizer_.start();
-    return block_organizer_.start();
+    // Pool start is deferred so that we don't overlap locks between initial
+    // block download and catch-up sync. The latter spans block pool lifetime.
+    return /*transaction_organizer_.start() &&*/ block_organizer_.start();
 }
 
 bool block_chain::stop()
 {
+    if (stopped_)
+        return true;
+
+    // Disable pools and safe queries.
     stopped_ = true;
 
     // These block until asynchronous write operations are complete, preventing
     // premature suspension of dispatch by shutdown of the threadpool.
-    transaction_organizer_.stop();
-    return block_organizer_.stop();
+    return
+        /*transaction_organizer_.stop() &&*/ block_organizer_.stop() &&
+        /*transaction_organizer_.close() &&*/ block_organizer_.close();
 }
 
 bool block_chain::close()
 {
-    return database_.close();
+    return stop() && database_.close();
 }
 
 block_chain::~block_chain()
@@ -841,7 +861,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 // Transaction Pool.
 //-----------------------------------------------------------------------------
 
-// TODO: maintain a cache of this inventory.
+// TODO: maintain a cache of this inventory (the current block template).
 // This exists only to satisfy the mempool message.
 void block_chain::fetch_floaters(size_t size,
     inventory_fetch_handler handler) const
@@ -948,26 +968,23 @@ const settings& block_chain::chain_settings() const
     return settings_;
 }
 
-// private
+// protected
 bool block_chain::stopped() const
 {
     return stopped_;
 }
 
-// Sequential locking helpers.
+// Locking helpers.
 // ----------------------------------------------------------------------------
 
-// Use to create flush lock scope around multiple closely-spaced inserts.
-bool block_chain::begin_writes()
+bool block_chain::flush_lock(bool lock)
 {
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    return database_.flush_lock();
+    return database_.flush_lock(lock);
 }
 
-bool block_chain::end_writes()
+bool block_chain::flush_unlock(bool unlock)
 {
-    return database_.flush_unlock();
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return database_.flush_unlock(unlock);
 }
 
 // private

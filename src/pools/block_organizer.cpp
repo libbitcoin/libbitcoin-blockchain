@@ -69,14 +69,27 @@ bool block_organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
+// TODO: move flush start/stop to blockchain  and add write mutex to prevent 
+// concurrent writes. Cover all block write in one CS and let txs compete for
+// write with blocks.
+// We can suspend new tx writes while a block is being processed, which should
+// limit delay to the validation process. But we will have a block populate
+// delay while mempool transactions are being written. If mempool tx writes
+// are not block-destructive we can write txs while populating blocks. But we
+// will not want to populate transactions while writing a preceding mempool tx.
+// This could invalidate the subsequent, although is that a problem? We could
+// have a block and a tx writing the same tx at the same time, resulting in 2.
+// So there needs to be a critical section around tx write.
+
 bool block_organizer::start()
 {
     stopped_ = false;
     subscriber_->start();
     validator_.start();
 
-    // Don't begin flush lock if flushing on each reorganization.
-    return flush_writes_ || fast_chain_.begin_writes();
+    // Begin Flush Lock
+    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    return fast_chain_.flush_lock(!flush_writes_);
 }
 
 bool block_organizer::stop()
@@ -85,19 +98,28 @@ bool block_organizer::stop()
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
 
-    // Ensure that this call blocks until database writes are complete.
-    // Ensure no reorganization is in process when the flush lock is cleared.
-    ///////////////////////////////////////////////////////////////////////////
     // Critical Section
-    shared_lock lock(mutex_);
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
 
-    // Ensure that a new validation will not begin after this stop. Otherwise
-    // termination of the threadpool will corrupt the database.
+    // Use scope lock over the same mutext to guard the chain against
+    // concurrent organizations as well as shutdown during organization.
     stopped_ = true;
 
-    // Don't end flush lock if flushing on each reorganization.
-    return flush_writes_ || fast_chain_.end_writes();
+    // The priority threadpool must not stop accepting work during organize.
+    priority_pool_.shutdown();
+    return true;
     ///////////////////////////////////////////////////////////////////////////
+}
+
+bool block_organizer::close()
+{
+    // This presumes that the organizer is stopped.
+    priority_pool_.join();
+
+    return fast_chain_.flush_unlock(!flush_writes_);
+    // End Flush Lock
+    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 }
 
 // Organize sequence.
@@ -107,10 +129,8 @@ bool block_organizer::stop()
 void block_organizer::organize(block_const_ptr block,
     result_handler handler)
 {
-    ///////////////////////////////////////////////////////////////////////////
     // Critical Section.
-    // Use scope lock to guard the chain against concurrent organizations.
-    // If a reorganization started after stop it will stop before writing.
+    ///////////////////////////////////////////////////////////////////////////
     const auto lock = std::make_shared<scope_lock>(mutex_);
 
     if (stopped())
@@ -307,6 +327,14 @@ void block_organizer::notify_reorganize(size_t branch_height,
     subscriber_->invoke(error::success, branch_height, branch, original);
 }
 
+// Queries.
+//-------------------------------------------------------------------------
+
+void block_organizer::filter(get_data_ptr message) const
+{
+    block_pool_.filter(message);
+}
+
 // Utility.
 //-----------------------------------------------------------------------------
 
@@ -321,11 +349,6 @@ bool block_organizer::set_branch_height(branch::ptr branch)
 
     branch->set_height(height);
     return true;
-}
-
-void block_organizer::filter(get_data_ptr message) const
-{
-    block_pool_.filter(message);
 }
 
 } // namespace blockchain

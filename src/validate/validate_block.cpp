@@ -151,6 +151,8 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto join_handler = synchronize(std::move(complete_handler), threads,
         NAME "_accept");
 
+    // If the priority threadpool is shut down when this is called the handler
+    // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < threads; ++bucket)
         priority_dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
@@ -227,6 +229,8 @@ void validate_block::connect(branch::const_ptr branch,
     const auto buckets = std::min(threads, non_coinbase_inputs);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
 
+    // If the priority threadpool is shut down when this is called the handler
+    // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::connect_inputs,
             this, block, bucket, buckets, join_handler);

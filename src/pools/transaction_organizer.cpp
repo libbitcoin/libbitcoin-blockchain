@@ -63,13 +63,26 @@ bool transaction_organizer::stopped() const
 bool transaction_organizer::start()
 {
     stopped_ = false;
-    return true;
+    subscriber_->start();
+    validator_.start();
+
+    // TODO: manage locks.
+    return false;
 }
 
 bool transaction_organizer::stop()
 {
+    validator_.stop();
+    subscriber_->stop();
+    subscriber_->invoke(error::service_stopped, nullptr);
     stopped_ = true;
     return true;
+}
+
+bool transaction_organizer::close()
+{
+    // TODO: manage unlocks.
+    return false;
 }
 
 // Organize sequence.
@@ -78,22 +91,40 @@ bool transaction_organizer::stop()
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)
 {
-    // TODO:
+    // TODO: implement organize.
     handler(error::not_implemented);
 }
+
+// Subscription.
+//-----------------------------------------------------------------------------
 
 void transaction_organizer::subscribe_transaction(
     transaction_handler&& handler)
 {
-    // TODO:
-    handler(error::not_implemented, nullptr);
+    subscriber_->subscribe(std::move(handler), error::service_stopped,
+        nullptr);
 }
 
-void transaction_organizer::fetch_inventory(size_t size,
+// private
+void transaction_organizer::notify_transaction(transaction_const_ptr tx)
+{
+    // Invoke is required here to prevent subscription parsing from creating a
+    // unsurmountable backlog during mempool message handling, etc.
+    subscriber_->invoke(error::success, tx);
+}
+
+// Queries.
+//-----------------------------------------------------------------------------
+
+// TODO: eliminate tx pool and process this directly in block_chain?
+void transaction_organizer::fetch_inventory(size_t maximum,
     safe_chain::inventory_fetch_handler handler) const
 {
-    transaction_pool_.fetch_inventory(size, handler);
+    transaction_pool_.fetch_inventory(maximum, handler);
 }
+
+// Utility.
+//-----------------------------------------------------------------------------
 
 } // namespace blockchain
 } // namespace libbitcoin
