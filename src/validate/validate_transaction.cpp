@@ -140,6 +140,8 @@ void validate_transaction::connect(transaction_const_ptr tx,
     const auto buckets = std::min(threads, total_inputs);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
 
+    // If the priority threadpool is shut down when this is called the handler
+    // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_transaction::connect_inputs,
             this, tx, bucket, buckets, join_handler);

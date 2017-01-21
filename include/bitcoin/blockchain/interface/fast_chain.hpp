@@ -93,11 +93,11 @@ public:
     // Synchronous writers.
     // ------------------------------------------------------------------------ 
 
-    /// Set the flush lock scope (for use only with insert).
-    virtual bool begin_writes() = 0;
+    /// Set the flush lock scope.
+    virtual bool flush_lock(bool lock) = 0;
 
-    /// Reset the flush lock scope (for use only with insert).
-    virtual bool end_writes() = 0;
+    /// Reset the flush lock scope.
+    virtual bool flush_unlock(bool unlock) = 0;
 
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height, bool flush) = 0;

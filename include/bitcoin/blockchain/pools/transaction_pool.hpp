@@ -34,7 +34,7 @@ class BCB_API transaction_pool
 public:
     transaction_pool(bool reject_conflicts, uint64_t minimum_fee);
 
-    void fetch_inventory(size_t size,
+    void fetch_inventory(size_t maximum,
         safe_chain::inventory_fetch_handler handler) const;
 
 private:

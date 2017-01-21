@@ -104,11 +104,11 @@ public:
     // ------------------------------------------------------------------------
     // Safe for concurrent execution with self (only).
 
-    /// Set the flush lock scope (for use only with insert).
-    bool begin_writes();
+    /// Optionally Set the flush lock scope.
+    bool flush_lock(bool unlock);
 
-    /// Reset the flush lock scope (for use only with insert).
-    bool end_writes();
+    /// Optionally reset the flush lock scope.
+    bool flush_unlock(bool unlock);
 
     /// Insert a block to the blockchain, height is checked for existence.
     bool insert(block_const_ptr block, size_t height, bool flush);
@@ -131,13 +131,13 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe except start.
 
-    /// Start or restart the blockchain.
-    virtual bool start();
+    /// Open the blockchain store.
+    virtual bool open();
 
     /// Start the block pool and the transaction pool.
-    virtual bool start_pools();
+    virtual bool start();
 
-    /// Optional signal work stop, speeds shutdown with multiple threads.
+    /// Signal pool work stop, speeds shutdown with multiple threads.
     virtual bool stop();
 
     /// Unmaps all memory and frees the database file handles.
@@ -267,7 +267,7 @@ protected:
 private:
     typedef database::data_base::handle handle;
 
-    // Sequential locking helpers.
+    // Locking helpers.
     // ----------------------------------------------------------------------------
 
     template <typename Reader>
@@ -280,8 +280,6 @@ private:
     //-----------------------------------------------------------------------------
 
     static hash_list to_hashes(const database::block_result& result);
-
-    bool do_insert(const chain::block& block, size_t height);
 
     void handle_push(const code& ec, bool flush, result_handler handler);
     void handle_pop(const code& ec, branch::const_ptr branch, bool flush,

@@ -50,17 +50,22 @@ public:
 
     virtual bool start();
     virtual bool stop();
+    virtual bool close();
 
     virtual void organize(transaction_const_ptr tx, result_handler handler);
     virtual void subscribe_transaction(transaction_handler&& handler);
 
-    virtual void fetch_inventory(size_t size,
+    virtual void fetch_inventory(size_t maximum,
         safe_chain::inventory_fetch_handler handler) const;
 
 protected:
     virtual bool stopped() const;
 
 private:
+
+    // Subscription.
+    void notify_transaction(transaction_const_ptr tx);
+
     fast_chain& fast_chain_;
 
     // These are thread safe.

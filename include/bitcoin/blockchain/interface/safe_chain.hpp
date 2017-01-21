@@ -73,6 +73,7 @@ public:
     // Startup and shutdown.
     // ------------------------------------------------------------------------
 
+    virtual bool open() = 0;
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool close() = 0;

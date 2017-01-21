@@ -52,6 +52,7 @@ public:
 
     virtual bool start();
     virtual bool stop();
+    virtual bool close();
 
     virtual void organize(block_const_ptr block, result_handler handler);
     virtual void subscribe_reorganize(reorganize_handler&& handler);
