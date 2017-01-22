@@ -171,6 +171,14 @@ public:
     virtual void fetch_merkle_block(const hash_digest& hash,
         merkle_block_fetch_handler handler) const;
 
+    /// fetch compact block by block height.
+    void fetch_compact_block(size_t height,
+        compact_block_fetch_handler handler) const;
+
+    /// fetch compact block by block hash.
+    void fetch_compact_block(const hash_digest& hash,
+        compact_block_fetch_handler handler) const;
+
     /// fetch height of block by hash.
     virtual void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) const;

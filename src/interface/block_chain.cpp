@@ -505,6 +505,21 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
     read_serial(do_fetch);
 }
 
+void block_chain::fetch_compact_block(size_t height,
+    compact_block_fetch_handler handler) const
+{
+    // TODO: implement.
+    handler(error::not_implemented, {}, 0);
+}
+
+
+void block_chain::fetch_compact_block(const hash_digest& hash,
+    compact_block_fetch_handler handler) const
+{
+    // TODO: implement.
+    handler(error::not_implemented, {}, 0);
+}
+
 void block_chain::fetch_block_height(const hash_digest& hash,
     block_height_fetch_handler handler) const
 {
