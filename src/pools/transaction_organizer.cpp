@@ -41,7 +41,7 @@ transaction_organizer::transaction_organizer(threadpool& thread_pool,
     fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    flush_writes_(settings.flush_reorganizations),
+    flush_writes_(settings.flush_writes),
     transaction_pool_(settings.reject_conflicts, settings.minimum_fee_satoshis),
     dispatch_(thread_pool, NAME "_dispatch"),
     validator_(thread_pool, fast_chain_, settings),

@@ -49,7 +49,7 @@ block_organizer::block_organizer(threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    flush_writes_(settings.flush_reorganizations),
+    flush_writes_(settings.flush_writes),
     block_pool_(settings.reorganization_limit),
     priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
