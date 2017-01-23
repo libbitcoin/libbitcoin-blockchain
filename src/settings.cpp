@@ -28,7 +28,7 @@ settings::settings()
   : cores(0),
     priority(true),
     use_libconsensus(false),
-    flush_reorganizations(false),
+    flush_writes(false),
     reject_conflicts(true),
     minimum_fee_satoshis(1),
     reorganization_limit(256),

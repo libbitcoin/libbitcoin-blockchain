@@ -42,7 +42,7 @@ public:
     uint32_t cores;
     bool priority;
     bool use_libconsensus;
-    bool flush_reorganizations;
+    bool flush_writes;
     bool reject_conflicts;
     uint64_t minimum_fee_satoshis;
     uint32_t reorganization_limit;
