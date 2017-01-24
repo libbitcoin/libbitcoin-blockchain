@@ -52,6 +52,11 @@ transaction_entry::transaction_entry(const hash_digest& hash)
 {
 }
 
+bool transaction_entry::is_anchor() const
+{
+    return parents_.empty();
+}
+
 // Not valid if the entry is a search key.
 size_t transaction_entry::size() const
 {

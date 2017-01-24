@@ -47,6 +47,9 @@ public:
     /// Use this construction only as a search key.
     transaction_entry(const hash_digest& hash);
 
+    /// An anchor tx binds a subgraph to the chain and is not itself mempool.
+    bool is_anchor() const;
+
     /// The size for the purpose of block limit computation.
     size_t size() const;
 
