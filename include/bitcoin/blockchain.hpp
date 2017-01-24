@@ -30,6 +30,7 @@
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/transaction_entry.hpp>
 #include <bitcoin/blockchain/pools/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/populate/populate_base.hpp>
