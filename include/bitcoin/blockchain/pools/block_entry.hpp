@@ -21,7 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
 
 #include <iostream>
-#include <vector>
+////#include <memory>
 #include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -33,6 +33,9 @@ namespace blockchain {
 class BCB_API block_entry
 {
 public:
+    ////typedef std::shared_ptr<transaction_entry> ptr;
+    ////typedef std::vector<ptr> list;
+
     /// Construct an entry for the pool.
     /// Never store an invalid block in the pool.
     block_entry(block_const_ptr block);
@@ -68,7 +71,7 @@ private:
 
     // TODO: could save some bytes here by holding the pointer in place of the
     // hash. This would allow navigation to the hash saving 24 bytes per child.
-    // Children do not pertain to entry hash, so can be mutable.
+    // Children do not pertain to entry hash, so must be mutable.
     mutable hash_list children_;
 };
 

@@ -99,8 +99,10 @@
     <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\branch.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
+    <ClCompile Include="..\..\..\..\test\transaction_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
+    <ClCompile Include="..\..\..\..\test\validate_transaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

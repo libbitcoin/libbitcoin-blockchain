@@ -41,6 +41,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/pools/block_organizer.cpp \
     src/pools/block_pool.cpp \
     src/pools/branch.cpp \
+    src/pools/transaction_entry.cpp \
     src/pools/transaction_organizer.cpp \
     src/pools/transaction_pool.cpp \
     src/populate/populate_base.cpp \
@@ -66,8 +67,10 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/block_pool.cpp \
     test/branch.cpp \
     test/main.cpp \
+    test/transaction_entry.cpp \
     test/transaction_pool.cpp \
-    test/validate_block.cpp
+    test/validate_block.cpp \
+    test/validate_transaction.cpp
 
 endif WITH_TESTS
 
@@ -107,6 +110,7 @@ include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/block_organizer.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/branch.hpp \
+    include/bitcoin/blockchain/pools/transaction_entry.hpp \
     include/bitcoin/blockchain/pools/transaction_organizer.hpp \
     include/bitcoin/blockchain/pools/transaction_pool.hpp
 
