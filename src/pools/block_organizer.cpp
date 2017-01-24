@@ -49,7 +49,6 @@ block_organizer::block_organizer(threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    flush_writes_(settings.flush_writes),
     block_pool_(settings.reorganization_limit),
     priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
@@ -69,27 +68,12 @@ bool block_organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-// TODO: move flush start/stop to blockchain  and add write mutex to prevent 
-// concurrent writes. Cover all block write in one CS and let txs compete for
-// write with blocks.
-// We can suspend new tx writes while a block is being processed, which should
-// limit delay to the validation process. But we will have a block populate
-// delay while mempool transactions are being written. If mempool tx writes
-// are not block-destructive we can write txs while populating blocks. But we
-// will not want to populate transactions while writing a preceding mempool tx.
-// This could invalidate the subsequent, although is that a problem? We could
-// have a block and a tx writing the same tx at the same time, resulting in 2.
-// So there needs to be a critical section around tx write.
-
 bool block_organizer::start()
 {
     stopped_ = false;
     subscriber_->start();
     validator_.start();
-
-    // Begin Flush Lock
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    return fast_chain_.flush_lock(!flush_writes_);
+    return true;
 }
 
 bool block_organizer::stop()
@@ -102,8 +86,7 @@ bool block_organizer::stop()
     ///////////////////////////////////////////////////////////////////////////
     unique_lock lock(mutex_);
 
-    // Use scope lock over the same mutext to guard the chain against
-    // concurrent organizations as well as shutdown during organization.
+    // Scope lock guards against concurrent organization and shutdown during.
     stopped_ = true;
 
     // The priority threadpool must not stop accepting work during organize.
@@ -114,12 +97,9 @@ bool block_organizer::stop()
 
 bool block_organizer::close()
 {
-    // This presumes that the organizer is stopped.
+    BITCOIN_ASSERT(stopped_);
     priority_pool_.join();
-
-    return fast_chain_.flush_unlock(!flush_writes_);
-    // End Flush Lock
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return true;
 }
 
 // Organize sequence.
@@ -186,7 +166,7 @@ void block_organizer::organize(block_const_ptr block,
     // Checks that are dependent on chain state and prevouts.
     // The branch may not have sufficient work to reorganize at this point, but
     // we must at least know if work required is sufficient in order to retain.
-    validator_.accept(to_const(branch), accept_handler);
+    validator_.accept(branch, accept_handler);
 }
 
 // private
@@ -226,7 +206,7 @@ void block_organizer::handle_accept(const code& ec, branch::ptr branch,
             this, _1, branch, handler);
 
     // Checks that include script validation.
-    validator_.connect(to_const(branch), connect_handler);
+    validator_.connect(branch, connect_handler);
 }
 
 // private
@@ -274,12 +254,11 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     
     const auto complete =
         std::bind(&block_organizer::handle_reorganized,
-            this, _1, to_const(branch), out_blocks, handler);
+            this, _1, branch, out_blocks, handler);
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(to_const(branch), out_blocks, flush_writes_,
-        priority_dispatch_, complete);
+    fast_chain_.reorganize(branch, out_blocks, priority_dispatch_, complete);
     //#########################################################################
 }
 
@@ -302,7 +281,7 @@ void block_organizer::handle_reorganized(const code& ec, branch::const_ptr branc
 
     // TODO: we can notify before reorg for mining scenario.
     // v3 reorg block order is reverse of v2, branch.back() is the new top.
-    notify_reorganize(branch->height(), branch->blocks(), to_const(outgoing));
+    notify_reorganize(branch->height(), branch->blocks(), outgoing);
 
     // This is the end of the verify sub-sequence.
     handler(error::success);
