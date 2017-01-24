@@ -126,6 +126,8 @@ void transaction_entry::remove_child(ptr child)
 {
     const auto it = find(children_.begin(), children_.end(), child);
 
+    // TODO: this is a placeholder for subtree purge.
+    // TODO: manage removal of bidirectional link add/remove.
     if (it != children_.end())
         children_.erase(it);
 }
