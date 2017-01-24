@@ -87,7 +87,7 @@ const hash_digest& transaction_entry::hash() const
     return hash_;
 }
 
-void transaction_entry::mark(bool value) const
+void transaction_entry::mark(bool value)
 {
     marked_ = value;
 }
@@ -110,15 +110,24 @@ const transaction_entry::list& transaction_entry::children() const
 }
 
 // This is not guarded against redundant entries.
-void transaction_entry::add_child(ptr child) const
+void transaction_entry::add_parent(ptr parent)
+{
+    parents_.push_back(parent);
+}
+
+// This is not guarded against redundant entries.
+void transaction_entry::add_child(ptr child)
 {
     children_.push_back(child);
 }
 
-// This is not guarded against redundant entries.
-void transaction_entry::add_parent(ptr parent) const
+// This is guarded against missing entries.
+void transaction_entry::remove_child(ptr child)
 {
-    parents_.push_back(parent);
+    const auto it = find(children_.begin(), children_.end(), child);
+
+    if (it != children_.end())
+        children_.erase(it);
 }
 
 std::ostream& operator<<(std::ostream& out, const transaction_entry& of)
@@ -127,12 +136,6 @@ std::ostream& operator<<(std::ostream& out, const transaction_entry& of)
         << " " << of.parents_.size()
         << " " << of.children_.size();
     return out;
-}
-
-// For the purpose of bimap identity only the tx hash matters.
-bool transaction_entry::operator==(const transaction_entry& other) const
-{
-    return hash_ == other.hash_;
 }
 
 } // namespace blockchain

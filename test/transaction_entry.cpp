@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_block_hash__expected
 
 BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__parents__false)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     const auto parent = make_instance();
     instance.add_parent(parent);
     BOOST_REQUIRE(!instance.is_anchor());
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__parents__false)
 
 BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__children__true)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     const auto child = make_instance();
     instance.add_child(child);
     BOOST_REQUIRE(instance.is_anchor());
@@ -111,14 +111,14 @@ BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__children__true)
 
 BOOST_AUTO_TEST_CASE(transaction_entry__mark__true__expected)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     instance.mark(true);
     BOOST_REQUIRE(instance.is_marked());
 }
 
 BOOST_AUTO_TEST_CASE(transaction_entry__mark__true_false__expected)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     instance.mark(true);
     instance.mark(false);
     BOOST_REQUIRE(!instance.is_marked());
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(transaction_entry__mark__default__false)
 
 BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     instance.mark(true);
     BOOST_REQUIRE(instance.is_marked());
 }
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
 
 BOOST_AUTO_TEST_CASE(transaction_entry__add_parent__one__expected_parents)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     const auto parent = make_instance();
     instance.add_parent(parent);
     BOOST_REQUIRE_EQUAL(instance.parents().size(), 1u);
@@ -154,29 +154,44 @@ BOOST_AUTO_TEST_CASE(transaction_entry__add_parent__one__expected_parents)
 
 BOOST_AUTO_TEST_CASE(transaction_entry__add_child__one__expected_children)
 {
-    const transaction_entry instance(make_tx());
+    transaction_entry instance(make_tx());
     const auto child = make_instance();
     instance.add_child(child);
     BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
     BOOST_REQUIRE_EQUAL(instance.children().front(), child);
 }
 
-// equality
+// remove_child
 
-BOOST_AUTO_TEST_CASE(transaction_entry__equality__same__true)
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__not_found__empty)
 {
-    const auto tx = make_tx();
-    transaction_entry instance1(tx);
-    transaction_entry instance2(tx->hash());
-    BOOST_REQUIRE(instance1 == instance2);
+    transaction_entry instance(make_tx());
+    const auto child = make_instance();
+    instance.remove_child(child);
+    BOOST_REQUIRE(instance.children().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_entry__equality__different__false)
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__only_found__empty)
 {
-    const auto tx = make_tx();
-    transaction_entry instance1(tx);
-    transaction_entry instance2(null_hash);
-    BOOST_REQUIRE(!(instance1 == instance2));
+    transaction_entry instance(make_tx());
+    const auto child = make_instance();
+    instance.add_child(child);
+    BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
+    instance.remove_child(child);
+    BOOST_REQUIRE(instance.children().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__one_of_two__expected_one_remains)
+{
+    transaction_entry instance(make_tx());
+    const auto child1 = make_instance();
+    const auto child2 = make_instance();
+    instance.add_child(child1);
+    instance.add_child(child2);
+    BOOST_REQUIRE_EQUAL(instance.children().size(), 2u);
+    instance.remove_child(child1);
+    BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
+    BOOST_REQUIRE_EQUAL(instance.children().front(), child2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

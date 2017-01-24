@@ -37,8 +37,6 @@ class BCB_API transaction_entry
 {
 public:
     typedef std::shared_ptr<transaction_entry> ptr;
-
-    // TODO: make this a hash table to support large transactions.
     typedef std::vector<ptr> list;
 
     /// Construct an entry for the pool.
@@ -70,7 +68,7 @@ public:
     const hash_digest& hash() const;
 
     /// Used for DAG traversal.
-    void mark(bool value) const;
+    void mark(bool value);
 
     /// Used for DAG traversal.
     bool is_marked() const;
@@ -82,21 +80,23 @@ public:
     const list& children() const;
 
     /// Add transaction to the list of children of this transaction.
-    void add_child(ptr child) const;
+    void add_parent(ptr parent);
 
     /// Add transaction to the list of children of this transaction.
-    void add_parent(ptr parent) const;
+    void add_child(ptr child);
+
+    /// Parents are never removed, as this invalidates the child.
+    /// Removal of a child causing the subgraph connected to it to be pruned.
+    void remove_child(ptr child);
 
     /// Serializer for debugging (temporary).
     friend std::ostream& operator<<(std::ostream& out,
         const transaction_entry& of);
 
-    /// Operators.
-    bool operator==(const transaction_entry& other) const;
-
 private:
     // These are non-const to allow for default copy construction.
     // TODO: can save 8 bytes per entry by limiting size/sigops to 32 bit.
+    // TODO: could remove the hash and navigate to it via a bimap.
     size_t size_;
     size_t sigops_;
     uint64_t fees_;
@@ -104,32 +104,14 @@ private:
     hash_digest hash_;
 
     // Used in DAG search.
-    mutable bool marked_;
+    bool marked_;
 
     // These do not affect the entry hash, so must be mutable.
-    mutable list parents_;
-    mutable list children_;
+    list parents_;
+    list children_;
 };
 
 } // namespace blockchain
 } // namespace libbitcoin
-
-// Standard (boost) hash.
-//-----------------------------------------------------------------------------
-
-namespace boost
-{
-
-// Extend boost namespace with our transaction_const_ptr hash function.
-template <>
-struct hash<bc::blockchain::transaction_entry>
-{
-    size_t operator()(const bc::blockchain::transaction_entry& entry) const
-    {
-        return boost::hash<bc::hash_digest>()(entry.hash());
-    }
-};
-
-} // namespace boost
 
 #endif
