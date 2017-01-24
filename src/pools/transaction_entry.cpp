@@ -87,6 +87,16 @@ const hash_digest& transaction_entry::hash() const
     return hash_;
 }
 
+void transaction_entry::mark(bool value) const
+{
+    marked_ = value;
+}
+
+bool transaction_entry::is_marked() const
+{
+    return marked_;
+}
+
 // Not valid if the entry is a search key.
 const transaction_entry::list& transaction_entry::parents() const
 {

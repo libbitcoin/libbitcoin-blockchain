@@ -37,12 +37,14 @@ class BCB_API transaction_entry
 {
 public:
     typedef std::shared_ptr<transaction_entry> ptr;
+
+    // TODO: make this a hash table to support large transactions.
     typedef std::vector<ptr> list;
 
     /// Construct an entry for the pool.
     /// Never store an invalid transaction in the pool except for the cases of:
     /// double spend and input invalid due to forks change (sentinel forks).
-    transaction_entry(transaction_const_ptr block);
+    transaction_entry(transaction_const_ptr tx);
 
     /// Use this construction only as a search key.
     transaction_entry(const hash_digest& hash);
@@ -66,6 +68,12 @@ public:
 
     /// The hash table entry identity.
     const hash_digest& hash() const;
+
+    /// Used for DAG traversal.
+    void mark(bool value) const;
+
+    /// Used for DAG traversal.
+    bool is_marked() const;
 
     /// The hash table entry's parent (prevout transaction) hashes.
     const list& parents() const;
