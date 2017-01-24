@@ -29,11 +29,17 @@
 namespace libbitcoin {
 namespace blockchain {
 
+// Space optimization since valid sigops and size are never close to 32 bits.
+inline uint32_t cap(size_t value)
+{
+    return domain_constrain<uint32_t>(value);
+}
+
 // TODO: implement size, sigops, and fees caching on chain::transaction.
 // This requires the full population of transaction.validation metadata.
 transaction_entry::transaction_entry(transaction_const_ptr tx)
- : size_(tx->serialized_size(message::version::level::canonical)),
-   sigops_(tx->signature_operations()),
+ : size_(cap(tx->serialized_size(message::version::level::canonical))),
+   sigops_(cap(tx->signature_operations())),
    fees_(tx->fees()),
    forks_(tx->validation.state->enabled_forks()),
    hash_(tx->hash()),
@@ -58,18 +64,6 @@ bool transaction_entry::is_anchor() const
 }
 
 // Not valid if the entry is a search key.
-size_t transaction_entry::size() const
-{
-    return size_;
-}
-
-// Not valid if the entry is a search key.
-size_t transaction_entry::sigops() const
-{
-    return sigops_;
-}
-
-// Not valid if the entry is a search key.
 uint64_t transaction_entry::fees() const
 {
     return fees_;
@@ -82,9 +76,31 @@ uint32_t transaction_entry::forks() const
 }
 
 // Not valid if the entry is a search key.
+size_t transaction_entry::sigops() const
+{
+    return sigops_;
+}
+
+// Not valid if the entry is a search key.
+size_t transaction_entry::size() const
+{
+    return size_;
+}
+
+// Not valid if the entry is a search key.
 const hash_digest& transaction_entry::hash() const
 {
     return hash_;
+}
+
+void transaction_entry::mark(bool value)
+{
+    marked_ = value;
+}
+
+bool transaction_entry::is_marked() const
+{
+    return marked_;
 }
 
 // Not valid if the entry is a search key.
@@ -100,15 +116,26 @@ const transaction_entry::list& transaction_entry::children() const
 }
 
 // This is not guarded against redundant entries.
-void transaction_entry::add_child(ptr child) const
+void transaction_entry::add_parent(ptr parent)
+{
+    parents_.push_back(parent);
+}
+
+// This is not guarded against redundant entries.
+void transaction_entry::add_child(ptr child)
 {
     children_.push_back(child);
 }
 
-// This is not guarded against redundant entries.
-void transaction_entry::add_parent(ptr parent) const
+// This is guarded against missing entries.
+void transaction_entry::remove_child(ptr child)
 {
-    parents_.push_back(parent);
+    const auto it = find(children_.begin(), children_.end(), child);
+
+    // TODO: this is a placeholder for subtree purge.
+    // TODO: manage removal of bidirectional link add/remove.
+    if (it != children_.end())
+        children_.erase(it);
 }
 
 std::ostream& operator<<(std::ostream& out, const transaction_entry& of)
@@ -117,12 +144,6 @@ std::ostream& operator<<(std::ostream& out, const transaction_entry& of)
         << " " << of.parents_.size()
         << " " << of.children_.size();
     return out;
-}
-
-// For the purpose of bimap identity only the tx hash matters.
-bool transaction_entry::operator==(const transaction_entry& other) const
-{
-    return hash_ == other.hash_;
 }
 
 } // namespace blockchain

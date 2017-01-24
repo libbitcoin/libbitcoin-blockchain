@@ -80,6 +80,9 @@ void block_pool::add(block_const_ptr_list_const_ptr valid_blocks)
     std::for_each(valid_blocks->begin(), valid_blocks->end(), insert);
 }
 
+// The pool is a forest connected to the chain at the roots of each tree.
+// We delete only roots, pulling the tree "down" as we go based on expiration
+// or acceptance. So there is never internal removal of a node.
 void block_pool::remove(block_const_ptr_list_const_ptr accepted_blocks)
 {
     hash_list child_hashes;
