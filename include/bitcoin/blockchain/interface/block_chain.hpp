@@ -104,14 +104,8 @@ public:
     // ------------------------------------------------------------------------
     // Safe for concurrent execution with self (only).
 
-    /// Optionally Set the flush lock scope.
-    bool flush_lock(bool unlock);
-
-    /// Optionally reset the flush lock scope.
-    bool flush_unlock(bool unlock);
-
     /// Insert a block to the blockchain, height is checked for existence.
-    bool insert(block_const_ptr block, size_t height, bool flush);
+    bool insert(block_const_ptr block, size_t height);
 
     // Asynchronous writer.
     // ------------------------------------------------------------------------
@@ -120,8 +114,8 @@ public:
 
     /// Swap incoming and outgoing blocks, height is validated.
     void reorganize(branch::const_ptr branch,
-        block_const_ptr_list_ptr outgoing_blocks, bool flush,
-        dispatcher& dispatch, complete_handler handler);
+        block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
+        complete_handler handler);
 
     // ========================================================================
     // SAFE CHAIN
@@ -262,7 +256,7 @@ public:
         result_handler handler);
 
     // Properties.
-    //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
@@ -276,7 +270,7 @@ private:
     typedef database::data_base::handle handle;
 
     // Locking helpers.
-    // ----------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     template <typename Reader>
     void read_serial(const Reader& reader) const;
@@ -285,12 +279,12 @@ private:
     bool finish_read(handle sequence, Handler handler, Args... args) const;
 
     // Utilities.
-    //-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
 
     static hash_list to_hashes(const database::block_result& result);
 
-    void handle_push(const code& ec, bool flush, result_handler handler);
-    void handle_pop(const code& ec, branch::const_ptr branch, bool flush,
+    void handle_push(const code& ec, result_handler handler);
+    void handle_pop(const code& ec, branch::const_ptr branch,
         dispatcher& dispatch, result_handler handler);
 
     // These are thread safe.

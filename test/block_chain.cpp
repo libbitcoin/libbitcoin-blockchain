@@ -58,17 +58,18 @@ using namespace boost::filesystem;
 #define TEST_NAME \
     std::string(boost::unit_test::framework::current_test_case().p_name)
 
-#define OPEN_BLOCKCHAIN(name) \
+#define OPEN_BLOCKCHAIN(name, flush) \
     threadpool pool; \
     database::settings database_settings; \
     database_settings.directory = TEST_NAME; \
     BOOST_REQUIRE(create_database(database_settings)); \
     blockchain::settings blockchain_settings; \
+    blockchain_settings.flush_writes = flush; \
     block_chain name(pool, blockchain_settings, database_settings); \
     BOOST_REQUIRE(name.open())
 
-#define START_BLOCKCHAIN(name) \
-    OPEN_BLOCKCHAIN(name); \
+#define START_BLOCKCHAIN(name, flush) \
+    OPEN_BLOCKCHAIN(name, flush); \
     BOOST_REQUIRE(name.start())
 
 #define NEW_BLOCK(height) \
@@ -116,30 +117,30 @@ BOOST_AUTO_TEST_SUITE(fast_chain_tests)
 
 BOOST_AUTO_TEST_CASE(block_chain__insert__flushed__expected)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, true);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, true));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE(instance.get_block_exists(block1->hash()));
     BOOST_REQUIRE(instance.get_block_exists(chain::block::genesis_mainnet().hash()));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__insert__unflushed__expected_block)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE(instance.get_block_exists(block1->hash()));
     BOOST_REQUIRE(instance.get_block_exists(chain::block::genesis_mainnet().hash()));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_gaps__none__none)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     database::block_database::heights heights;
     BOOST_REQUIRE(instance.get_gaps(heights));
@@ -148,10 +149,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_gaps__none__none)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_gaps__one__one)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     database::block_database::heights heights;
     BOOST_REQUIRE(instance.get_gaps(heights));
@@ -161,7 +162,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_gaps__one__one)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     hash_digest hash;
     BOOST_REQUIRE(!instance.get_block_hash(hash, 1));
@@ -169,10 +170,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     hash_digest hash;
     BOOST_REQUIRE(instance.get_block_hash(hash, 1));
@@ -181,7 +182,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     uint256_t work;
     uint256_t maximum(max_uint64);
@@ -193,7 +194,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_zero__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     uint256_t work;
     uint256_t maximum(0);
@@ -205,10 +206,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_zero__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_one__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     uint256_t work;
     uint256_t maximum(genesis_mainnet_work);
 
@@ -219,12 +220,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_one__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     uint256_t work;
     uint256_t maximum(max_uint64);
@@ -236,7 +237,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_header__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     chain::header header;
     BOOST_REQUIRE(!instance.get_header(header, 1));
@@ -244,10 +245,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_header__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_header__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     chain::header header;
     BOOST_REQUIRE(instance.get_header(header, 1));
@@ -256,7 +257,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_header__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_height__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     size_t height;
     BOOST_REQUIRE(!instance.get_height(height, null_hash));
@@ -264,10 +265,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_height__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_height__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     size_t height;
     BOOST_REQUIRE(instance.get_height(height, block1->hash()));
@@ -276,7 +277,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_height__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_bits__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     uint32_t bits;
     BOOST_REQUIRE(!instance.get_bits(bits, 1));
@@ -284,10 +285,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_bits__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_bits__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     uint32_t bits;
     BOOST_REQUIRE(instance.get_bits(bits, 1));
@@ -296,7 +297,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_bits__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     uint32_t timestamp;
     BOOST_REQUIRE(!instance.get_timestamp(timestamp, 1));
@@ -304,10 +305,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     uint32_t timestamp;
     BOOST_REQUIRE(instance.get_timestamp(timestamp, 1));
@@ -316,7 +317,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_version__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     uint32_t version;
     BOOST_REQUIRE(!instance.get_version(version, 1));
@@ -324,10 +325,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_version__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_version__found__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
 
     uint32_t version;
     BOOST_REQUIRE(instance.get_version(version, 1));
@@ -336,12 +337,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_version__found__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_last_height__no_gaps__last_block)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     size_t height;
     BOOST_REQUIRE(instance.get_last_height(height));
@@ -350,10 +351,10 @@ BOOST_AUTO_TEST_CASE(block_chain__get_last_height__no_gaps__last_block)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_last_height__gap__last_block)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     size_t height;
     BOOST_REQUIRE(instance.get_last_height(height));
@@ -362,7 +363,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_last_height__gap__last_block)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_output__not_found__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     chain::output output;
     size_t height;
@@ -374,12 +375,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__not_found__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_output__found__expected)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     chain::output output;
     size_t height;
@@ -396,12 +397,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__found__expected)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_output__above_fork__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     chain::output output;
     size_t height;
@@ -412,12 +413,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__above_fork__false)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_at_fork__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     const auto hash = block2->transactions()[0].hash();
     BOOST_REQUIRE(instance.get_is_unspent_transaction(hash, 2));
@@ -425,12 +426,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_at_fork__t
 
 BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_above_fork__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     const auto hash = block2->transactions()[0].hash();
     BOOST_REQUIRE(!instance.get_is_unspent_transaction(hash, 1));
@@ -443,12 +444,12 @@ BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__spent_below_fork__
 
 BOOST_AUTO_TEST_CASE(block_chain__get_transaction__exists__true)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     size_t height;
     const auto hash = block1->transactions()[0].hash();
@@ -458,11 +459,11 @@ BOOST_AUTO_TEST_CASE(block_chain__get_transaction__exists__true)
 
 BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
 {
-    OPEN_BLOCKCHAIN(instance);
+    OPEN_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block2, 2, false));
+    BOOST_REQUIRE(instance.insert(block2, 2));
 
     size_t height;
     const auto hash = block1->transactions()[0].hash();
@@ -511,16 +512,16 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__unstarted__error_service_stopped
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_block_by_height_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_block_by_height_result(instance, block1, 1), error::not_found);
@@ -548,16 +549,16 @@ static int fetch_block_by_hash_result(block_chain& instance,
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_block_by_hash_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_block_by_hash_result(instance, block1, 1), error::not_found);
@@ -588,16 +589,16 @@ static int fetch_block_header_by_height_result(block_chain& instance,
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header1__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_block_header_by_height_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header1__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_block_header_by_height_result(instance, block1, 1), error::not_found);
@@ -626,16 +627,16 @@ static int fetch_block_header_by_hash_result(block_chain& instance,
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header2__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_block_header_by_hash_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header2__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_block_header_by_hash_result(instance, block1, 1), error::not_found);
@@ -666,16 +667,16 @@ static int fetch_merkle_block_by_height_result(block_chain& instance,
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block1__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_merkle_block_by_height_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block1__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_merkle_block_by_height_result(instance, block1, 1), error::not_found);
@@ -704,16 +705,16 @@ static int fetch_merkle_block_by_hash_result(block_chain& instance,
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block2__exists__true)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1, false));
+    BOOST_REQUIRE(instance.insert(block1, 1));
     BOOST_REQUIRE_EQUAL(fetch_merkle_block_by_hash_result(instance, block1, 1), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block2__not_exists__error_not_found)
 {
-    START_BLOCKCHAIN(instance);
+    START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_merkle_block_by_hash_result(instance, block1, 1), error::not_found);

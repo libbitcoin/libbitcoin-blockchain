@@ -100,7 +100,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool flush_writes_;
     block_pool block_pool_;
     threadpool priority_pool_;
     validate_block validator_;

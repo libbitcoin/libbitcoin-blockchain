@@ -93,22 +93,16 @@ public:
     // Synchronous writers.
     // ------------------------------------------------------------------------ 
 
-    /// Set the flush lock scope.
-    virtual bool flush_lock(bool lock) = 0;
-
-    /// Reset the flush lock scope.
-    virtual bool flush_unlock(bool unlock) = 0;
-
     /// Insert a block to the blockchain, height is checked for existence.
-    virtual bool insert(block_const_ptr block, size_t height, bool flush) = 0;
+    virtual bool insert(block_const_ptr block, size_t height) = 0;
 
     // Asynchronous writers.
     // ------------------------------------------------------------------------ 
 
     /// Swap incoming and outgoing blocks, height is validated.
     virtual void reorganize(branch::const_ptr branch,
-        block_const_ptr_list_ptr outgoing_blocks, bool flush,
-        dispatcher& dispatch, complete_handler handler) = 0;
+        block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
+        complete_handler handler) = 0;
 };
 
 } // namespace blockchain
