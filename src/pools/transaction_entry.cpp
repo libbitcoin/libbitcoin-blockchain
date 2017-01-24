@@ -29,11 +29,17 @@
 namespace libbitcoin {
 namespace blockchain {
 
+// Space optimization since valid sigops and size are never close to 32 bits.
+inline uint32_t cap(size_t value)
+{
+    return domain_constrain<uint32_t>(value);
+}
+
 // TODO: implement size, sigops, and fees caching on chain::transaction.
 // This requires the full population of transaction.validation metadata.
 transaction_entry::transaction_entry(transaction_const_ptr tx)
- : size_(tx->serialized_size(message::version::level::canonical)),
-   sigops_(tx->signature_operations()),
+ : size_(cap(tx->serialized_size(message::version::level::canonical))),
+   sigops_(cap(tx->signature_operations())),
    fees_(tx->fees()),
    forks_(tx->validation.state->enabled_forks()),
    hash_(tx->hash()),
@@ -58,18 +64,6 @@ bool transaction_entry::is_anchor() const
 }
 
 // Not valid if the entry is a search key.
-size_t transaction_entry::size() const
-{
-    return size_;
-}
-
-// Not valid if the entry is a search key.
-size_t transaction_entry::sigops() const
-{
-    return sigops_;
-}
-
-// Not valid if the entry is a search key.
 uint64_t transaction_entry::fees() const
 {
     return fees_;
@@ -79,6 +73,18 @@ uint64_t transaction_entry::fees() const
 uint32_t transaction_entry::forks() const
 {
     return forks_;
+}
+
+// Not valid if the entry is a search key.
+size_t transaction_entry::sigops() const
+{
+    return sigops_;
+}
+
+// Not valid if the entry is a search key.
+size_t transaction_entry::size() const
+{
+    return size_;
 }
 
 // Not valid if the entry is a search key.

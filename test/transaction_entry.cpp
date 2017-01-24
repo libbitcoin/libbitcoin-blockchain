@@ -63,10 +63,10 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_tx__expected_values)
 {
     const transaction_entry instance(make_tx());
     BOOST_REQUIRE(instance.is_anchor());
-    BOOST_REQUIRE_EQUAL(instance.size(), 10u);
-    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
     BOOST_REQUIRE_EQUAL(instance.fees(), 0);
     BOOST_REQUIRE_EQUAL(instance.forks(), 0);
+    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
+    BOOST_REQUIRE_EQUAL(instance.size(), 10u);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
     BOOST_REQUIRE(!instance.is_marked());
     BOOST_REQUIRE(instance.parents().empty());
@@ -79,10 +79,10 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_block_hash__expected
 {
     const transaction_entry instance(make_tx()->hash());
     BOOST_REQUIRE(instance.is_anchor());
-    BOOST_REQUIRE_EQUAL(instance.size(), 0);
-    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
     BOOST_REQUIRE_EQUAL(instance.fees(), 0);
     BOOST_REQUIRE_EQUAL(instance.forks(), 0);
+    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
+    BOOST_REQUIRE_EQUAL(instance.size(), 0);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
     BOOST_REQUIRE(!instance.is_marked());
     BOOST_REQUIRE(instance.parents().empty());

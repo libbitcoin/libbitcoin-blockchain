@@ -50,19 +50,19 @@ public:
     /// An anchor tx binds a subgraph to the chain and is not itself mempool.
     bool is_anchor() const;
 
-    /// The size for the purpose of block limit computation.
-    size_t size() const;
-
-    /// The sigops for the purpose of block limit computation.
-    /// This is computed based on the specified forks as pertains to BIP16.
-    size_t sigops() const;
-
     /// The fees for the purpose of mempool reply and template optimization.
     uint64_t fees() const;
 
     /// The forks used for sigop count and validation of inputs.
     /// If the forks for the next block differ this must be recomputed.
     uint32_t forks() const;
+
+    /// The sigops for the purpose of block limit computation.
+    /// This is computed based on the specified forks as pertains to BIP16.
+    size_t sigops() const;
+
+    /// The size for the purpose of block limit computation.
+    size_t size() const;
 
     /// The hash table entry identity.
     const hash_digest& hash() const;
@@ -95,12 +95,10 @@ public:
 
 private:
     // These are non-const to allow for default copy construction.
-    // TODO: can save 8 bytes per entry by limiting size/sigops to 32 bit.
-    // TODO: could remove the hash and navigate to it via a bimap.
-    size_t size_;
-    size_t sigops_;
     uint64_t fees_;
     uint32_t forks_;
+    uint32_t sigops_;
+    uint32_t size_;
     hash_digest hash_;
 
     // Used in DAG search.
