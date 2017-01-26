@@ -90,17 +90,21 @@ public:
     virtual transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& hash) const = 0;
 
-    // Synchronous writers.
+    // Writers.
     // ------------------------------------------------------------------------ 
+
+    /// Create flush lock if flush_writes is true, and set sequential lock.
+    virtual bool begin_insert() const = 0;
+
+    /// Clear flush lock if flush_writes is true, and clear sequential lock.
+    virtual bool end_insert() const = 0;
 
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height) = 0;
 
-    // Asynchronous writers.
-    // ------------------------------------------------------------------------ 
-
     /// Swap incoming and outgoing blocks, height is validated.
-    virtual void reorganize(branch::const_ptr branch,
+    virtual void reorganize(const config::checkpoint& fork_point,
+        block_const_ptr_list_const_ptr incoming_blocks,
         block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
         complete_handler handler) = 0;
 };

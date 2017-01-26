@@ -54,7 +54,7 @@ public:
 
     // Readers.
     // ------------------------------------------------------------------------
-    // Thread safe except during write, unprotected by sequential lock.
+    // Thread safe, unprotected by sequential lock.
 
     /// Get the set of block gaps in the chain.
     bool get_gaps(database::block_database::heights& out_gaps) const;
@@ -100,22 +100,25 @@ public:
     transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& hash) const;
 
-    // Synchronous writer.
+    // Writers.
     // ------------------------------------------------------------------------
-    // Safe for concurrent execution with self (only).
+    // Thread safe, insert does not set sequential lock.
+
+    /// Create flush lock if flush_writes is true, and set sequential lock.
+    bool begin_insert() const;
+
+    /// Clear flush lock if flush_writes is true, and clear sequential lock.
+    bool end_insert() const;
 
     /// Insert a block to the blockchain, height is checked for existence.
+    /// Reads and reorgs are undefined when chain is gapped.
     bool insert(block_const_ptr block, size_t height);
 
-    // Asynchronous writer.
-    // ------------------------------------------------------------------------
-    // Safe for concurrent execution with safe_chain reads.
-    // Not safe for concurrent execution with other writes.
-
     /// Swap incoming and outgoing blocks, height is validated.
-    void reorganize(branch::const_ptr branch,
+    void reorganize(const config::checkpoint& fork_point,
+        block_const_ptr_list_const_ptr incoming_blocks,
         block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
-        complete_handler handler);
+        result_handler handler);
 
     // ========================================================================
     // SAFE CHAIN
@@ -124,9 +127,6 @@ public:
     // Startup and shutdown.
     // ------------------------------------------------------------------------
     // Thread safe except start.
-
-    /// Open the blockchain store.
-    virtual bool open();
 
     /// Start the block pool and the transaction pool.
     virtual bool start();
@@ -282,10 +282,6 @@ private:
     //-------------------------------------------------------------------------
 
     static hash_list to_hashes(const database::block_result& result);
-
-    void handle_push(const code& ec, result_handler handler);
-    void handle_pop(const code& ec, branch::const_ptr branch,
-        dispatcher& dispatch, result_handler handler);
 
     // These are thread safe.
     std::atomic<bool> stopped_;

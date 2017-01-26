@@ -101,6 +101,11 @@ hash_digest branch::hash() const
         blocks_->front()->header().previous_block_hash();
 }
 
+config::checkpoint branch::fork_point() const
+{
+    return{ hash(), height() };
+}
+
 // private
 size_t branch::index_of(size_t height) const
 {
