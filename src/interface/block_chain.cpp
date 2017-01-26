@@ -199,17 +199,11 @@ bool block_chain::end_insert() const
     return database_.end_insert();
 }
 
-// This does not use the sequence lock so concurrent reading is unsafe.
-// Any failure will leave the flush lock and prevent writes (if flush is true).
 bool block_chain::insert(block_const_ptr block, size_t height)
 {
     return database_.insert(*block, height) == error::success;
 }
 
-// This is part of fast_chain despite being async and sequence locked.
-// Any failure will leave the flush lock and prevent writes (if flush is true).
-// Regardless of flush lock status the sequence lock will prevent all reads if
-// there is a failure, leaving the sequence in a write state.
 void block_chain::reorganize(const checkpoint& fork_point,
     block_const_ptr_list_const_ptr incoming_blocks,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
