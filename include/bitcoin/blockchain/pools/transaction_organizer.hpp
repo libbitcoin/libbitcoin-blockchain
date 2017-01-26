@@ -70,7 +70,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool flush_writes_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;

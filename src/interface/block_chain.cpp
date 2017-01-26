@@ -33,6 +33,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::config;
 using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
@@ -185,91 +186,37 @@ transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     return std::make_shared<transaction>(result.transaction());
 }
 
-// Synchronous write sequence.
+// Writers
 // ----------------------------------------------------------------------------
+
+bool block_chain::begin_insert() const
+{
+    return database_.begin_insert();
+}
+
+bool block_chain::end_insert() const
+{
+    return database_.end_insert();
+}
 
 // This does not use the sequence lock so concurrent reading is unsafe.
 // Any failure will leave the flush lock and prevent writes (if flush is true).
 bool block_chain::insert(block_const_ptr block, size_t height)
 {
-    // Begin Flush Lock
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    if (!database_.flush_lock(settings_.flush_writes))
-        return false;
-
-    if (database_.insert(*block, height) != error::success)
-        return false;
-
-    return database_.flush_unlock(settings_.flush_writes);
-    // End Flush Lock
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return database_.insert(*block, height) == error::success;
 }
-
-// Asynchronous write sequence.
-// ----------------------------------------------------------------------------
 
 // This is part of fast_chain despite being async and sequence locked.
 // Any failure will leave the flush lock and prevent writes (if flush is true).
 // Regardless of flush lock status the sequence lock will prevent all reads if
 // there is a failure, leaving the sequence in a write state.
-void block_chain::reorganize(branch::const_ptr branch,
+void block_chain::reorganize(const checkpoint& fork_point,
+    block_const_ptr_list_const_ptr incoming_blocks,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
-    complete_handler handler)
+    result_handler handler)
 {
-    // handle_push closes the write operation.
-    const result_handler pop_handler =
-        std::bind(&block_chain::handle_pop,
-            this, _1, branch, std::ref(dispatch), handler);
-
-    // Begin Flush Lock
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    if (!database_.begin_write(settings_.flush_writes))
-    {
-        pop_handler(error::operation_failed);
-        return;
-    }
-
-    database_.pop_above(outgoing_blocks, branch->hash(), dispatch,
-        pop_handler);
-}
-
-void block_chain::handle_pop(const code& ec, branch::const_ptr branch,
-    dispatcher& dispatch, result_handler handler)
-{
-    const result_handler push_handler =
-        std::bind(&block_chain::handle_push,
-            this, _1, handler);
-
-    if (ec)
-    {
-        push_handler(ec);
-        return;
-    }
-
-    const auto height = safe_add(branch->height(), size_t(1));
-    database_.push_all(branch->blocks(), height, std::ref(dispatch),
-        push_handler);
-}
-
-// Does not clear the flush lock on fail, in the case where flush is true.
-// If flush lock is not true the caller must prevent store use after fail.
-void block_chain::handle_push(const code& ec, result_handler handler)
-{
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
-    if (!database_.end_write(settings_.flush_writes))
-    {
-        handler(error::operation_failed);
-        return;
-    }
-    // End Flush Lock
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    handler(error::success);
+    database_.reorganize(fork_point, incoming_blocks, outgoing_blocks,
+        dispatch, handler);
 }
 
 // ============================================================================
@@ -279,47 +226,26 @@ void block_chain::handle_push(const code& ec, result_handler handler)
 // Startup and shutdown.
 // ----------------------------------------------------------------------------
 
-bool block_chain::open()
-{
-    return database_.open();
-}
-
-// TODO: Add write mutex to prevent concurrent writes. 
-// Cover all block write in one CS and let txs compete for write with blocks.
-
 bool block_chain::start()
 {
-    if (!stopped_)
-        return true;
-
-    // Enables safe chain only.
     stopped_ = false;
-
-    // Begin Flush Lock [if flush_writes=false]
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    return database_.flush_lock(!settings_.flush_writes) &&
+    return database_.open() &&
         /*transaction_organizer_.start() &&*/ block_organizer_.start();
 }
 
 bool block_chain::stop()
 {
-    if (stopped_)
-        return true;
-
-    // Disables safe chain only.
     stopped_ = true;
-
-    return
-        /*transaction_organizer_.stop() &&*/ block_organizer_.stop() &&
-        /*transaction_organizer_.close() &&*/ block_organizer_.close() &&
-        database_.flush_unlock(!settings_.flush_writes);
-    // End Flush Lock [if flush_writes=false]
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return /*transaction_organizer_.stop() &&*/ block_organizer_.stop();
 }
 
+// Close is idempotent and thread safe.
+// Optional as the blockchain will close on destruct.
 bool block_chain::close()
 {
-    return stop() && database_.close();
+    return stop() &&
+        /*transaction_organizer_.close() &&*/ block_organizer_.close() &&
+        database_.close();
 }
 
 block_chain::~block_chain()

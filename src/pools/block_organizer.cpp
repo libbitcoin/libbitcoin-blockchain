@@ -258,7 +258,8 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(branch, out_blocks, priority_dispatch_, complete);
+    fast_chain_.reorganize(branch->fork_point(), branch->blocks(), out_blocks,
+        priority_dispatch_, complete);
     //#########################################################################
 }
 
