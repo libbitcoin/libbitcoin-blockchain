@@ -204,6 +204,24 @@ bool block_chain::insert(block_const_ptr block, size_t height)
     return database_.insert(*block, height) == error::success;
 }
 
+void block_chain::push(transaction_const_ptr, result_handler handler)
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: implement push of unconfirmed tx if valid for next height.
+    // The store is already protected against write concurrency and this
+    // method atomically checks for tx existence before writing. Block writes
+    // are informed of unconfirmed tx existence and update them upon commmit.
+    // This race may result in burying an unconfirmed tx with the same hash tx
+    // confirmed. Note that there is hash collision risk in blocks updating and
+    // incorporating txs based on hash correlation.
+    ///////////////////////////////////////////////////////////////////////////
+
+    LOG_DEBUG(LOG_BLOCKCHAIN)
+        << "Transaction dropped on the floor (not implemented).";
+
+    handler(error::success);
+}
+
 void block_chain::reorganize(const checkpoint& fork_point,
     block_const_ptr_list_const_ptr incoming_blocks,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
@@ -224,13 +242,13 @@ bool block_chain::start()
 {
     stopped_ = false;
     return database_.open() &&
-        /*transaction_organizer_.start() &&*/ block_organizer_.start();
+        transaction_organizer_.start() && block_organizer_.start();
 }
 
 bool block_chain::stop()
 {
     stopped_ = true;
-    return /*transaction_organizer_.stop() &&*/ block_organizer_.stop();
+    return transaction_organizer_.stop() && block_organizer_.stop();
 }
 
 // Close is idempotent and thread safe.
@@ -238,7 +256,7 @@ bool block_chain::stop()
 bool block_chain::close()
 {
     return stop() &&
-        /*transaction_organizer_.close() &&*/ block_organizer_.close() &&
+        transaction_organizer_.close() && block_organizer_.close() &&
         database_.close();
 }
 
@@ -440,14 +458,18 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 void block_chain::fetch_compact_block(size_t height,
     compact_block_fetch_handler handler) const
 {
+    ///////////////////////////////////////////////////////////////////////////
     // TODO: implement.
+    ///////////////////////////////////////////////////////////////////////////
     handler(error::not_implemented, {}, 0);
 }
 
 void block_chain::fetch_compact_block(const hash_digest& hash,
     compact_block_fetch_handler handler) const
 {
+    ///////////////////////////////////////////////////////////////////////////
     // TODO: implement.
+    ///////////////////////////////////////////////////////////////////////////
     handler(error::not_implemented, {}, 0);
 }
 
@@ -488,6 +510,9 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
     read_serial(do_fetch);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: parameterize for confirmation required.
+///////////////////////////////////////////////////////////////////////////////
 void block_chain::fetch_transaction(const hash_digest& hash,
     transaction_fetch_handler handler) const
 {
@@ -511,6 +536,10 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     read_serial(do_fetch);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: return unconfirmed sentinel and either forks or top height.
+// This is only used for the server API, need to document sentinel/forks.
+///////////////////////////////////////////////////////////////////////////////
 // same as fetch_transaction but skips the tx payload.
 void block_chain::fetch_transaction_position(const hash_digest& hash,
     transaction_index_fetch_handler handler) const
@@ -807,9 +836,15 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 // Transaction Pool.
 //-----------------------------------------------------------------------------
 
-// TODO: maintain a cache of this inventory (the current block template).
-// This exists only to satisfy the mempool message.
-void block_chain::fetch_floaters(size_t size,
+///////////////////////////////////////////////////////////////////////////////
+// Return a set of currently-valid unconfirmed txs in dependency order.
+// All txs satisfy the fee minimum and are valid at the next chain state.
+// The set of blocks is limited in count to size. The set may have internal
+// dependencies but all inputs must be satisfied at the current height.
+// The set may be limited in total sigops and bytes to fit within a block and
+// optimized for maximum possible block fee (block template).
+///////////////////////////////////////////////////////////////////////////////
+void block_chain::fetch_unconfirmed(size_t size, uint64_t minimum_fee,
     inventory_fetch_handler handler) const
 {
     transaction_organizer_.fetch_inventory(size, handler);

@@ -114,6 +114,9 @@ public:
     /// Reads and reorgs are undefined when chain is gapped.
     bool insert(block_const_ptr block, size_t height);
 
+    /// Push an unconfirmed transaction to the tx table and index outputs.
+    void push(transaction_const_ptr tx, result_handler handler);
+
     /// Swap incoming and outgoing blocks, height is validated.
     void reorganize(const config::checkpoint& fork_point,
         block_const_ptr_list_const_ptr incoming_blocks,
@@ -222,7 +225,7 @@ public:
     //-------------------------------------------------------------------------
 
     /// Fetch an inventory vector for all unconfirmed transactions.
-    virtual void fetch_floaters(size_t limit,
+    virtual void fetch_unconfirmed(size_t limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const;
 
     // Filters.
