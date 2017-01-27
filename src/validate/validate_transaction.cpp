@@ -84,7 +84,10 @@ code validate_transaction::check(transaction_const_ptr tx) const
 void validate_transaction::accept(transaction_const_ptr tx,
     result_handler handler) const
 {
-    // Populate chain state for the tx (valid for the entire pool).
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: share and deconflict with block validator.
+    ///////////////////////////////////////////////////////////////////////////
+    // Populate chain state for the top block/tx (applies to the entire pool).
     tx->validation.state = state_populator_.populate();
 
     if (!tx->validation.state)

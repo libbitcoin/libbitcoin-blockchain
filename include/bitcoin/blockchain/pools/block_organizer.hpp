@@ -64,17 +64,6 @@ protected:
     virtual bool stopped() const;
 
 private:
-    inline branch::const_ptr to_const(branch::ptr branch)
-    {
-        return std::const_pointer_cast<const blockchain::branch>(branch);
-    }
-
-    inline block_const_ptr_list_const_ptr to_const(
-        block_const_ptr_list_ptr blocks)
-    {
-        return std::const_pointer_cast<const block_const_ptr_list>(blocks);
-    }
-
     // Utility.
     bool set_branch_height(branch::ptr branch);
 
@@ -96,7 +85,7 @@ private:
 
     // This is protected by mutex.
     fast_chain& fast_chain_;
-    mutable upgrade_mutex mutex_;
+    mutable shared_mutex mutex_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

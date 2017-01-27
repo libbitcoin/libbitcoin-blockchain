@@ -119,7 +119,6 @@ void block_organizer::organize(block_const_ptr block,
         return;
     }
 
-    // TODO: defer deserialization using network stream.
     // Checks that are independent of chain state.
     const auto ec = validator_.check(block);
 
@@ -280,11 +279,15 @@ void block_organizer::handle_reorganized(const code& ec, branch::const_ptr branc
     block_pool_.prune(branch->top_height());
     block_pool_.add(outgoing);
 
+    ///////////////////////////////////////////////////////////////////////////
     // TODO: we can notify before reorg for mining scenario.
+    // However we must be careful not to do this during catch-up as it can
+    // create a perpetually-growing blacklog and overrun available memory.
+    ///////////////////////////////////////////////////////////////////////////
     // v3 reorg block order is reverse of v2, branch.back() is the new top.
     notify_reorganize(branch->height(), branch->blocks(), outgoing);
 
-    // This is the end of the verify sub-sequence.
+    // This is the end of the block verify sub-sequence.
     handler(error::success);
 }
 
