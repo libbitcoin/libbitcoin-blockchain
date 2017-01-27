@@ -145,6 +145,8 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
     BITCOIN_ASSERT(input_index < tx.inputs().size());
     const auto& prevout = tx.inputs()[input_index].previous_output().validation;
     const auto script_data = prevout.cache.script().to_data(false);
+
+    // Wire serialization is cached in support of large numbers of inputs.
     const auto tx_data = tx.to_data();
 
     // libconsensus
