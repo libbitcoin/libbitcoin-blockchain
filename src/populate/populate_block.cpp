@@ -91,6 +91,7 @@ void populate_block::populate(branch::const_ptr branch,
     const auto threads = dispatch_.size();
     const auto buckets = std::min(threads, non_coinbase_inputs);
     const auto join_handler = synchronize(std::move(handler), buckets, NAME);
+    BITCOIN_ASSERT(threads != 0);
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_inputs,
