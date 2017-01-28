@@ -48,7 +48,6 @@ void populate_base::populate_duplicate(size_t branch_height,
         tx.hash(), branch_height);
 }
 
-// This is identical to populate_transaction::populate_prevout.
 void populate_base::populate_prevout(size_t branch_height,
     const output_point& outpoint) const
 {

@@ -42,8 +42,10 @@ transaction_pool::transaction_pool(bool reject_conflicts, uint64_t minimum_fee)
 void transaction_pool::fetch_inventory(size_t maximum,
     safe_chain::inventory_fetch_handler handler) const
 {
-    // TODO:
-    handler(error::not_implemented, nullptr);
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: implement.
+    ///////////////////////////////////////////////////////////////////////////
+    handler(error::success, {});
 }
 
 } // namespace blockchain

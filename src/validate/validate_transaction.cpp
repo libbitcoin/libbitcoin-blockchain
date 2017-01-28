@@ -44,12 +44,12 @@ using namespace std::placeholders;
 // spend: { spender }
 // transaction: { exists, height, output }
 
-validate_transaction::validate_transaction(threadpool& priority_pool,
+validate_transaction::validate_transaction(threadpool& pool,
     const fast_chain& chain, const settings& settings)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
-    priority_dispatch_(priority_pool, NAME "_dispatch"),
-    transaction_populator_(priority_pool, chain),
+    dispatch_(pool, NAME "_dispatch"),
+    transaction_populator_(pool, chain),
     state_populator_(chain, settings)
 {
 }
@@ -84,7 +84,10 @@ code validate_transaction::check(transaction_const_ptr tx) const
 void validate_transaction::accept(transaction_const_ptr tx,
     result_handler handler) const
 {
-    // Populate chain state for the tx (valid for the entire pool).
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: share and deconflict with block validator.
+    ///////////////////////////////////////////////////////////////////////////
+    // Populate chain state for the top block/tx (applies to the entire pool).
     tx->validation.state = state_populator_.populate();
 
     if (!tx->validation.state)
@@ -136,14 +139,15 @@ void validate_transaction::connect(transaction_const_ptr tx,
         return;
     }
 
-    const auto threads = priority_dispatch_.size();
+    const auto threads = dispatch_.size();
     const auto buckets = std::min(threads, total_inputs);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
+    BITCOIN_ASSERT(threads != 0);
 
     // If the priority threadpool is shut down when this is called the handler
     // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < buckets; ++bucket)
-        priority_dispatch_.concurrent(&validate_transaction::connect_inputs,
+        dispatch_.concurrent(&validate_transaction::connect_inputs,
             this, tx, bucket, buckets, join_handler);
 }
 

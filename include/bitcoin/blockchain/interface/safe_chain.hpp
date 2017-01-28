@@ -145,7 +145,7 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    virtual void fetch_floaters(size_t limit,
+    virtual void fetch_unconfirmed(size_t limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const = 0;
 
     // Filters.

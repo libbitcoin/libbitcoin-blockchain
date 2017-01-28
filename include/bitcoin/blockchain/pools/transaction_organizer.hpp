@@ -62,18 +62,28 @@ protected:
     virtual bool stopped() const;
 
 private:
+    // Verify sub-sequence.
+    void complete(const code& ec, scope_lock::ptr lock,
+        result_handler handler);
+    void handle_accept(const code& ec, transaction_const_ptr tx,
+        result_handler handler);
+    void handle_connect(const code& ec, transaction_const_ptr tx,
+        result_handler handler);
+    void handle_transaction(const code& ec,
+        transaction_const_ptr tx, result_handler handler);
 
     // Subscription.
     void notify_transaction(transaction_const_ptr tx);
 
     fast_chain& fast_chain_;
+    mutable shared_mutex mutex_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
-    mutable dispatcher dispatch_;
+    ////mutable dispatcher dispatch_;
 
 };
 

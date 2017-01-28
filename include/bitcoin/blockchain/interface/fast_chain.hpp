@@ -35,6 +35,7 @@ namespace blockchain {
 class BCB_API fast_chain
 {
 public:
+    // This avoids conflict with the result_handler in safe_chain.
     typedef handle0 complete_handler;
 
     // Readers.
@@ -101,6 +102,9 @@ public:
 
     /// Insert a block to the blockchain, height is checked for existence.
     virtual bool insert(block_const_ptr block, size_t height) = 0;
+
+    /// Push an unconfirmed transaction to the tx table and index outputs.
+    virtual void push(transaction_const_ptr tx, complete_handler handler) = 0;
 
     /// Swap incoming and outgoing blocks, height is validated.
     virtual void reorganize(const config::checkpoint& fork_point,

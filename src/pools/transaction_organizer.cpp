@@ -42,7 +42,7 @@ transaction_organizer::transaction_organizer(threadpool& thread_pool,
   : fast_chain_(chain),
     stopped_(true),
     transaction_pool_(settings.reject_conflicts, settings.minimum_fee_satoshis),
-    dispatch_(thread_pool, NAME "_dispatch"),
+    ////dispatch_(thread_pool, NAME "_dispatch"),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
 {
@@ -64,34 +64,147 @@ bool transaction_organizer::start()
     stopped_ = false;
     subscriber_->start();
     validator_.start();
-
-    // TODO: manage locks.
-    return false;
+    return true;
 }
 
 bool transaction_organizer::stop()
 {
     validator_.stop();
     subscriber_->stop();
-    subscriber_->invoke(error::service_stopped, nullptr);
+    subscriber_->invoke(error::service_stopped, {});
     stopped_ = true;
     return true;
 }
 
 bool transaction_organizer::close()
 {
-    // TODO: manage unlocks.
-    return false;
+    BITCOIN_ASSERT(stopped_);
+    return true;
 }
 
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
+// This is called from block_chain::organize.
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)
 {
-    // TODO: implement organize.
-    handler(error::not_implemented);
+    // Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+    const auto lock = std::make_shared<scope_lock>(mutex_);
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    // Checks that are independent of chain state.
+    const auto ec = validator_.check(tx);
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    const auto accept_handler =
+        std::bind(&transaction_organizer::handle_accept,
+            this, _1, tx, handler);
+
+    // Checks that are dependent on chain state and prevouts.
+    validator_.accept(tx, accept_handler);
+}
+
+// private
+void transaction_organizer::complete(const code& ec, scope_lock::ptr lock,
+    result_handler handler)
+{
+    lock.reset();
+    // End Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+
+    // This is the end of the organize sequence.
+    handler(ec);
+}
+
+// Verify sub-sequence.
+//-----------------------------------------------------------------------------
+
+// private
+void transaction_organizer::handle_accept(const code& ec,
+    transaction_const_ptr tx, result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    // This also protects our stack from exhaustion due to recursion.
+    const result_handler connect_handler =
+        std::bind(&transaction_organizer::handle_connect,
+            this, _1, tx, handler);
+
+    // Checks that include script validation.
+    validator_.connect(tx, connect_handler);
+}
+
+// private
+void transaction_organizer::handle_connect(const code& ec,
+    transaction_const_ptr tx, result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    const auto complete =
+        std::bind(&transaction_organizer::handle_transaction,
+            this, _1, tx, handler);
+
+    //#########################################################################
+    fast_chain_.push(tx, /*dispatch_,*/ complete);
+    //#########################################################################
+}
+
+// private
+void transaction_organizer::handle_transaction(const code& ec,
+    transaction_const_ptr tx, result_handler handler)
+{
+    if (ec == error::unspent_duplicate)
+    {
+        handler(ec);
+        return;
+    }
+
+    if (ec)
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure writing transaction to store, is now corrupted: "
+            << ec.message();
+        handler(ec);
+        return;
+    }
+
+    // This gets picked up by node tx-out protocol for announcement to peers.
+    notify_transaction(tx);
+
+    // This is the end of the tx verify sub-sequence.
+    handler(ec);
 }
 
 // Subscription.
@@ -100,8 +213,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 void transaction_organizer::subscribe_transaction(
     transaction_handler&& handler)
 {
-    subscriber_->subscribe(std::move(handler), error::service_stopped,
-        nullptr);
+    subscriber_->subscribe(std::move(handler), error::service_stopped, {});
 }
 
 // private
@@ -115,7 +227,6 @@ void transaction_organizer::notify_transaction(transaction_const_ptr tx)
 // Queries.
 //-----------------------------------------------------------------------------
 
-// TODO: eliminate tx pool and process this directly in block_chain?
 void transaction_organizer::fetch_inventory(size_t maximum,
     safe_chain::inventory_fetch_handler handler) const
 {

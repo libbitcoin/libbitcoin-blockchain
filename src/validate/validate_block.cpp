@@ -92,6 +92,9 @@ void validate_block::accept(branch::const_ptr branch,
     // The block has no population timer, so set externally.
     block->validation.start_populate = asio::steady_clock::now();
 
+    ///////////////////////////////////////////////////////////////////////////
+    // TODO: share and deconflict with block validator.
+    ///////////////////////////////////////////////////////////////////////////
     // Populate chain state for the top block (others are valid).
     block->validation.state = state_populator_.populate(branch);
 
