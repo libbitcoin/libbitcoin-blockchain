@@ -40,7 +40,7 @@ public:
     void populate(transaction_const_ptr tx, result_handler&& handler) const;
 
 protected:
-    void populate_inputs(const chain::transaction& tx, size_t chain_height,
+    void populate_inputs(transaction_const_ptr tx, size_t chain_height,
         size_t bucket, size_t buckets, result_handler handler) const;
 };
 

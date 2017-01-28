@@ -150,9 +150,9 @@ void populate_block::populate_inputs(branch::const_ptr branch,
                 continue;
 
             const auto& input = inputs[input_index];
-            const auto& output = input.previous_output();
-            populate_base::populate_prevout(branch_height, output);
-            populate_prevout(branch, output);
+            const auto& prevout = input.previous_output();
+            populate_base::populate_prevout(branch_height, prevout);
+            populate_prevout(branch, prevout);
         }
     }
 

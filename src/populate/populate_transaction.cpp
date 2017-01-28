@@ -79,22 +79,22 @@ void populate_transaction::populate(transaction_const_ptr tx,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_transaction::populate_inputs,
-            this, *tx, chain_height, bucket, buckets, join_handler);
+            this, tx, chain_height, bucket, buckets, join_handler);
 }
 
-void populate_transaction::populate_inputs(const chain::transaction& tx,
+void populate_transaction::populate_inputs(transaction_const_ptr tx,
     size_t chain_height, size_t bucket, size_t buckets,
     result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
-    const auto& inputs = tx.inputs();
+    const auto& inputs = tx->inputs();
 
     for (auto input_index = bucket; input_index < inputs.size();
         input_index = ceiling_add(input_index, buckets))
     {
         const auto& input = inputs[input_index];
-        const auto& output = input.previous_output();
-        populate_prevout(chain_height, output);
+        const auto& prevout = input.previous_output();
+        populate_prevout(chain_height, prevout);
     }
 
     handler(error::success);
