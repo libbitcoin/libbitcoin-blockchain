@@ -164,8 +164,8 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
     {
         if (stopped())
         {
-            handler(error::service_stopped);
-            return;
+            ec = error::service_stopped;
+            break;
         }
 
         const auto& prevout = inputs[input_index].previous_output();
@@ -179,10 +179,11 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
         if ((ec = validate_input::verify_script(*tx, input_index, forks,
             use_libconsensus_)))
         {
-            handler(ec);
             break;
         }
     }
+
+    handler(ec);
 }
 
 } // namespace blockchain
