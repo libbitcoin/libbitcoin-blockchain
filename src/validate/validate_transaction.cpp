@@ -152,7 +152,7 @@ void validate_transaction::connect(transaction_const_ptr tx,
 }
 
 void validate_transaction::connect_inputs(transaction_const_ptr tx,
-    size_t bucket,  size_t buckets, result_handler handler) const
+    size_t bucket, size_t buckets, result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
     code ec(error::success);
@@ -160,7 +160,7 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
     const auto& inputs = tx->inputs();
 
     for (auto input_index = bucket; input_index < inputs.size();
-        input_index = ceiling_add(input_index, bucket))
+        input_index = ceiling_add(input_index, buckets))
     {
         if (stopped())
         {
