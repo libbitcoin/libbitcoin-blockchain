@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 
@@ -45,7 +46,8 @@ void transaction_pool::fetch_inventory(size_t maximum,
     ///////////////////////////////////////////////////////////////////////////
     // TODO: implement.
     ///////////////////////////////////////////////////////////////////////////
-    handler(error::success, {});
+    const auto dummy = std::make_shared<message::inventory>();
+    handler(error::success, dummy);
 }
 
 } // namespace blockchain
