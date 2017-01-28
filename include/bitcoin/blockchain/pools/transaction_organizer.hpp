@@ -42,24 +42,25 @@ public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<transaction_organizer> ptr;
     typedef safe_chain::transaction_handler transaction_handler;
+    typedef safe_chain::inventory_fetch_handler mempool_fetch_handler;
     typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
 
     /// Construct an instance.
     transaction_organizer(threadpool& thread_pool, fast_chain& chain,
         const settings& settings);
 
-    virtual bool start();
-    virtual bool stop();
-    virtual bool close();
+    bool start();
+    bool stop();
+    bool close();
 
-    virtual void organize(transaction_const_ptr tx, result_handler handler);
-    virtual void subscribe_transaction(transaction_handler&& handler);
+    void organize(transaction_const_ptr tx, result_handler handler);
+    void subscribe_transaction(transaction_handler&& handler);
 
-    virtual void fetch_inventory(size_t maximum,
-        safe_chain::inventory_fetch_handler handler) const;
+    void fetch_template(mempool_fetch_handler) const;
+    void fetch_mempool(size_t maximum, mempool_fetch_handler) const;
 
 protected:
-    virtual bool stopped() const;
+    bool stopped() const;
 
 private:
     // Verify sub-sequence.
@@ -83,7 +84,6 @@ private:
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
-    ////mutable dispatcher dispatch_;
 
 };
 

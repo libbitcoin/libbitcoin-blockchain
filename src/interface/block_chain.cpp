@@ -836,18 +836,21 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 // Transaction Pool.
 //-----------------------------------------------------------------------------
 
-///////////////////////////////////////////////////////////////////////////////
-// Return a set of currently-valid unconfirmed txs in dependency order.
+// Same as fetch_mempool but also optimized for maximum possible block fee as
+// limited by total bytes and signature operations.
+void block_chain::fetch_template(inventory_fetch_handler handler) const
+{
+    transaction_organizer_.fetch_template(handler);
+}
+
+// Fetch a set of currently-valid unconfirmed txs in dependency order.
 // All txs satisfy the fee minimum and are valid at the next chain state.
 // The set of blocks is limited in count to size. The set may have internal
 // dependencies but all inputs must be satisfied at the current height.
-// The set may be limited in total sigops and bytes to fit within a block and
-// optimized for maximum possible block fee (block template).
-///////////////////////////////////////////////////////////////////////////////
-void block_chain::fetch_unconfirmed(size_t size, uint64_t minimum_fee,
+void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
     inventory_fetch_handler handler) const
 {
-    transaction_organizer_.fetch_inventory(size, handler);
+    transaction_organizer_.fetch_mempool(count_limit, handler);
 }
 
 // Filters.
@@ -927,7 +930,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
     transaction_organizer_.subscribe_transaction(std::move(handler));
 }
 
-// Organizers (pools).
+// Organizers.
 //-----------------------------------------------------------------------------
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
@@ -935,10 +938,9 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
     block_organizer_.organize(block, handler);
 }
 
-void block_chain::organize(transaction_const_ptr transaction,
-    result_handler handler)
+void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    transaction_organizer_.organize(transaction, handler);
+    transaction_organizer_.organize(tx, handler);
 }
 
 // Properties (thread safe).

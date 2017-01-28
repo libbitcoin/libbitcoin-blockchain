@@ -224,8 +224,11 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    /// Fetch an inventory vector for all unconfirmed transactions.
-    virtual void fetch_unconfirmed(size_t limit, uint64_t minimum_fee,
+    /// Fetch an inventory vector for the maximal fee block template.
+    virtual void fetch_template(inventory_fetch_handler handler) const;
+
+    /// Fetch an inventory vector for a rational "mempool" message response.
+    virtual void fetch_mempool(size_t count_limit, size_t minimum_fee,
         inventory_fetch_handler handler) const;
 
     // Filters.
@@ -255,8 +258,7 @@ public:
     virtual void organize(block_const_ptr block, result_handler handler);
 
     /// Store a transaction to the pool.
-    virtual void organize(transaction_const_ptr transaction,
-        result_handler handler);
+    virtual void organize(transaction_const_ptr tx, result_handler handler);
 
     // Properties.
     //-------------------------------------------------------------------------
