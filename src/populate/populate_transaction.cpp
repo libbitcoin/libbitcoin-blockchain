@@ -90,7 +90,7 @@ void populate_transaction::populate_inputs(const chain::transaction& tx,
     const auto& inputs = tx.inputs();
 
     for (auto input_index = bucket; input_index < inputs.size();
-        input_index = ceiling_add(input_index, bucket))
+        input_index = ceiling_add(input_index, buckets))
     {
         const auto& input = inputs[input_index];
         const auto& output = input.previous_output();
