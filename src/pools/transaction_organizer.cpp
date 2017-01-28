@@ -37,13 +37,12 @@ using namespace std::placeholders;
 
 #define NAME "transaction_organizer"
 
-// TODO: consider using priority pool when compact blocks is implemented.
 transaction_organizer::transaction_organizer(threadpool& thread_pool,
     fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
     transaction_pool_(settings.reject_conflicts, settings.minimum_fee_satoshis),
-    dispatch_(thread_pool, NAME "_dispatch"),
+    ////dispatch_(thread_pool, NAME "_dispatch"),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
 {
@@ -178,7 +177,7 @@ void transaction_organizer::handle_connect(const code& ec,
             this, _1, tx, handler);
 
     //#########################################################################
-    fast_chain_.push(tx, complete);
+    fast_chain_.push(tx, /*dispatch_,*/ complete);
     //#########################################################################
 }
 

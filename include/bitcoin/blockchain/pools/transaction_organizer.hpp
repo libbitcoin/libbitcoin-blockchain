@@ -83,7 +83,7 @@ private:
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
-    mutable dispatcher dispatch_;
+    ////mutable dispatcher dispatch_;
 
 };
 
