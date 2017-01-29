@@ -290,6 +290,8 @@ bool block_chain::stop()
     // The block organizer cannot be stopped while organizing because it uses
     // an internal threadpool that would stop and prevent completion. For
     // consistency this also blocks on transaction organize.
+
+    // This cannot call organize or stop (lock safe).
     return transaction_organizer_.stop() && block_organizer_.stop();
     ///////////////////////////////////////////////////////////////////////////
 }
@@ -984,6 +986,7 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
         std::bind(&block_chain::handle_block,
             this, _1, block, lock, handler);
 
+    // This cannot call organize or stop (lock safe).
     block_organizer_.organize(block, locked_handler);
 }
 
@@ -1015,6 +1018,7 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
         std::bind(&block_chain::handle_transaction,
             this, _1, tx, lock, handler);
 
+    // This cannot call organize or stop (lock safe).
     transaction_organizer_.organize(tx, locked_handler);
 }
 
