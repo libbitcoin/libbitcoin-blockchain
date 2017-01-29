@@ -145,7 +145,8 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    virtual void fetch_unconfirmed(size_t limit, uint64_t minimum_fee,
+    virtual void fetch_template(inventory_fetch_handler handler) const = 0;
+    virtual void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const = 0;
 
     // Filters.
@@ -163,12 +164,11 @@ public:
     virtual void subscribe_reorganize(reorganize_handler&& handler) = 0;
     virtual void subscribe_transaction(transaction_handler&& handler) = 0;
 
-    // Organizers (pools).
+    // Organizers.
     //-------------------------------------------------------------------------
 
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
-    virtual void organize(transaction_const_ptr transaction,
-        result_handler handler) = 0;
+    virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
 };
 
 } // namespace blockchain

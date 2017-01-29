@@ -50,18 +50,18 @@ public:
     block_organizer(threadpool& thread_pool, fast_chain& chain,
         const settings& settings);
 
-    virtual bool start();
-    virtual bool stop();
-    virtual bool close();
+    bool start();
+    bool stop();
+    bool close();
 
-    virtual void organize(block_const_ptr block, result_handler handler);
-    virtual void subscribe_reorganize(reorganize_handler&& handler);
+    void organize(block_const_ptr block, result_handler handler);
+    void subscribe_reorganize(reorganize_handler&& handler);
 
     /// Remove all message vectors that match block hashes.
-    virtual void filter(get_data_ptr message) const;
+    void filter(get_data_ptr message) const;
 
 protected:
-    virtual bool stopped() const;
+    bool stopped() const;
 
 private:
     // Utility.

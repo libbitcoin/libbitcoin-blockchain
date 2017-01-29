@@ -20,10 +20,9 @@
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/safe_chain.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -34,18 +33,23 @@ namespace blockchain {
 // exmaple implementation simply tests all txs in a new block against
 // transactions in previous blocks.
 
-transaction_pool::transaction_pool(bool reject_conflicts, uint64_t minimum_fee)
-  : reject_conflicts_(true),
-    minimum_fee_(minimum_fee)
+transaction_pool::transaction_pool(const settings& settings)
+  : reject_conflicts_(settings.reject_conflicts),
+    minimum_fee_(settings.minimum_fee_satoshis)
 {
 }
 
-void transaction_pool::fetch_inventory(size_t maximum,
-    safe_chain::inventory_fetch_handler handler) const
+// TODO: implement block template discovery.
+void transaction_pool::fetch_template(mempool_fetch_handler handler) const
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: implement.
-    ///////////////////////////////////////////////////////////////////////////
+    const auto dummy = std::make_shared<message::inventory>();
+    handler(error::success, dummy);
+}
+
+// TODO: implement mempool message payload discovery.
+void transaction_pool::fetch_mempool(size_t maximum,
+    mempool_fetch_handler handler) const
+{
     const auto dummy = std::make_shared<message::inventory>();
     handler(error::success, dummy);
 }

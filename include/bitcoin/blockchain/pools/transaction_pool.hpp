@@ -25,6 +25,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -32,10 +33,12 @@ namespace blockchain {
 class BCB_API transaction_pool
 {
 public:
-    transaction_pool(bool reject_conflicts, uint64_t minimum_fee);
+    typedef safe_chain::inventory_fetch_handler mempool_fetch_handler;
 
-    void fetch_inventory(size_t maximum,
-        safe_chain::inventory_fetch_handler handler) const;
+    transaction_pool(const settings& settings);
+
+    void fetch_template(mempool_fetch_handler) const;
+    void fetch_mempool(size_t maximum, mempool_fetch_handler) const;
 
 private:
     const bool reject_conflicts_;

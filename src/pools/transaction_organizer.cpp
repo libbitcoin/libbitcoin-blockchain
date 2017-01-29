@@ -41,8 +41,7 @@ transaction_organizer::transaction_organizer(threadpool& thread_pool,
     fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    transaction_pool_(settings.reject_conflicts, settings.minimum_fee_satoshis),
-    ////dispatch_(thread_pool, NAME "_dispatch"),
+    transaction_pool_(settings),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
 {
@@ -177,7 +176,7 @@ void transaction_organizer::handle_connect(const code& ec,
             this, _1, tx, handler);
 
     //#########################################################################
-    fast_chain_.push(tx, /*dispatch_,*/ complete);
+    fast_chain_.push(tx, complete);
     //#########################################################################
 }
 
@@ -227,10 +226,15 @@ void transaction_organizer::notify_transaction(transaction_const_ptr tx)
 // Queries.
 //-----------------------------------------------------------------------------
 
-void transaction_organizer::fetch_inventory(size_t maximum,
-    safe_chain::inventory_fetch_handler handler) const
+void transaction_organizer::fetch_template(mempool_fetch_handler handler) const
 {
-    transaction_pool_.fetch_inventory(maximum, handler);
+    transaction_pool_.fetch_template(handler);
+}
+
+void transaction_organizer::fetch_mempool(size_t maximum,
+    mempool_fetch_handler handler) const
+{
+    transaction_pool_.fetch_mempool(maximum, handler);
 }
 
 // Utility.
