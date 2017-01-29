@@ -279,11 +279,13 @@ bool block_chain::start()
 
 bool block_chain::stop()
 {
+    stopped_ = true;
+
+    // TODO: prioritize lock access: stop, block, tx.
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     unique_lock lock(mutex_);
-
-    stopped_ = true;
 
     // The block organizer cannot be stopped while organizing because it uses
     // an internal threadpool that would stop and prevent completion. For
@@ -972,6 +974,8 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
+    // TODO: prioritize lock access: stop, block, tx.
+
     ///////////////////////////////////////////////////////////////////////////
     // Begin Critical Section.
     const auto lock = std::make_shared<scope_lock>(mutex_);
@@ -1001,6 +1005,8 @@ void block_chain::handle_block(const code& ec, block_const_ptr block,
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
+    // TODO: prioritize lock access: stop, block, tx.
+
     ///////////////////////////////////////////////////////////////////////////
     // Begin Critical Section.
     const auto lock = std::make_shared<scope_lock>(mutex_);
