@@ -228,7 +228,7 @@ public:
     virtual void fetch_template(inventory_fetch_handler handler) const;
 
     /// Fetch an inventory vector for a rational "mempool" message response.
-    virtual void fetch_mempool(size_t count_limit, size_t minimum_fee,
+    virtual void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const;
 
     // Filters.
