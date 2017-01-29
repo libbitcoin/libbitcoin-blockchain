@@ -84,6 +84,10 @@ bool transaction_organizer::close()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: share this mutex with block_organizer.
+///////////////////////////////////////////////////////////////////////////////
+
 // This is called from block_chain::organize.
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)

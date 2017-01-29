@@ -26,7 +26,6 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
-#include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/populate/populate_transaction.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -64,11 +63,11 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
+    const fast_chain& fast_chain_;
     mutable dispatcher dispatch_;
 
     // Caller must not invoke accept/connect concurrently.
     populate_transaction transaction_populator_;
-    populate_chain_state state_populator_;
 };
 
 } // namespace blockchain

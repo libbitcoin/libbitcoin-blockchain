@@ -35,14 +35,14 @@ namespace blockchain {
 class BCB_API populate_chain_state
 {
 public:
-    populate_chain_state(const fast_chain& chain, const settings& settings);
+    populate_chain_state(const blockchain::fast_chain& chain,
+        const blockchain::settings& settings);
 
     /// Populate chain state for the next block (tx pool).
     chain::chain_state::ptr populate() const;
 
     /// Populate chain state for the top block in the branch.
     chain::chain_state::ptr populate(branch::const_ptr branch) const;
-
 
 private:
     typedef branch::const_ptr branch_ptr;

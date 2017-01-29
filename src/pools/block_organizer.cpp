@@ -105,6 +105,10 @@ bool block_organizer::close()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
+///////////////////////////////////////////////////////////////////////////////
+// TODO: share this mutex with transaction_organizer.
+///////////////////////////////////////////////////////////////////////////////
+
 // This is called from block_chain::organize.
 void block_organizer::organize(block_const_ptr block,
     result_handler handler)
@@ -279,11 +283,10 @@ void block_organizer::handle_reorganized(const code& ec, branch::const_ptr branc
     block_pool_.prune(branch->top_height());
     block_pool_.add(outgoing);
 
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: we can notify before reorg for mining scenario.
+    // We can notify before reorg for mining scenario.
     // However we must be careful not to do this during catch-up as it can
     // create a perpetually-growing blacklog and overrun available memory.
-    ///////////////////////////////////////////////////////////////////////////
+
     // v3 reorg block order is reverse of v2, branch.back() is the new top.
     notify_reorganize(branch->height(), branch->blocks(), outgoing);
 

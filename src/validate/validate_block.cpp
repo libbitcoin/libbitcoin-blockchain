@@ -27,8 +27,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
-#include <bitcoin/blockchain/populate/populate_block.hpp>
-#include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_input.hpp>
 
@@ -52,7 +50,7 @@ validate_block::validate_block(threadpool& priority_pool,
     use_libconsensus_(settings.use_libconsensus),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
     block_populator_(priority_pool, chain),
-    state_populator_(chain, settings)
+    fast_chain_(chain)
 {
 }
 
@@ -92,11 +90,8 @@ void validate_block::accept(branch::const_ptr branch,
     // The block has no population timer, so set externally.
     block->validation.start_populate = asio::steady_clock::now();
 
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: share and deconflict with block validator.
-    ///////////////////////////////////////////////////////////////////////////
-    // Populate chain state for the top block (others are valid).
-    block->validation.state = state_populator_.populate(branch);
+    // Populate chain state for the next block.
+    block->validation.state = fast_chain_.chain_state(branch);
 
     if (!block->validation.state)
     {

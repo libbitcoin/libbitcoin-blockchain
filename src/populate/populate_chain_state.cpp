@@ -25,6 +25,7 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -198,8 +199,12 @@ chain_state::ptr populate_chain_state::populate() const
     if (!populate_all(data, empty_branch))
         return{};
 
-    return std::make_shared<chain_state>(std::move(data), checkpoints_,
-        configured_forks_);
+    const auto state = std::make_shared<chain_state>(std::move(data),
+        checkpoints_, configured_forks_);
+
+    // This should never happen with a non-zero height (guaranteed above).
+    BITCOIN_ASSERT(state->is_valid());
+    return state;
 }
 
 // TODO: generate from cache using preceding block's map and data.
@@ -215,8 +220,12 @@ chain_state::ptr populate_chain_state::populate(branch::const_ptr branch) const
     if (!populate_all(data, branch))
         return{};
 
-    return std::make_shared<chain_state>(std::move(data), checkpoints_,
-        configured_forks_);
+    const auto state = std::make_shared<chain_state>(std::move(data),
+        checkpoints_, configured_forks_);
+
+    // This should never happen with a non-zero height (guaranteed by branch).
+    BITCOIN_ASSERT(state->is_valid());
+    return state;
 }
 
 } // namespace blockchain

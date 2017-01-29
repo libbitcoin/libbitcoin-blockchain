@@ -111,6 +111,16 @@ public:
         block_const_ptr_list_const_ptr incoming_blocks,
         block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
         complete_handler handler) = 0;
+
+    // Properties
+    // ------------------------------------------------------------------------
+
+    /// Get a reference to the chain state relative to the next block.
+    virtual chain::chain_state::ptr chain_state() const = 0;
+
+    /// Get a reference to the chain state relative to the next block.
+    virtual chain::chain_state::ptr chain_state(
+        branch::const_ptr branch) const = 0;
 };
 
 } // namespace blockchain

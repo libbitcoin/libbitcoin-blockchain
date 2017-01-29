@@ -29,6 +29,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -46,6 +47,7 @@ block_chain::block_chain(threadpool& pool,
     spin_lock_sleep_(asio::milliseconds(1)),
     block_organizer_(pool, *this, chain_settings),
     transaction_organizer_(pool, *this, chain_settings),
+    chain_state_populator_(*this, chain_settings),
     database_(database_settings)
 {
 }
@@ -227,8 +229,50 @@ void block_chain::reorganize(const checkpoint& fork_point,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
     result_handler handler)
 {
+    const auto complete =
+        std::bind(&block_chain::handle_reorganize,
+            this, _1, incoming_blocks, handler);
+
     database_.reorganize(fork_point, incoming_blocks, outgoing_blocks,
-        dispatch, handler);
+        dispatch, complete);
+}
+
+// This matches the cache to the top at the completion of each reorg.
+void block_chain::handle_reorganize(const code& ec,
+    block_const_ptr_list_const_ptr incoming_blocks, result_handler handler)
+{
+    if (!ec)
+    {
+        BITCOIN_ASSERT(!incoming_blocks->empty());
+        const auto top = incoming_blocks->back();
+        chain_state_ = top->validation.state;
+        BITCOIN_ASSERT(chain_state_);
+    }
+
+    handler(ec);
+}
+
+// Properties.
+// ----------------------------------------------------------------------------
+
+// For tx validator.
+chain::chain_state::ptr block_chain::chain_state() const
+{
+    // Initialized on start.
+    return chain_state_;
+}
+
+// For block validator.
+// The net chain state will become the cache if the reorg is successful.
+chain::chain_state::ptr block_chain::chain_state(
+    branch::const_ptr branch) const
+{
+    // Return cache if branch is same height as pool (the most typical case).
+    if (chain_state_ && branch->top_height() == (chain_state_->height() - 1))
+        return chain_state_;
+
+    // TODO: generate next chain state from previous.
+    return chain_state_populator_.populate(branch);
 }
 
 // ============================================================================
@@ -241,8 +285,16 @@ void block_chain::reorganize(const checkpoint& fork_point,
 bool block_chain::start()
 {
     stopped_ = false;
-    return database_.open() &&
-        transaction_organizer_.start() && block_organizer_.start();
+
+    if (!database_.open())
+        return false;
+
+    // Initialize chain state after database start but before organizers.
+    // TODO: move chain_state maintenance into store and make safe (v4).
+    chain_state_ = chain_state_populator_.populate();
+
+    return chain_state_ && transaction_organizer_.start() &&
+        block_organizer_.start();
 }
 
 bool block_chain::stop()
@@ -955,8 +1007,8 @@ bool block_chain::stopped() const
 
 // Locking helpers.
 // ----------------------------------------------------------------------------
-
 // private
+
 template <typename Reader>
 void block_chain::read_serial(const Reader& reader) const
 {
@@ -974,7 +1026,6 @@ void block_chain::read_serial(const Reader& reader) const
     }
 }
 
-// private
 template <typename Handler, typename... Args>
 bool block_chain::finish_read(handle sequence, Handler handler,
     Args... args) const
@@ -992,6 +1043,7 @@ bool block_chain::finish_read(handle sequence, Handler handler,
 
 // Utilities.
 //-----------------------------------------------------------------------------
+// private
 
 hash_list block_chain::to_hashes(const block_result& result)
 {
