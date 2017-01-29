@@ -458,18 +458,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 void block_chain::fetch_compact_block(size_t height,
     compact_block_fetch_handler handler) const
 {
-    ///////////////////////////////////////////////////////////////////////////
     // TODO: implement.
-    ///////////////////////////////////////////////////////////////////////////
     handler(error::not_implemented, {}, 0);
 }
 
 void block_chain::fetch_compact_block(const hash_digest& hash,
     compact_block_fetch_handler handler) const
 {
-    ///////////////////////////////////////////////////////////////////////////
     // TODO: implement.
-    ///////////////////////////////////////////////////////////////////////////
     handler(error::not_implemented, {}, 0);
 }
 
