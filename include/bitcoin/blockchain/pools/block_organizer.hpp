@@ -67,10 +67,6 @@ private:
     // Utility.
     bool set_branch_height(branch::ptr branch);
 
-    // Organize sequence.
-    void complete(const code& ec, scope_lock::ptr lock,
-        result_handler handler);
-
     // Verify sub-sequence.
     void handle_accept(const code& ec, branch::ptr branch, result_handler handler);
     void handle_connect(const code& ec, branch::ptr branch, result_handler handler);
@@ -83,9 +79,8 @@ private:
         block_const_ptr_list_const_ptr branch,
         block_const_ptr_list_const_ptr original);
 
-    // This is protected by mutex.
+    // This must be protected by the implementation.
     fast_chain& fast_chain_;
-    mutable shared_mutex mutex_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

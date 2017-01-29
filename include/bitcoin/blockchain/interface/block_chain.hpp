@@ -31,6 +31,7 @@
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_organizer.hpp>
+#include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -123,6 +124,15 @@ public:
         block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
         result_handler handler);
 
+    // Properties
+    // ------------------------------------------------------------------------
+
+    /// Get forks chain state relative to chain top.
+    chain::chain_state::ptr chain_state() const;
+
+    /// Get full chain state relative to the branch top.
+    chain::chain_state::ptr chain_state(branch::const_ptr branch) const;
+
     // ========================================================================
     // SAFE CHAIN
     // ========================================================================
@@ -132,40 +142,40 @@ public:
     // Thread safe except start.
 
     /// Start the block pool and the transaction pool.
-    virtual bool start();
+    bool start();
 
     /// Signal pool work stop, speeds shutdown with multiple threads.
-    virtual bool stop();
+    bool stop();
 
     /// Unmaps all memory and frees the database file handles.
     /// Threads must be joined before close is called (or by destruct).
-    virtual bool close();
+    bool close();
 
     // Queries.
     // ------------------------------------------------------------------------
     // Thread safe.
 
     /// fetch a block by height.
-    virtual void fetch_block(size_t height, block_fetch_handler handler) const;
+    void fetch_block(size_t height, block_fetch_handler handler) const;
 
     /// fetch a block by hash.
-    virtual void fetch_block(const hash_digest& hash,
+    void fetch_block(const hash_digest& hash,
         block_fetch_handler handler) const;
 
     /// fetch block header by height.
-    virtual void fetch_block_header(size_t height,
+    void fetch_block_header(size_t height,
         block_header_fetch_handler handler) const;
 
     /// fetch block header by hash.
-    virtual void fetch_block_header(const hash_digest& hash,
+    void fetch_block_header(const hash_digest& hash,
         block_header_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
-    virtual void fetch_merkle_block(size_t height,
+    void fetch_merkle_block(size_t height,
         merkle_block_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block hash.
-    virtual void fetch_merkle_block(const hash_digest& hash,
+    void fetch_merkle_block(const hash_digest& hash,
         merkle_block_fetch_handler handler) const;
 
     /// fetch compact block by block height.
@@ -177,47 +187,47 @@ public:
         compact_block_fetch_handler handler) const;
 
     /// fetch height of block by hash.
-    virtual void fetch_block_height(const hash_digest& hash,
+    void fetch_block_height(const hash_digest& hash,
         block_height_fetch_handler handler) const;
 
     /// fetch height of latest block.
-    virtual void fetch_last_height(last_height_fetch_handler handler) const;
+    void fetch_last_height(last_height_fetch_handler handler) const;
 
     /// fetch transaction by hash.
-    virtual void fetch_transaction(const hash_digest& hash,
+    void fetch_transaction(const hash_digest& hash,
         transaction_fetch_handler handler) const;
 
     /// fetch position and height within block of transaction by hash.
-    virtual void fetch_transaction_position(const hash_digest& hash,
+    void fetch_transaction_position(const hash_digest& hash,
         transaction_index_fetch_handler handler) const;
 
     /// fetch the output of an outpoint (spent or otherwise).
-    virtual void fetch_output(const chain::output_point& outpoint,
+    void fetch_output(const chain::output_point& outpoint,
         output_fetch_handler handler) const;
 
     /// fetch the inpoint (spender) of an outpoint.
-    virtual void fetch_spend(const chain::output_point& outpoint,
+    void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const;
 
     /// fetch outputs, values and spends for an address.
-    virtual void fetch_history(const wallet::payment_address& address,
+    void fetch_history(const wallet::payment_address& address,
         size_t limit, size_t from_height, history_fetch_handler handler) const;
 
     /// fetch stealth results.
-    virtual void fetch_stealth(const binary& filter, size_t from_height,
+    void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const;
 
     /// fetch a block locator relative to the current top and threshold.
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
+    void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const;
 
     /// fetch the set of block hashes indicated by the block locator.
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+    void fetch_locator_block_hashes(get_blocks_const_ptr locator,
         const hash_digest& threshold, size_t limit,
         inventory_fetch_handler handler) const;
 
     /// fetch the set of block headers indicated by the block locator.
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+    void fetch_locator_block_headers(get_headers_const_ptr locator,
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const;
 
@@ -225,40 +235,39 @@ public:
     //-------------------------------------------------------------------------
 
     /// Fetch an inventory vector for the maximal fee block template.
-    virtual void fetch_template(inventory_fetch_handler handler) const;
+    void fetch_template(inventory_fetch_handler handler) const;
 
     /// Fetch an inventory vector for a rational "mempool" message response.
-    virtual void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
+    void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const;
 
     // Filters.
     //-------------------------------------------------------------------------
 
     /// Filter out block by hash that exist in the block pool or store.
-    virtual void filter_blocks(get_data_ptr message,
-        result_handler handler) const;
+    void filter_blocks(get_data_ptr message, result_handler handler) const;
 
     /// Filter out confirmed and unconfirmed transactions by hash.
-    virtual void filter_transactions(get_data_ptr message,
+    void filter_transactions(get_data_ptr message,
         result_handler handler) const;
 
     // Subscribers.
     //-------------------------------------------------------------------------
 
     /// Subscribe to blockchain reorganizations, get branch/height.
-    virtual void subscribe_reorganize(reorganize_handler&& handler);
+    void subscribe_reorganize(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
-    virtual void subscribe_transaction(transaction_handler&& handler);
+    void subscribe_transaction(transaction_handler&& handler);
 
-    // Organizers (pools).
+    // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Store a block in the block pool, triggers may trigger reorganization.
-    virtual void organize(block_const_ptr block, result_handler handler);
+    /// Organize a block into the block pool if valid and sufficient.
+    void organize(block_const_ptr block, result_handler handler);
 
-    /// Store a transaction to the pool.
-    virtual void organize(transaction_const_ptr tx, result_handler handler);
+    /// Store a transaction to the pool if valid.
+    void organize(transaction_const_ptr tx, result_handler handler);
 
     // Properties.
     //-------------------------------------------------------------------------
@@ -288,13 +297,25 @@ private:
 
     static hash_list to_hashes(const database::block_result& result);
 
+    void handle_transaction(const code& ec, transaction_const_ptr tx,
+        scope_lock::ptr lock, result_handler handler) const;
+
+    void handle_block(const code& ec, block_const_ptr block,
+        scope_lock::ptr lock, result_handler handler) const;
+
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
     asio::duration spin_lock_sleep_;
     block_organizer block_organizer_;
     transaction_organizer transaction_organizer_;
+    populate_chain_state chain_state_populator_;
     database::data_base database_;
+
+    // This is protected by mutex.
+    // TODO: move chain_state maintenance into store and make safe (v4).
+    mutable chain::chain_state::ptr chain_state_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

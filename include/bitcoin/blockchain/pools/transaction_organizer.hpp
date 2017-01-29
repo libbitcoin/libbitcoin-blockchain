@@ -64,8 +64,6 @@ protected:
 
 private:
     // Verify sub-sequence.
-    void complete(const code& ec, scope_lock::ptr lock,
-        result_handler handler);
     void handle_accept(const code& ec, transaction_const_ptr tx,
         result_handler handler);
     void handle_connect(const code& ec, transaction_const_ptr tx,
@@ -76,8 +74,8 @@ private:
     // Subscription.
     void notify_transaction(transaction_const_ptr tx);
 
+    // This must be protected by the implementation.
     fast_chain& fast_chain_;
-    mutable shared_mutex mutex_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;

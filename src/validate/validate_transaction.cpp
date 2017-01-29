@@ -50,7 +50,7 @@ validate_transaction::validate_transaction(threadpool& pool,
     use_libconsensus_(settings.use_libconsensus),
     dispatch_(pool, NAME "_dispatch"),
     transaction_populator_(pool, chain),
-    state_populator_(chain, settings)
+    fast_chain_(chain)
 {
 }
 
@@ -79,16 +79,13 @@ code validate_transaction::check(transaction_const_ptr tx) const
 
 // Accept sequence.
 //-----------------------------------------------------------------------------
-// These checks require chain and tx state.
+// These checks require chain and tx state (net height and enabled forks).
 
 void validate_transaction::accept(transaction_const_ptr tx,
     result_handler handler) const
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: share and deconflict with block validator.
-    ///////////////////////////////////////////////////////////////////////////
-    // Populate chain state for the top block/tx (applies to the entire pool).
-    tx->validation.state = state_populator_.populate();
+    // Populate chain state for the next block.
+    tx->validation.state = fast_chain_.chain_state();
 
     if (!tx->validation.state)
     {
