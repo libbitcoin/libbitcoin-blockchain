@@ -84,18 +84,10 @@ bool transaction_organizer::close()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: share this mutex with block_organizer.
-///////////////////////////////////////////////////////////////////////////////
-
 // This is called from block_chain::organize.
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)
 {
-    // Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-    const auto lock = std::make_shared<scope_lock>(mutex_);
-
     if (stopped())
     {
         handler(error::service_stopped);
@@ -117,18 +109,6 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 
     // Checks that are dependent on chain state and prevouts.
     validator_.accept(tx, accept_handler);
-}
-
-// private
-void transaction_organizer::complete(const code& ec, scope_lock::ptr lock,
-    result_handler handler)
-{
-    lock.reset();
-    // End Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-
-    // This is the end of the organize sequence.
-    handler(ec);
 }
 
 // Verify sub-sequence.

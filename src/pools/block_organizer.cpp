@@ -81,18 +81,9 @@ bool block_organizer::stop()
     validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
-
-    // Scope lock guards against concurrent organization and shutdown during.
-    stopped_ = true;
-
-    // The priority threadpool must not stop accepting work during organize.
     priority_pool_.shutdown();
+    stopped_ = true;
     return true;
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool block_organizer::close()
@@ -105,18 +96,9 @@ bool block_organizer::close()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: share this mutex with transaction_organizer.
-///////////////////////////////////////////////////////////////////////////////
-
 // This is called from block_chain::organize.
-void block_organizer::organize(block_const_ptr block,
-    result_handler handler)
+void block_organizer::organize(block_const_ptr block, result_handler handler)
 {
-    // Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-    const auto lock = std::make_shared<scope_lock>(mutex_);
-
     if (stopped())
     {
         handler(error::service_stopped);
@@ -132,10 +114,6 @@ void block_organizer::organize(block_const_ptr block,
         return;
     }
 
-    const result_handler locked_handler =
-        std::bind(&block_organizer::complete,
-            this, _1, lock, handler);
-
     // Get the path through the block forest to the new block.
     const auto branch = block_pool_.get_path(block);
 
@@ -144,44 +122,32 @@ void block_organizer::organize(block_const_ptr block,
     // produce a chain split in the case of a hash collision. This is because
     // it is not applied at the branch point, so some nodes will not see the
     // collision block and others will, depending on block order of arrival.
-    // TODO: The hash check should start at the branch point. The duplicate check
+    // TODO: The hash check should start at the branch point. The dup check
     // is a conflated network denial of service protection mechanism and cannot
     // be allowed to reject blocks based on collisions not in the actual chain.
     // The block pool must be modified to accomodate hash collision as well.
     //*************************************************************************
     if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
     {
-        locked_handler(error::duplicate_block);
+        handler(error::duplicate_block);
         return;
     }
 
     if (!set_branch_height(branch))
     {
-        locked_handler(error::orphan_block);
+        handler(error::orphan_block);
         return;
     }
 
     // Verify the last branch block (all others are verified).
     const result_handler accept_handler =
         std::bind(&block_organizer::handle_accept,
-            this, _1, branch, locked_handler);
+            this, _1, branch, handler);
 
     // Checks that are dependent on chain state and prevouts.
     // The branch may not have sufficient work to reorganize at this point, but
     // we must at least know if work required is sufficient in order to retain.
     validator_.accept(branch, accept_handler);
-}
-
-// private
-void block_organizer::complete(const code& ec, scope_lock::ptr lock,
-    result_handler handler)
-{
-    lock.reset();
-    // End Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-
-    // This is the end of the organize sequence.
-    handler(ec);
 }
 
 // Verify sub-sequence.
@@ -267,8 +233,9 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
 }
 
 // private
-void block_organizer::handle_reorganized(const code& ec, branch::const_ptr branch,
-    block_const_ptr_list_ptr outgoing, result_handler handler)
+void block_organizer::handle_reorganized(const code& ec,
+    branch::const_ptr branch, block_const_ptr_list_ptr outgoing,
+    result_handler handler)
 {
     if (ec)
     {

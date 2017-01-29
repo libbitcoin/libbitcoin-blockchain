@@ -206,7 +206,7 @@ bool block_chain::insert(block_const_ptr block, size_t height)
     return database_.insert(*block, height) == error::success;
 }
 
-void block_chain::push(transaction_const_ptr, result_handler handler)
+void block_chain::push(transaction_const_ptr tx, result_handler handler)
 {
     ///////////////////////////////////////////////////////////////////////////
     // TODO: implement push of unconfirmed tx if valid for next height.
@@ -217,7 +217,6 @@ void block_chain::push(transaction_const_ptr, result_handler handler)
     // confirmed. Note that there is hash collision risk in blocks updating and
     // incorporating txs based on hash correlation.
     ///////////////////////////////////////////////////////////////////////////
-
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Transaction dropped on the floor (not implemented).";
 
@@ -229,27 +228,8 @@ void block_chain::reorganize(const checkpoint& fork_point,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
     result_handler handler)
 {
-    const auto complete =
-        std::bind(&block_chain::handle_reorganize,
-            this, _1, incoming_blocks, handler);
-
     database_.reorganize(fork_point, incoming_blocks, outgoing_blocks,
-        dispatch, complete);
-}
-
-// This matches the cache to the top at the completion of each reorg.
-void block_chain::handle_reorganize(const code& ec,
-    block_const_ptr_list_const_ptr incoming_blocks, result_handler handler)
-{
-    if (!ec)
-    {
-        BITCOIN_ASSERT(!incoming_blocks->empty());
-        const auto top = incoming_blocks->back();
-        chain_state_ = top->validation.state;
-        BITCOIN_ASSERT(chain_state_);
-    }
-
-    handler(ec);
+        dispatch, handler);
 }
 
 // Properties.
@@ -271,7 +251,7 @@ chain::chain_state::ptr block_chain::chain_state(
     if (chain_state_ && branch->top_height() == (chain_state_->height() - 1))
         return chain_state_;
 
-    // TODO: generate next chain state from previous.
+    // TODO: generate chain state from previous.
     return chain_state_populator_.populate(branch);
 }
 
@@ -299,8 +279,17 @@ bool block_chain::start()
 
 bool block_chain::stop()
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+
     stopped_ = true;
+
+    // The block organizer cannot be stopped while organizing because it uses
+    // an internal threadpool that would stop and prevent completion. For
+    // consistency this also blocks on transaction organize.
     return transaction_organizer_.stop() && block_organizer_.stop();
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // Close is idempotent and thread safe.
@@ -983,12 +972,54 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    block_organizer_.organize(block, handler);
+    ///////////////////////////////////////////////////////////////////////////
+    // Begin Critical Section.
+    const auto lock = std::make_shared<scope_lock>(mutex_);
+
+    const auto locked_handler =
+        std::bind(&block_chain::handle_block,
+            this, _1, block, lock, handler);
+
+    block_organizer_.organize(block, locked_handler);
+}
+
+// This matches the cache to the top at the completion of each reorg.
+void block_chain::handle_block(const code& ec, block_const_ptr block,
+    scope_lock::ptr lock, result_handler handler) const
+{
+    // TODO: generate chain state from previous.
+    // If new top create chain state for next block and tx pool.
+    if (!ec)
+        chain_state_ = chain_state_populator_.populate();
+
+    lock.reset();
+    // End Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+
+    handler(ec);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    transaction_organizer_.organize(tx, handler);
+    ///////////////////////////////////////////////////////////////////////////
+    // Begin Critical Section.
+    const auto lock = std::make_shared<scope_lock>(mutex_);
+
+    const result_handler locked_handler =
+        std::bind(&block_chain::handle_transaction,
+            this, _1, tx, lock, handler);
+
+    transaction_organizer_.organize(tx, locked_handler);
+}
+
+void block_chain::handle_transaction(const code& ec, transaction_const_ptr tx,
+    scope_lock::ptr lock, result_handler handler) const
+{
+    lock.reset();
+    // End Critical Section.
+    ///////////////////////////////////////////////////////////////////////////
+
+    handler(ec);
 }
 
 // Properties (thread safe).

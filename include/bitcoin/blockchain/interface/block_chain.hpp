@@ -297,9 +297,11 @@ private:
 
     static hash_list to_hashes(const database::block_result& result);
 
-    void handle_reorganize(const code& ec,
-        block_const_ptr_list_const_ptr incoming_blocks,
-        result_handler handler);
+    void handle_transaction(const code& ec, transaction_const_ptr tx,
+        scope_lock::ptr lock, result_handler handler) const;
+
+    void handle_block(const code& ec, block_const_ptr block,
+        scope_lock::ptr lock, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
@@ -310,9 +312,10 @@ private:
     populate_chain_state chain_state_populator_;
     database::data_base database_;
 
-    // This must be protected by caller (unsafe).
+    // This is protected by mutex.
     // TODO: move chain_state maintenance into store and make safe (v4).
     mutable chain::chain_state::ptr chain_state_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain
