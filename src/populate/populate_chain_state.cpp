@@ -19,7 +19,6 @@
  */
 #include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -33,9 +32,6 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
-
-// Use system clock because we require accurate time of day.
-using wall_clock = std::chrono::system_clock;
 
 // This value should never be read, but may be useful in debugging.
 static constexpr uint32_t unspecified = max_uint32;
@@ -52,9 +48,9 @@ populate_chain_state::populate_chain_state(const fast_chain& chain,
 {
 }
 
-inline std::time_t now()
+inline uint32_t now()
 {
-    return wall_clock::to_time_t(wall_clock::now());
+    return static_cast<uint32_t>(zulu_time());
 }
 
 inline bool is_transaction_pool(branch::const_ptr branch)
@@ -104,13 +100,19 @@ bool populate_chain_state::populate_bits(chain_state::data& data,
         if (!get_bits(bit, ++height, branch))
             return false;
 
-    return true;
+    if (is_transaction_pool(branch))
+    {
+        data.bits.self = proof_of_work_limit;
+        return true;
+    }
+
+    return get_bits(data.bits.self, map.bits_self, branch);
 }
 
 bool populate_chain_state::populate_versions(chain_state::data& data,
     const chain_state::map& map, branch::const_ptr branch) const
 {
-    auto& versions = data.version.unordered;
+    auto& versions = data.version.ordered;
     versions.resize(map.version.count);
     auto height = map.version.high - map.version.count;
 
@@ -184,48 +186,51 @@ bool populate_chain_state::populate_all(chain_state::data& data,
 
 chain_state::ptr populate_chain_state::populate() const
 {
-    size_t last_height;
-    
-    if (!fast_chain_.get_last_height(last_height))
+    size_t top;
+    if (!fast_chain_.get_last_height(top))
         return{};
 
     chain_state::data data;
     data.hash = null_hash;
-    data.height = safe_add(last_height, size_t(1));
+    data.height = safe_add(top, size_t(1));
 
     // Use an empty branch to represent the transaction pool.
-    const auto empty_branch = std::make_shared<branch>(last_height);
-
-    if (!populate_all(data, empty_branch))
+    if (!populate_all(data, std::make_shared<branch>(top)))
         return{};
 
-    const auto state = std::make_shared<chain_state>(std::move(data),
-        checkpoints_, configured_forks_);
-
-    // This should never happen with a non-zero height (guaranteed above).
-    BITCOIN_ASSERT(state->is_valid());
-    return state;
+    return std::make_shared<chain_state>(std::move(data), checkpoints_,
+        configured_forks_);
 }
 
-// TODO: generate from cache using preceding block's map and data.
-chain_state::ptr populate_chain_state::populate(branch::const_ptr branch) const
+chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
+    branch::const_ptr branch) const
 {
     const auto block = branch->top();
     BITCOIN_ASSERT(block);
+
+    // If this is not a reorganization we can just promote the pool state.
+    if (pool->height() == branch->top_height())
+        return std::make_shared<chain_state>(*pool, *block);
 
     chain_state::data data;
     data.hash = block->hash();
     data.height = branch->top_height();
 
+    // Caller must test result.
     if (!populate_all(data, branch))
         return{};
 
-    const auto state = std::make_shared<chain_state>(std::move(data),
-        checkpoints_, configured_forks_);
+    return std::make_shared<chain_state>(std::move(data), checkpoints_,
+        configured_forks_);
+}
 
-    // This should never happen with a non-zero height (guaranteed by branch).
-    BITCOIN_ASSERT(state->is_valid());
-    return state;
+chain_state::ptr populate_chain_state::populate(chain_state::ptr top) const
+{
+    // Create pool state from top block chain state.
+    const auto state = std::make_shared<chain_state>(*top, block_version_);
+
+    // If is a retarget height or reorganization must populate from store. 
+    return state->is_valid() ? state : populate();
 }
 
 } // namespace blockchain

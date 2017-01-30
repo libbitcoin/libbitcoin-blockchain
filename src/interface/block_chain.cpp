@@ -238,21 +238,18 @@ void block_chain::reorganize(const checkpoint& fork_point,
 // For tx validator.
 chain::chain_state::ptr block_chain::chain_state() const
 {
-    // Initialized on start.
-    return chain_state_;
+    // Initialized on start and updated after each successful organization.
+    return pool_state_;
 }
 
 // For block validator.
-// The net chain state will become the cache if the reorg is successful.
 chain::chain_state::ptr block_chain::chain_state(
     branch::const_ptr branch) const
 {
-    // Return cache if branch is same height as pool (the most typical case).
-    if (chain_state_ && branch->top_height() == (chain_state_->height() - 1))
-        return chain_state_;
-
-    // TODO: generate chain state from previous.
-    return chain_state_populator_.populate(branch);
+    // Promote from cache if branch is same height as pool (most typical).
+    // Generate from branch/store if the promotion is not successful.
+    // If the organize is successful pool state will be updated accordingly.
+    return chain_state_populator_.populate(pool_state_, branch);
 }
 
 // ============================================================================
@@ -270,10 +267,9 @@ bool block_chain::start()
         return false;
 
     // Initialize chain state after database start but before organizers.
-    // TODO: move chain_state maintenance into store and make safe (v4).
-    chain_state_ = chain_state_populator_.populate();
+    pool_state_ = chain_state_populator_.populate();
 
-    return chain_state_ && transaction_organizer_.start() &&
+    return pool_state_ && transaction_organizer_.start() &&
         block_organizer_.start();
 }
 
@@ -994,16 +990,22 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
 void block_chain::handle_block(const code& ec, block_const_ptr block,
     scope_lock::ptr lock, result_handler handler) const
 {
-    // TODO: generate chain state from previous.
-    // If new top create chain state for next block and tx pool.
+    code result(ec);
+
     if (!ec)
-        chain_state_ = chain_state_populator_.populate();
+    {
+        BITCOIN_ASSERT(block->validation.state);
+        pool_state_ = chain_state_populator_.populate(block->validation.state);
+
+        if (!pool_state_)
+            result = error::operation_failed;
+    }
 
     lock.reset();
     // End Critical Section.
     ///////////////////////////////////////////////////////////////////////////
 
-    handler(ec);
+    handler(result);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)

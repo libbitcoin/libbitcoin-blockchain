@@ -313,8 +313,7 @@ private:
     database::data_base database_;
 
     // This is protected by mutex.
-    // TODO: move chain_state maintenance into store and make safe (v4).
-    mutable chain::chain_state::ptr chain_state_;
+    mutable chain::chain_state::ptr pool_state_;
     mutable shared_mutex mutex_;
 };
 
