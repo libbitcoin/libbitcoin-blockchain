@@ -208,19 +208,7 @@ bool block_chain::insert(block_const_ptr block, size_t height)
 
 void block_chain::push(transaction_const_ptr tx, result_handler handler)
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: implement push of unconfirmed tx if valid for next height.
-    // The store is already protected against write concurrency and this
-    // method atomically checks for tx existence before writing. Block writes
-    // are informed of unconfirmed tx existence and update them upon commmit.
-    // This race may result in burying an unconfirmed tx with the same hash tx
-    // confirmed. Note that there is hash collision risk in blocks updating and
-    // incorporating txs based on hash correlation.
-    ///////////////////////////////////////////////////////////////////////////
-    LOG_DEBUG(LOG_BLOCKCHAIN)
-        << "Transaction dropped on the floor (not implemented).";
-
-    handler(error::success);
+    handler(database_.push(*tx, pool_state_->enabled_forks()));
 }
 
 void block_chain::reorganize(const checkpoint& fork_point,
@@ -456,11 +444,8 @@ void block_chain::fetch_merkle_block(size_t height,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        // Hack: see safe_unsigned comments in bc::merkle_block.
-        auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(),
-                safe_unsigned<uint32_t>(result.transaction_count()),
-                    to_hashes(result), {} });
+        const auto merkle = std::make_shared<merkle_block>(result.header(),
+            result.transaction_count(), to_hashes(result), data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -484,11 +469,8 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        // Hack: see safe_unsigned comments in bc::merkle_block.
-        auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(),
-                safe_unsigned<uint32_t>(result.transaction_count()),
-                    to_hashes(result), {} });
+        const auto merkle = std::make_shared<merkle_block>(result.header(),
+            result.transaction_count(), to_hashes(result), data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -499,14 +481,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 void block_chain::fetch_compact_block(size_t height,
     compact_block_fetch_handler handler) const
 {
-    // TODO: implement.
+    // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
 void block_chain::fetch_compact_block(const hash_digest& hash,
     compact_block_fetch_handler handler) const
 {
-    // TODO: implement.
+    // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
@@ -1080,8 +1062,8 @@ bool block_chain::finish_read(handle sequence, Handler handler,
         return false;
 
     // Handle the read (done).
-    // Do not forward args, callers using smart pointer returns.
-    // TODO: it should be fine to forward args as long as handler is bound.
+    // To forward args we would need to use std::bind here, but not necessary
+    // because all parameterizations use smart pointers or integral types.
     handler(args...);
     return true;
 }

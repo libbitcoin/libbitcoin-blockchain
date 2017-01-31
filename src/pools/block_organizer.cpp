@@ -211,6 +211,7 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
+    // TODO: consider relay of pooled blocks by modifying subscriber semantics.
     if (branch->work() <= threshold)
     {
         block_pool_.add(branch->top());
