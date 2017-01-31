@@ -456,11 +456,8 @@ void block_chain::fetch_merkle_block(size_t height,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        // Hack: see safe_unsigned comments in bc::merkle_block.
-        auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(),
-                safe_unsigned<uint32_t>(result.transaction_count()),
-                    to_hashes(result), {} });
+        const auto merkle = std::make_shared<merkle_block>(result.header(),
+            result.transaction_count(), to_hashes(result), data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -484,11 +481,8 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
-        // Hack: see safe_unsigned comments in bc::merkle_block.
-        auto merkle = std::make_shared<merkle_block>(
-            merkle_block{ result.header(),
-                safe_unsigned<uint32_t>(result.transaction_count()),
-                    to_hashes(result), {} });
+        const auto merkle = std::make_shared<merkle_block>(result.header(),
+            result.transaction_count(), to_hashes(result), data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -499,14 +493,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 void block_chain::fetch_compact_block(size_t height,
     compact_block_fetch_handler handler) const
 {
-    // TODO: implement.
+    // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
 void block_chain::fetch_compact_block(const hash_digest& hash,
     compact_block_fetch_handler handler) const
 {
-    // TODO: implement.
+    // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
