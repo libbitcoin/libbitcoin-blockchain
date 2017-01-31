@@ -36,7 +36,7 @@ static chain_state::data data()
 {
     chain_state::data value;
     value.height = 1;
-    value.bits = { { 0 } };
+    value.bits = { 0, { 0 } };
     value.version = { 1, { 0 } };
     value.timestamp = { 0, 0, { 0 } };
     return value;
