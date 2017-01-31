@@ -1074,8 +1074,8 @@ bool block_chain::finish_read(handle sequence, Handler handler,
         return false;
 
     // Handle the read (done).
-    // Do not forward args, callers using smart pointer returns.
-    // TODO: it should be fine to forward args as long as handler is bound.
+    // To forward args we would need to use std::bind here, but not necessary
+    // because all parameterizations use smart pointers or integral types.
     handler(args...);
     return true;
 }
