@@ -778,13 +778,14 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         for (auto index = begin; index < stop; ++index)
         {
             const auto result = database_.blocks().get(index);
-            if (result)
-            {
-                const auto& header = result.header();
-                static const auto id = inventory::type_id::block;
-                hashes->inventories().push_back({ id, header.hash() });
+
+            // If not found then we are at our top.
+            if (!result)
                 break;
-            }
+
+            const auto& header = result.header();
+            static const auto id = inventory::type_id::block;
+            hashes->inventories().push_back({ id, header.hash() });
         }
 
         hashes->inventories().shrink_to_fit();
@@ -857,11 +858,12 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
         for (auto index = begin; index < stop; ++index)
         {
             const auto result = database_.blocks().get(index);
-            if (result)
-            {
-                headers->elements().push_back(result.header());
+
+            // If not found then we are at our top.
+            if (!result)
                 break;
-            }
+
+            headers->elements().push_back(result.header());
         }
 
         headers->elements().shrink_to_fit();
