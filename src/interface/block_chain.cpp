@@ -208,19 +208,7 @@ bool block_chain::insert(block_const_ptr block, size_t height)
 
 void block_chain::push(transaction_const_ptr tx, result_handler handler)
 {
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO: implement push of unconfirmed tx if valid for next height.
-    // The store is already protected against write concurrency and this
-    // method atomically checks for tx existence before writing. Block writes
-    // are informed of unconfirmed tx existence and update them upon commmit.
-    // This race may result in burying an unconfirmed tx with the same hash tx
-    // confirmed. Note that there is hash collision risk in blocks updating and
-    // incorporating txs based on hash correlation.
-    ///////////////////////////////////////////////////////////////////////////
-    LOG_DEBUG(LOG_BLOCKCHAIN)
-        << "Transaction dropped on the floor (not implemented).";
-
-    handler(error::success);
+    handler(database_.push(*tx, pool_state_->enabled_forks()));
 }
 
 void block_chain::reorganize(const checkpoint& fork_point,
