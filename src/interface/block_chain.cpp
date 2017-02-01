@@ -859,7 +859,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 
 // Same as fetch_mempool but also optimized for maximum possible block fee as
 // limited by total bytes and signature operations.
-void block_chain::fetch_template(inventory_fetch_handler handler) const
+void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 {
     transaction_organizer_.fetch_template(handler);
 }

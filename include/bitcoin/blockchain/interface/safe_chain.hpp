@@ -145,7 +145,7 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    virtual void fetch_template(inventory_fetch_handler handler) const = 0;
+    virtual void fetch_template(merkle_block_fetch_handler handler) const = 0;
     virtual void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const = 0;
 
