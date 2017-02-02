@@ -38,10 +38,10 @@ protected:
     populate_base(threadpool& pool, const fast_chain& chain);
 
     void populate_duplicate(size_t maximum_height,
-        const chain::transaction& tx) const;
+        const chain::transaction& tx, bool require_confirmed) const;
 
     void populate_prevout(size_t maximum_height,
-        const chain::output_point& outpoint) const;
+        const chain::output_point& outpoint, bool require_confirmed) const;
 
     // This is thread safe.
     mutable dispatcher dispatch_;

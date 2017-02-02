@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__not_found__false)
     bool coinbase;
     const chain::output_point outpoint{ null_hash, 42 };
     size_t branch_height = 0;
-    BOOST_REQUIRE(!instance.get_output(output, height, coinbase, outpoint, branch_height));
+    BOOST_REQUIRE(!instance.get_output(output, height, coinbase, outpoint, branch_height, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_output__found__expected)
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__found__expected)
     const chain::output_point outpoint{ block2->transactions()[0].hash(), 0 };
     const auto expected_value = initial_block_reward_satoshi();
     const auto expected_script = block2->transactions()[0].outputs()[0].script().to_string(0);
-    BOOST_REQUIRE(instance.get_output(output, height, coinbase, outpoint, 2));
+    BOOST_REQUIRE(instance.get_output(output, height, coinbase, outpoint, 2, false));
     BOOST_REQUIRE(coinbase);
     BOOST_REQUIRE_EQUAL(height, 2u);
     BOOST_REQUIRE_EQUAL(output.value(), expected_value);
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__above_fork__false)
     size_t height;
     bool coinbase;
     const chain::output_point outpoint{ block2->transactions()[0].hash(), 0 };
-    BOOST_REQUIRE(!instance.get_output(output, height, coinbase, outpoint, 1));
+    BOOST_REQUIRE(!instance.get_output(output, height, coinbase, outpoint, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_at_fork__true)
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_at_fork__t
     BOOST_REQUIRE(instance.insert(block2, 2));
 
     const auto hash = block2->transactions()[0].hash();
-    BOOST_REQUIRE(instance.get_is_unspent_transaction(hash, 2));
+    BOOST_REQUIRE(instance.get_is_unspent_transaction(hash, 2, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_above_fork__false)
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__unspent_above_fork
     BOOST_REQUIRE(instance.insert(block2, 2));
 
     const auto hash = block2->transactions()[0].hash();
-    BOOST_REQUIRE(!instance.get_is_unspent_transaction(hash, 1));
+    BOOST_REQUIRE(!instance.get_is_unspent_transaction(hash, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__spent_below_fork__false)
@@ -449,7 +449,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_transaction__exists__true)
 
     size_t height;
     const auto hash = block1->transactions()[0].hash();
-    BOOST_REQUIRE(instance.get_transaction(height, hash));
+    BOOST_REQUIRE(instance.get_transaction(height, hash, false));
     BOOST_REQUIRE_EQUAL(height, 1u);
 }
 
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
 
     size_t height;
     const auto hash = block1->transactions()[0].hash();
-    BOOST_REQUIRE(!instance.get_transaction(height, hash));
+    BOOST_REQUIRE(!instance.get_transaction(height, hash, false));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

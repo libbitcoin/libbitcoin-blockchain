@@ -91,15 +91,15 @@ public:
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
         bool& out_coinbase, const chain::output_point& outpoint,
-        size_t branch_height) const;
+        size_t branch_height, bool require_confirmed) const;
 
     /// Determine if an unspent transaction exists with the given hash.
     bool get_is_unspent_transaction(const hash_digest& hash,
-        size_t branch_height) const;
+        size_t branch_height, bool require_confirmed) const;
 
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash) const;
+        const hash_digest& hash, bool require_confirmed) const;
 
     // Writers.
     // ------------------------------------------------------------------------
@@ -194,16 +194,17 @@ public:
     void fetch_last_height(last_height_fetch_handler handler) const;
 
     /// fetch transaction by hash.
-    void fetch_transaction(const hash_digest& hash,
+    void fetch_transaction(const hash_digest& hash, bool confirmation_required,
         transaction_fetch_handler handler) const;
 
     /// fetch position and height within block of transaction by hash.
     void fetch_transaction_position(const hash_digest& hash,
+        bool confirmation_required,
         transaction_index_fetch_handler handler) const;
 
     /// fetch the output of an outpoint (spent or otherwise).
     void fetch_output(const chain::output_point& outpoint,
-        output_fetch_handler handler) const;
+        bool confirmation_required, output_fetch_handler handler) const;
 
     /// fetch the inpoint (spender) of an outpoint.
     void fetch_spend(const chain::output_point& outpoint,

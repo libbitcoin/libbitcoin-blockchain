@@ -57,12 +57,14 @@ void populate_transaction::populate(transaction_const_ptr tx,
     const auto chain_height = tx->validation.state->height() - 1u;
 
     //*************************************************************************
-    // CONSENSUS: Satoshi implemented this block validation change in Nov 2015.
-    // We must follow the same rules in the tx pool to support block templates.
+    // CONSENSUS:
+    // It is OK for us to restrict *pool* transactions to those that do not
+    // collide with any in the chain (as well as any in the pool) as collision
+    // will result in monetrary destruction and we don't want to facilitate it.
+    // We must allow collisions in *block* validation if that is configured as
+    // otherwise will will not follow the chain when a collision is mined.
     //*************************************************************************
-    if (!state->is_enabled(machine::rule_fork::allow_collisions))
-        populate_duplicate(chain_height, *tx);
-
+    populate_duplicate(chain_height, *tx, false);
     const auto total_inputs = tx->inputs().size();
 
     // Return if there are no inputs to validate (will fail later).
@@ -94,7 +96,7 @@ void populate_transaction::populate_inputs(transaction_const_ptr tx,
     {
         const auto& input = inputs[input_index];
         const auto& prevout = input.previous_output();
-        populate_prevout(chain_height, prevout);
+        populate_prevout(chain_height, prevout, false);
     }
 
     handler(error::success);

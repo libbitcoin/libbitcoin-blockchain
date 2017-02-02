@@ -71,10 +71,10 @@ void populate_block::populate(branch::const_ptr branch,
         //*********************************************************************
         // CONSENSUS: The tx duplicate check must apply to coinbase txs.
         //*********************************************************************
-        // TODO: consider paralellize by transaction.
+        // TODO: consider paralellize by batch of transactions.
         for (auto& tx: block->transactions())
         {
-            populate_base::populate_duplicate(branch->height(), tx);
+            populate_base::populate_duplicate(branch->height(), tx, true);
             populate_duplicate(branch, tx);
         }
     }
@@ -151,7 +151,7 @@ void populate_block::populate_inputs(branch::const_ptr branch,
 
             const auto& input = inputs[input_index];
             const auto& prevout = input.previous_output();
-            populate_base::populate_prevout(branch_height, prevout);
+            populate_base::populate_prevout(branch_height, prevout, true);
             populate_prevout(branch, prevout);
         }
     }

@@ -42,14 +42,14 @@ populate_base::populate_base(threadpool& pool, const fast_chain& chain)
 }
 
 void populate_base::populate_duplicate(size_t branch_height,
-    const chain::transaction& tx) const
+    const chain::transaction& tx, bool require_confirmed) const
 {
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
-        tx.hash(), branch_height);
+        tx.hash(), branch_height, require_confirmed);
 }
 
 void populate_base::populate_prevout(size_t branch_height,
-    const output_point& outpoint) const
+    const output_point& outpoint, bool require_confirmed) const
 {
     // The previous output will be cached on the input's outpoint.
     auto& prevout = outpoint.validation;
@@ -69,7 +69,7 @@ void populate_base::populate_prevout(size_t branch_height,
     // Get the script, value and spender height (if any) for the prevout.
     // The output (prevout.cache) is populated only if the return is true.
     if (!fast_chain_.get_output(prevout.cache, output_height, output_coinbase,
-        outpoint, branch_height))
+        outpoint, branch_height, require_confirmed))
         return;
 
     //*************************************************************************
