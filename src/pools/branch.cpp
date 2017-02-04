@@ -140,26 +140,32 @@ uint256_t branch::work() const
     return total;
 }
 
-void branch::populate_tx(const chain::transaction& tx) const
-{
-    const auto outer = [&tx](size_t total, block_const_ptr block)
-    {
-        const auto hashes = [&tx](const transaction& block_tx)
-        {
-            return block_tx.hash() == tx.hash();
-        };
-
-        const auto& txs = block->transactions();
-        return total + std::count_if(txs.begin(), txs.end(), hashes);
-    };
-
-    // Counting all is easier than excluding self and terminating early.
-    const auto count = std::accumulate(blocks_->begin(), blocks_->end(),
-        size_t(0), outer);
-
-    BITCOIN_ASSERT(count > 0);
-    tx.validation.duplicate = count > 1u;
-}
+// BUGBUG: this does not differentiate between spent and unspent txs.
+// Spent transactions could exist in the pool due to other txs in the same or
+// later pool blocks. So this is disabled in favor of "allowed collisions".
+// Otherwise it could reject a spent duplicate. Given that collisions must be
+// rejected at least prior to the BIP34 checkpoint this is technically a
+// consensus break which would only apply to a reorg at height less than BIP34.
+////void branch::populate_duplicate(const chain::transaction& tx) const
+////{
+////    const auto outer = [&tx](size_t total, block_const_ptr block)
+////    {
+////        const auto hashes = [&tx](const transaction& block_tx)
+////        {
+////            return block_tx.hash() == tx.hash();
+////        };
+////
+////        const auto& txs = block->transactions();
+////        return total + std::count_if(txs.begin(), txs.end(), hashes);
+////    };
+////
+////    // Counting all is easier than excluding self and terminating early.
+////    const auto count = std::accumulate(blocks_->begin(), blocks_->end(),
+////        size_t(0), outer);
+////
+////    BITCOIN_ASSERT(count > 0);
+////    tx.validation.duplicate = count > 1u;
+////}
 
 void branch::populate_spent(const output_point& outpoint) const
 {
