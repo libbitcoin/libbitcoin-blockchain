@@ -179,6 +179,21 @@ bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
     return result && !result.is_spent(branch_height);
 }
 
+bool block_chain::get_transaction_position(size_t& out_height,
+    size_t& out_position, const hash_digest& hash,
+    bool require_confirmed) const
+{
+    const auto result = database_.transactions().get(hash, max_size_t,
+        require_confirmed);
+
+    if (!result)
+        return false;
+
+    out_height = result.height();
+    out_position = result.position();
+    return true;
+}
+
 transaction_ptr block_chain::get_transaction(size_t& out_block_height,
     const hash_digest& hash, bool require_confirmed) const
 {

@@ -97,6 +97,10 @@ public:
     bool get_is_unspent_transaction(const hash_digest& hash,
         size_t branch_height, bool require_confirmed) const;
 
+    /// Get position data for a transaction.
+    bool get_transaction_position(size_t& out_height, size_t& out_position,
+        const hash_digest& hash, bool require_confirmed) const;
+
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,
         const hash_digest& hash, bool require_confirmed) const;
