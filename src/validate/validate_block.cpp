@@ -44,13 +44,16 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
+// If the priority threadpool is shut down when this is running the handlers
+// will never be invoked, resulting in a threadpool.join indefinite hang.
+
 validate_block::validate_block(threadpool& priority_pool,
     const fast_chain& chain, const settings& settings, bool relay_transactions)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
+    fast_chain_(chain),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
-    block_populator_(priority_pool, chain, relay_transactions),
-    fast_chain_(chain)
+    block_populator_(priority_pool, chain, relay_transactions)
 {
 }
 
@@ -149,8 +152,6 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto join_handler = synchronize(std::move(complete_handler), threads,
         NAME "_accept");
 
-    // If the priority threadpool is shut down when this is called the handler
-    // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < threads; ++bucket)
         priority_dispatch_.concurrent(&validate_block::accept_transactions,
             this, block, bucket, sigops, bip16, join_handler);
@@ -223,12 +224,19 @@ void validate_block::connect(branch::const_ptr branch,
         return;
     }
 
+    // Reset statistics for each block (treat coinbase as cached).
+    hits_ = 1;
+    queries_ = 1;
+
+    result_handler complete_handler =
+        std::bind(&validate_block::handle_connected,
+            this, _1, branch->top_height(), handler);
+
     const auto threads = priority_dispatch_.size();
     const auto buckets = std::min(threads, non_coinbase_inputs);
-    const auto join_handler = synchronize(handler, buckets, NAME "_validate");
+    const auto join_handler = synchronize(std::move(complete_handler), buckets,
+        NAME "_validate");
 
-    // If the priority threadpool is shut down when this is called the handler
-    // will never be invoked, resulting in a threadpool.join indefinite hang.
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::connect_inputs,
             this, block, bucket, buckets, join_handler);
@@ -246,9 +254,14 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
+        ++queries_;
+
         // The tx is pooled with current fork state so outputs are validated.
         if (tx->validation.current)
+        {
+            ++hits_;
             continue;
+        }
 
         size_t input_index;
         const auto& inputs = tx->inputs();
@@ -287,6 +300,22 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
             break;
         }
     }
+
+    handler(ec);
+}
+
+// The tx pool cache hit rate.
+float validate_block::hit_rate() const
+{
+    // These values could overflow or divide by zero, but that's okay.
+    return hits_ * 1.0f / queries_;
+}
+
+void validate_block::handle_connected(const code& ec, size_t height,
+    result_handler handler) const
+{
+    LOG_DEBUG(LOG_BLOCKCHAIN)
+        << "Block [" << height << "] tx cache hit rate: " << hit_rate();
 
     handler(ec);
 }

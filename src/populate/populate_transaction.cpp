@@ -58,7 +58,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
     // CONSENSUS:
     // It is OK for us to restrict *pool* transactions to those that do not
     // collide with any in the chain (as well as any in the pool) as collision
-    // will result in monetrary destruction and we don't want to facilitate it.
+    // will result in monetary destruction and we don't want to facilitate it.
     // We must allow collisions in *block* validation if that is configured as
     // otherwise will will not follow the chain when a collision is mined.
     //*************************************************************************
