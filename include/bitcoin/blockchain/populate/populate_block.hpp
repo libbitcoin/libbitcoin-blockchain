@@ -43,12 +43,14 @@ public:
 protected:
     typedef branch::const_ptr branch_ptr;
 
-    void populate_coinbase(block_const_ptr block) const;
+    void populate_coinbase(branch::const_ptr branch,
+        block_const_ptr block) const;
 
-    void populate_duplicate(branch_ptr branch, const chain::transaction& tx) const;
+    ////void populate_duplicate(branch_ptr branch,
+    ////    const chain::transaction& tx) const;
 
-    void populate_inputs(branch::const_ptr branch, size_t bucket, size_t buckets,
-        result_handler handler) const;
+    void populate_transactions(branch::const_ptr branch, size_t bucket,
+        size_t buckets, result_handler handler) const;
 
     void populate_prevout(branch_ptr branch,
         const chain::output_point& outpoint) const;
