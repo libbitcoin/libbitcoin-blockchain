@@ -41,11 +41,11 @@ using namespace std::placeholders;
 
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
-    const database::settings& database_settings)
+    const database::settings& database_settings, bool relay_transactions)
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    block_organizer_(pool, *this, chain_settings),
+    block_organizer_(pool, *this, chain_settings, relay_transactions),
     transaction_organizer_(pool, *this, chain_settings),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings)

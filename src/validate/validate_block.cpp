@@ -45,11 +45,11 @@ using namespace std::placeholders;
 // transaction: { exists, height, output }
 
 validate_block::validate_block(threadpool& priority_pool,
-    const fast_chain& chain, const settings& settings)
+    const fast_chain& chain, const settings& settings, bool relay_transactions)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
     priority_dispatch_(priority_pool, NAME "_dispatch"),
-    block_populator_(priority_pool, chain),
+    block_populator_(priority_pool, chain, relay_transactions),
     fast_chain_(chain)
 {
 }

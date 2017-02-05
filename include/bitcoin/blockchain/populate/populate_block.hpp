@@ -35,7 +35,8 @@ class BCB_API populate_block
   : public populate_base
 {
 public:
-    populate_block(threadpool& priority_pool, const fast_chain& chain);
+    populate_block(threadpool& priority_pool, const fast_chain& chain,
+        bool relay_transactions);
 
     /// Populate validation state for the top block.
     void populate(branch::const_ptr branch, result_handler&& handler) const;
@@ -54,6 +55,9 @@ protected:
 
     void populate_prevout(branch_ptr branch,
         const chain::output_point& outpoint) const;
+
+private:
+    const bool relay_transactions_;
 };
 
 } // namespace blockchain

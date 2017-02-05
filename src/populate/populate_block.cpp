@@ -37,8 +37,9 @@ using namespace bc::machine;
 // Database access is limited to calling populate_base.
 
 populate_block::populate_block(threadpool& priority_pool,
-    const fast_chain& chain)
-  : populate_base(priority_pool, chain)
+    const fast_chain& chain, bool relay_transactions)
+  : populate_base(priority_pool, chain),
+    relay_transactions_(relay_transactions)
 {
 }
 
@@ -147,10 +148,16 @@ void populate_block::populate_transactions(branch::const_ptr branch,
     {
         const auto& tx = txs[position];
 
-        // These prevent output validation and full tx deposit respectively.
+        //---------------------------------------------------------------------
+        // This prevents output validation and full tx deposit respectively.
         // The tradeoff is a read per tx that may not be cached. This is
         // bypassed by checkpoints. This will be optimized using the tx pool.
-        populate_base::populate_pooled(tx, forks);
+        // Until that time this is a material population performance hit.
+        // However the hit is necessary in preventing store tx duplication
+        // unless tx relay is disabled. In that case duplication is unlikely.
+        //---------------------------------------------------------------------
+        if (relay_transactions_)
+            populate_base::populate_pooled(tx, forks);
 
         //*********************************************************************
         // CONSENSUS: Satoshi implemented allow collisions in Nov 2015. This is

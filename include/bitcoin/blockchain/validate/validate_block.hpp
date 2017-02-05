@@ -41,7 +41,7 @@ public:
     typedef handle0 result_handler;
 
     validate_block(threadpool& priority_pool, const fast_chain& chain,
-        const settings& settings);
+        const settings& settings, bool relay_transactions);
 
     void start();
     void stop();
