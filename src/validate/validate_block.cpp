@@ -239,20 +239,23 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
 {
     BITCOIN_ASSERT(bucket < buckets);
     code ec(error::success);
-    const auto branches = block->validation.state->enabled_forks();
+    const auto forks = block->validation.state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
 
     // Must skip coinbase here as it is already accounted for.
     for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
     {
+        // The tx is pooled with current fork state so outputs are validated.
+        if (tx->validation.current)
+            continue;
+
         size_t input_index;
         const auto& inputs = tx->inputs();
 
         for (input_index = 0; input_index < inputs.size();
             ++input_index, ++position)
         {
-            // TODO: eliminate the wasteful iterations by using smart step.
             if (position % buckets != bucket)
                 continue;
 
@@ -270,7 +273,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
                 break;
             }
 
-            if ((ec = validate_input::verify_script(*tx, input_index, branches,
+            if ((ec = validate_input::verify_script(*tx, input_index, forks,
                 use_libconsensus_)))
             {
                 break;
@@ -280,7 +283,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         if (ec)
         {
             const auto height = block->validation.state->height();
-            dump(ec, *tx, input_index, branches, height, use_libconsensus_);
+            dump(ec, *tx, input_index, forks, height, use_libconsensus_);
             break;
         }
     }
