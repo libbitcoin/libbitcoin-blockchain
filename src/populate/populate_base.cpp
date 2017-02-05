@@ -28,12 +28,13 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
+using namespace bc::database;
 
 #define NAME "populate_base"
 
 // Database access is limited to:
 // spend: { spender }
-// transaction: { exists, height, output }
+// transaction: { exists, height, position, output }
 
 populate_base::populate_base(threadpool& pool, const fast_chain& chain)
   : dispatch_(pool, NAME),
@@ -41,15 +42,37 @@ populate_base::populate_base(threadpool& pool, const fast_chain& chain)
 {
 }
 
+// This is the only necessary file system read in block/tx validation.
 void populate_base::populate_duplicate(size_t branch_height,
-    const chain::transaction& tx) const
+    const chain::transaction& tx, bool require_confirmed) const
 {
     tx.validation.duplicate = fast_chain_.get_is_unspent_transaction(
-        tx.hash(), branch_height);
+        tx.hash(), branch_height, require_confirmed);
 }
 
+void populate_base::populate_pooled(const chain::transaction& tx,
+    uint32_t forks) const
+{
+    size_t height;
+    size_t position;
+
+    if (fast_chain_.get_transaction_position(height, position, tx.hash(),
+        false) && (position == transaction_database::unconfirmed))
+    {
+        tx.validation.pooled = true;
+        tx.validation.current = (height == forks);
+        return;
+    }
+
+    tx.validation.pooled = false;
+    tx.validation.current = false;
+}
+
+// Unspent outputs are cached by the store. If the cache is large enough this
+// may never hit the file system. However on high RAM systems the file system
+// is faster than the cache due to reduced paging of the memory-mapped file.
 void populate_base::populate_prevout(size_t branch_height,
-    const output_point& outpoint) const
+    const output_point& outpoint, bool require_confirmed) const
 {
     // The previous output will be cached on the input's outpoint.
     auto& prevout = outpoint.validation;
@@ -69,7 +92,7 @@ void populate_base::populate_prevout(size_t branch_height,
     // Get the script, value and spender height (if any) for the prevout.
     // The output (prevout.cache) is populated only if the return is true.
     if (!fast_chain_.get_output(prevout.cache, output_height, output_coinbase,
-        outpoint, branch_height))
+        outpoint, branch_height, require_confirmed))
         return;
 
     //*************************************************************************
@@ -84,10 +107,12 @@ void populate_base::populate_prevout(size_t branch_height,
     if (output_coinbase)
         prevout.height = output_height;
 
+    // BUGBUG: Spends are not marked as spent by unconfirmed transactions.
+    // So tx pool transactions currently have no double spend limitation.
     // The output is spent only if by a spend at or below the branch height.
     const auto spend_height = prevout.cache.validation.spender_height;
 
-    // The previous output has already been spent.
+    // The previous output has already been spent (double spend).
     if ((spend_height <= branch_height) &&
         (spend_height != output::validation::not_spent))
     {

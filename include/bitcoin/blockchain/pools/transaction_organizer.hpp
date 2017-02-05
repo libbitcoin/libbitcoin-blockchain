@@ -42,7 +42,8 @@ public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<transaction_organizer> ptr;
     typedef safe_chain::transaction_handler transaction_handler;
-    typedef safe_chain::inventory_fetch_handler mempool_fetch_handler;
+    typedef safe_chain::inventory_fetch_handler inventory_fetch_handler;
+    typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
     typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
 
     /// Construct an instance.
@@ -56,8 +57,8 @@ public:
     void organize(transaction_const_ptr tx, result_handler handler);
     void subscribe_transaction(transaction_handler&& handler);
 
-    void fetch_template(mempool_fetch_handler) const;
-    void fetch_mempool(size_t maximum, mempool_fetch_handler) const;
+    void fetch_template(merkle_block_fetch_handler) const;
+    void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
 
 protected:
     bool stopped() const;

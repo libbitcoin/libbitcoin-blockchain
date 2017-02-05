@@ -52,8 +52,8 @@ public:
     /// The top block of the branch, if it exists.
     size_t top_height() const;
 
-    /// Populate transaction validation state in the context of the branch.
-    void populate_tx(const chain::transaction& tx) const;
+    /////// Populate unspent duplicate state in the context of the branch.
+    ////void populate_duplicate(const chain::transaction& tx) const;
 
     /// Populate prevout validation spend state in the context of the branch.
     void populate_spent(const chain::output_point& outpoint) const;

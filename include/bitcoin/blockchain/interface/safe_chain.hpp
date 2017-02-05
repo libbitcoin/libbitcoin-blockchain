@@ -113,13 +113,15 @@ public:
         last_height_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction(const hash_digest& hash,
+        bool confirmation_required,
         transaction_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction_position(const hash_digest& hash,
+        bool confirmation_required,
         transaction_index_fetch_handler handler) const = 0;
 
     virtual void fetch_output(const chain::output_point& outpoint,
-        output_fetch_handler handler) const = 0;
+        bool confirmation_required, output_fetch_handler handler) const = 0;
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
@@ -145,7 +147,7 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    virtual void fetch_template(inventory_fetch_handler handler) const = 0;
+    virtual void fetch_template(merkle_block_fetch_handler handler) const = 0;
     virtual void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
         inventory_fetch_handler handler) const = 0;
 

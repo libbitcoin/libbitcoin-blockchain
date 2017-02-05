@@ -46,13 +46,13 @@ using namespace std::placeholders;
 // transaction: { exists, height, output }
 
 block_organizer::block_organizer(threadpool& thread_pool, fast_chain& chain,
-    const settings& settings)
+    const settings& settings, bool relay_transactions)
   : fast_chain_(chain),
     stopped_(true),
     block_pool_(settings.reorganization_limit),
     priority_pool_(threads(settings.cores, 1), priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_priority"),
-    validator_(priority_pool_, fast_chain_, settings),
+    validator_(priority_pool_, fast_chain_, settings, relay_transactions),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
 }

@@ -41,11 +41,11 @@ using namespace std::placeholders;
 
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
-    const database::settings& database_settings)
+    const database::settings& database_settings, bool relay_transactions)
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    block_organizer_(pool, *this, chain_settings),
+    block_organizer_(pool, *this, chain_settings, relay_transactions),
     transaction_organizer_(pool, *this, chain_settings),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings)
@@ -162,25 +162,44 @@ bool block_chain::get_last_height(size_t& out_height) const
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
     bool& out_coinbase, const chain::output_point& outpoint,
-    size_t branch_height) const
+    size_t branch_height, bool require_confirmed) const
 {
     // This includes a cached value for spender height (or not_spent).
     // Get the highest tx with matching hash, at or below the branch height.
     return database_.transactions().get_output(out_output, out_height,
-        out_coinbase, outpoint, branch_height);
+        out_coinbase, outpoint, branch_height, require_confirmed);
 }
 
 bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
-    size_t branch_height) const
+    size_t branch_height, bool require_confirmed) const
 {
-    const auto result = database_.transactions().get(hash, branch_height);
+    const auto result = database_.transactions().get(hash, branch_height,
+        require_confirmed);
+
     return result && !result.is_spent(branch_height);
 }
 
-transaction_ptr block_chain::get_transaction(size_t& out_block_height,
-    const hash_digest& hash) const
+bool block_chain::get_transaction_position(size_t& out_height,
+    size_t& out_position, const hash_digest& hash,
+    bool require_confirmed) const
 {
-    const auto result = database_.transactions().get(hash, max_size_t);
+    const auto result = database_.transactions().get(hash, max_size_t,
+        require_confirmed);
+
+    if (!result)
+        return false;
+
+    out_height = result.height();
+    out_position = result.position();
+    return true;
+}
+
+transaction_ptr block_chain::get_transaction(size_t& out_block_height,
+    const hash_digest& hash, bool require_confirmed) const
+{
+    const auto result = database_.transactions().get(hash, max_size_t,
+        require_confirmed);
+
     if (!result)
         return nullptr;
 
@@ -320,7 +339,7 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
         for (size_t position = 0; position < count; ++position)
         {
             const auto tx_result = database_.transactions().get(
-                block_result.transaction_hash(position), max_size_t);
+                block_result.transaction_hash(position), max_size_t, true);
 
             if (!tx_result)
                 return finish_read(slock, handler, error::operation_failed,
@@ -362,7 +381,7 @@ void block_chain::fetch_block(const hash_digest& hash,
         for (size_t position = 0; position < count; ++position)
         {
             const auto tx_result = database_.transactions().get(
-                block_result.transaction_hash(position), max_size_t);
+                block_result.transaction_hash(position), max_size_t, true);
 
             if (!tx_result)
                 return finish_read(slock, handler, error::operation_failed,
@@ -529,11 +548,8 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
     read_serial(do_fetch);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: parameterize for confirmation required.
-///////////////////////////////////////////////////////////////////////////////
 void block_chain::fetch_transaction(const hash_digest& hash,
-    transaction_fetch_handler handler) const
+    bool confirmation_required, transaction_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -543,7 +559,8 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions().get(hash, max_size_t);
+        const auto result = database_.transactions().get(hash, max_size_t,
+            confirmation_required);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0, 0);
@@ -555,13 +572,10 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     read_serial(do_fetch);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TODO: return unconfirmed sentinel and either forks or top height.
 // This is only used for the server API, need to document sentinel/forks.
-///////////////////////////////////////////////////////////////////////////////
-// same as fetch_transaction but skips the tx payload.
+// This is same as fetch_transaction but skips the tx payload.
 void block_chain::fetch_transaction_position(const hash_digest& hash,
-    transaction_index_fetch_handler handler) const
+    bool confirmation_required, transaction_index_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -571,7 +585,9 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto do_fetch = [&](size_t slock)
     {
-        const auto result = database_.transactions().get(hash, max_size_t);
+        auto result = database_.transactions().get(hash, max_size_t,
+            confirmation_required);
+
         return result ?
             finish_read(slock, handler, error::success, result.position(),
                 result.height()) :
@@ -581,7 +597,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 }
 
 void block_chain::fetch_output(const chain::output_point& outpoint,
-    output_fetch_handler handler) const
+    bool confirmation_required, output_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -592,7 +608,7 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
     const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions().get(outpoint.hash(),
-            max_size_t);
+            max_size_t, confirmation_required);
 
         if (!result)
             return finish_read(slock, handler, error::not_found,
@@ -859,7 +875,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 
 // Same as fetch_mempool but also optimized for maximum possible block fee as
 // limited by total bytes and signature operations.
-void block_chain::fetch_template(inventory_fetch_handler handler) const
+void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 {
     transaction_organizer_.fetch_template(handler);
 }
@@ -925,7 +941,7 @@ void block_chain::filter_transactions(get_data_ptr message,
         for (auto it = inventories.begin(); it != inventories.end();)
         {
             if (it->is_transaction_type() &&
-                get_is_unspent_transaction(it->hash(), max_size_t))
+                get_is_unspent_transaction(it->hash(), max_size_t, false))
                 it = inventories.erase(it);
             else
                 ++it;

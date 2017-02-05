@@ -41,7 +41,7 @@ public:
     typedef handle0 result_handler;
 
     validate_block(threadpool& priority_pool, const fast_chain& chain,
-        const settings& settings);
+        const settings& settings, bool relay_transactions);
 
     void start();
     void stop();
@@ -55,6 +55,8 @@ protected:
     {
         return stopped_;
     }
+
+    float hit_rate() const;
 
 private:
     typedef std::atomic<size_t> atomic_counter;
@@ -73,11 +75,15 @@ private:
         result_handler handler) const;
     void connect_inputs(block_const_ptr block, size_t bucket,
         size_t buckets, result_handler handler) const;
+    void handle_connected(const code& ec, size_t height,
+        result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
     const fast_chain& fast_chain_;
+    mutable atomic_counter hits_;
+    mutable atomic_counter queries_;
     mutable dispatcher priority_dispatch_;
 
     // Caller must not invoke accept/connect concurrently.

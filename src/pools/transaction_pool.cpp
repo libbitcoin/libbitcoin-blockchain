@@ -40,18 +40,19 @@ transaction_pool::transaction_pool(const settings& settings)
 }
 
 // TODO: implement block template discovery.
-void transaction_pool::fetch_template(mempool_fetch_handler handler) const
+void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 {
-    const auto dummy = std::make_shared<message::inventory>();
-    handler(error::success, dummy);
+    const size_t height = max_size_t;
+    const auto block = std::make_shared<message::merkle_block>();
+    handler(error::success, block, height);
 }
 
 // TODO: implement mempool message payload discovery.
 void transaction_pool::fetch_mempool(size_t maximum,
-    mempool_fetch_handler handler) const
+    inventory_fetch_handler handler) const
 {
-    const auto dummy = std::make_shared<message::inventory>();
-    handler(error::success, dummy);
+    const auto empty = std::make_shared<message::inventory>();
+    handler(error::success, empty);
 }
 
 } // namespace blockchain

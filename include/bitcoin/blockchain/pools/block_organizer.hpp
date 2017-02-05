@@ -48,7 +48,7 @@ public:
 
     /// Construct an instance.
     block_organizer(threadpool& thread_pool, fast_chain& chain,
-        const settings& settings);
+        const settings& settings, bool relay_transactions);
 
     bool start();
     bool stop();

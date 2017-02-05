@@ -210,13 +210,14 @@ void transaction_organizer::notify_transaction(transaction_const_ptr tx)
 // Queries.
 //-----------------------------------------------------------------------------
 
-void transaction_organizer::fetch_template(mempool_fetch_handler handler) const
+void transaction_organizer::fetch_template(
+    merkle_block_fetch_handler handler) const
 {
     transaction_pool_.fetch_template(handler);
 }
 
 void transaction_organizer::fetch_mempool(size_t maximum,
-    mempool_fetch_handler handler) const
+    inventory_fetch_handler handler) const
 {
     transaction_pool_.fetch_mempool(maximum, handler);
 }

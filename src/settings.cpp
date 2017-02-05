@@ -33,12 +33,11 @@ settings::settings()
     reorganization_limit(256),
     block_version(4),
     easy_blocks(false),
-    bip16(false),
+    bip16(true),
     bip30(true),
     bip34(true),
     bip66(true),
     bip65(true),
-    allow_collisions(false),
     bip90(true)
 {
 }
@@ -54,7 +53,6 @@ uint32_t settings::enabled_forks() const
     forks |= (bip34 ? rule_fork::bip34_rule : 0);
     forks |= (bip66 ? rule_fork::bip66_rule : 0);
     forks |= (bip65 ? rule_fork::bip65_rule : 0);
-    forks |= (allow_collisions ? rule_fork::allow_collisions : 0);
     forks |= (bip90 ? rule_fork::bip90_rule : 0);
     return forks;
 }

@@ -33,12 +33,13 @@ namespace blockchain {
 class BCB_API transaction_pool
 {
 public:
-    typedef safe_chain::inventory_fetch_handler mempool_fetch_handler;
+    typedef safe_chain::inventory_fetch_handler inventory_fetch_handler;
+    typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
 
     transaction_pool(const settings& settings);
 
-    void fetch_template(mempool_fetch_handler) const;
-    void fetch_mempool(size_t maximum, mempool_fetch_handler) const;
+    void fetch_template(merkle_block_fetch_handler) const;
+    void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
 
 private:
     const bool reject_conflicts_;

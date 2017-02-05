@@ -81,15 +81,20 @@ public:
     /// Get the output that is referenced by the outpoint.
     virtual bool get_output(chain::output& out_output, size_t& out_height,
         bool& out_coinbase, const chain::output_point& outpoint,
-        size_t branch_height) const = 0;
+        size_t branch_height, bool require_confirmed) const = 0;
 
     /// Determine if an unspent transaction exists with the given hash.
     virtual bool get_is_unspent_transaction(const hash_digest& hash,
-        size_t branch_height) const = 0;
+        size_t branch_height, bool require_confirmed) const = 0;
+
+    /// Get position data for a transaction.
+    virtual bool get_transaction_position(size_t& out_height,
+        size_t& out_position, const hash_digest& hash,
+        bool require_confirmed) const = 0;
 
     /// Get the transaction of the given hash and its block height.
     virtual transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash) const = 0;
+        const hash_digest& hash, bool require_confirmed) const = 0;
 
     // Writers.
     // ------------------------------------------------------------------------ 

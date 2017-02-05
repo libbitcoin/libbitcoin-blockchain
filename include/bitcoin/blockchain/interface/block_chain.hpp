@@ -42,9 +42,13 @@ class BCB_API block_chain
   : public safe_chain, public fast_chain, noncopyable
 {
 public:
+    /// Relay transactions is network setting that is passed through to block
+    /// population as an optimization. This can be removed once there is an
+    /// in-memory cache of tx pool metadata, as the costly query will go away.
     block_chain(threadpool& pool, 
         const blockchain::settings& chain_settings,
-        const database::settings& database_settings);
+        const database::settings& database_settings,
+        bool relay_transactions=true);
 
     /// The database is closed on destruct, threads must be joined.
     ~block_chain();
@@ -91,15 +95,19 @@ public:
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
         bool& out_coinbase, const chain::output_point& outpoint,
-        size_t branch_height) const;
+        size_t branch_height, bool require_confirmed) const;
 
     /// Determine if an unspent transaction exists with the given hash.
     bool get_is_unspent_transaction(const hash_digest& hash,
-        size_t branch_height) const;
+        size_t branch_height, bool require_confirmed) const;
+
+    /// Get position data for a transaction.
+    bool get_transaction_position(size_t& out_height, size_t& out_position,
+        const hash_digest& hash, bool require_confirmed) const;
 
     /// Get the transaction of the given hash and its block height.
     transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash) const;
+        const hash_digest& hash, bool require_confirmed) const;
 
     // Writers.
     // ------------------------------------------------------------------------
@@ -194,16 +202,17 @@ public:
     void fetch_last_height(last_height_fetch_handler handler) const;
 
     /// fetch transaction by hash.
-    void fetch_transaction(const hash_digest& hash,
+    void fetch_transaction(const hash_digest& hash, bool confirmation_required,
         transaction_fetch_handler handler) const;
 
     /// fetch position and height within block of transaction by hash.
     void fetch_transaction_position(const hash_digest& hash,
+        bool confirmation_required,
         transaction_index_fetch_handler handler) const;
 
     /// fetch the output of an outpoint (spent or otherwise).
     void fetch_output(const chain::output_point& outpoint,
-        output_fetch_handler handler) const;
+        bool confirmation_required, output_fetch_handler handler) const;
 
     /// fetch the inpoint (spender) of an outpoint.
     void fetch_spend(const chain::output_point& outpoint,
@@ -234,8 +243,8 @@ public:
     // Transaction Pool.
     //-------------------------------------------------------------------------
 
-    /// Fetch an inventory vector for the maximal fee block template.
-    void fetch_template(inventory_fetch_handler handler) const;
+    /// Fetch a merkle block for the maximal fee block template.
+    void fetch_template(merkle_block_fetch_handler handler) const;
 
     /// Fetch an inventory vector for a rational "mempool" message response.
     void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
