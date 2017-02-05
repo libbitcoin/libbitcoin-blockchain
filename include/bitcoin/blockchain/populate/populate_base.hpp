@@ -21,6 +21,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -39,6 +40,8 @@ protected:
 
     void populate_duplicate(size_t maximum_height,
         const chain::transaction& tx, bool require_confirmed) const;
+
+    void populate_pooled(const chain::transaction& tx, uint32_t forks) const;
 
     void populate_prevout(size_t maximum_height,
         const chain::output_point& outpoint, bool require_confirmed) const;
