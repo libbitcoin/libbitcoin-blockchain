@@ -57,10 +57,10 @@ void populate_base::populate_pooled(const chain::transaction& tx,
     size_t position;
 
     if (fast_chain_.get_transaction_position(height, position, tx.hash(),
-        false) && height == transaction_database::unconfirmed)
+        false) && (position == transaction_database::unconfirmed))
     {
         tx.validation.pooled = true;
-        tx.validation.current = (position == forks);
+        tx.validation.current = (height == forks);
         return;
     }
 
