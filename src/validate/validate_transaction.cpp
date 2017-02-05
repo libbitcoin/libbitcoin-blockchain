@@ -84,7 +84,7 @@ code validate_transaction::check(transaction_const_ptr tx) const
 void validate_transaction::accept(transaction_const_ptr tx,
     result_handler handler) const
 {
-    // Populate chain state for the next block.
+    // Populate chain state of the next block (tx pool).
     tx->validation.state = fast_chain_.chain_state();
 
     if (!tx->validation.state)

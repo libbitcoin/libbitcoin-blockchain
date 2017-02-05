@@ -37,6 +37,7 @@ using namespace bc::chain;
 static constexpr uint32_t unspecified = max_uint32;
 
 // Database access is limited to:
+// get_last_height
 // block: { hash, bits, version, timestamp }
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
@@ -162,7 +163,6 @@ bool populate_chain_state::populate_checkpoint(chain_state::data& data,
 {
     if (map.allow_collisions_height == chain_state::map::unrequested)
     {
-        // The allow_collisions_hash must be null_hash if unrequested.
         data.allow_collisions_hash = null_hash;
         return true;
     }

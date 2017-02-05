@@ -36,9 +36,7 @@ using namespace std::placeholders;
 
 #define NAME "populate_transaction"
 
-// Database access is limited to:
-// spend: { spender }
-// transaction: { exists, height, output }
+// Database access is limited to calling populate_base.
 
 populate_transaction::populate_transaction(threadpool& pool,
     const fast_chain& chain)
@@ -64,7 +62,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
     // We must allow collisions in *block* validation if that is configured as
     // otherwise will will not follow the chain when a collision is mined.
     //*************************************************************************
-    populate_duplicate(chain_height, *tx, false);
+    populate_base::populate_duplicate(chain_height, *tx, false);
     const auto total_inputs = tx->inputs().size();
 
     // Return if there are no inputs to validate (will fail later).
