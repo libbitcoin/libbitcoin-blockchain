@@ -130,7 +130,6 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
-    // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler =
         std::bind(&transaction_organizer::handle_connect,
             this, _1, tx, handler);
