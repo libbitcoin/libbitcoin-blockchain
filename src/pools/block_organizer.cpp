@@ -170,7 +170,6 @@ void block_organizer::handle_accept(const code& ec, branch::ptr branch,
         return;
     }
 
-    // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler = 
         std::bind(&block_organizer::handle_connect,
             this, _1, branch, handler);

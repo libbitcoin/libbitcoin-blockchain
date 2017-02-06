@@ -130,7 +130,6 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
-    // This also protects our stack from exhaustion due to recursion.
     const result_handler connect_handler =
         std::bind(&transaction_organizer::handle_connect,
             this, _1, tx, handler);
@@ -152,6 +151,14 @@ void transaction_organizer::handle_connect(const code& ec,
     if (ec)
     {
         handler(ec);
+        return;
+    }
+
+    // The validation is not intended to store the transaction.
+    // TODO: create an simulated validation path that does not lock others.
+    if (tx->validation.simulate)
+    {
+        handler(error::success);
         return;
     }
 

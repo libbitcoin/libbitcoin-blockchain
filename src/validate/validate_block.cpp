@@ -230,7 +230,7 @@ void validate_block::connect(branch::const_ptr branch,
 
     result_handler complete_handler =
         std::bind(&validate_block::handle_connected,
-            this, _1, branch->top_height(), handler);
+            this, _1, block, handler);
 
     const auto threads = priority_dispatch_.size();
     const auto buckets = std::min(threads, non_coinbase_inputs);
@@ -311,12 +311,10 @@ float validate_block::hit_rate() const
     return hits_ * 1.0f / queries_;
 }
 
-void validate_block::handle_connected(const code& ec, size_t height,
+void validate_block::handle_connected(const code& ec, block_const_ptr block,
     result_handler handler) const
 {
-    LOG_DEBUG(LOG_BLOCKCHAIN)
-        << "Block [" << height << "] tx cache hit rate: " << hit_rate();
-
+    block->validation.cache_efficiency = hit_rate();
     handler(ec);
 }
 
