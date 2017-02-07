@@ -225,8 +225,8 @@ void validate_block::connect(branch::const_ptr branch,
     }
 
     // Reset statistics for each block (treat coinbase as cached).
-    hits_ = 1;
-    queries_ = 1;
+    hits_ = 0;
+    queries_ = 0;
 
     result_handler complete_handler =
         std::bind(&validate_block::handle_connected,
@@ -308,7 +308,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
 float validate_block::hit_rate() const
 {
     // These values could overflow or divide by zero, but that's okay.
-    return hits_ * 1.0f / queries_;
+    return queries_ == 0 ? 0.0f : (hits_ * 1.0f / queries_);
 }
 
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
