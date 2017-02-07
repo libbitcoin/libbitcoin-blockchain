@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -80,6 +81,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const uint16_t minimum_fee_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;

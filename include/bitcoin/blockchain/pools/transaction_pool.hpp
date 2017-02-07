@@ -30,6 +30,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+/// TODO: this class is not implemented or utilized.
 class BCB_API transaction_pool
 {
 public:
@@ -41,9 +42,9 @@ public:
     void fetch_template(merkle_block_fetch_handler) const;
     void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
 
-private:
-    const bool reject_conflicts_;
-    const uint64_t minimum_fee_;
+////private:
+////    const bool reject_conflicts_;
+////    const uint64_t minimum_fee_;
 };
 
 } // namespace blockchain
