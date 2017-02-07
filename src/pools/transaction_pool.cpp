@@ -34,8 +34,8 @@ namespace blockchain {
 // transactions in previous blocks.
 
 transaction_pool::transaction_pool(const settings& settings)
-  : reject_conflicts_(settings.reject_conflicts),
-    minimum_fee_(settings.minimum_fee_satoshis)
+  ////: reject_conflicts_(settings.reject_conflicts),
+  ////  minimum_fee_(settings.minimum_fee_satoshis)
 {
 }
 
