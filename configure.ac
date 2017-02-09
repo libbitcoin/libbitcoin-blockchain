@@ -13,7 +13,7 @@
 AC_PREREQ([2.65])
 
 # Process command-line arguments and perform initialization and verification.
-AC_INIT([libbitcoin-blockchain], [3.0.0], [eric@voskuil.org])
+AC_INIT([libbitcoin-blockchain], [4.0.0], [eric@voskuil.org])
 
 # Do compilation tests.
 AC_LANG(C++)
@@ -144,19 +144,19 @@ AS_CASE([${with_tests}], [yes],
      AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
     [AC_SUBST([boost_unit_test_framework_LIBS], [])])
 
-# Require bitcoin-database of at least version 3.0.0 and output ${bitcoin_database_CPPFLAGS/LIBS/PKG}.
+# Require bitcoin-database of at least version 4.0.0 and output ${bitcoin_database_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
-PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 3.0.0])
-AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 3.0.0'])
+PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 4.0.0])
+AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 4.0.0'])
 AC_SUBST([bitcoin_database_CPPFLAGS], [${bitcoin_database_CFLAGS}])
 AC_MSG_NOTICE([bitcoin_database_CPPFLAGS : ${bitcoin_database_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_database_LIBS : ${bitcoin_database_LIBS}])
 
-# Require bitcoin-consensus of at least version 2.0.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
+# Require bitcoin-consensus of at least version 4.0.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
 #------------------------------------------------------------------------------
 AS_CASE([${with_consensus}], [yes],
-    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 2.0.0])
-     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 2.0.0'])
+    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 4.0.0])
+     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 4.0.0'])
      AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
      AC_MSG_NOTICE([bitcoin_consensus_CPPFLAGS : ${bitcoin_consensus_CPPFLAGS}])
      AC_MSG_NOTICE([bitcoin_consensus_LIBS : ${bitcoin_consensus_LIBS}])],
