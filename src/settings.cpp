@@ -84,10 +84,6 @@ settings::settings(config::settings context)
             checkpoints.push_back({ "000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214", 250000 });
             checkpoints.push_back({ "0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40", 279000 });
             checkpoints.push_back({ "00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983", 295000 });
-            checkpoints.push_back({ "000000000000000017a4b176294583519076f06cd2b5e4ef139dada8d44838d8", 330791 });
-            checkpoints.push_back({ "000000000000000017522241d7afd686bb2315930fc1121861c9abf52e8c37f1", 337459 });
-            checkpoints.push_back({ "0000000000000000086672a8c97ad666f89cf04736951791150015419810d586", 368991 });
-            checkpoints.push_back({ "000000000000000004ec466ce4732fe6f1ed1cddc2ed4b328fff5224276e3f6f", 400000 });
             break;
         }
 
