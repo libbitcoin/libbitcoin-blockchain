@@ -40,7 +40,7 @@ transaction_organizer::transaction_organizer(threadpool& thread_pool,
     fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     stopped_(true),
-    minimum_fee_(settings.minimum_fee_satoshis),
+    minimum_byte_fee_(settings.minimum_byte_fee_satoshis),
     transaction_pool_(settings),
     validator_(thread_pool, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
@@ -130,7 +130,7 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
-    if (tx->fees() < minimum_fee_)
+    if (tx->fees() < minimum_byte_fee_ * tx->serialized_size(true))
     {
         handler(error::insufficient_fee);
         return;

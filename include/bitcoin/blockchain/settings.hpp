@@ -42,7 +42,8 @@ public:
     bool priority;
     bool use_libconsensus;
     bool reject_conflicts;
-    uint64_t minimum_fee_satoshis;
+    float minimum_byte_fee_satoshis;
+    uint64_t minimum_relay_fee_satoshis;
     uint32_t reorganization_limit;
     uint32_t block_version;
     config::checkpoint::list checkpoints;
