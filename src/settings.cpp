@@ -29,7 +29,6 @@ settings::settings()
     use_libconsensus(false),
     reject_conflicts(true),
     minimum_byte_fee_satoshis(1),
-    minimum_relay_fee_satoshis(1),
     reorganization_limit(256),
     block_version(4),
     easy_blocks(false),
