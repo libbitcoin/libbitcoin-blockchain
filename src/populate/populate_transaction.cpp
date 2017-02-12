@@ -62,6 +62,15 @@ void populate_transaction::populate(transaction_const_ptr tx,
     // otherwise will will not follow the chain when a collision is mined.
     //*************************************************************************
     populate_base::populate_duplicate(chain_height, *tx, false);
+
+    // Because txs include no proof of work we much short circuit here.
+    // Otherwise a peer can flood us with repeat transactions to validate.
+    if (tx->validation.duplicate)
+    {
+        handler(error::unspent_duplicate);
+        return;
+    }
+
     const auto total_inputs = tx->inputs().size();
 
     // Return if there are no inputs to validate (will fail later).

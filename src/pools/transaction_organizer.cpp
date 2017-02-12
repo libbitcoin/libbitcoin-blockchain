@@ -181,6 +181,7 @@ void transaction_organizer::handle_connect(const code& ec,
 void transaction_organizer::handle_transaction(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
+    // The store verifies this as a safeguard, but should have caught earlier.
     if (ec == error::unspent_duplicate)
     {
         handler(ec);
@@ -200,7 +201,7 @@ void transaction_organizer::handle_transaction(const code& ec,
     notify_transaction(tx);
 
     // This is the end of the tx verify sub-sequence.
-    handler(ec);
+    handler(error::success);
 }
 
 // Subscription.
