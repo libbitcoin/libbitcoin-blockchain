@@ -548,7 +548,7 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
 }
 
 void block_chain::fetch_transaction(const hash_digest& hash,
-    bool confirmation_required, transaction_fetch_handler handler) const
+    bool require_confirmed, transaction_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -559,7 +559,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions().get(hash, max_size_t,
-            confirmation_required);
+            require_confirmed);
 
         if (!result)
             return finish_read(slock, handler, error::not_found, nullptr, 0, 0);
@@ -574,7 +574,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 // This is only used for the server API, need to document sentinel/forks.
 // This is same as fetch_transaction but skips the tx payload.
 void block_chain::fetch_transaction_position(const hash_digest& hash,
-    bool confirmation_required, transaction_index_fetch_handler handler) const
+    bool require_confirmed, transaction_index_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -585,7 +585,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     const auto do_fetch = [&](size_t slock)
     {
         auto result = database_.transactions().get(hash, max_size_t,
-            confirmation_required);
+            require_confirmed);
 
         return result ?
             finish_read(slock, handler, error::success, result.position(),
@@ -596,7 +596,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 }
 
 void block_chain::fetch_output(const chain::output_point& outpoint,
-    bool confirmation_required, output_fetch_handler handler) const
+    bool require_confirmed, output_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -607,7 +607,7 @@ void block_chain::fetch_output(const chain::output_point& outpoint,
     const auto do_fetch = [&](size_t slock)
     {
         const auto result = database_.transactions().get(outpoint.hash(),
-            max_size_t, confirmation_required);
+            max_size_t, require_confirmed);
 
         if (!result)
             return finish_read(slock, handler, error::not_found,

@@ -201,17 +201,16 @@ public:
     void fetch_last_height(last_height_fetch_handler handler) const;
 
     /// fetch transaction by hash.
-    void fetch_transaction(const hash_digest& hash, bool confirmation_required,
+    void fetch_transaction(const hash_digest& hash, bool require_confirmed,
         transaction_fetch_handler handler) const;
 
     /// fetch position and height within block of transaction by hash.
     void fetch_transaction_position(const hash_digest& hash,
-        bool confirmation_required,
-        transaction_index_fetch_handler handler) const;
+        bool require_confirmed, transaction_index_fetch_handler handler) const;
 
     /// fetch the output of an outpoint (spent or otherwise).
     void fetch_output(const chain::output_point& outpoint,
-        bool confirmation_required, output_fetch_handler handler) const;
+        bool require_confirmed, output_fetch_handler handler) const;
 
     /// fetch the inpoint (spender) of an outpoint.
     void fetch_spend(const chain::output_point& outpoint,
