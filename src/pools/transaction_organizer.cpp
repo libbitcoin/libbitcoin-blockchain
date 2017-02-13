@@ -160,8 +160,7 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // The validation is not intended to store the transaction.
-    // TODO: create an simulated validation path that does not lock others.
+    // TODO: create a simulated validation path that does not lock others.
     if (tx->validation.simulate)
     {
         handler(error::success);
