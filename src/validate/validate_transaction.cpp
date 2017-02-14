@@ -43,12 +43,12 @@ using namespace std::placeholders;
 // spend: { spender }
 // transaction: { exists, height, output }
 
-validate_transaction::validate_transaction(threadpool& pool,
+validate_transaction::validate_transaction(dispatcher& dispatch,
     const fast_chain& chain, const settings& settings)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
-    dispatch_(pool, NAME "_dispatch"),
-    transaction_populator_(pool, chain),
+    dispatch_(dispatch),
+    transaction_populator_(dispatch, chain),
     fast_chain_(chain)
 {
 }

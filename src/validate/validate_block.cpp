@@ -46,13 +46,13 @@ using namespace std::placeholders;
 // If the priority threadpool is shut down when this is running the handlers
 // will never be invoked, resulting in a threadpool.join indefinite hang.
 
-validate_block::validate_block(threadpool& priority_pool,
-    const fast_chain& chain, const settings& settings, bool relay_transactions)
+validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
+    const settings& settings, bool relay_transactions)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
     fast_chain_(chain),
-    priority_dispatch_(priority_pool, NAME "_dispatch"),
-    block_populator_(priority_pool, chain, relay_transactions)
+    priority_dispatch_(dispatch),
+    block_populator_(dispatch, chain, relay_transactions)
 {
 }
 

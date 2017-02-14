@@ -123,7 +123,8 @@ public:
     bool insert(block_const_ptr block, size_t height);
 
     /// Push an unconfirmed transaction to the tx table and index outputs.
-    void push(transaction_const_ptr tx, result_handler handler);
+    void push(transaction_const_ptr tx, dispatcher& dispatch,
+        result_handler handler);
 
     /// Swap incoming and outgoing blocks, height is validated.
     void reorganize(const config::checkpoint& fork_point,
@@ -304,24 +305,31 @@ private:
 
     static hash_list to_hashes(const database::block_result& result);
 
+    code set_chain_state(chain::chain_state::ptr previous);
     void handle_transaction(const code& ec, transaction_const_ptr tx,
-        scope_lock::ptr lock, result_handler handler) const;
-
+        result_handler handler) const;
     void handle_block(const code& ec, block_const_ptr block,
-        scope_lock::ptr lock, result_handler handler) const;
+        result_handler handler) const;
+    void handle_reorganize(const code& ec, block_const_ptr block,
+        result_handler handler);
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
     asio::duration spin_lock_sleep_;
-    block_organizer block_organizer_;
-    transaction_organizer transaction_organizer_;
-    populate_chain_state chain_state_populator_;
+    const populate_chain_state chain_state_populator_;
     database::data_base database_;
 
     // This is protected by mutex.
-    mutable chain::chain_state::ptr pool_state_;
+    chain::chain_state::ptr pool_state_;
+    mutable shared_mutex pool_state_mutex_;
+
+    // These are thread safe.
     mutable shared_mutex mutex_;
+    mutable threadpool priority_pool_;
+    mutable dispatcher dispatch_;
+    transaction_organizer transaction_organizer_;
+    block_organizer block_organizer_;
 };
 
 } // namespace blockchain

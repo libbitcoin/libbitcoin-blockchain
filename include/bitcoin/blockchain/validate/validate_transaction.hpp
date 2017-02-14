@@ -37,7 +37,7 @@ class BCB_API validate_transaction
 public:
     typedef handle0 result_handler;
 
-    validate_transaction(threadpool& pool, const fast_chain& chain,
+    validate_transaction(dispatcher& dispatch, const fast_chain& chain,
         const settings& settings);
 
     void start();
@@ -63,7 +63,7 @@ private:
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
     const fast_chain& fast_chain_;
-    mutable dispatcher dispatch_;
+    dispatcher& dispatch_;
 
     // Caller must not invoke accept/connect concurrently.
     populate_transaction transaction_populator_;

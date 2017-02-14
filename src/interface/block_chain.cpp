@@ -38,16 +38,22 @@ using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
 
+#define NAME "block_chain"
+
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings, bool relay_transactions)
   : stopped_(true),
     settings_(chain_settings),
     spin_lock_sleep_(asio::milliseconds(1)),
-    block_organizer_(pool, *this, chain_settings, relay_transactions),
-    transaction_organizer_(pool, *this, chain_settings),
     chain_state_populator_(*this, chain_settings),
-    database_(database_settings)
+    database_(database_settings),
+    priority_pool_(thread_ceiling(chain_settings.cores),
+        priority(chain_settings.priority)),
+    dispatch_(priority_pool_, NAME "_priority"),
+    transaction_organizer_(mutex_, dispatch_, pool, *this, chain_settings),
+    block_organizer_(mutex_, dispatch_, pool, *this, chain_settings,
+        relay_transactions)
 {
 }
 
@@ -224,9 +230,11 @@ bool block_chain::insert(block_const_ptr block, size_t height)
     return database_.insert(*block, height) == error::success;
 }
 
-void block_chain::push(transaction_const_ptr tx, result_handler handler)
+void block_chain::push(transaction_const_ptr tx, dispatcher&,
+    result_handler handler)
 {
-    handler(database_.push(*tx, pool_state_->enabled_forks()));
+    // Transaction push is currently sequential so dispatch is not used.
+    handler(database_.push(*tx, chain_state()->enabled_forks()));
 }
 
 void block_chain::reorganize(const checkpoint& fork_point,
@@ -234,28 +242,64 @@ void block_chain::reorganize(const checkpoint& fork_point,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
     result_handler handler)
 {
+    if (incoming_blocks->empty())
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    const auto complete =
+        std::bind(&block_chain::handle_reorganize,
+            this, _1, incoming_blocks->front(), handler);
+
     database_.reorganize(fork_point, incoming_blocks, outgoing_blocks,
-        dispatch, handler);
+        dispatch, complete);
+}
+
+void block_chain::handle_reorganize(const code& ec, block_const_ptr block,
+    result_handler handler)
+{
+    if (!ec)
+        set_chain_state(block->validation.state);
+
+    handler(ec);
 }
 
 // Properties.
 // ----------------------------------------------------------------------------
 
-// For tx validator.
+// For tx validator, call only from inside validate critical section.
 chain::chain_state::ptr block_chain::chain_state() const
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    shared_lock lock(pool_state_mutex_);
+
     // Initialized on start and updated after each successful organization.
     return pool_state_;
+    ///////////////////////////////////////////////////////////////////////////
 }
 
-// For block validator.
+// For block validator, call only from inside validate critical section.
 chain::chain_state::ptr block_chain::chain_state(
     branch::const_ptr branch) const
 {
     // Promote from cache if branch is same height as pool (most typical).
     // Generate from branch/store if the promotion is not successful.
     // If the organize is successful pool state will be updated accordingly.
-    return chain_state_populator_.populate(pool_state_, branch);
+    return chain_state_populator_.populate(chain_state(), branch);
+}
+
+// private.
+code block_chain::set_chain_state(chain::chain_state::ptr previous)
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(pool_state_mutex_);
+
+    pool_state_ = chain_state_populator_.populate(previous);
+    return pool_state_ ? error::success : error::operation_failed;
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 // ============================================================================
@@ -283,18 +327,16 @@ bool block_chain::stop()
 {
     stopped_ = true;
 
-    // TODO: prioritize lock access: stop, block, tx.
-
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     unique_lock lock(mutex_);
 
-    // The block organizer cannot be stopped while organizing because it uses
-    // an internal threadpool that would stop and prevent completion. For
-    // consistency this also blocks on transaction organize.
-
     // This cannot call organize or stop (lock safe).
-    return transaction_organizer_.stop() && block_organizer_.stop();
+    auto result = transaction_organizer_.stop() && block_organizer_.stop();
+
+    // The priority pool must not be stopped while organizing.
+    priority_pool_.shutdown();
+    return result;
     ///////////////////////////////////////////////////////////////////////////
 }
 
@@ -302,9 +344,9 @@ bool block_chain::stop()
 // Optional as the blockchain will close on destruct.
 bool block_chain::close()
 {
-    return stop() &&
-        transaction_organizer_.close() && block_organizer_.close() &&
-        database_.close();
+    const auto result = stop();
+    priority_pool_.join();
+    return result && database_.close();
 }
 
 block_chain::~block_chain()
@@ -971,66 +1013,14 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    // TODO: prioritize lock access: stop, block, tx.
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Begin Critical Section.
-    const auto lock = std::make_shared<scope_lock>(mutex_);
-
-    const auto locked_handler =
-        std::bind(&block_chain::handle_block,
-            this, _1, block, lock, handler);
-
     // This cannot call organize or stop (lock safe).
-    block_organizer_.organize(block, locked_handler);
-}
-
-// This matches the cache to the top at the completion of each reorg.
-void block_chain::handle_block(const code& ec, block_const_ptr block,
-    scope_lock::ptr lock, result_handler handler) const
-{
-    code result(ec);
-
-    if (!ec)
-    {
-        BITCOIN_ASSERT(block->validation.state);
-        pool_state_ = chain_state_populator_.populate(block->validation.state);
-
-        if (!pool_state_)
-            result = error::operation_failed;
-    }
-
-    lock.reset();
-    // End Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(result);
+    block_organizer_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    // TODO: prioritize lock access: stop, block, tx.
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Begin Critical Section.
-    const auto lock = std::make_shared<scope_lock>(mutex_);
-
-    const result_handler locked_handler =
-        std::bind(&block_chain::handle_transaction,
-            this, _1, tx, lock, handler);
-
     // This cannot call organize or stop (lock safe).
-    transaction_organizer_.organize(tx, locked_handler);
-}
-
-void block_chain::handle_transaction(const code& ec, transaction_const_ptr tx,
-    scope_lock::ptr lock, result_handler handler) const
-{
-    lock.reset();
-    // End Critical Section.
-    ///////////////////////////////////////////////////////////////////////////
-
-    handler(ec);
+    transaction_organizer_.organize(tx, handler);
 }
 
 // Properties (thread safe).

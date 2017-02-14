@@ -33,7 +33,7 @@ class BCB_API populate_transaction
   : public populate_base
 {
 public:
-    populate_transaction(threadpool& pool, const fast_chain& chain);
+    populate_transaction(dispatcher& dispatch, const fast_chain& chain);
 
     /// Populate validation state for the transaction.
     void populate(transaction_const_ptr tx, result_handler&& handler) const;

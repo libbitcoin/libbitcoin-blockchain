@@ -20,6 +20,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <future>
 #include <memory>
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
@@ -44,15 +45,15 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-block_organizer::block_organizer(threadpool& thread_pool, fast_chain& chain,
-    const settings& settings, bool relay_transactions)
+block_organizer::block_organizer(shared_mutex& mutex, dispatcher& dispatch,
+    threadpool& thread_pool, fast_chain& chain,  const settings& settings,
+    bool relay_transactions)
   : fast_chain_(chain),
+    mutex_(mutex),
     stopped_(true),
+    dispatch_(dispatch),
     block_pool_(settings.reorganization_limit),
-    priority_pool_(thread_ceiling(settings.cores),
-        priority(settings.priority)),
-    priority_dispatch_(priority_pool_, NAME "_priority"),
-    validator_(priority_pool_, fast_chain_, settings, relay_transactions),
+    validator_(dispatch, fast_chain_, settings, relay_transactions),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
 }
@@ -81,15 +82,7 @@ bool block_organizer::stop()
     validator_.stop();
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
-    priority_pool_.shutdown();
     stopped_ = true;
-    return true;
-}
-
-bool block_organizer::close()
-{
-    BITCOIN_ASSERT(stopped_);
-    priority_pool_.join();
     return true;
 }
 
@@ -99,21 +92,33 @@ bool block_organizer::close()
 // This is called from block_chain::organize.
 void block_organizer::organize(block_const_ptr block, result_handler handler)
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock();
+
+    // TODO: prioritize lock access: stop, block, tx.
+
+    // The stop check must be guarded.
     if (stopped())
     {
+        mutex_.unlock();
+        //---------------------------------------------------------------------
         handler(error::service_stopped);
         return;
     }
 
     // Checks that are independent of chain state.
-    const auto ec = validator_.check(block);
+    auto ec = validator_.check(block);
 
     if (ec)
     {
+        mutex_.unlock();
+        //---------------------------------------------------------------------
         handler(ec);
         return;
     }
 
+    // Verify the last branch block (all others are verified).
     // Get the path through the block forest to the new block.
     const auto branch = block_pool_.get_path(block);
 
@@ -129,25 +134,54 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
     //*************************************************************************
     if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
     {
+        mutex_.unlock();
+        //---------------------------------------------------------------------
         handler(error::duplicate_block);
         return;
     }
 
     if (!set_branch_height(branch))
     {
+        mutex_.unlock();
+        //---------------------------------------------------------------------
         handler(error::orphan_block);
         return;
     }
 
-    // Verify the last branch block (all others are verified).
-    const result_handler accept_handler =
+    // Reset the reusable promise.
+    resume_ = std::promise<code>();
+
+    // Cannot allow the possibility of a signal from this thread.
+    // Cannot expect to be able to obtain a thread from the network pool.
+    const auto complete = dispatch_.concurrent_delegate(
+        &block_organizer::signal_completion,
+            this, _1);
+
+    const auto accept_handler =
         std::bind(&block_organizer::handle_accept,
-            this, _1, branch, handler);
+            this, _1, branch, complete);
 
     // Checks that are dependent on chain state and prevouts.
-    // The branch may not have sufficient work to reorganize at this point, but
-    // we must at least know if work required is sufficient in order to retain.
     validator_.accept(branch, accept_handler);
+
+    // Wait on completion signal.
+    // This is necessary in order to continue on a non-priority thread.
+    // If we do not wait on the original thread there may be none left.
+    ec = resume_.get_future().get();
+
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Invoke caller handler outside of critical section.
+    handler(ec);
+}
+
+// private
+void block_organizer::signal_completion(const code& ec)
+{
+    // This must be protected so that it is properly cleared.
+    // Signal completion, which results in original handler invoke with code.
+    resume_.set_value(ec);
 }
 
 // Verify sub-sequence.
@@ -169,7 +203,7 @@ void block_organizer::handle_accept(const code& ec, branch::ptr branch,
         return;
     }
 
-    const result_handler connect_handler =
+    const auto connect_handler =
         std::bind(&block_organizer::handle_connect,
             this, _1, branch, handler);
 
@@ -221,14 +255,14 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     // Get the outgoing blocks to forward to reorg handler.
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
 
-    const auto complete =
+    const auto reorganized_handler =
         std::bind(&block_organizer::handle_reorganized,
             this, _1, branch, out_blocks, handler);
 
     // Replace! Switch!
     //#########################################################################
     fast_chain_.reorganize(branch->fork_point(), branch->blocks(), out_blocks,
-        priority_dispatch_, complete);
+        dispatch_, reorganized_handler);
     //#########################################################################
 }
 
@@ -250,19 +284,23 @@ void block_organizer::handle_reorganized(const code& ec,
     block_pool_.prune(branch->top_height());
     block_pool_.add(outgoing);
 
-    // We can notify before reorg for mining scenario.
-    // However we must be careful not to do this during catch-up as it can
-    // create a perpetually-growing blacklog and overrun available memory.
-
     // v3 reorg block order is reverse of v2, branch.back() is the new top.
     notify_reorganize(branch->height(), branch->blocks(), outgoing);
 
-    // This is the end of the block verify sub-sequence.
     handler(error::success);
 }
 
 // Subscription.
 //-----------------------------------------------------------------------------
+
+// private
+void block_organizer::notify_reorganize(size_t branch_height,
+    block_const_ptr_list_const_ptr branch,
+    block_const_ptr_list_const_ptr original)
+{
+    // Using relay can create big backlog but this is a criticial section.
+    subscriber_->relay(error::success, branch_height, branch, original);
+}
 
 void block_organizer::subscribe_reorganize(reorganize_handler&& handler)
 {
@@ -270,18 +308,8 @@ void block_organizer::subscribe_reorganize(reorganize_handler&& handler)
         error::service_stopped, 0, {}, {});
 }
 
-// private
-void block_organizer::notify_reorganize(size_t branch_height,
-    block_const_ptr_list_const_ptr branch,
-    block_const_ptr_list_const_ptr original)
-{
-    // Invoke is required here to prevent subscription parsing from creating a
-    // unsurmountable backlog during catch-up sync.
-    subscriber_->invoke(error::success, branch_height, branch, original);
-}
-
 // Queries.
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 void block_organizer::filter(get_data_ptr message) const
 {
