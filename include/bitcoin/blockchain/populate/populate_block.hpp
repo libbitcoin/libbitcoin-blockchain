@@ -34,7 +34,7 @@ class BCB_API populate_block
   : public populate_base
 {
 public:
-    populate_block(threadpool& priority_pool, const fast_chain& chain,
+    populate_block(dispatcher& dispatch, const fast_chain& chain,
         bool relay_transactions);
 
     /// Populate validation state for the top block.

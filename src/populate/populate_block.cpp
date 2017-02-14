@@ -35,9 +35,9 @@ using namespace bc::machine;
 
 // Database access is limited to calling populate_base.
 
-populate_block::populate_block(threadpool& priority_pool,
-    const fast_chain& chain, bool relay_transactions)
-  : populate_base(priority_pool, chain),
+populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain,
+    bool relay_transactions)
+  : populate_base(dispatch, chain),
     relay_transactions_(relay_transactions)
 {
 }

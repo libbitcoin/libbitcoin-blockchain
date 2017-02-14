@@ -22,6 +22,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -47,12 +48,11 @@ public:
     typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
 
     /// Construct an instance.
-    transaction_organizer(threadpool& thread_pool, fast_chain& chain,
-        const settings& settings);
+    transaction_organizer(shared_mutex& mutex, dispatcher& dispatch,
+        threadpool& thread_pool, fast_chain& chain, const settings& settings);
 
     bool start();
     bool stop();
-    bool close();
 
     void organize(transaction_const_ptr tx, result_handler handler);
     void subscribe_transaction(transaction_handler&& handler);
@@ -69,8 +69,9 @@ private:
         result_handler handler);
     void handle_connect(const code& ec, transaction_const_ptr tx,
         result_handler handler);
-    void handle_transaction(const code& ec,
-        transaction_const_ptr tx, result_handler handler);
+    void handle_pushed(const code& ec, transaction_const_ptr tx,
+        result_handler handler);
+    void signal_completion(const code& ec);
 
     // Subscription.
     void notify_transaction(transaction_const_ptr tx);
@@ -79,12 +80,14 @@ private:
     fast_chain& fast_chain_;
 
     // These are thread safe.
+    shared_mutex& mutex_;
     std::atomic<bool> stopped_;
+    std::promise<code> resume_;
     const float minimum_byte_fee_;
+    dispatcher& dispatch_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;
     transaction_subscriber::ptr subscriber_;
-
 };
 
 } // namespace blockchain

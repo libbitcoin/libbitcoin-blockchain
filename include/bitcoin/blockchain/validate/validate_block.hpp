@@ -39,7 +39,7 @@ class BCB_API validate_block
 public:
     typedef handle0 result_handler;
 
-    validate_block(threadpool& priority_pool, const fast_chain& chain,
+    validate_block(dispatcher& dispatch, const fast_chain& chain,
         const settings& settings, bool relay_transactions);
 
     void start();
@@ -81,9 +81,9 @@ private:
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
     const fast_chain& fast_chain_;
+    dispatcher& priority_dispatch_;
     mutable atomic_counter hits_;
     mutable atomic_counter queries_;
-    mutable dispatcher priority_dispatch_;
 
     // Caller must not invoke accept/connect concurrently.
     populate_block block_populator_;

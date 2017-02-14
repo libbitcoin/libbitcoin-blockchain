@@ -35,8 +35,8 @@ using namespace bc::database;
 // spend: { spender }
 // transaction: { exists, height, position, output }
 
-populate_base::populate_base(threadpool& pool, const fast_chain& chain)
-  : dispatch_(pool, NAME),
+populate_base::populate_base(dispatcher& dispatch, const fast_chain& chain)
+  : dispatch_(dispatch),
     fast_chain_(chain)
 {
 }

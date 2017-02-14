@@ -112,15 +112,14 @@ public:
         last_height_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction(const hash_digest& hash,
-        bool confirmation_required,
-        transaction_fetch_handler handler) const = 0;
+        bool require_confirmed, transaction_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction_position(const hash_digest& hash,
-        bool confirmation_required,
+        bool require_confirmed,
         transaction_index_fetch_handler handler) const = 0;
 
     virtual void fetch_output(const chain::output_point& outpoint,
-        bool confirmation_required, output_fetch_handler handler) const = 0;
+        bool require_confirmed, output_fetch_handler handler) const = 0;
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;

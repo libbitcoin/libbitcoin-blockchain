@@ -37,9 +37,9 @@ using namespace std::placeholders;
 
 // Database access is limited to calling populate_base.
 
-populate_transaction::populate_transaction(threadpool& pool,
+populate_transaction::populate_transaction(dispatcher& dispatch,
     const fast_chain& chain)
-  : populate_base(pool, chain)
+  : populate_base(dispatch, chain)
 {
 }
 

@@ -69,8 +69,10 @@ private:
     const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
 
-    // The store is protected by caller not invoking populate concurrently.
+    // Populate is guarded against concurrent callers but because it uses the fast
+    // chain it must not be invoked during chain writes.
     const fast_chain& fast_chain_;
+    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

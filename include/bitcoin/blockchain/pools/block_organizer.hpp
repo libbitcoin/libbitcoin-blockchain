@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
@@ -46,12 +47,12 @@ public:
         block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
-    block_organizer(threadpool& thread_pool, fast_chain& chain,
-        const settings& settings, bool relay_transactions);
+    block_organizer(shared_mutex& mutex, dispatcher& dispatch,
+        threadpool& thread_pool, fast_chain& chain, const settings& settings,
+        bool relay_transactions);
 
     bool start();
     bool stop();
-    bool close();
 
     void organize(block_const_ptr block, result_handler handler);
     void subscribe_reorganize(reorganize_handler&& handler);
@@ -72,6 +73,7 @@ private:
     void organized(branch::ptr branch, result_handler handler);
     void handle_reorganized(const code& ec, branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing, result_handler handler);
+    void signal_completion(const code& ec);
 
     // Subscription.
     void notify_reorganize(size_t branch_height,
@@ -82,13 +84,13 @@ private:
     fast_chain& fast_chain_;
 
     // These are thread safe.
+    shared_mutex& mutex_;
     std::atomic<bool> stopped_;
+    std::promise<code> resume_;
+    dispatcher& dispatch_;
     block_pool block_pool_;
-    threadpool priority_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
-    mutable dispatcher priority_dispatch_;
-
 };
 
 } // namespace blockchain

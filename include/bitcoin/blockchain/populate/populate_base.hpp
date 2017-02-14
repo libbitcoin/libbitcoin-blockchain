@@ -35,7 +35,7 @@ class BCB_API populate_base
 protected:
     typedef handle0 result_handler;
 
-    populate_base(threadpool& pool, const fast_chain& chain);
+    populate_base(dispatcher& dispatch, const fast_chain& chain);
 
     void populate_duplicate(size_t maximum_height,
         const chain::transaction& tx, bool require_confirmed) const;
@@ -46,7 +46,7 @@ protected:
         const chain::output_point& outpoint, bool require_confirmed) const;
 
     // This is thread safe.
-    mutable dispatcher dispatch_;
+    dispatcher& dispatch_;
 
     // The store is protected by caller not invoking populate concurrently.
     const fast_chain& fast_chain_;
