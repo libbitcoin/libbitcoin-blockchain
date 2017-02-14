@@ -173,6 +173,10 @@ bool populate_chain_state::populate_checkpoint(chain_state::data& data,
 bool populate_chain_state::populate_all(chain_state::data& data,
     branch::const_ptr branch) const
 {
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+
     // Construct a map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_,
         configured_forks_);
@@ -181,6 +185,7 @@ bool populate_chain_state::populate_all(chain_state::data& data,
         populate_versions(data, map, branch) &&
         populate_timestamps(data, map, branch) &&
         populate_checkpoint(data, map, branch));
+    ///////////////////////////////////////////////////////////////////////////
 }
 
 chain_state::ptr populate_chain_state::populate() const
