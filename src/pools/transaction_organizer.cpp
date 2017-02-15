@@ -114,10 +114,8 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 
-    // Cannot allow the possibility of a signal from this thread.
-    // Cannot expect to be able to obtain a thread from the network pool.
-    const auto complete = dispatch_.concurrent_delegate(
-        &transaction_organizer::signal_completion,
+    const result_handler complete =
+        std::bind(&transaction_organizer::signal_completion,
             this, _1);
 
     const auto accept_handler =
