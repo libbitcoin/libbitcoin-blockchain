@@ -332,7 +332,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Verify failed [" << height << "] : " << ec.message() << std::endl
         << " libconsensus : " << use_libconsensus << std::endl
-        << " branches        : " << branches << std::endl
+        << " forks        : " << branches << std::endl
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl
         << " inpoint      : " << tx_hash << ":" << input_index << std::endl
