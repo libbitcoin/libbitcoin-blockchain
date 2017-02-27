@@ -310,7 +310,7 @@ private:
         result_handler handler) const;
     void handle_block(const code& ec, block_const_ptr block,
         result_handler handler) const;
-    void handle_reorganize(const code& ec, block_const_ptr block,
+    void handle_reorganize(const code& ec, block_const_ptr top,
         result_handler handler);
 
     // These are thread safe.

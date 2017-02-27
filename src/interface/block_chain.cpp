@@ -248,19 +248,20 @@ void block_chain::reorganize(const checkpoint& fork_point,
         return;
     }
 
+    // The top (back) block is used to update the chain state.
     const auto complete =
         std::bind(&block_chain::handle_reorganize,
-            this, _1, incoming_blocks->front(), handler);
+            this, _1, incoming_blocks->back(), handler);
 
     database_.reorganize(fork_point, incoming_blocks, outgoing_blocks,
         dispatch, complete);
 }
 
-void block_chain::handle_reorganize(const code& ec, block_const_ptr block,
+void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
     result_handler handler)
 {
     if (!ec)
-        set_chain_state(block->validation.state);
+        set_chain_state(top->validation.state);
 
     handler(ec);
 }
