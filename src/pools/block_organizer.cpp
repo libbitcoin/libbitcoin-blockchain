@@ -250,6 +250,13 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
+    // TODO: create a simulated validation path that does not lock others.
+    if (top->validation.simulate)
+    {
+        handler(error::success);
+        return;
+    }
+
     // Get the outgoing blocks to forward to reorg handler.
     const auto out_blocks = std::make_shared<block_const_ptr_list>();
 
