@@ -226,6 +226,8 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     }
 
     // The top block is valid even if the branch has insufficient work.
+    // We aren't summing the chain work computation cost, but this is trivial
+    // unless there is a reorganization as it just gets the top block height.
     const auto top = branch->top();
     top->header().validation.height = branch->top_height();
     top->validation.error = error::success;
