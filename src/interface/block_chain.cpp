@@ -260,10 +260,20 @@ void block_chain::reorganize(const checkpoint& fork_point,
 void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
     result_handler handler)
 {
-    if (!ec)
-        set_chain_state(top->validation.state);
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
 
-    handler(ec);
+    if (!top->validation.state)
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    set_chain_state(top->validation.state);
+    handler(error::success);
 }
 
 // Properties.
