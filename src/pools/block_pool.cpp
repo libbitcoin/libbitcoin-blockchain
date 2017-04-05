@@ -180,6 +180,7 @@ void block_pool::prune(size_t top_height)
     hash_list hashes;
     const auto minimum_height = floor_subtract(top_height, maximum_depth_);
 
+    // TODO: not using table sort here, should stop iterating once above min.
     // Iterate over all root nodes with insufficient height.
     for (auto it: blocks_.right)
         if (it.first != 0 && it.first < minimum_height)
