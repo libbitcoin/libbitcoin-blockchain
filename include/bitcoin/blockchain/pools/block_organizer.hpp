@@ -47,7 +47,7 @@ public:
         block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
-    block_organizer(shared_mutex& mutex, dispatcher& dispatch,
+    block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
         threadpool& thread_pool, fast_chain& chain, const settings& settings,
         bool relay_transactions);
 
@@ -84,7 +84,7 @@ private:
     fast_chain& fast_chain_;
 
     // These are thread safe.
-    shared_mutex& mutex_;
+    prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     dispatcher& dispatch_;

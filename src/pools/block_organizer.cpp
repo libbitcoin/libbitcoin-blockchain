@@ -45,7 +45,7 @@ using namespace std::placeholders;
 // block: { bits, version, timestamp }
 // transaction: { exists, height, output }
 
-block_organizer::block_organizer(shared_mutex& mutex, dispatcher& dispatch,
+block_organizer::block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
     threadpool& thread_pool, fast_chain& chain,  const settings& settings,
     bool relay_transactions)
   : fast_chain_(chain),
@@ -94,14 +94,14 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
 {
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock();
+    mutex_.lock_high_priority();
 
     // TODO: prioritize lock access: stop, block, tx.
 
     // The stop check must be guarded.
     if (stopped())
     {
-        mutex_.unlock();
+        mutex_.unlock_high_priority();
         //---------------------------------------------------------------------
         handler(error::service_stopped);
         return;
@@ -112,7 +112,7 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
 
     if (ec)
     {
-        mutex_.unlock();
+        mutex_.unlock_high_priority();
         //---------------------------------------------------------------------
         handler(ec);
         return;
@@ -134,7 +134,7 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
     //*************************************************************************
     if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
     {
-        mutex_.unlock();
+        mutex_.unlock_high_priority();
         //---------------------------------------------------------------------
         handler(error::duplicate_block);
         return;
@@ -142,7 +142,7 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
 
     if (!set_branch_height(branch))
     {
-        mutex_.unlock();
+        mutex_.unlock_high_priority();
         //---------------------------------------------------------------------
         handler(error::orphan_block);
         return;
@@ -167,7 +167,7 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
     // If we do not wait on the original thread there may be none left.
     ec = resume_.get_future().get();
 
-    mutex_.unlock();
+    mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
 
     // Invoke caller handler outside of critical section.

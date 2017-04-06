@@ -325,7 +325,7 @@ private:
     mutable shared_mutex pool_state_mutex_;
 
     // These are thread safe.
-    mutable shared_mutex mutex_;
+    mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;
     transaction_organizer transaction_organizer_;
