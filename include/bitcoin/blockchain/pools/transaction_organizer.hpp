@@ -48,7 +48,7 @@ public:
     typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
 
     /// Construct an instance.
-    transaction_organizer(shared_mutex& mutex, dispatcher& dispatch,
+    transaction_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
         threadpool& thread_pool, fast_chain& chain, const settings& settings);
 
     bool start();
@@ -80,7 +80,7 @@ private:
     fast_chain& fast_chain_;
 
     // These are thread safe.
-    shared_mutex& mutex_;
+    prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     const float minimum_byte_fee_;

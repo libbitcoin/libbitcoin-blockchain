@@ -51,8 +51,9 @@ block_chain::block_chain(threadpool& pool,
     priority_pool_(thread_ceiling(chain_settings.cores),
         priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
-    transaction_organizer_(mutex_, dispatch_, pool, *this, chain_settings),
-    block_organizer_(mutex_, dispatch_, pool, *this, chain_settings,
+    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
+        chain_settings),
+    block_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings,
         relay_transactions)
 {
 }
@@ -340,15 +341,17 @@ bool block_chain::stop()
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
+    validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
     auto result = transaction_organizer_.stop() && block_organizer_.stop();
 
     // The priority pool must not be stopped while organizing.
     priority_pool_.shutdown();
-    return result;
+
+    validation_mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
+    return result;
 }
 
 // Close is idempotent and thread safe.

@@ -38,7 +38,7 @@ using namespace std::placeholders;
 #define NAME "transaction_organizer"
 
 // TODO: create priority pool at blockchain level and use in both organizers. 
-transaction_organizer::transaction_organizer(shared_mutex& mutex,
+transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
@@ -89,12 +89,12 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 {
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock();
+    mutex_.lock_low_priority();
 
     // The stop check must be guarded.
     if (stopped())
     {
-        mutex_.unlock();
+        mutex_.unlock_low_priority();
         //---------------------------------------------------------------------
         handler(error::service_stopped);
         return;
@@ -105,7 +105,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 
     if (ec)
     {
-        mutex_.unlock();
+        mutex_.unlock_low_priority();
         //---------------------------------------------------------------------
         handler(ec);
         return;
@@ -130,7 +130,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     // If we do not wait on the original thread there may be none left.
     ec = resume_.get_future().get();
 
-    mutex_.unlock();
+    mutex_.unlock_low_priority();
     ///////////////////////////////////////////////////////////////////////////
 
     // Invoke caller handler outside of critical section.
