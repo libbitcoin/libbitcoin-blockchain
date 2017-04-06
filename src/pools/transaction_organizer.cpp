@@ -242,8 +242,8 @@ void transaction_organizer::handle_pushed(const code& ec,
 // private
 void transaction_organizer::notify_transaction(transaction_const_ptr tx)
 {
-    // Using relay can create big backlog but this is a criticial section.
-    subscriber_->relay(error::success, tx);
+    // Using relay can create huge backlog, but careful of criticial section.
+    subscriber_->invoke(error::success, tx);
 }
 
 void transaction_organizer::subscribe_transaction(

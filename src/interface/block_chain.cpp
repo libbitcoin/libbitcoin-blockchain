@@ -692,8 +692,8 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     read_serial(do_fetch);
 }
 
-void block_chain::fetch_history(const wallet::payment_address& address,
-    size_t limit, size_t from_height, history_fetch_handler handler) const
+void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
+    size_t from_height, history_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -704,7 +704,7 @@ void block_chain::fetch_history(const wallet::payment_address& address,
     const auto do_fetch = [&](size_t slock)
     {
         return finish_read(slock, handler, error::success,
-            database_.history().get(address.hash(), limit, from_height));
+            database_.history().get(address_hash, limit, from_height));
     };
     read_serial(do_fetch);
 }

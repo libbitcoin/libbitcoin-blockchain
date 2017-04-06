@@ -217,9 +217,9 @@ public:
     void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const;
 
-    /// fetch outputs, values and spends for an address.
-    void fetch_history(const wallet::payment_address& address,
-        size_t limit, size_t from_height, history_fetch_handler handler) const;
+    /// fetch outputs, values and spends for an address_hash.
+    void fetch_history(const short_hash& address_hash, size_t limit,
+        size_t from_height, history_fetch_handler handler) const;
 
     /// fetch stealth results.
     void fetch_stealth(const binary& filter, size_t from_height,
