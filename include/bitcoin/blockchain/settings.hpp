@@ -27,7 +27,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// Common database configuration settings, properties not thread safe.
+/// Common blockchain configuration settings, properties not thread safe.
 class BCB_API settings
 {
 public:
