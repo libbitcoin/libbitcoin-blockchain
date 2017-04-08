@@ -1011,16 +1011,22 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe_reorganize(reorganize_handler&& handler)
+void block_chain::subscribe_blockchain(reorganize_handler&& handler)
 {
     // Pass this through to the organizer, which issues the notifications.
-    block_organizer_.subscribe_reorganize(std::move(handler));
+    block_organizer_.subscribe(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
 {
-    // Pass this through to the tx pool, which issues the notifications.
-    transaction_organizer_.subscribe_transaction(std::move(handler));
+    // Pass this through to the tx organizer, which issues the notifications.
+    transaction_organizer_.subscribe(std::move(handler));
+}
+
+void block_chain::unsubscribe()
+{
+    block_organizer_.unsubscribe();
+    transaction_organizer_.unsubscribe();
 }
 
 // Organizers.

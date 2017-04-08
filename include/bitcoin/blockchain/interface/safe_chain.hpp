@@ -160,8 +160,9 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    virtual void subscribe_reorganize(reorganize_handler&& handler) = 0;
+    virtual void subscribe_blockchain(reorganize_handler&& handler) = 0;
     virtual void subscribe_transaction(transaction_handler&& handler) = 0;
+    virtual void unsubscribe() = 0;
 
     // Organizers.
     //-------------------------------------------------------------------------

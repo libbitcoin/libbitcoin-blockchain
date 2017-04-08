@@ -55,7 +55,8 @@ public:
     bool stop();
 
     void organize(block_const_ptr block, result_handler handler);
-    void subscribe_reorganize(reorganize_handler&& handler);
+    void subscribe(reorganize_handler&& handler);
+    void unsubscribe();
 
     /// Remove all message vectors that match block hashes.
     void filter(get_data_ptr message) const;
@@ -68,16 +69,17 @@ private:
     bool set_branch_height(branch::ptr branch);
 
     // Verify sub-sequence.
-    void handle_accept(const code& ec, branch::ptr branch, result_handler handler);
-    void handle_connect(const code& ec, branch::ptr branch, result_handler handler);
+    void handle_accept(const code& ec, branch::ptr branch,
+        result_handler handler);
+    void handle_connect(const code& ec, branch::ptr branch,
+        result_handler handler);
     void organized(branch::ptr branch, result_handler handler);
     void handle_reorganized(const code& ec, branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing, result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.
-    void notify_reorganize(size_t branch_height,
-        block_const_ptr_list_const_ptr branch,
+    void notify(size_t branch_height, block_const_ptr_list_const_ptr branch,
         block_const_ptr_list_const_ptr original);
 
     // This must be protected by the implementation.
