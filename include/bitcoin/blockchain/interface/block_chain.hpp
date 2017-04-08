@@ -263,10 +263,13 @@ public:
     //-------------------------------------------------------------------------
 
     /// Subscribe to blockchain reorganizations, get branch/height.
-    void subscribe_reorganize(reorganize_handler&& handler);
+    void subscribe_blockchain(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
     void subscribe_transaction(transaction_handler&& handler);
+
+    /// Send null data success notification to all subscribers.
+    void unsubscribe();
 
     // Organizers.
     //-------------------------------------------------------------------------

@@ -292,7 +292,7 @@ void block_organizer::handle_reorganized(const code& ec,
     block_pool_.add(outgoing);
 
     // v3 reorg block order is reverse of v2, branch.back() is the new top.
-    notify_reorganize(branch->height(), branch->blocks(), outgoing);
+    notify(branch->height(), branch->blocks(), outgoing);
 
     handler(error::success);
 }
@@ -301,7 +301,7 @@ void block_organizer::handle_reorganized(const code& ec,
 //-----------------------------------------------------------------------------
 
 // private
-void block_organizer::notify_reorganize(size_t branch_height,
+void block_organizer::notify(size_t branch_height,
     block_const_ptr_list_const_ptr branch,
     block_const_ptr_list_const_ptr original)
 {
@@ -309,10 +309,15 @@ void block_organizer::notify_reorganize(size_t branch_height,
     subscriber_->invoke(error::success, branch_height, branch, original);
 }
 
-void block_organizer::subscribe_reorganize(reorganize_handler&& handler)
+void block_organizer::subscribe(reorganize_handler&& handler)
 {
     subscriber_->subscribe(std::move(handler),
         error::service_stopped, 0, {}, {});
+}
+
+void block_organizer::unsubscribe()
+{
+    subscriber_->relay(error::success, 0, {}, {});
 }
 
 // Queries.

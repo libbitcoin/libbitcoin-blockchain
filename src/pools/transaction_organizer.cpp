@@ -231,7 +231,7 @@ void transaction_organizer::handle_pushed(const code& ec,
     }
 
     // This gets picked up by node tx-out protocol for announcement to peers.
-    notify_transaction(tx);
+    notify(tx);
 
     handler(error::success);
 }
@@ -240,16 +240,20 @@ void transaction_organizer::handle_pushed(const code& ec,
 //-----------------------------------------------------------------------------
 
 // private
-void transaction_organizer::notify_transaction(transaction_const_ptr tx)
+void transaction_organizer::notify(transaction_const_ptr tx)
 {
     // Using relay can create huge backlog, but careful of criticial section.
     subscriber_->invoke(error::success, tx);
 }
 
-void transaction_organizer::subscribe_transaction(
-    transaction_handler&& handler)
+void transaction_organizer::subscribe(transaction_handler&& handler)
 {
     subscriber_->subscribe(std::move(handler), error::service_stopped, {});
+}
+
+void transaction_organizer::unsubscribe()
+{
+    subscriber_->relay(error::success, {});
 }
 
 // Queries.
