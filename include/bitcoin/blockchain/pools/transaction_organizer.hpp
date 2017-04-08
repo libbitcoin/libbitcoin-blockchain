@@ -55,7 +55,8 @@ public:
     bool stop();
 
     void organize(transaction_const_ptr tx, result_handler handler);
-    void subscribe_transaction(transaction_handler&& handler);
+    void subscribe(transaction_handler&& handler);
+    void unsubscribe();
 
     void fetch_template(merkle_block_fetch_handler) const;
     void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
@@ -74,7 +75,7 @@ private:
     void signal_completion(const code& ec);
 
     // Subscription.
-    void notify_transaction(transaction_const_ptr tx);
+    void notify(transaction_const_ptr tx);
 
     // This must be protected by the implementation.
     fast_chain& fast_chain_;
