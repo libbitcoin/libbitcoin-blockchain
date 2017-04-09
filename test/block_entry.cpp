@@ -53,8 +53,7 @@ BOOST_AUTO_TEST_CASE(block_entry__parent__hash42__expected)
 {
     const auto block = std::make_shared<message::block>();
     block->header().set_previous_block_hash(hash42);
-    const auto const_block = std::const_pointer_cast<const message::block>(block);
-    block_entry instance(const_block);
+    block_entry instance(block);
     BOOST_REQUIRE(instance.parent() == hash42);
 }
 
@@ -86,8 +85,7 @@ BOOST_AUTO_TEST_CASE(block_entry__add_child__two__expected_order)
 
     const auto child2 = std::make_shared<message::block>();
     child2->header().set_previous_block_hash(hash42);
-    const auto const_child2 = std::const_pointer_cast<const message::block>(child2);
-    instance.add_child(const_child2);
+    instance.add_child(child2);
 
     BOOST_REQUIRE_EQUAL(instance.children().size(), 2u);
     BOOST_REQUIRE(instance.children()[0] == child1->hash());
