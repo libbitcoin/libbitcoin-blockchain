@@ -47,14 +47,6 @@ public:
     }
 };
 
-// construct
-
-BOOST_AUTO_TEST_CASE(branch__construct__always__capacity_1)
-{
-    branch instance;
-    BOOST_REQUIRE_EQUAL(instance.blocks()->capacity(), 1u);
-}
-
 // hash
 
 BOOST_AUTO_TEST_CASE(branch__hash__default__null_hash)

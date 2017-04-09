@@ -36,7 +36,6 @@ branch::branch(size_t height)
   : height_(height),
     blocks_(std::make_shared<block_const_ptr_list>())
 {
-    blocks_->reserve(1);
 }
 
 void branch::set_height(size_t height)
@@ -55,7 +54,6 @@ bool branch::push_front(block_const_ptr block)
 
     if (empty() || linked(block))
     {
-        // TODO: optimize.
         blocks_->insert(blocks_->begin(), block);
         return true;
     }
@@ -75,8 +73,7 @@ size_t branch::top_height() const
 
 block_const_ptr_list_const_ptr branch::blocks() const
 {
-    // Protect the blocks list from the caller.
-    return std::const_pointer_cast<const block_const_ptr_list>(blocks_);
+    return blocks_;
 }
 
 bool branch::empty() const
@@ -133,6 +130,7 @@ uint256_t branch::work() const
 {
     uint256_t total;
 
+    // Not using accumulator here avoids repeated copying of uint256 object.
     for (auto block: *blocks_)
         total += block->proof();
 
@@ -168,30 +166,45 @@ uint256_t branch::work() const
 
 void branch::populate_spent(const output_point& outpoint) const
 {
-    const auto outer = [&outpoint](size_t total, block_const_ptr block)
+    auto& prevout = outpoint.validation;
+
+    // Assuming (1) block.check() validates against internal double spends
+    // and (2) the outpoint is of the top block, there is no need to consider
+    // the top block here. Under these assumptions spends in the top block
+    // could only be double spent by a spend in a preceding block. Excluding
+    // the top block requires that we consider 1 collision spent (vs. > 1).
+    if (size() < 2u)
     {
-        const auto inner = [&outpoint](size_t sum, const transaction& tx)
+        prevout.spent = false;
+        prevout.confirmed = false;
+        return;
+    }
+
+    // This is inefficient for long branches and will be replaced in v4 by the
+    // database storage of weak chain blocks. This will allow use of the hash
+    // table index to locate spends. However due to lack of weak chain indexing
+    // if spend and position data in the store some inefficiency will remain.
+    // This will be a design tradeoff of space against reorg performance.
+    const auto blocks = [&outpoint](block_const_ptr block)
+    {
+        const auto transactions = [&outpoint](const transaction& tx)
         {
-            const auto points = [&outpoint](const input& input)
+            const auto prevout_match = [&outpoint](const input& input)
             {
                 return input.previous_output() == outpoint;
             };
 
             const auto& ins = tx.inputs();
-            return sum + std::count_if(ins.begin(), ins.end(), points);
+            return std::any_of(ins.begin(), ins.end(), prevout_match);
         };
 
         const auto& txs = block->transactions();
-        return total + std::accumulate(txs.begin(), txs.end(), total, inner);
+        BITCOIN_ASSERT_MSG(!txs.empty(), "empty block in branch");
+        return std::any_of(txs.begin() + 1, txs.end(), transactions);
     };
 
-    // Counting all is easier than excluding self and terminating early.
-    const auto spent = std::accumulate(blocks_->begin(), blocks_->end(),
-        size_t(0), outer);
-
-    BITCOIN_ASSERT(spent > 0);
-    auto& prevout = outpoint.validation;
-    prevout.spent = spent > 1u;
+    auto spent = std::any_of(blocks_->begin() + 1, blocks_->end(), blocks);
+    prevout.spent = spent;
     prevout.confirmed = prevout.spent;
 }
 
