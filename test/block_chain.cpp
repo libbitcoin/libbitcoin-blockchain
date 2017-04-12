@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_output__found__expected)
     size_t height;
     bool coinbase;
     const chain::output_point outpoint{ block2->transactions()[0].hash(), 0 };
-    const auto expected_value = initial_block_reward_satoshi();
+    const auto expected_value = initial_block_subsidy_satoshi();
     const auto expected_script = block2->transactions()[0].outputs()[0].script().to_string(0);
     BOOST_REQUIRE(instance.get_output(output, height, coinbase, outpoint, 2, true));
     BOOST_REQUIRE(coinbase);
