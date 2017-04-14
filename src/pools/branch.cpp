@@ -180,11 +180,7 @@ void branch::populate_spent(const output_point& outpoint) const
         return;
     }
 
-    // This is inefficient for long branches and will be replaced in v4 by the
-    // database storage of weak chain blocks. This will allow use of the hash
-    // table index to locate spends. However due to lack of weak chain indexing
-    // if spend and position data in the store some inefficiency will remain.
-    // This will be a design tradeoff of space against reorg performance.
+    // TODO: use hash table storage of block's inputs fors block pool entries.
     const auto blocks = [&outpoint](block_const_ptr block)
     {
         const auto transactions = [&outpoint](const transaction& tx)
