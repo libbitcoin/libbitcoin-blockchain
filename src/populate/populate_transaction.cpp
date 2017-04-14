@@ -80,10 +80,9 @@ void populate_transaction::populate(transaction_const_ptr tx,
         return;
     }
 
-    const auto threads = dispatch_.size();
-    const auto buckets = std::min(threads, total_inputs);
+    const auto buckets = std::min(dispatch_.size(), total_inputs);
     const auto join_handler = synchronize(std::move(handler), buckets, NAME);
-    BITCOIN_ASSERT(threads != 0);
+    BITCOIN_ASSERT(buckets != 0);
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_transaction::populate_inputs,
