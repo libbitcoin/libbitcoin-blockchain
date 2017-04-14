@@ -69,6 +69,8 @@ private:
     bool set_branch_height(branch::ptr branch);
 
     // Verify sub-sequence.
+    void handle_check(const code& ec, block_const_ptr block,
+        result_handler handler);
     void handle_accept(const code& ec, branch::ptr branch,
         result_handler handler);
     void handle_connect(const code& ec, branch::ptr branch,

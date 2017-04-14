@@ -91,26 +91,6 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
-    // The stop check must be guarded.
-    if (stopped())
-    {
-        mutex_.unlock_low_priority();
-        //---------------------------------------------------------------------
-        handler(error::service_stopped);
-        return;
-    }
-
-    // Checks that are independent of chain state.
-    auto ec = validator_.check(tx);
-
-    if (ec)
-    {
-        mutex_.unlock_low_priority();
-        //---------------------------------------------------------------------
-        handler(ec);
-        return;
-    }
-
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 
@@ -118,17 +98,17 @@ void transaction_organizer::organize(transaction_const_ptr tx,
         std::bind(&transaction_organizer::signal_completion,
             this, _1);
 
-    const auto accept_handler =
-        std::bind(&transaction_organizer::handle_accept,
+    const auto check_handler =
+        std::bind(&transaction_organizer::handle_check,
             this, _1, tx, complete);
 
-    // Checks that are dependent on chain state and prevouts.
-    validator_.accept(tx, accept_handler);
+    // Checks that are independent of chain state.
+    validator_.check(tx, check_handler);
 
     // Wait on completion signal.
     // This is necessary in order to continue on a non-priority thread.
     // If we do not wait on the original thread there may be none left.
-    ec = resume_.get_future().get();
+    auto ec = resume_.get_future().get();
 
     mutex_.unlock_low_priority();
     ///////////////////////////////////////////////////////////////////////////
@@ -147,6 +127,30 @@ void transaction_organizer::signal_completion(const code& ec)
 
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
+
+// private
+void transaction_organizer::handle_check(const code& ec,
+    transaction_const_ptr tx, result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    const auto accept_handler =
+        std::bind(&transaction_organizer::handle_accept,
+            this, _1, tx, handler);
+
+    // Checks that are dependent on chain state and prevouts.
+    validator_.accept(tx, accept_handler);
+}
 
 // private
 void transaction_organizer::handle_accept(const code& ec,
@@ -194,7 +198,7 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // TODO: create a simulated validation path that does not lock others.
+    // TODO: create a simulated validation path that does not block others.
     if (tx->validation.simulate)
     {
         handler(error::success);
@@ -214,13 +218,6 @@ void transaction_organizer::handle_connect(const code& ec,
 void transaction_organizer::handle_pushed(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
-    // The store verifies this as a safeguard, but should have caught earlier.
-    if (ec == error::unspent_duplicate)
-    {
-        handler(ec);
-        return;
-    }
-
     if (ec)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
