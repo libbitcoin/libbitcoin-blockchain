@@ -75,8 +75,49 @@ void validate_block::stop()
 
 void validate_block::check(block_const_ptr block, result_handler handler) const
 {
-    // TODO: parallelize tx hashing by hitting all tx.hash() methods.
-    handle_checked(error::success, block, handler);
+    // The block hasn't been checked yet.
+    if (block->transactions().empty())
+    {
+        handler(error::success);
+        return;
+    }
+
+    result_handler complete_handler =
+        std::bind(&validate_block::handle_checked,
+            this, _1, block, handler);
+
+    // TODO: make configurable for each parallel segment.
+    // This one is more efficient with one thread than parallel.
+    const auto threads = std::min(size_t(1), priority_dispatch_.size());
+
+    const auto count = block->transactions().size();
+    const auto buckets = std::min(threads, count);
+    BITCOIN_ASSERT(buckets != 0);
+
+    const auto join_handler = synchronize(std::move(complete_handler), buckets,
+        NAME "_check");
+
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
+        priority_dispatch_.concurrent(&validate_block::check_block,
+            this, block, bucket, buckets, join_handler);
+}
+
+void validate_block::check_block(block_const_ptr block, size_t bucket,
+    size_t buckets, result_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    const auto& txs = block->transactions();
+
+    // Generate each tx hash (stored in tx cache).
+    for (auto tx = bucket; tx < txs.size(); tx = ceiling_add(tx, buckets))
+        txs[tx].hash();
+
+    handler(error::success);
 }
 
 void validate_block::handle_checked(const code& ec, block_const_ptr block,
@@ -160,17 +201,20 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
 
     const auto count = block->transactions().size();
     const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
-    const auto threads = std::min(priority_dispatch_.size(), count);
-    const auto join_handler = synchronize(std::move(complete_handler), threads,
+    const auto buckets = std::min(priority_dispatch_.size(), count);
+    BITCOIN_ASSERT(buckets != 0);
+
+    const auto join_handler = synchronize(std::move(complete_handler), buckets,
         NAME "_accept");
 
-    for (size_t bucket = 0; bucket < threads; ++bucket)
+    for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::accept_transactions,
-            this, block, bucket, sigops, bip16, join_handler);
+            this, block, bucket, buckets, sigops, bip16, join_handler);
 }
 
 void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
-    atomic_counter_ptr sigops, bool bip16, result_handler handler) const
+    size_t buckets, atomic_counter_ptr sigops, bool bip16,
+    result_handler handler) const
 {
     if (stopped())
     {
@@ -179,7 +223,6 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     }
 
     code ec(error::success);
-    const auto buckets = priority_dispatch_.size();
     const auto& state = *block->validation.state;
     const auto& txs = block->transactions();
     const auto count = txs.size();
@@ -246,6 +289,8 @@ void validate_block::connect(branch::const_ptr branch,
 
     const auto threads = priority_dispatch_.size();
     const auto buckets = std::min(threads, non_coinbase_inputs);
+    BITCOIN_ASSERT(buckets != 0);
+
     const auto join_handler = synchronize(std::move(complete_handler), buckets,
         NAME "_validate");
 

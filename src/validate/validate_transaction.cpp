@@ -136,10 +136,9 @@ void validate_transaction::connect(transaction_const_ptr tx,
         return;
     }
 
-    const auto threads = dispatch_.size();
-    const auto buckets = std::min(threads, total_inputs);
+    const auto buckets = std::min(dispatch_.size(), total_inputs);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
-    BITCOIN_ASSERT(threads != 0);
+    BITCOIN_ASSERT(buckets != 0);
 
     // If the priority threadpool is shut down when this is called the handler
     // will never be invoked, resulting in a threadpool.join indefinite hang.

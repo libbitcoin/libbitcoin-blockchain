@@ -65,11 +65,14 @@ private:
         uint32_t input_index, uint32_t branches, size_t height,
         bool use_libconsensus);
 
+    void check_block(block_const_ptr block, size_t bucket, size_t buckets,
+        result_handler handler) const;
+    void handle_checked(const code& ec, block_const_ptr block,
+        result_handler handler) const;
     void handle_populated(const code& ec, block_const_ptr block,
         result_handler handler) const;
     void accept_transactions(block_const_ptr block, size_t bucket,
-        atomic_counter_ptr sigops, bool bip16, result_handler handler) const;
-    void handle_checked(const code& ec, block_const_ptr block,
+        size_t buckets, atomic_counter_ptr sigops, bool bip16,
         result_handler handler) const;
     void handle_accepted(const code& ec, block_const_ptr block,
         atomic_counter_ptr sigops, result_handler handler) const;
