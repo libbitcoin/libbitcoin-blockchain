@@ -96,58 +96,6 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // TODO: prioritize lock access: stop, block, tx.
-
-    // The stop check must be guarded.
-    if (stopped())
-    {
-        mutex_.unlock_high_priority();
-        //---------------------------------------------------------------------
-        handler(error::service_stopped);
-        return;
-    }
-
-    // Checks that are independent of chain state.
-    auto ec = validator_.check(block);
-
-    if (ec)
-    {
-        mutex_.unlock_high_priority();
-        //---------------------------------------------------------------------
-        handler(ec);
-        return;
-    }
-
-    // Verify the last branch block (all others are verified).
-    // Get the path through the block forest to the new block.
-    const auto branch = block_pool_.get_path(block);
-
-    //*************************************************************************
-    // CONSENSUS: This is the same check performed by satoshi, yet it will
-    // produce a chain split in the case of a hash collision. This is because
-    // it is not applied at the branch point, so some nodes will not see the
-    // collision block and others will, depending on block order of arrival.
-    // TODO: The hash check should start at the branch point. The dup check
-    // is a conflated network denial of service protection mechanism and cannot
-    // be allowed to reject blocks based on collisions not in the actual chain.
-    // The block pool must be modified to accomodate hash collision as well.
-    //*************************************************************************
-    if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
-    {
-        mutex_.unlock_high_priority();
-        //---------------------------------------------------------------------
-        handler(error::duplicate_block);
-        return;
-    }
-
-    if (!set_branch_height(branch))
-    {
-        mutex_.unlock_high_priority();
-        //---------------------------------------------------------------------
-        handler(error::orphan_block);
-        return;
-    }
-
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 
@@ -155,17 +103,17 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
         std::bind(&block_organizer::signal_completion,
             this, _1);
 
-    const auto accept_handler =
-        std::bind(&block_organizer::handle_accept,
-            this, _1, branch, complete);
+    const auto check_handler =
+        std::bind(&block_organizer::handle_check,
+            this, _1, block, complete);
 
-    // Checks that are dependent on chain state and prevouts.
-    validator_.accept(branch, accept_handler);
+    // Checks that are independent of chain state.
+    validator_.check(block, check_handler);
 
     // Wait on completion signal.
     // This is necessary in order to continue on a non-priority thread.
     // If we do not wait on the original thread there may be none left.
-    ec = resume_.get_future().get();
+    auto ec = resume_.get_future().get();
 
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
@@ -184,6 +132,52 @@ void block_organizer::signal_completion(const code& ec)
 
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
+
+// private
+void block_organizer::handle_check(const code& ec, block_const_ptr block,
+    result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    // Verify the last branch block (all others are verified).
+    // Get the path through the block forest to the new block.
+    const auto branch = block_pool_.get_path(block);
+
+    //*************************************************************************
+    // CONSENSUS: This is the same check performed by satoshi, yet it will
+    // produce a chain split in the case of a hash collision. This is because
+    // it is not applied at the branch point, so some nodes will not see the
+    // collision block and others will, depending on block order of arrival.
+    //*************************************************************************
+    if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
+    {
+        handler(error::duplicate_block);
+        return;
+    }
+
+    if (!set_branch_height(branch))
+    {
+        handler(error::orphan_block);
+        return;
+    }
+
+    const auto accept_handler =
+        std::bind(&block_organizer::handle_accept,
+            this, _1, branch, handler);
+
+    // Checks that are dependent on chain state and prevouts.
+    validator_.accept(branch, accept_handler);
+}
 
 // private
 void block_organizer::handle_accept(const code& ec, branch::ptr branch,
@@ -252,7 +246,7 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
-    // TODO: create a simulated validation path that does not lock others.
+    // TODO: create a simulated validation path that does not block others.
     if (top->validation.simulate)
     {
         handler(error::success);
@@ -331,7 +325,7 @@ void block_organizer::filter(get_data_ptr message) const
 // Utility.
 //-----------------------------------------------------------------------------
 
-// private
+// TODO: store this in the block pool and avoid this query.
 bool block_organizer::set_branch_height(branch::ptr branch)
 {
     size_t height;

@@ -73,10 +73,23 @@ void validate_block::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-code validate_block::check(block_const_ptr block) const
+void validate_block::check(block_const_ptr block, result_handler handler) const
 {
+    // TODO: parallelize tx hashing by hitting all tx.hash() methods.
+    handle_checked(error::success, block, handler);
+}
+
+void validate_block::handle_checked(const code& ec, block_const_ptr block,
+    result_handler handler) const
+{
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
     // Run context free checks, sets time internally.
-    return block->check();
+    handler(block->check());
 }
 
 // Accept sequence.

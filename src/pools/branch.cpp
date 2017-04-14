@@ -32,6 +32,7 @@ namespace blockchain {
 using namespace bc::chain;
 using namespace bc::config;
 
+// This will be eliminated once weak block headers are moved to the store.
 branch::branch(size_t height)
   : height_(height),
     blocks_(std::make_shared<block_const_ptr_list>())
@@ -116,6 +117,7 @@ size_t branch::height_at(size_t index) const
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
+// TODO: absorb into the main chain for speed and code consolidation.
 // The branch work check is both a consensus check and denial of service
 // protection. It is necessary here that total claimed work exceeds that of the
 // competing chain segment (consensus), and that the work has actually been
@@ -137,6 +139,7 @@ uint256_t branch::work() const
     return total;
 }
 
+// TODO: convert to a direct block pool query when the branch goes away.
 // BUGBUG: this does not differentiate between spent and unspent txs.
 // Spent transactions could exist in the pool due to other txs in the same or
 // later pool blocks. So this is disabled in favor of "allowed collisions".
@@ -164,6 +167,7 @@ uint256_t branch::work() const
 ////    tx.validation.duplicate = count > 1u;
 ////}
 
+// TODO: convert to a direct block pool query when the branch goes away.
 void branch::populate_spent(const output_point& outpoint) const
 {
     auto& prevout = outpoint.validation;
@@ -180,7 +184,7 @@ void branch::populate_spent(const output_point& outpoint) const
         return;
     }
 
-    // TODO: use hash table storage of block's inputs fors block pool entries.
+    // TODO: use hash table storage of block's inputs for block pool entries.
     const auto blocks = [&outpoint](block_const_ptr block)
     {
         const auto transactions = [&outpoint](const transaction& tx)
@@ -204,6 +208,7 @@ void branch::populate_spent(const output_point& outpoint) const
     prevout.confirmed = prevout.spent;
 }
 
+// TODO: absorb into the main chain for speed and code consolidation.
 void branch::populate_prevout(const output_point& outpoint) const
 {
     const auto count = size();
@@ -266,7 +271,8 @@ void branch::populate_prevout(const output_point& outpoint) const
         prevout.height = finder.height;
 }
 
-/// The bits of the block at the given height in the branch.
+// TODO: absorb into the main chain for speed and code consolidation.
+// The bits of the block at the given height in the branch.
 bool branch::get_bits(uint32_t& out_bits, size_t height) const
 {
     if (height <= height_)
@@ -281,6 +287,7 @@ bool branch::get_bits(uint32_t& out_bits, size_t height) const
     return true;
 }
 
+// TODO: absorb into the main chain for speed and code consolidation.
 // The version of the block at the given height in the branch.
 bool branch::get_version(uint32_t& out_version, size_t height) const
 {
@@ -296,6 +303,7 @@ bool branch::get_version(uint32_t& out_version, size_t height) const
     return true;
 }
 
+// TODO: absorb into the main chain for speed and code consolidation.
 // The timestamp of the block at the given height in the branch.
 bool branch::get_timestamp(uint32_t& out_timestamp, size_t height) const
 {
@@ -311,6 +319,7 @@ bool branch::get_timestamp(uint32_t& out_timestamp, size_t height) const
     return true;
 }
 
+// TODO: convert to a direct block pool query when the branch goes away.
 // The hash of the block at the given height if it exists in the branch.
 bool branch::get_block_hash(hash_digest& out_hash, size_t height) const
 {

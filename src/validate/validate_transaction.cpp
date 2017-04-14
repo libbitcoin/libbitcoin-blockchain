@@ -70,10 +70,11 @@ void validate_transaction::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-code validate_transaction::check(transaction_const_ptr tx) const
+void validate_transaction::check(transaction_const_ptr tx,
+    result_handler handler) const
 {
     // Run context free checks.
-    return tx->check();
+    handler(tx->check());
 }
 
 // Accept sequence.
