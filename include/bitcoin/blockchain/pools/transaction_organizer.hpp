@@ -66,6 +66,8 @@ protected:
 
 private:
     // Verify sub-sequence.
+    void handle_check(const code& ec, transaction_const_ptr tx,
+        result_handler handler);
     void handle_accept(const code& ec, transaction_const_ptr tx,
         result_handler handler);
     void handle_connect(const code& ec, transaction_const_ptr tx,

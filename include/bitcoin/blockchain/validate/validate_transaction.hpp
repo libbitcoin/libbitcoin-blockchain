@@ -43,7 +43,7 @@ public:
     void start();
     void stop();
 
-    code check(transaction_const_ptr tx) const;
+    void check(transaction_const_ptr tx, result_handler handler) const;
     void accept(transaction_const_ptr tx, result_handler handler) const;
     void connect(transaction_const_ptr tx, result_handler handler) const;
 
