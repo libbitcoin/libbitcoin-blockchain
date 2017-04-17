@@ -48,11 +48,13 @@ block_chain::block_chain(threadpool& pool,
     spin_lock_sleep_(asio::milliseconds(1)),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
+    validation_mutex_(database_settings.flush_writes && relay_transactions),
     priority_pool_(thread_ceiling(chain_settings.cores),
         priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
-    transaction_organizer_(mutex_, dispatch_, pool, *this, chain_settings),
-    block_organizer_(mutex_, dispatch_, pool, *this, chain_settings,
+    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
+        chain_settings),
+    block_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings,
         relay_transactions)
 {
 }
@@ -260,10 +262,20 @@ void block_chain::reorganize(const checkpoint& fork_point,
 void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
     result_handler handler)
 {
-    if (!ec)
-        set_chain_state(top->validation.state);
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
 
-    handler(ec);
+    if (!top->validation.state)
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    set_chain_state(top->validation.state);
+    handler(error::success);
 }
 
 // Properties.
@@ -330,15 +342,17 @@ bool block_chain::stop()
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
+    validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
     auto result = transaction_organizer_.stop() && block_organizer_.stop();
 
     // The priority pool must not be stopped while organizing.
     priority_pool_.shutdown();
-    return result;
+
+    validation_mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
+    return result;
 }
 
 // Close is idempotent and thread safe.
@@ -682,8 +696,8 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     read_serial(do_fetch);
 }
 
-void block_chain::fetch_history(const wallet::payment_address& address,
-    size_t limit, size_t from_height, history_fetch_handler handler) const
+void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
+    size_t from_height, history_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -694,7 +708,7 @@ void block_chain::fetch_history(const wallet::payment_address& address,
     const auto do_fetch = [&](size_t slock)
     {
         return finish_read(slock, handler, error::success,
-            database_.history().get(address.hash(), limit, from_height));
+            database_.history().get(address_hash, limit, from_height));
     };
     read_serial(do_fetch);
 }
@@ -997,16 +1011,22 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe_reorganize(reorganize_handler&& handler)
+void block_chain::subscribe_blockchain(reorganize_handler&& handler)
 {
     // Pass this through to the organizer, which issues the notifications.
-    block_organizer_.subscribe_reorganize(std::move(handler));
+    block_organizer_.subscribe(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
 {
-    // Pass this through to the tx pool, which issues the notifications.
-    transaction_organizer_.subscribe_transaction(std::move(handler));
+    // Pass this through to the tx organizer, which issues the notifications.
+    transaction_organizer_.subscribe(std::move(handler));
+}
+
+void block_chain::unsubscribe()
+{
+    block_organizer_.unsubscribe();
+    transaction_organizer_.unsubscribe();
 }
 
 // Organizers.

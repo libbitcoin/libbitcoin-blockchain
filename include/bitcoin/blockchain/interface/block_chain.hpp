@@ -217,9 +217,9 @@ public:
     void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const;
 
-    /// fetch outputs, values and spends for an address.
-    void fetch_history(const wallet::payment_address& address,
-        size_t limit, size_t from_height, history_fetch_handler handler) const;
+    /// fetch outputs, values and spends for an address_hash.
+    void fetch_history(const short_hash& address_hash, size_t limit,
+        size_t from_height, history_fetch_handler handler) const;
 
     /// fetch stealth results.
     void fetch_stealth(const binary& filter, size_t from_height,
@@ -263,10 +263,13 @@ public:
     //-------------------------------------------------------------------------
 
     /// Subscribe to blockchain reorganizations, get branch/height.
-    void subscribe_reorganize(reorganize_handler&& handler);
+    void subscribe_blockchain(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
     void subscribe_transaction(transaction_handler&& handler);
+
+    /// Send null data success notification to all subscribers.
+    void unsubscribe();
 
     // Organizers.
     //-------------------------------------------------------------------------
@@ -325,7 +328,7 @@ private:
     mutable shared_mutex pool_state_mutex_;
 
     // These are thread safe.
-    mutable shared_mutex mutex_;
+    mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;
     transaction_organizer transaction_organizer_;

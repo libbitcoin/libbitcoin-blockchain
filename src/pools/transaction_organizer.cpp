@@ -38,7 +38,7 @@ using namespace std::placeholders;
 #define NAME "transaction_organizer"
 
 // TODO: create priority pool at blockchain level and use in both organizers. 
-transaction_organizer::transaction_organizer(shared_mutex& mutex,
+transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
@@ -89,27 +89,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 {
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock();
-
-    // The stop check must be guarded.
-    if (stopped())
-    {
-        mutex_.unlock();
-        //---------------------------------------------------------------------
-        handler(error::service_stopped);
-        return;
-    }
-
-    // Checks that are independent of chain state.
-    auto ec = validator_.check(tx);
-
-    if (ec)
-    {
-        mutex_.unlock();
-        //---------------------------------------------------------------------
-        handler(ec);
-        return;
-    }
+    mutex_.lock_low_priority();
 
     // Reset the reusable promise.
     resume_ = std::promise<code>();
@@ -118,19 +98,19 @@ void transaction_organizer::organize(transaction_const_ptr tx,
         std::bind(&transaction_organizer::signal_completion,
             this, _1);
 
-    const auto accept_handler =
-        std::bind(&transaction_organizer::handle_accept,
+    const auto check_handler =
+        std::bind(&transaction_organizer::handle_check,
             this, _1, tx, complete);
 
-    // Checks that are dependent on chain state and prevouts.
-    validator_.accept(tx, accept_handler);
+    // Checks that are independent of chain state.
+    validator_.check(tx, check_handler);
 
     // Wait on completion signal.
     // This is necessary in order to continue on a non-priority thread.
     // If we do not wait on the original thread there may be none left.
-    ec = resume_.get_future().get();
+    auto ec = resume_.get_future().get();
 
-    mutex_.unlock();
+    mutex_.unlock_low_priority();
     ///////////////////////////////////////////////////////////////////////////
 
     // Invoke caller handler outside of critical section.
@@ -147,6 +127,30 @@ void transaction_organizer::signal_completion(const code& ec)
 
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
+
+// private
+void transaction_organizer::handle_check(const code& ec,
+    transaction_const_ptr tx, result_handler handler)
+{
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    const auto accept_handler =
+        std::bind(&transaction_organizer::handle_accept,
+            this, _1, tx, handler);
+
+    // Checks that are dependent on chain state and prevouts.
+    validator_.accept(tx, accept_handler);
+}
 
 // private
 void transaction_organizer::handle_accept(const code& ec,
@@ -194,7 +198,7 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // TODO: create a simulated validation path that does not lock others.
+    // TODO: create a simulated validation path that does not block others.
     if (tx->validation.simulate)
     {
         handler(error::success);
@@ -214,13 +218,6 @@ void transaction_organizer::handle_connect(const code& ec,
 void transaction_organizer::handle_pushed(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
-    // The store verifies this as a safeguard, but should have caught earlier.
-    if (ec == error::unspent_duplicate)
-    {
-        handler(ec);
-        return;
-    }
-
     if (ec)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
@@ -231,7 +228,7 @@ void transaction_organizer::handle_pushed(const code& ec,
     }
 
     // This gets picked up by node tx-out protocol for announcement to peers.
-    notify_transaction(tx);
+    notify(tx);
 
     handler(error::success);
 }
@@ -240,16 +237,20 @@ void transaction_organizer::handle_pushed(const code& ec,
 //-----------------------------------------------------------------------------
 
 // private
-void transaction_organizer::notify_transaction(transaction_const_ptr tx)
+void transaction_organizer::notify(transaction_const_ptr tx)
 {
-    // Using relay can create big backlog but this is a criticial section.
-    subscriber_->relay(error::success, tx);
+    // Using relay can create huge backlog, but careful of criticial section.
+    subscriber_->invoke(error::success, tx);
 }
 
-void transaction_organizer::subscribe_transaction(
-    transaction_handler&& handler)
+void transaction_organizer::subscribe(transaction_handler&& handler)
 {
     subscriber_->subscribe(std::move(handler), error::service_stopped, {});
+}
+
+void transaction_organizer::unsubscribe()
+{
+    subscriber_->relay(error::success, {});
 }
 
 // Queries.

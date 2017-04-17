@@ -146,7 +146,7 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
     const auto script_data = prevout.cache.script().to_data(false);
 
     // Wire serialization is cached in support of large numbers of inputs.
-    const auto tx_data = tx.to_data();
+    const auto tx_data = tx.to_data(true);
 
     // libconsensus
     return convert_result(consensus::verify_script(tx_data.data(),

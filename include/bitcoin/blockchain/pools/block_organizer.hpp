@@ -47,7 +47,7 @@ public:
         block_const_ptr_list_const_ptr> reorganize_subscriber;
 
     /// Construct an instance.
-    block_organizer(shared_mutex& mutex, dispatcher& dispatch,
+    block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
         threadpool& thread_pool, fast_chain& chain, const settings& settings,
         bool relay_transactions);
 
@@ -55,7 +55,8 @@ public:
     bool stop();
 
     void organize(block_const_ptr block, result_handler handler);
-    void subscribe_reorganize(reorganize_handler&& handler);
+    void subscribe(reorganize_handler&& handler);
+    void unsubscribe();
 
     /// Remove all message vectors that match block hashes.
     void filter(get_data_ptr message) const;
@@ -68,23 +69,26 @@ private:
     bool set_branch_height(branch::ptr branch);
 
     // Verify sub-sequence.
-    void handle_accept(const code& ec, branch::ptr branch, result_handler handler);
-    void handle_connect(const code& ec, branch::ptr branch, result_handler handler);
+    void handle_check(const code& ec, block_const_ptr block,
+        result_handler handler);
+    void handle_accept(const code& ec, branch::ptr branch,
+        result_handler handler);
+    void handle_connect(const code& ec, branch::ptr branch,
+        result_handler handler);
     void organized(branch::ptr branch, result_handler handler);
     void handle_reorganized(const code& ec, branch::const_ptr branch,
         block_const_ptr_list_ptr outgoing, result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.
-    void notify_reorganize(size_t branch_height,
-        block_const_ptr_list_const_ptr branch,
+    void notify(size_t branch_height, block_const_ptr_list_const_ptr branch,
         block_const_ptr_list_const_ptr original);
 
     // This must be protected by the implementation.
     fast_chain& fast_chain_;
 
     // These are thread safe.
-    shared_mutex& mutex_;
+    prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     dispatcher& dispatch_;
