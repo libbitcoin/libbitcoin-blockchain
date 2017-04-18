@@ -967,6 +967,7 @@ void block_chain::filter_blocks(get_data_ptr message,
         auto& inventories = message->inventories();
         const auto& blocks = database_.blocks();
 
+        // TODO: optimize (prevent repeating vector moves).
         for (auto it = inventories.begin(); it != inventories.end();)
             if (it->is_block_type() && blocks.get(it->hash()))
                 it = inventories.erase(it);
@@ -994,6 +995,7 @@ void block_chain::filter_transactions(get_data_ptr message,
         auto& inventories = message->inventories();
         const auto& transactions = database_.transactions();
 
+        // TODO: optimize (prevent repeating vector moves).
         for (auto it = inventories.begin(); it != inventories.end();)
         {
             if (it->is_transaction_type() &&

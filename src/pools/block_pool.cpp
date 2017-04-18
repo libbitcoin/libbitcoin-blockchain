@@ -213,6 +213,7 @@ void block_pool::filter(get_data_ptr message) const
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
+        // TODO: optimize (prevent repeating vector moves).
         it = found ? inventories.erase(it) : it + 1;
     }
 }
