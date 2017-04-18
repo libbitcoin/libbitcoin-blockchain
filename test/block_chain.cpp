@@ -19,6 +19,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <future>
+#include <memory>
 #include <string>
 #include <bitcoin/blockchain.hpp>
 
@@ -467,6 +468,8 @@ BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+//-----------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_SUITE(safe_chain_tests)
 
 // fetch_block
@@ -505,7 +508,7 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__unstarted__error_service_stopped
     BOOST_REQUIRE_EQUAL(fetch_block_by_height_result(instance, block1, 1), error::service_stopped);
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -542,7 +545,7 @@ static int fetch_block_by_hash_result(block_chain& instance,
     return promise.get_future().get().value();
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block2__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -582,7 +585,7 @@ static int fetch_block_header_by_height_result(block_chain& instance,
     return promise.get_future().get().value();
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header1__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header1__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -620,7 +623,7 @@ static int fetch_block_header_by_hash_result(block_chain& instance,
     return promise.get_future().get().value();
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header2__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_block_header2__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -660,7 +663,7 @@ static int fetch_merkle_block_by_height_result(block_chain& instance,
     return promise.get_future().get().value();
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block1__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block1__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -698,7 +701,7 @@ static int fetch_merkle_block_by_hash_result(block_chain& instance,
     return promise.get_future().get().value();
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block2__exists__true)
+BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block2__exists__success)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -714,5 +717,101 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_merkle_block2__not_exists__error_not_fou
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_merkle_block_by_hash_result(instance, block1, 1), error::not_found);
 }
+
+// TODO: fetch_block_height
+// TODO: fetch_last_height
+// TODO: fetch_transaction
+// TODO: fetch_transaction_position
+// TODO: fetch_output
+// TODO: fetch_spend
+// TODO: fetch_history
+// TODO: fetch_stealth
+// TODO: fetch_block_locator
+// TODO: fetch_locator_block_hashes
+
+// fetch_locator_block_headers
+
+static int fetch_locator_block_headers(block_chain& instance,
+    get_headers_const_ptr locator, const hash_digest& threshold, size_t limit)
+{
+    std::promise<code> promise;
+    const auto handler = [=, &promise](code ec, headers_ptr result_headers)
+    {
+        if (ec)
+        {
+            promise.set_value(ec);
+            return;
+        }
+
+        // TODO: incorporate other expectations.
+        const auto sequential = result_headers->is_sequential();
+
+        promise.set_value(sequential ? error::success : error::operation_failed);
+    };
+    instance.fetch_locator_block_headers(locator, threshold, limit, handler);
+    return promise.get_future().get().value();
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__empty__sequential)
+{
+    START_BLOCKCHAIN(instance, false);
+
+    const auto block1 = NEW_BLOCK(1);
+    const auto block2 = NEW_BLOCK(2);
+    const auto block3 = NEW_BLOCK(3);
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
+    BOOST_REQUIRE(instance.insert(block3, 3));
+
+    const auto locator = std::make_shared<const message::get_headers>();
+    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, null_hash, 0), error::success);
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__full__sequential)
+{
+    START_BLOCKCHAIN(instance, false);
+
+    const auto block1 = NEW_BLOCK(1);
+    const auto block2 = NEW_BLOCK(2);
+    const auto block3 = NEW_BLOCK(3);
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
+    BOOST_REQUIRE(instance.insert(block3, 3));
+
+    const size_t limit = 3;
+    const auto threshold = null_hash;
+    const auto locator = std::make_shared<const message::get_headers>();
+    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, null_hash, 3), error::success);
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__limited__sequential)
+{
+    START_BLOCKCHAIN(instance, false);
+
+    const auto block1 = NEW_BLOCK(1);
+    const auto block2 = NEW_BLOCK(2);
+    const auto block3 = NEW_BLOCK(3);
+    BOOST_REQUIRE(instance.insert(block1, 1));
+    BOOST_REQUIRE(instance.insert(block2, 2));
+    BOOST_REQUIRE(instance.insert(block3, 3));
+
+    const size_t limit = 3;
+    const auto threshold = null_hash;
+    const auto locator = std::make_shared<const message::get_headers>();
+    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, null_hash, 2), error::success);
+}
+
+// TODO: fetch_template
+// TODO: fetch_mempool
+// TODO: filter_blocks
+// TODO: filter_transactions
+// TODO: subscribe_blockchain
+// TODO: subscribe_transaction
+// TODO: unsubscribe
+// TODO: organize_block
+// TODO: organize_transaction
+// TODO: chain_settings
+// TODO: stopped
+// TODO: to_hashes
 
 BOOST_AUTO_TEST_SUITE_END()
