@@ -789,7 +789,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     // will be much faster than hashing each retrieved block to test for stop.
     const auto do_fetch = [&](size_t slock)
     {
-        // Find the first block height.
+        // Find the start block height.
         // If no start block is on our chain we start with block 0.
         size_t start = 0;
         for (const auto& hash: locator->start_hashes())
@@ -802,47 +802,55 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
             }
         }
 
-        // Find the stop block height.
-        // The maximum stop block is 501 blocks after start (to return 500).
-        const auto begin = safe_add(start, size_t(1));
-        auto stop = safe_add(begin, limit);
+        // The first block requested is always one after the start block.
+        auto first = safe_add(start, size_t(1));
 
+        // The maximum last block requested is 500 after first.
+        auto last = safe_add(first, limit);
+
+        // Find the upper threshold block height (peer-specified).
         if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks().get(locator->stop_hash());
-            if (stop_result)
-                stop = std::min(stop_result.height(), stop);
+            const auto result = database_.blocks().get(locator->stop_hash());
+
+            // Otherwise limit the last height to the stop block height.
+            // If last precedes first floor_subtract will handle below.
+            if (result)
+                last = std::min(result.height(), last);
         }
 
-        // Find the threshold block height.
-        // If the threshold is above the start it becomes the new start.
+        // Find the lower threshold block height (self-specified).
         if (threshold != null_hash)
         {
-            const auto start_result = database_.blocks().get(threshold);
-            if (start_result)
-                start = std::max(start_result.height(), start);
+            // If the threshold is not on chain we ignore it.
+            const auto result = database_.blocks().get(threshold);
+
+            // Otherwise limit the first height to the threshold block height.
+            // If first exceeds last floor_subtract will handle below.
+            if (result)
+                first = std::max(result.height(), first);
         }
 
         auto hashes = std::make_shared<inventory>();
-        const auto size = floor_subtract(stop, begin);
-        hashes->inventories().reserve(size);
+        hashes->inventories().reserve(floor_subtract(last, first));
 
         // Build the hash list until we hit last or the blockchain top.
-        for (auto index = begin; index < stop; ++index)
+        for (auto index = first; index < last; ++index)
         {
             const auto result = database_.blocks().get(index);
 
             // If not found then we are at our top.
             if (!result)
+            {
+                hashes->inventories().shrink_to_fit();
                 break;
+            }
 
-            const auto& header = result.header();
             static const auto id = inventory::type_id::block;
-            hashes->inventories().push_back({ id, header.hash() });
+            hashes->inventories().emplace_back(id, result.header().hash());
         }
 
-        hashes->inventories().shrink_to_fit();
         return finish_read(slock, handler, error::success, hashes);
     };
     read_serial(do_fetch);
@@ -855,7 +863,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 {
     if (stopped())
     {
-        handler(error::service_stopped, {});
+        handler(error::service_stopped, nullptr);
         return;
     }
 
@@ -863,9 +871,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     // will be much faster than hashing each retrieved block to test for stop.
     const auto do_fetch = [&](size_t slock)
     {
-        // TODO: consolidate this portion with fetch_locator_block_hashes.
-        //---------------------------------------------------------------------
-        // Find the first block height.
+        // Find the start block height.
         // If no start block is on our chain we start with block 0.
         size_t start = 0;
         for (const auto& hash: locator->start_hashes())
@@ -878,49 +884,54 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
             }
         }
 
-        // Find the stop block height.
-        // The maximum stop block is 501 blocks after start (to return 500).
-        const auto begin = safe_add(start, size_t(1));
-        auto stop = safe_add(begin, limit);
+        // The first block requested is always one after the start block.
+        auto first = safe_add(start, size_t(1));
 
+        // The maximum last block requested is 2000 after first.
+        auto last = safe_add(first, limit);
+
+        // Find the upper threshold block height (peer-specified).
         if (locator->stop_hash() != null_hash)
         {
             // If the stop block is not on chain we treat it as a null stop.
-            const auto stop_result = database_.blocks().get(
-                locator->stop_hash());
+            const auto result = database_.blocks().get(locator->stop_hash());
 
-            if (stop_result)
-                stop = std::min(stop_result.height(), stop);
+            // Otherwise limit the last height to the stop block height.
+            // If last precedes first floor_subtract will handle below.
+            if (result)
+                last = std::min(result.height(), last);
         }
 
-        // Find the threshold block height.
-        // If the threshold is above the start it becomes the new start.
+        // Find the lower threshold block height (self-specified).
         if (threshold != null_hash)
         {
-            const auto start_result = database_.blocks().get(threshold);
-            if (start_result)
-                start = std::max(start_result.height(), start);
+            // If the threshold is not on chain we ignore it.
+            const auto result = database_.blocks().get(threshold);
+
+            // Otherwise limit the first height to the threshold block height.
+            // If first exceeds last floor_subtract will handle below.
+            if (result)
+                first = std::max(result.height(), first);
         }
 
-        //---------------------------------------------------------------------
-
-        const auto headers = std::make_shared<message::headers>();
-        const auto size = floor_subtract(stop, begin);
-        headers->elements().reserve(size);
+        auto headers = std::make_shared<message::headers>();
+        headers->elements().reserve(floor_subtract(last, first));
 
         // Build the hash list until we hit last or the blockchain top.
-        for (auto index = begin; index < stop; ++index)
+        for (auto index = first; index < last; ++index)
         {
             const auto result = database_.blocks().get(index);
 
             // If not found then we are at our top.
             if (!result)
+            {
+                headers->elements().shrink_to_fit();
                 break;
+            }
 
-            headers->elements().push_back(result.header());
+            headers->elements().emplace_back(result.header());
         }
 
-        headers->elements().shrink_to_fit();
         return finish_read(slock, handler, error::success, headers);
     };
     read_serial(do_fetch);
