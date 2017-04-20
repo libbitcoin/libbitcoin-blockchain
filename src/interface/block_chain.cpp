@@ -804,7 +804,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        const auto begin = safe_increment(start);
+        const auto begin = safe_add(start, size_t(1));
         auto stop = safe_add(begin, limit);
 
         if (locator->stop_hash() != null_hash)
@@ -880,7 +880,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
 
         // Find the stop block height.
         // The maximum stop block is 501 blocks after start (to return 500).
-        const auto begin = safe_increment(start);
+        const auto begin = safe_add(start, size_t(1));
         auto stop = safe_add(begin, limit);
 
         if (locator->stop_hash() != null_hash)
