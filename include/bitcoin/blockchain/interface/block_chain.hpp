@@ -320,6 +320,7 @@ private:
     std::atomic<bool> stopped_;
     const settings& settings_;
     asio::duration spin_lock_sleep_;
+    bc::atomic<block_const_ptr> last_block_;
     const populate_chain_state chain_state_populator_;
     database::data_base database_;
 
