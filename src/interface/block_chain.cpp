@@ -275,6 +275,8 @@ void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
     }
 
     set_chain_state(top->validation.state);
+    last_block_.store(top);
+
     handler(error::success);
 }
 
@@ -380,6 +382,19 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
         return;
     }
 
+    // Try the last block first.
+    const auto last = last_block_.load();
+    BITCOIN_ASSERT(!last || last->validation.state);
+
+    if (last && last->validation.state->height() == height)
+    {
+        // TODO: create chain::block::clean_copy() method.
+        const auto copy = std::make_shared<message::block>(*last);
+        copy->validation.state.reset();
+        handler(error::success, copy, height);
+        return;
+    }
+
     const auto do_fetch = [&](size_t slock)
     {
         const auto block_result = database_.blocks().get(height);
@@ -419,6 +434,20 @@ void block_chain::fetch_block(const hash_digest& hash,
     if (stopped())
     {
         handler(error::service_stopped, nullptr, 0);
+        return;
+    }
+
+    // Try the last block first.
+    const auto last = last_block_.load();
+    BITCOIN_ASSERT(!last || last->validation.state);
+
+    if (last && last->hash() == hash)
+    {
+        // TODO: create chain::block::clean_copy() method.
+        const auto height = last->validation.state->height();
+        const auto copy = std::make_shared<message::block>(*last);
+        copy->validation.state.reset();
+        handler(error::success, copy, height);
         return;
     }
 
