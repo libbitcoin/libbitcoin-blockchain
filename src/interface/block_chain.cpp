@@ -549,7 +549,8 @@ void block_chain::fetch_merkle_block(size_t height,
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
         const auto merkle = std::make_shared<merkle_block>(result.header(),
-            result.transaction_count(), to_hashes(result), data_chunk{});
+            result.transaction_count(), result.transaction_hashes(),
+            data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -574,7 +575,8 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
             return finish_read(slock, handler, error::not_found, nullptr, 0);
 
         const auto merkle = std::make_shared<merkle_block>(result.header(),
-            result.transaction_count(), to_hashes(result), data_chunk{});
+            result.transaction_count(), result.transaction_hashes(),
+            data_chunk{});
 
         return finish_read(slock, handler, error::success, merkle,
             result.height());
@@ -1134,22 +1136,6 @@ bool block_chain::finish_read(handle sequence, Handler handler,
     // because all parameterizations use smart pointers or integral types.
     handler(args...);
     return true;
-}
-
-// Utilities.
-//-----------------------------------------------------------------------------
-// private
-
-hash_list block_chain::to_hashes(const block_result& result)
-{
-    const auto count = result.transaction_count();
-    hash_list hashes;
-    hashes.reserve(count);
-
-    for (size_t position = 0; position < count; ++position)
-        hashes.push_back(result.transaction_hash(position));
-
-    return hashes;
 }
 
 } // namespace blockchain
