@@ -78,7 +78,7 @@ public:
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    // Queries.
+    // Node Queries.
     // ------------------------------------------------------------------------
 
     virtual void fetch_block(size_t height,
@@ -118,8 +118,19 @@ public:
         bool require_confirmed,
         transaction_index_fetch_handler handler) const = 0;
 
-    virtual void fetch_output(const chain::output_point& outpoint,
-        bool require_confirmed, output_fetch_handler handler) const = 0;
+    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        inventory_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const = 0;
+
+    virtual void fetch_block_locator(const chain::block::indexes& heights,
+        block_locator_fetch_handler handler) const = 0;
+
+    // Server Queries.
+    //-------------------------------------------------------------------------
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
@@ -129,17 +140,6 @@ public:
 
     virtual void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const = 0;
-
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        inventory_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const = 0;
 
     // Transaction Pool.
     //-------------------------------------------------------------------------
