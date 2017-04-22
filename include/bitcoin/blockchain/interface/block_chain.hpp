@@ -144,6 +144,7 @@ public:
     // ========================================================================
     // SAFE CHAIN
     // ========================================================================
+    // Thread safe.
 
     // Startup and shutdown.
     // ------------------------------------------------------------------------
@@ -159,9 +160,8 @@ public:
     /// Threads must be joined before close is called (or by destruct).
     bool close();
 
-    // Queries.
+    // Node Queries.
     // ------------------------------------------------------------------------
-    // Thread safe.
 
     /// fetch a block by height.
     void fetch_block(size_t height, block_fetch_handler handler) const;
@@ -209,9 +209,22 @@ public:
     void fetch_transaction_position(const hash_digest& hash,
         bool require_confirmed, transaction_index_fetch_handler handler) const;
 
-    /// fetch the output of an outpoint (spent or otherwise).
-    void fetch_output(const chain::output_point& outpoint,
-        bool require_confirmed, output_fetch_handler handler) const;
+    /// fetch the set of block hashes indicated by the block locator.
+    void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        inventory_fetch_handler handler) const;
+
+    /// fetch the set of block headers indicated by the block locator.
+    void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const;
+
+    /// fetch a block locator relative to the current top and threshold.
+    void fetch_block_locator(const chain::block::indexes& heights,
+        block_locator_fetch_handler handler) const;
+
+    // Server Queries.
+    //-------------------------------------------------------------------------
 
     /// fetch the inpoint (spender) of an outpoint.
     void fetch_spend(const chain::output_point& outpoint,
@@ -224,20 +237,6 @@ public:
     /// fetch stealth results.
     void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const;
-
-    /// fetch a block locator relative to the current top and threshold.
-    void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const;
-
-    /// fetch the set of block hashes indicated by the block locator.
-    void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        inventory_fetch_handler handler) const;
-
-    /// fetch the set of block headers indicated by the block locator.
-    void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const;
 
     // Transaction Pool.
     //-------------------------------------------------------------------------
