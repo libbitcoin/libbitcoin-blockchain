@@ -306,8 +306,6 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
-    static hash_list to_hashes(const database::block_result& result);
-
     code set_chain_state(chain::chain_state::ptr previous);
     void handle_transaction(const code& ec, transaction_const_ptr tx,
         result_handler handler) const;
