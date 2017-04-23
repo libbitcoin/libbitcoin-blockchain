@@ -91,9 +91,9 @@ public:
         size_t& out_position, const hash_digest& hash,
         bool require_confirmed) const = 0;
 
-    /// Get the transaction of the given hash and its block height.
-    virtual transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash, bool require_confirmed) const = 0;
+    /////// Get the transaction of the given hash and its block height.
+    ////virtual transaction_ptr get_transaction(size_t& out_block_height,
+    ////    const hash_digest& hash, bool require_confirmed) const = 0;
 
     // Writers.
     // ------------------------------------------------------------------------
