@@ -104,9 +104,9 @@ public:
     bool get_transaction_position(size_t& out_height, size_t& out_position,
         const hash_digest& hash, bool require_confirmed) const;
 
-    /// Get the transaction of the given hash and its block height.
-    transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash, bool require_confirmed) const;
+    /////// Get the transaction of the given hash and its block height.
+    ////transaction_ptr get_transaction(size_t& out_block_height,
+    ////    const hash_digest& hash, bool require_confirmed) const;
 
     // Writers.
     // ------------------------------------------------------------------------
@@ -305,8 +305,8 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-    asio::duration spin_lock_sleep_;
     bc::atomic<block_const_ptr> last_block_;
+    bc::atomic<transaction_const_ptr> last_transaction_;
     const populate_chain_state chain_state_populator_;
     database::data_base database_;
 

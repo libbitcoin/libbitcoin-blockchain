@@ -48,7 +48,7 @@ public:
     typedef handle2<size_t, size_t> transaction_index_fetch_handler;
 
     // Smart pointer parameters must not be passed by reference.
-    typedef std::function<void(const code&, block_ptr, size_t)>
+    typedef std::function<void(const code&, block_const_ptr, size_t)>
         block_fetch_handler;
     typedef std::function<void(const code&, merkle_block_ptr, size_t)>
         merkle_block_fetch_handler;
@@ -56,8 +56,8 @@ public:
         compact_block_fetch_handler;
     typedef std::function<void(const code&, header_ptr, size_t)>
         block_header_fetch_handler;
-    typedef std::function<void(const code&, transaction_ptr, size_t, size_t)>
-        transaction_fetch_handler;
+    typedef std::function<void(const code&, transaction_const_ptr, size_t,
+        size_t)> transaction_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
     typedef std::function<void(const code&, get_headers_ptr)>
