@@ -828,7 +828,6 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     handler(error::success, std::move(headers));
 }
 
-// TODO: remove need for spin lock.
 // This may generally execute 29+ queries.
 void block_chain::fetch_block_locator(const block::indexes& heights,
     block_locator_fetch_handler handler) const
@@ -839,39 +838,25 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         return;
     }
 
-    const auto do_fetch = [&](size_t slock)
+    // Caller can cast get_headers down to get_blocks.
+    auto get_headers = std::make_shared<message::get_headers>();
+    auto& hashes = get_headers->start_hashes();
+    hashes.reserve(heights.size());
+
+    for (const auto height: heights)
     {
-        size_t top;
-        code ec(error::operation_failed);
+        const auto result = database_.blocks().get(height);
 
-        if (!database_.blocks().top(top))
-            return finish_read(slock, handler, ec, nullptr);
-
-        // Caller can cast down to get_blocks.
-        auto get_headers = std::make_shared<message::get_headers>();
-        auto& hashes = get_headers->start_hashes();
-        hashes.reserve(heights.size());
-        ec = error::success;
-
-        for (const auto height: heights)
+        if (!result)
         {
-            const auto result = database_.blocks().get(height);
-
-            if (!result)
-            {
-                ec = error::not_found;
-                hashes.clear();
-                break;
-            }
-
-            hashes.push_back(result.header().hash());
+            handler(error::not_found, nullptr);
+            break;
         }
 
-        hashes.shrink_to_fit();
-        return finish_read(slock, handler, ec, get_headers);
-    };
+        hashes.push_back(result.header().hash());
+    }
 
-    read_serial(do_fetch);
+    handler(error::success, get_headers);
 }
 
 // Server Queries.
@@ -1045,42 +1030,6 @@ const settings& block_chain::chain_settings() const
 bool block_chain::stopped() const
 {
     return stopped_;
-}
-
-// Locking helpers.
-// ----------------------------------------------------------------------------
-// private
-
-template <typename Reader>
-void block_chain::read_serial(const Reader& reader) const
-{
-    while (true)
-    {
-        // Get a read handle.
-        const auto sequence = database_.begin_read();
-
-        // If read handle indicates write or reader finishes false, wait.
-        if (!database_.is_write_locked(sequence) && reader(sequence))
-            break;
-
-        // Sleep while waiting for write to complete.
-        std::this_thread::sleep_for(spin_lock_sleep_);
-    }
-}
-
-template <typename Handler, typename... Args>
-bool block_chain::finish_read(handle sequence, Handler handler,
-    Args... args) const
-{
-    // If the read sequence was interrupted by a write, return false (wait).
-    if (!database_.is_read_valid(sequence))
-        return false;
-
-    // Handle the read (done).
-    // To forward args we would need to use std::bind here, but not necessary
-    // because all parameterizations use smart pointers or integral types.
-    handler(args...);
-    return true;
 }
 
 } // namespace blockchain
