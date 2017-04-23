@@ -45,7 +45,6 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings, bool relay_transactions)
   : stopped_(true),
     settings_(chain_settings),
-    spin_lock_sleep_(asio::milliseconds(1)),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
     validation_mutex_(database_settings.flush_writes && relay_transactions),
@@ -201,18 +200,18 @@ bool block_chain::get_transaction_position(size_t& out_height,
     return true;
 }
 
-transaction_ptr block_chain::get_transaction(size_t& out_block_height,
-    const hash_digest& hash, bool require_confirmed) const
-{
-    const auto result = database_.transactions().get(hash, max_size_t,
-        require_confirmed);
-
-    if (!result)
-        return nullptr;
-
-    out_block_height = result.height();
-    return std::make_shared<transaction>(result.transaction());
-}
+////transaction_ptr block_chain::get_transaction(size_t& out_block_height,
+////    const hash_digest& hash, bool require_confirmed) const
+////{
+////    const auto result = database_.transactions().get(hash, max_size_t,
+////        require_confirmed);
+////
+////    if (!result)
+////        return nullptr;
+////
+////    out_block_height = result.height();
+////    return std::make_shared<transaction>(result.transaction());
+////}
 
 // Writers
 // ----------------------------------------------------------------------------
@@ -235,6 +234,8 @@ bool block_chain::insert(block_const_ptr block, size_t height)
 void block_chain::push(transaction_const_ptr tx, dispatcher&,
     result_handler handler)
 {
+    last_transaction_.store(tx);
+
     // Transaction push is currently sequential so dispatch is not used.
     handler(database_.push(*tx, chain_state()->enabled_forks()));
 }
@@ -373,6 +374,8 @@ block_chain::~block_chain()
 
 // Queries.
 // ----------------------------------------------------------------------------
+// Blocks are and transactions returned const because they don't change and
+// this eliminates the need to copy the cached items.
 
 void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
 {
@@ -382,16 +385,13 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
         return;
     }
 
-    // Try the cached block first.
-    const auto last = last_block_.load();
-    BITCOIN_ASSERT(!last || last->validation.state);
+    const auto cached = last_block_.load();
 
-    if (last && last->validation.state->height() == height)
+    // Try the cached block first.
+    if (cached && cached->validation.state &&
+        cached->validation.state->height() == height)
     {
-        // TODO: create chain::block::clean_copy() method.
-        const auto copy = std::make_shared<message::block>(*last);
-        copy->validation.state.reset();
-        handler(error::success, copy, height);
+        handler(error::success, cached, height);
         return;
     }
 
@@ -425,9 +425,9 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
         txs.push_back(tx_result.transaction());
     }
 
-    const auto block = std::make_shared<message::block>(block_result.header(),
+    auto message = std::make_shared<const block>(block_result.header(),
         std::move(txs));
-    handler(error::success, block, height);
+    handler(error::success, message, height);
 }
 
 void block_chain::fetch_block(const hash_digest& hash,
@@ -439,17 +439,12 @@ void block_chain::fetch_block(const hash_digest& hash,
         return;
     }
 
-    // Try the cached block first.
-    const auto last = last_block_.load();
-    BITCOIN_ASSERT(!last || last->validation.state);
+    const auto cached = last_block_.load();
 
-    if (last && last->hash() == hash)
+    // Try the cached block first.
+    if (cached && cached->validation.state && cached->hash() == hash)
     {
-        // TODO: create chain::block::clean_copy() method.
-        const auto cached_height = last->validation.state->height();
-        const auto copy = std::make_shared<message::block>(*last);
-        copy->validation.state.reset();
-        handler(error::success, copy, cached_height);
+        handler(error::success, cached, cached->validation.state->height());
         return;
     }
 
@@ -483,9 +478,9 @@ void block_chain::fetch_block(const hash_digest& hash,
         txs.push_back(tx_result.transaction());
     }
 
-    const auto block = std::make_shared<message::block>(block_result.header(),
+    const auto message = std::make_shared<const block>(block_result.header(),
         std::move(txs));
-    handler(error::success, block, height);
+    handler(error::success, message, height);
 }
 
 void block_chain::fetch_block_header(size_t height,
@@ -505,8 +500,8 @@ void block_chain::fetch_block_header(size_t height,
         return;
     }
 
-    const auto header = std::make_shared<message::header>(result.header());
-    handler(error::success, header, result.height());
+    const auto message = std::make_shared<header>(result.header());
+    handler(error::success, message, result.height());
 }
 
 void block_chain::fetch_block_header(const hash_digest& hash,
@@ -526,8 +521,8 @@ void block_chain::fetch_block_header(const hash_digest& hash,
         return;
     }
 
-    const auto header = std::make_shared<message::header>(result.header());
-    handler(error::success, header, result.height());
+    const auto message = std::make_shared<header>(result.header());
+    handler(error::success, message, result.height());
 }
 
 void block_chain::fetch_merkle_block(size_t height,
@@ -636,6 +631,22 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         return;
     }
 
+    // Try the cached block first if confirmation is not required.
+    if (!require_confirmed)
+    {
+        const auto cached = last_transaction_.load();
+
+        if (cached && cached->validation.state && cached->hash() == hash)
+        {
+            ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
+
+            // Simulate the position and height overloading of the database.
+            handler(error::success, cached, transaction_database::unconfirmed,
+                cached->validation.state->height());
+            return;
+        }
+    }
+
     const auto result = database_.transactions().get(hash, max_size_t,
         require_confirmed);
 
@@ -645,7 +656,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         return;
     }
 
-    const auto tx = std::make_shared<transaction>(result.transaction());
+    const auto tx = std::make_shared<const transaction>(result.transaction());
     handler(error::success, tx, result.position(), result.height());
 }
 
@@ -807,8 +818,8 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
             begin = std::max(result.height(), begin);
     }
 
-    auto headers = std::make_shared<message::headers>();
-    headers->elements().reserve(floor_subtract(end, begin));
+    auto message = std::make_shared<headers>();
+    message->elements().reserve(floor_subtract(end, begin));
 
     // Build the hash list until we hit end or the blockchain top.
     for (auto height = begin; height < end; ++height)
@@ -818,14 +829,14 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
         // If not found then we are at our top.
         if (!result)
         {
-            headers->elements().shrink_to_fit();
+            message->elements().shrink_to_fit();
             break;
         }
 
-        headers->elements().push_back(result.header());
+        message->elements().push_back(result.header());
     }
 
-    handler(error::success, std::move(headers));
+    handler(error::success, std::move(message));
 }
 
 // This may generally execute 29+ queries.
@@ -839,8 +850,8 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
     }
 
     // Caller can cast get_headers down to get_blocks.
-    auto get_headers = std::make_shared<message::get_headers>();
-    auto& hashes = get_headers->start_hashes();
+    auto message = std::make_shared<get_headers>();
+    auto& hashes = message->start_hashes();
     hashes.reserve(heights.size());
 
     for (const auto height: heights)
@@ -856,7 +867,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         hashes.push_back(result.header().hash());
     }
 
-    handler(error::success, get_headers);
+    handler(error::success, message);
 }
 
 // Server Queries.
