@@ -22,6 +22,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <functional>
 #include <vector>
 #include <bitcoin/database.hpp>
@@ -282,6 +283,9 @@ public:
     // Properties.
     //-------------------------------------------------------------------------
 
+    /// True if the blockchain is stale based on configured age limit.
+    bool is_stale() const;
+
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
@@ -305,6 +309,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
+    const time_t notify_limit_seconds_;
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<transaction_const_ptr> last_transaction_;
     const populate_chain_state chain_state_populator_;

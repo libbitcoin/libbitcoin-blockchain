@@ -169,6 +169,11 @@ public:
 
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
+
+    // Properties
+    // ------------------------------------------------------------------------
+
+    virtual bool is_stale() const = 0;
 };
 
 } // namespace blockchain
