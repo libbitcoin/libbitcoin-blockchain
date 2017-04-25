@@ -62,7 +62,7 @@ private:
     typedef std::shared_ptr<atomic_counter> atomic_counter_ptr;
 
     static void dump(const code& ec, const chain::transaction& tx,
-        uint32_t input_index, uint32_t branches, size_t height,
+        uint32_t input_index, uint32_t forks, size_t height,
         bool use_libconsensus);
 
     void check_block(block_const_ptr block, size_t bucket, size_t buckets,
