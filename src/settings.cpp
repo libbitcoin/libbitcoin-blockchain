@@ -28,6 +28,8 @@ settings::settings()
     priority(true),
     use_libconsensus(false),
     byte_fee_satoshis(1),
+    sigop_fee_satoshis(100),
+    minimum_output_satoshis(500),
     notify_limit_hours(42),
     reorganization_limit(256),
     block_version(4),
