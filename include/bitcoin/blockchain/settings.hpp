@@ -41,7 +41,6 @@ public:
     uint32_t cores;
     bool priority;
     bool use_libconsensus;
-    bool reject_conflicts;
     float byte_fee_satoshis;
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
