@@ -44,7 +44,7 @@ transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    minimum_byte_fee_(settings.byte_fee_satoshis),
+    settings_(settings),
     dispatch_(dispatch),
     transaction_pool_(settings),
     validator_(dispatch, fast_chain_, settings),
@@ -168,9 +168,20 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
-    if (tx->fees() < minimum_byte_fee_ * tx->serialized_size(true))
+    // TODO: this is a second pass on sigops and tx size, implement cache.
+    const auto price =
+        settings_.byte_fee_satoshis * tx->serialized_size(true) +
+        settings_.sigop_fee_satoshis * tx->signature_operations();
+
+    if (tx->fees() < price)
     {
         handler(error::insufficient_fee);
+        return;
+    }
+
+    if (tx->is_dusty(settings_.minimum_output_satoshis))
+    {
+        handler(error::dusty_transaction);
         return;
     }
 

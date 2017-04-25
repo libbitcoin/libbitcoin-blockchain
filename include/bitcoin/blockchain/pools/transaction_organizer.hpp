@@ -86,7 +86,7 @@ private:
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
-    const float minimum_byte_fee_;
+    const settings& settings_;
     dispatcher& dispatch_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;
