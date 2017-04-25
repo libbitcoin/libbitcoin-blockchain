@@ -42,6 +42,8 @@ public:
     bool priority;
     bool use_libconsensus;
     float byte_fee_satoshis;
+    float sigop_fee_satoshis;
+    uint64_t minimum_output_satoshis;
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
     uint32_t block_version;
