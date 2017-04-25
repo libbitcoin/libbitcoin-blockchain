@@ -29,6 +29,7 @@ settings::settings()
     use_libconsensus(false),
     reject_conflicts(true),
     byte_fee_satoshis(1),
+    notify_limit_hours(42),
     reorganization_limit(256),
     block_version(4),
     easy_blocks(false),
@@ -39,21 +40,6 @@ settings::settings()
     bip65(true),
     bip90(true)
 {
-}
-
-uint32_t settings::enabled_forks() const
-{
-    using namespace machine;
-
-    uint32_t forks = no_rules;
-    forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
-    forks |= (bip16 ? rule_fork::bip16_rule : 0);
-    forks |= (bip30 ? rule_fork::bip30_rule : 0);
-    forks |= (bip34 ? rule_fork::bip34_rule : 0);
-    forks |= (bip66 ? rule_fork::bip66_rule : 0);
-    forks |= (bip65 ? rule_fork::bip65_rule : 0);
-    forks |= (bip90 ? rule_fork::bip90_rule : 0);
-    return forks;
 }
 
 // Use push_back due to initializer_list bug:
@@ -107,6 +93,21 @@ settings::settings(config::settings context)
         {
         }
     }
+}
+
+uint32_t settings::enabled_forks() const
+{
+    using namespace machine;
+
+    uint32_t forks = no_rules;
+    forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
+    forks |= (bip16 ? rule_fork::bip16_rule : 0);
+    forks |= (bip30 ? rule_fork::bip30_rule : 0);
+    forks |= (bip34 ? rule_fork::bip34_rule : 0);
+    forks |= (bip66 ? rule_fork::bip66_rule : 0);
+    forks |= (bip65 ? rule_fork::bip65_rule : 0);
+    forks |= (bip90 ? rule_fork::bip90_rule : 0);
+    return forks;
 }
 
 } // namespace blockchain
