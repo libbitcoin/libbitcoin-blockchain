@@ -35,6 +35,7 @@ using namespace bc::machine;
 
 using namespace bc::consensus;
 
+// TODO: map bc policy flags.
 uint32_t validate_input::convert_flags(uint32_t native_flags)
 {
     uint32_t flags = verify_flags_none;
@@ -51,6 +52,7 @@ uint32_t validate_input::convert_flags(uint32_t native_flags)
     return flags;
 }
 
+// TODO: map to corresponding bc::error codes.
 code validate_input::convert_result(verify_result_type result)
 {
     switch (result)
@@ -124,28 +126,17 @@ code validate_input::convert_result(verify_result_type result)
     }
 }
 
+// TODO: cache transaction wire serialization.
 code validate_input::verify_script(const transaction& tx, uint32_t input_index,
     uint32_t branches, bool use_libconsensus)
 {
     if (!use_libconsensus)
-    {
-        ////// Simulate the inefficiency of calling libconsensus.
-        ////BITCOIN_ASSERT(input_index < tx.inputs().size());
-        ////const auto& prevout = tx.inputs()[input_index].previous_output().validation;
-        ////const auto script_data = prevout.cache.script().to_data(false);
-        ////const auto tx_data = tx.to_data();
-        ////auto clone = transaction::factory_from_data(tx_data);
-        ////const auto input = clone.inputs()[input_index].script();
-        ////const auto prevout = script::factory_from_data(script_data, false);
-        ////return script::verify(clone, input_index, branches, input, prevout);
         return script::verify(tx, input_index, branches);
-    }
 
     BITCOIN_ASSERT(input_index < tx.inputs().size());
     const auto& prevout = tx.inputs()[input_index].previous_output().validation;
     const auto script_data = prevout.cache.script().to_data(false);
 
-    // Wire serialization is cached in support of large numbers of inputs.
     const auto tx_data = tx.to_data(true);
 
     // libconsensus
