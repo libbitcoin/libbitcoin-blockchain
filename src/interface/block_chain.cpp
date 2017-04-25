@@ -40,11 +40,14 @@ using namespace std::placeholders;
 
 #define NAME "block_chain"
 
+static const auto hour_seconds = 3600u;
+
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings, bool relay_transactions)
   : stopped_(true),
     settings_(chain_settings),
+    notify_limit_seconds_(chain_settings.notify_limit_hours * hour_seconds),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
     validation_mutex_(database_settings.flush_writes && relay_transactions),
@@ -1031,6 +1034,17 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 
 // Properties (thread safe).
 // ----------------------------------------------------------------------------
+
+bool block_chain::is_stale() const
+{
+    // If there is no limit set the chain is never considered stale.
+    if (notify_limit_seconds_ == 0)
+        return false;
+
+    const auto top = last_block_.load();
+    const auto timestamp = top ? top->header().timestamp() : uint32_t(0);
+    return timestamp < floor_subtract(zulu_time(), notify_limit_seconds_);
+}
 
 const settings& block_chain::chain_settings() const
 {
