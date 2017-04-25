@@ -27,7 +27,6 @@ settings::settings()
   : cores(0),
     priority(true),
     use_libconsensus(false),
-    reject_conflicts(true),
     byte_fee_satoshis(1),
     notify_limit_hours(42),
     reorganization_limit(256),
