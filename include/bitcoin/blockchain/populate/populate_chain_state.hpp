@@ -65,7 +65,6 @@ private:
         branch_ptr branch) const;
 
     // These are thread safe.
-    const uint32_t block_version_;
     const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
 

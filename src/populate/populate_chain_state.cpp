@@ -41,16 +41,10 @@ static constexpr uint32_t unspecified = max_uint32;
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
     const settings& settings)
-  : block_version_(settings.block_version),
-    configured_forks_(settings.enabled_forks()),
+  : configured_forks_(settings.enabled_forks()),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     fast_chain_(chain)
 {
-}
-
-inline uint32_t now()
-{
-    return static_cast<uint32_t>(zulu_time());
 }
 
 inline bool is_transaction_pool(branch::const_ptr branch)
@@ -122,7 +116,7 @@ bool populate_chain_state::populate_versions(chain_state::data& data,
 
     if (is_transaction_pool(branch))
     {
-        data.version.self = block_version_;
+        data.version.self = chain_state::signal_version(configured_forks_);
         return true;
     }
 
@@ -150,7 +144,7 @@ bool populate_chain_state::populate_timestamps(chain_state::data& data,
 
     if (is_transaction_pool(branch))
     {
-        data.timestamp.self = now();
+        data.timestamp.self = static_cast<uint32_t>(zulu_time());
         return true;
     }
 
@@ -237,7 +231,7 @@ chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
 chain_state::ptr populate_chain_state::populate(chain_state::ptr top) const
 {
     // Create pool state from top block chain state.
-    const auto state = std::make_shared<chain_state>(*top, block_version_);
+    const auto state = std::make_shared<chain_state>(*top);
 
     // If is a retarget height or reorganization must populate from store.
     return state->is_valid() ? state : populate();
