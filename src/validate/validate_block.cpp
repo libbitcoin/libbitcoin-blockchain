@@ -379,8 +379,7 @@ void validate_block::handle_connected(const code& ec, block_const_ptr block,
 //-----------------------------------------------------------------------------
 
 void validate_block::dump(const code& ec, const transaction& tx,
-    uint32_t input_index, uint32_t branches, size_t height,
-    bool use_libconsensus)
+    uint32_t input_index, uint32_t forks, size_t height, bool use_libconsensus)
 {
     const auto& prevout = tx.inputs()[input_index].previous_output();
     const auto script = prevout.validation.cache.script().to_data(false);
@@ -390,7 +389,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Verify failed [" << height << "] : " << ec.message() << std::endl
         << " libconsensus : " << use_libconsensus << std::endl
-        << " forks        : " << branches << std::endl
+        << " forks        : " << forks << std::endl
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl
         << " inpoint      : " << tx_hash << ":" << input_index << std::endl

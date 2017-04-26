@@ -35,22 +35,24 @@ using namespace bc::machine;
 
 using namespace bc::consensus;
 
-uint32_t validate_input::convert_flags(uint32_t native_flags)
+// TODO: map bc policy flags.
+uint32_t validate_input::convert_flags(uint32_t native_forks)
 {
     uint32_t flags = verify_flags_none;
 
-    if (script::is_enabled(native_flags, rule_fork::bip16_rule))
+    if (script::is_enabled(native_forks, rule_fork::bip16_rule))
         flags |= verify_flags_p2sh;
 
-    if (script::is_enabled(native_flags, rule_fork::bip65_rule))
+    if (script::is_enabled(native_forks, rule_fork::bip65_rule))
         flags |= verify_flags_checklocktimeverify;
 
-    if (script::is_enabled(native_flags, rule_fork::bip66_rule))
+    if (script::is_enabled(native_forks, rule_fork::bip66_rule))
         flags |= verify_flags_dersig;
 
     return flags;
 }
 
+// TODO: map to corresponding bc::error codes.
 code validate_input::convert_result(verify_result_type result)
 {
     switch (result)
@@ -124,45 +126,34 @@ code validate_input::convert_result(verify_result_type result)
     }
 }
 
+// TODO: cache transaction wire serialization.
 code validate_input::verify_script(const transaction& tx, uint32_t input_index,
-    uint32_t branches, bool use_libconsensus)
+    uint32_t forks, bool use_libconsensus)
 {
     if (!use_libconsensus)
-    {
-        ////// Simulate the inefficiency of calling libconsensus.
-        ////BITCOIN_ASSERT(input_index < tx.inputs().size());
-        ////const auto& prevout = tx.inputs()[input_index].previous_output().validation;
-        ////const auto script_data = prevout.cache.script().to_data(false);
-        ////const auto tx_data = tx.to_data();
-        ////auto clone = transaction::factory_from_data(tx_data);
-        ////const auto input = clone.inputs()[input_index].script();
-        ////const auto prevout = script::factory_from_data(script_data, false);
-        ////return script::verify(clone, input_index, branches, input, prevout);
-        return script::verify(tx, input_index, branches);
-    }
+        return script::verify(tx, input_index, forks);
 
     BITCOIN_ASSERT(input_index < tx.inputs().size());
     const auto& prevout = tx.inputs()[input_index].previous_output().validation;
     const auto script_data = prevout.cache.script().to_data(false);
 
-    // Wire serialization is cached in support of large numbers of inputs.
     const auto tx_data = tx.to_data(true);
 
     // libconsensus
     return convert_result(consensus::verify_script(tx_data.data(),
         tx_data.size(), script_data.data(), script_data.size(), input_index,
-        convert_flags(branches)));
+        convert_flags(forks)));
 }
 
 #else
 
 code validate_input::verify_script(const transaction& tx,
-    uint32_t input_index, uint32_t branches, bool use_libconsensus)
+    uint32_t input_index, uint32_t forks, bool use_libconsensus)
 {
     if (use_libconsensus)
         return error::operation_failed;
 
-    return script::verify(tx, input_index, branches);
+    return script::verify(tx, input_index, forks);
 }
 
 #endif
