@@ -1041,6 +1041,7 @@ bool block_chain::is_stale() const
     if (notify_limit_seconds_ == 0)
         return false;
 
+    // The chain is stale after start until first new block is cached.
     const auto top = last_block_.load();
     const auto timestamp = top ? top->header().timestamp() : uint32_t(0);
     return timestamp < floor_subtract(zulu_time(), notify_limit_seconds_);
