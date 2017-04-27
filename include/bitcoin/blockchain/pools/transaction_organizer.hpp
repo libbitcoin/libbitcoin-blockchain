@@ -63,6 +63,7 @@ public:
 
 protected:
     bool stopped() const;
+    uint64_t price(transaction_const_ptr tx) const;
 
 private:
     // Verify sub-sequence.

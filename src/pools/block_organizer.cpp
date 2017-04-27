@@ -299,7 +299,7 @@ void block_organizer::notify(size_t branch_height,
     block_const_ptr_list_const_ptr branch,
     block_const_ptr_list_const_ptr original)
 {
-    // Using relay can create huge backlog, but careful of criticial section.
+    // This invokes handlers within the criticial section (deadlock risk).
     subscriber_->invoke(error::success, branch_height, branch, original);
 }
 
