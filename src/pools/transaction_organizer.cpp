@@ -18,6 +18,7 @@
  */
 #include <bitcoin/blockchain/pools/transaction_organizer.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <future>
@@ -168,12 +169,7 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
-    // TODO: this is a second pass on sigops and tx size, implement cache.
-    const auto price =
-        settings_.byte_fee_satoshis * tx->serialized_size(true) +
-        settings_.sigop_fee_satoshis * tx->signature_operations();
-
-    if (tx->fees() < price)
+    if (tx->fees() < price(tx))
     {
         handler(error::insufficient_fee);
         return;
@@ -250,7 +246,7 @@ void transaction_organizer::handle_pushed(const code& ec,
 // private
 void transaction_organizer::notify(transaction_const_ptr tx)
 {
-    // Using relay can create huge backlog, but careful of criticial section.
+    // This invokes handlers within the criticial section (deadlock risk).
     subscriber_->invoke(error::success, tx);
 }
 
@@ -281,6 +277,24 @@ void transaction_organizer::fetch_mempool(size_t maximum,
 
 // Utility.
 //-----------------------------------------------------------------------------
+
+uint64_t transaction_organizer::price(transaction_const_ptr tx) const
+{
+    const auto byte_fee = settings_.byte_fee_satoshis;
+    const auto sigop_fee = settings_.sigop_fee_satoshis;
+
+    // Guard against summing signed values by testing independently.
+    if (byte_fee == 0.0f && sigop_fee == 0.0f)
+        return 0;
+
+    // TODO: this is a second pass on size and sigops, implement cache.
+    // This at least prevents uncached calls when zero fee is configured.
+    auto byte = byte_fee > 0 ? byte_fee * tx->serialized_size(true) : 0;
+    auto sigop = sigop_fee > 0 ? sigop_fee * tx->signature_operations() : 0;
+
+    // Require at least one satoshi per tx if there are any fees configured.
+    return std::max(uint64_t(1), static_cast<uint64_t>(byte + sigop));
+}
 
 } // namespace blockchain
 } // namespace libbitcoin
