@@ -63,6 +63,7 @@ public:
 
 protected:
     bool stopped() const;
+    uint64_t price(transaction_const_ptr tx) const;
 
 private:
     // Verify sub-sequence.
@@ -86,7 +87,7 @@ private:
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
-    const float minimum_byte_fee_;
+    const settings& settings_;
     dispatcher& dispatch_;
     transaction_pool transaction_pool_;
     validate_transaction validator_;

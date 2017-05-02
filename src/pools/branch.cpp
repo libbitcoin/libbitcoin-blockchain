@@ -203,7 +203,7 @@ void branch::populate_spent(const output_point& outpoint) const
         return std::any_of(txs.begin() + 1, txs.end(), transactions);
     };
 
-    auto spent = std::any_of(blocks_->begin() + 1, blocks_->end(), blocks);
+    auto spent = std::any_of(blocks_->begin(), blocks_->end() - 1, blocks);
     prevout.spent = spent;
     prevout.confirmed = prevout.spent;
 }

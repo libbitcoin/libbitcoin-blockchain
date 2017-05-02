@@ -48,7 +48,7 @@ public:
     typedef handle2<size_t, size_t> transaction_index_fetch_handler;
 
     // Smart pointer parameters must not be passed by reference.
-    typedef std::function<void(const code&, block_ptr, size_t)>
+    typedef std::function<void(const code&, block_const_ptr, size_t)>
         block_fetch_handler;
     typedef std::function<void(const code&, merkle_block_ptr, size_t)>
         merkle_block_fetch_handler;
@@ -56,8 +56,8 @@ public:
         compact_block_fetch_handler;
     typedef std::function<void(const code&, header_ptr, size_t)>
         block_header_fetch_handler;
-    typedef std::function<void(const code&, transaction_ptr, size_t, size_t)>
-        transaction_fetch_handler;
+    typedef std::function<void(const code&, transaction_const_ptr, size_t,
+        size_t)> transaction_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
     typedef std::function<void(const code&, get_headers_ptr)>
@@ -78,7 +78,7 @@ public:
     virtual bool stop() = 0;
     virtual bool close() = 0;
 
-    // Queries.
+    // Node Queries.
     // ------------------------------------------------------------------------
 
     virtual void fetch_block(size_t height,
@@ -118,8 +118,19 @@ public:
         bool require_confirmed,
         transaction_index_fetch_handler handler) const = 0;
 
-    virtual void fetch_output(const chain::output_point& outpoint,
-        bool require_confirmed, output_fetch_handler handler) const = 0;
+    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        inventory_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const = 0;
+
+    virtual void fetch_block_locator(const chain::block::indexes& heights,
+        block_locator_fetch_handler handler) const = 0;
+
+    // Server Queries.
+    //-------------------------------------------------------------------------
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
@@ -129,17 +140,6 @@ public:
 
     virtual void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const = 0;
-
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        inventory_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const = 0;
 
     // Transaction Pool.
     //-------------------------------------------------------------------------
@@ -169,6 +169,11 @@ public:
 
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
+
+    // Properties
+    // ------------------------------------------------------------------------
+
+    virtual bool is_stale() const = 0;
 };
 
 } // namespace blockchain

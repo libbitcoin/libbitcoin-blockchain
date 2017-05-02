@@ -438,33 +438,33 @@ BOOST_AUTO_TEST_CASE(block_chain__get_is_unspent_transaction__spent_below_fork__
     // TODO: generate spent tx test vector.
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_transaction__exists__true)
-{
-    START_BLOCKCHAIN(instance, false);
+////BOOST_AUTO_TEST_CASE(block_chain__get_transaction__exists__true)
+////{
+////    START_BLOCKCHAIN(instance, false);
+////
+////    const auto block1 = NEW_BLOCK(1);
+////    const auto block2 = NEW_BLOCK(2);
+////    BOOST_REQUIRE(instance.insert(block1, 1));
+////    BOOST_REQUIRE(instance.insert(block2, 2));
+////
+////    size_t height;
+////    const auto hash = block1->transactions()[0].hash();
+////    BOOST_REQUIRE(instance.get_transaction(height, hash, false));
+////    BOOST_REQUIRE_EQUAL(height, 1u);
+////}
 
-    const auto block1 = NEW_BLOCK(1);
-    const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block1, 1));
-    BOOST_REQUIRE(instance.insert(block2, 2));
-
-    size_t height;
-    const auto hash = block1->transactions()[0].hash();
-    BOOST_REQUIRE(instance.get_transaction(height, hash, false));
-    BOOST_REQUIRE_EQUAL(height, 1u);
-}
-
-BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
-{
-    START_BLOCKCHAIN(instance, false);
-
-    const auto block1 = NEW_BLOCK(1);
-    const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block2, 2));
-
-    size_t height;
-    const auto hash = block1->transactions()[0].hash();
-    BOOST_REQUIRE(!instance.get_transaction(height, hash, false));
-}
+////BOOST_AUTO_TEST_CASE(block_chain__get_transaction__not_exists_and_gapped__false)
+////{
+////    START_BLOCKCHAIN(instance, false);
+////
+////    const auto block1 = NEW_BLOCK(1);
+////    const auto block2 = NEW_BLOCK(2);
+////    BOOST_REQUIRE(instance.insert(block2, 2));
+////
+////    size_t height;
+////    const auto hash = block1->transactions()[0].hash();
+////    BOOST_REQUIRE(!instance.get_transaction(height, hash, false));
+////}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -478,7 +478,7 @@ static int fetch_block_by_height_result(block_chain& instance,
     block_const_ptr block, size_t height)
 {
     std::promise<code> promise;
-    const auto handler = [=, &promise](code ec, block_ptr result_block,
+    const auto handler = [=, &promise](code ec, block_const_ptr result_block,
         size_t result_height)
     {
         if (ec)
@@ -529,7 +529,7 @@ static int fetch_block_by_hash_result(block_chain& instance,
     block_const_ptr block, size_t height)
 {
     std::promise<code> promise;
-    const auto handler = [=, &promise](code ec, block_ptr result_block,
+    const auto handler = [=, &promise](code ec, block_const_ptr result_block,
         size_t result_height)
     {
         if (ec)

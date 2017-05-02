@@ -22,6 +22,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <functional>
 #include <vector>
 #include <bitcoin/database.hpp>
@@ -104,9 +105,9 @@ public:
     bool get_transaction_position(size_t& out_height, size_t& out_position,
         const hash_digest& hash, bool require_confirmed) const;
 
-    /// Get the transaction of the given hash and its block height.
-    transaction_ptr get_transaction(size_t& out_block_height,
-        const hash_digest& hash, bool require_confirmed) const;
+    /////// Get the transaction of the given hash and its block height.
+    ////transaction_ptr get_transaction(size_t& out_block_height,
+    ////    const hash_digest& hash, bool require_confirmed) const;
 
     // Writers.
     // ------------------------------------------------------------------------
@@ -144,6 +145,7 @@ public:
     // ========================================================================
     // SAFE CHAIN
     // ========================================================================
+    // Thread safe.
 
     // Startup and shutdown.
     // ------------------------------------------------------------------------
@@ -159,9 +161,8 @@ public:
     /// Threads must be joined before close is called (or by destruct).
     bool close();
 
-    // Queries.
+    // Node Queries.
     // ------------------------------------------------------------------------
-    // Thread safe.
 
     /// fetch a block by height.
     void fetch_block(size_t height, block_fetch_handler handler) const;
@@ -209,9 +210,22 @@ public:
     void fetch_transaction_position(const hash_digest& hash,
         bool require_confirmed, transaction_index_fetch_handler handler) const;
 
-    /// fetch the output of an outpoint (spent or otherwise).
-    void fetch_output(const chain::output_point& outpoint,
-        bool require_confirmed, output_fetch_handler handler) const;
+    /// fetch the set of block hashes indicated by the block locator.
+    void fetch_locator_block_hashes(get_blocks_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        inventory_fetch_handler handler) const;
+
+    /// fetch the set of block headers indicated by the block locator.
+    void fetch_locator_block_headers(get_headers_const_ptr locator,
+        const hash_digest& threshold, size_t limit,
+        locator_block_headers_fetch_handler handler) const;
+
+    /// fetch a block locator relative to the current top and threshold.
+    void fetch_block_locator(const chain::block::indexes& heights,
+        block_locator_fetch_handler handler) const;
+
+    // Server Queries.
+    //-------------------------------------------------------------------------
 
     /// fetch the inpoint (spender) of an outpoint.
     void fetch_spend(const chain::output_point& outpoint,
@@ -224,20 +238,6 @@ public:
     /// fetch stealth results.
     void fetch_stealth(const binary& filter, size_t from_height,
         stealth_fetch_handler handler) const;
-
-    /// fetch a block locator relative to the current top and threshold.
-    void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const;
-
-    /// fetch the set of block hashes indicated by the block locator.
-    void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        inventory_fetch_handler handler) const;
-
-    /// fetch the set of block headers indicated by the block locator.
-    void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
-        locator_block_headers_fetch_handler handler) const;
 
     // Transaction Pool.
     //-------------------------------------------------------------------------
@@ -283,6 +283,9 @@ public:
     // Properties.
     //-------------------------------------------------------------------------
 
+    /// True if the blockchain is stale based on configured age limit.
+    bool is_stale() const;
+
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
@@ -292,21 +295,8 @@ protected:
     bool stopped() const;
 
 private:
-    typedef database::data_base::handle handle;
-
-    // Locking helpers.
-    // ------------------------------------------------------------------------
-
-    template <typename Reader>
-    void read_serial(const Reader& reader) const;
-
-    template <typename Handler, typename... Args>
-    bool finish_read(handle sequence, Handler handler, Args... args) const;
-
     // Utilities.
     //-------------------------------------------------------------------------
-
-    static hash_list to_hashes(const database::block_result& result);
 
     code set_chain_state(chain::chain_state::ptr previous);
     void handle_transaction(const code& ec, transaction_const_ptr tx,
@@ -319,7 +309,9 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-    asio::duration spin_lock_sleep_;
+    const time_t notify_limit_seconds_;
+    bc::atomic<block_const_ptr> last_block_;
+    bc::atomic<transaction_const_ptr> last_transaction_;
     const populate_chain_state chain_state_populator_;
     database::data_base database_;
 
