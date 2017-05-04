@@ -75,10 +75,10 @@ void validate_block::stop()
 
 void validate_block::check(block_const_ptr block, result_handler handler) const
 {
-    // The block hasn't been checked yet.
+    // Guard aganst zero threads dispatch.
     if (block->transactions().empty())
     {
-        handler(error::success);
+        handler(error::empty_block);
         return;
     }
 
