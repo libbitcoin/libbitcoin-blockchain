@@ -758,7 +758,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         }
 
         static const auto id = inventory::type_id::block;
-        hashes->inventories().emplace_back(id, result.header().hash());
+        hashes->inventories().emplace_back(id, result.hash());
     }
 
     handler(error::success, std::move(hashes));
@@ -852,7 +852,36 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
         return;
     }
 
-    // Caller can cast get_headers down to get_blocks.
+    auto message = std::make_shared<get_blocks>();
+    auto& hashes = message->start_hashes();
+    hashes.reserve(heights.size());
+
+    for (const auto height: heights)
+    {
+        const auto result = database_.blocks().get(height);
+
+        if (!result)
+        {
+            handler(error::not_found, nullptr);
+            break;
+        }
+
+        hashes.push_back(result.hash());
+    }
+
+    handler(error::success, message);
+}
+
+// This may generally execute 29+ queries.
+void block_chain::fetch_header_locator(const block::indexes& heights,
+    header_locator_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
+        return;
+    }
+
     auto message = std::make_shared<get_headers>();
     auto& hashes = message->start_hashes();
     hashes.reserve(heights.size());
@@ -867,7 +896,7 @@ void block_chain::fetch_block_locator(const block::indexes& heights,
             break;
         }
 
-        hashes.push_back(result.header().hash());
+        hashes.push_back(result.hash());
     }
 
     handler(error::success, message);

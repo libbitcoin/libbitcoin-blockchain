@@ -220,9 +220,13 @@ public:
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const;
 
-    /// fetch a block locator relative to the current top and threshold.
+    /// fetch an inventory locator relative to the current top and threshold.
     void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const;
+
+    /// fetch a header locator relative to the current top and threshold.
+    void fetch_header_locator(const chain::block::indexes& heights,
+       header_locator_fetch_handler handler) const;
 
     // Server Queries.
     //-------------------------------------------------------------------------
