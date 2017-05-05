@@ -188,6 +188,7 @@ bool populate_chain_state::populate_all(chain_state::data& data,
     ///////////////////////////////////////////////////////////////////////////
 }
 
+// Caller must test result.
 chain_state::ptr populate_chain_state::populate() const
 {
     size_t top;
@@ -206,9 +207,13 @@ chain_state::ptr populate_chain_state::populate() const
         configured_forks_);
 }
 
+// Caller must test result.
 chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
     branch::const_ptr branch) const
 {
+    if (!pool)
+        return{};
+
     const auto block = branch->top();
     BITCOIN_ASSERT(block);
 
@@ -220,7 +225,6 @@ chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
     data.hash = block->hash();
     data.height = branch->top_height();
 
-    // Caller must test result.
     if (!populate_all(data, branch))
         return{};
 
@@ -228,8 +232,12 @@ chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
         configured_forks_);
 }
 
+// Caller must test result.
 chain_state::ptr populate_chain_state::populate(chain_state::ptr top) const
 {
+    if (!top)
+        return{};
+
     // Create pool state from top block chain state.
     const auto state = std::make_shared<chain_state>(*top);
 
