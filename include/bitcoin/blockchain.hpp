@@ -26,18 +26,22 @@
 #include <bitcoin/blockchain/interface/block_chain.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
+#include <bitcoin/blockchain/organizers/block_organizer.hpp>
+#include <bitcoin/blockchain/organizers/header_organizer.hpp>
+#include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_entry.hpp>
-#include <bitcoin/blockchain/pools/block_organizer.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_entry.hpp>
-#include <bitcoin/blockchain/pools/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/populate/populate_base.hpp>
 #include <bitcoin/blockchain/populate/populate_block.hpp>
 #include <bitcoin/blockchain/populate/populate_chain_state.hpp>
+#include <bitcoin/blockchain/populate/populate_header.hpp>
 #include <bitcoin/blockchain/populate/populate_transaction.hpp>
 #include <bitcoin/blockchain/validate/validate_block.hpp>
+#include <bitcoin/blockchain/validate/validate_header.hpp>
 #include <bitcoin/blockchain/validate/validate_input.hpp>
 #include <bitcoin/blockchain/validate/validate_transaction.hpp>
 

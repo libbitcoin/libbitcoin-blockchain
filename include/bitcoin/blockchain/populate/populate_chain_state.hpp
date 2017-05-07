@@ -39,12 +39,14 @@ public:
     /// Populate chain state for the tx pool (start).
     chain::chain_state::ptr populate() const;
 
+    // TODO: branch becomes block_const_ptr once all blocks are stored.
     /// Populate chain state for the top block in the branch (try).
-    chain::chain_state::ptr populate(chain::chain_state::ptr pool,
+    chain::chain_state::ptr populate(const chain::chain_state& pool,
         branch::const_ptr branch) const;
 
-    /// Populate pool state from the top block (organized).
-    chain::chain_state::ptr populate(chain::chain_state::ptr top) const;
+    /// Populate chain state for the header from its parent chain state.
+    chain::chain_state::ptr populate(const chain::chain_state& parent,
+        header_const_ptr header) const;
 
 private:
     typedef branch::const_ptr branch_ptr;

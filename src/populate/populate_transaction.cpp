@@ -46,12 +46,19 @@ populate_transaction::populate_transaction(dispatcher& dispatch,
 void populate_transaction::populate(transaction_const_ptr tx,
     result_handler&& handler) const
 {
-    const auto state = tx->validation.state;
-    BITCOIN_ASSERT(state);
+    // Get the chain state of the next block (tx pool).
+    const auto state = fast_chain_.chain_state();
+    tx->validation.state = state;
+
+    if (!state)
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
     // Chain state is for the next block, so always > 0.
-    BITCOIN_ASSERT(tx->validation.state->height() > 0);
-    const auto chain_height = tx->validation.state->height() - 1u;
+    BITCOIN_ASSERT(state->height() > 0);
+    const auto chain_height = state->height() - 1u;
 
     //*************************************************************************
     // CONSENSUS:

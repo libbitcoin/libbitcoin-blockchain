@@ -19,7 +19,6 @@
 #include <bitcoin/blockchain/validate/validate_transaction.hpp>
 
 #include <algorithm>
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -84,15 +83,6 @@ void validate_transaction::check(transaction_const_ptr tx,
 void validate_transaction::accept(transaction_const_ptr tx,
     result_handler handler) const
 {
-    // Populate chain state of the next block (tx pool).
-    tx->validation.state = fast_chain_.chain_state();
-
-    if (!tx->validation.state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
     transaction_populator_.populate(tx,
         std::bind(&validate_transaction::handle_populated,
             this, _1, tx, handler));
@@ -112,8 +102,6 @@ void validate_transaction::handle_populated(const code& ec,
         handler(ec);
         return;
     }
-
-    BITCOIN_ASSERT(tx->validation.state);
 
     // Run contextual tx checks.
     handler(tx->accept());

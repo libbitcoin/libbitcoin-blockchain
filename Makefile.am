@@ -37,18 +37,22 @@ src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consens
 src_libbitcoin_blockchain_la_SOURCES = \
     src/settings.cpp \
     src/interface/block_chain.cpp \
+    src/organizers/block_organizer.cpp \
+    src/organizers/header_organizer.cpp \
+    src/organizers/transaction_organizer.cpp \
     src/pools/block_entry.cpp \
-    src/pools/block_organizer.cpp \
     src/pools/block_pool.cpp \
     src/pools/branch.cpp \
+    src/pools/header_pool.cpp \
     src/pools/transaction_entry.cpp \
-    src/pools/transaction_organizer.cpp \
     src/pools/transaction_pool.cpp \
     src/populate/populate_base.cpp \
     src/populate/populate_block.cpp \
     src/populate/populate_chain_state.cpp \
+    src/populate/populate_header.cpp \
     src/populate/populate_transaction.cpp \
     src/validate/validate_block.cpp \
+    src/validate/validate_header.cpp \
     src/validate/validate_input.cpp \
     src/validate/validate_transaction.cpp
 
@@ -104,14 +108,19 @@ include_bitcoin_blockchain_interface_HEADERS = \
     include/bitcoin/blockchain/interface/fast_chain.hpp \
     include/bitcoin/blockchain/interface/safe_chain.hpp
 
+include_bitcoin_blockchain_organizersdir = ${includedir}/bitcoin/blockchain/organizers
+include_bitcoin_blockchain_organizers_HEADERS = \
+    include/bitcoin/blockchain/organizers/block_organizer.hpp \
+    include/bitcoin/blockchain/organizers/header_organizer.hpp \
+    include/bitcoin/blockchain/organizers/transaction_organizer.hpp
+
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/block_entry.hpp \
-    include/bitcoin/blockchain/pools/block_organizer.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/branch.hpp \
+    include/bitcoin/blockchain/pools/header_pool.hpp \
     include/bitcoin/blockchain/pools/transaction_entry.hpp \
-    include/bitcoin/blockchain/pools/transaction_organizer.hpp \
     include/bitcoin/blockchain/pools/transaction_pool.hpp
 
 include_bitcoin_blockchain_populatedir = ${includedir}/bitcoin/blockchain/populate
@@ -119,11 +128,13 @@ include_bitcoin_blockchain_populate_HEADERS = \
     include/bitcoin/blockchain/populate/populate_base.hpp \
     include/bitcoin/blockchain/populate/populate_block.hpp \
     include/bitcoin/blockchain/populate/populate_chain_state.hpp \
+    include/bitcoin/blockchain/populate/populate_header.hpp \
     include/bitcoin/blockchain/populate/populate_transaction.hpp
 
 include_bitcoin_blockchain_validatedir = ${includedir}/bitcoin/blockchain/validate
 include_bitcoin_blockchain_validate_HEADERS = \
     include/bitcoin/blockchain/validate/validate_block.hpp \
+    include/bitcoin/blockchain/validate/validate_header.hpp \
     include/bitcoin/blockchain/validate/validate_input.hpp \
     include/bitcoin/blockchain/validate/validate_transaction.hpp
 

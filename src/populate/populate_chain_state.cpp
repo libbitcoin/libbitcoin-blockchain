@@ -188,11 +188,12 @@ bool populate_chain_state::populate_all(chain_state::data& data,
     ///////////////////////////////////////////////////////////////////////////
 }
 
+// Caller should test result, but failure implies store corruption.
 chain_state::ptr populate_chain_state::populate() const
 {
     size_t top;
     if (!fast_chain_.get_last_height(top))
-        return{};
+        return nullptr;
 
     chain_state::data data;
     data.hash = null_hash;
@@ -200,41 +201,46 @@ chain_state::ptr populate_chain_state::populate() const
 
     // Use an empty branch to represent the transaction pool.
     if (!populate_all(data, std::make_shared<branch>(top)))
-        return{};
+        return nullptr;
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_,
         configured_forks_);
 }
 
-chain_state::ptr populate_chain_state::populate(chain_state::ptr pool,
+// Caller should test result, but failure implies store corruption.
+chain_state::ptr populate_chain_state::populate(const chain_state& pool,
     branch::const_ptr branch) const
 {
     const auto block = branch->top();
     BITCOIN_ASSERT(block);
 
     // If this is not a reorganization we can just promote the pool state.
-    if (branch->size() == 1 && branch->top_height() == pool->height())
-        return std::make_shared<chain_state>(*pool, *block);
+    if (branch->size() == 1 && branch->top_height() == pool.height())
+        return std::make_shared<chain_state>(pool, *block);
 
     chain_state::data data;
     data.hash = block->hash();
     data.height = branch->top_height();
 
-    // Caller must test result.
     if (!populate_all(data, branch))
-        return{};
+        return nullptr;
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_,
         configured_forks_);
 }
 
-chain_state::ptr populate_chain_state::populate(chain_state::ptr top) const
+// Caller should test result, but failure implies store corruption.
+chain::chain_state::ptr populate_chain_state::populate(
+    const chain_state& parent, header_const_ptr header) const
 {
-    // Create pool state from top block chain state.
-    const auto state = std::make_shared<chain_state>(*top);
-
-    // If is a retarget height or reorganization must populate from store.
-    return state->is_valid() ? state : populate();
+    //=========================================================================
+    //=========================================================================
+    // TODO: find the header pool entry or chain block of the header.parent.
+    // TODO: read or generate the parent chain state and promote to the header.
+    // Create header state from parent state.
+    return nullptr;
+    //=========================================================================
+    //=========================================================================
 }
 
 } // namespace blockchain

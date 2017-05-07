@@ -16,42 +16,50 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_VALIDATE_HEADER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_VALIDATE_HEADER_HPP
 
-#include <cstddef>
-#include <cstdint>
+#include <atomic>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/populate/populate_header.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is NOT thread safe.
-class BCB_API populate_base
+class BCB_API validate_header
 {
-protected:
+public:
     typedef handle0 result_handler;
 
-    populate_base(dispatcher& dispatch, const fast_chain& chain);
+    validate_header(dispatcher& dispatch, const fast_chain& chain,
+        const settings& settings);
 
-    bool is_stale() const;
+    void start();
+    void stop();
 
-    void populate_duplicate(size_t maximum_height,
-        const chain::transaction& tx, bool require_confirmed) const;
+    void check(header_const_ptr header, result_handler handler) const;
+    void accept(header_const_ptr header, result_handler handler) const;
 
-    void populate_pooled(const chain::transaction& tx, uint32_t forks) const;
+protected:
+    inline bool stopped() const
+    {
+        return stopped_;
+    }
 
-    void populate_prevout(size_t maximum_height,
-        const chain::output_point& outpoint, bool require_confirmed) const;
+private:
+    void handle_populated(const code& ec, header_const_ptr header,
+        result_handler handler) const;
 
-    // This is thread safe.
-    dispatcher& dispatch_;
-
-    // The store is protected by caller not invoking populate concurrently.
+    // These are thread safe.
+    std::atomic<bool> stopped_;
     const fast_chain& fast_chain_;
+
+    // This is thread safe becuase it is currently a stub.
+    populate_header header_populator_;
 };
 
 } // namespace blockchain

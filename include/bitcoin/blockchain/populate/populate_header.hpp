@@ -16,42 +16,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_POPULATE_HEADER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_POPULATE_HEADER_HPP
 
-#include <cstddef>
-#include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/settings.hpp>
+#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/populate/populate_base.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is NOT thread safe.
-class BCB_API populate_base
+class BCB_API populate_header
+  : public populate_base
 {
-protected:
-    typedef handle0 result_handler;
+public:
+    populate_header(dispatcher& dispatch, const fast_chain& chain);
 
-    populate_base(dispatcher& dispatch, const fast_chain& chain);
-
-    bool is_stale() const;
-
-    void populate_duplicate(size_t maximum_height,
-        const chain::transaction& tx, bool require_confirmed) const;
-
-    void populate_pooled(const chain::transaction& tx, uint32_t forks) const;
-
-    void populate_prevout(size_t maximum_height,
-        const chain::output_point& outpoint, bool require_confirmed) const;
-
-    // This is thread safe.
-    dispatcher& dispatch_;
-
-    // The store is protected by caller not invoking populate concurrently.
-    const fast_chain& fast_chain_;
+    /// Populate validation state for the top block.
+    void populate(header_const_ptr header, result_handler&& handler) const;
 };
 
 } // namespace blockchain

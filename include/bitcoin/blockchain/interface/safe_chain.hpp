@@ -60,8 +60,10 @@ public:
         size_t)> transaction_fetch_handler;
     typedef std::function<void(const code&, headers_ptr)>
         locator_block_headers_fetch_handler;
-    typedef std::function<void(const code&, get_headers_ptr)>
+    typedef std::function<void(const code&, get_blocks_ptr)>
         block_locator_fetch_handler;
+    typedef std::function<void(const code&, get_headers_ptr)>
+        header_locator_fetch_handler;
     typedef std::function<void(const code&, inventory_ptr)>
         inventory_fetch_handler;
 
@@ -129,6 +131,9 @@ public:
     virtual void fetch_block_locator(const chain::block::indexes& heights,
         block_locator_fetch_handler handler) const = 0;
 
+    virtual void fetch_header_locator(const chain::block::indexes& heights,
+        header_locator_fetch_handler handler) const = 0;
+
     // Server Queries.
     //-------------------------------------------------------------------------
 
@@ -168,6 +173,7 @@ public:
     //-------------------------------------------------------------------------
 
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
+    virtual void organize(header_const_ptr header, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
 
     // Properties
