@@ -48,8 +48,7 @@ public:
 
     /// Construct an instance.
     block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings,
-        bool relay_transactions);
+        threadpool& thread_pool, fast_chain& chain, const settings& settings);
 
     bool start();
     bool stop();

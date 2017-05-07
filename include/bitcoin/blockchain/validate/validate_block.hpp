@@ -40,7 +40,7 @@ public:
     typedef handle0 result_handler;
 
     validate_block(dispatcher& dispatch, const fast_chain& chain,
-        const settings& settings, bool relay_transactions);
+        const settings& settings);
 
     void start();
     void stop();

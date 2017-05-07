@@ -40,6 +40,12 @@
     <Filter Include="src\populate">
       <UniqueIdentifier>{2166791a-5859-4cfb-b7f3-87244f3c21d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\organizers">
+      <UniqueIdentifier>{1007a00a-112f-4f3e-8ab1-057c34dacbce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\organizers">
+      <UniqueIdentifier>{5f2ff0f5-9f6f-4f8f-9fce-a537fafad014}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp">
@@ -96,14 +102,26 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_organizer.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_organizer.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_entry.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\header_organizer.hpp">
+      <Filter>include\bitcoin\blockchain\organizers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\transaction_organizer.hpp">
+      <Filter>include\bitcoin\blockchain\organizers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\block_organizer.hpp">
+      <Filter>include\bitcoin\blockchain\organizers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_header.hpp">
+      <Filter>include\bitcoin\blockchain\validate</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_pool.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_header.hpp">
+      <Filter>include\bitcoin\blockchain\populate</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -146,14 +164,26 @@
     <ClCompile Include="..\..\..\..\src\pools\branch.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\block_organizer.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\transaction_organizer.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\transaction_entry.cpp">
       <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\organizers\header_organizer.cpp">
+      <Filter>src\organizers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\organizers\transaction_organizer.cpp">
+      <Filter>src\organizers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\organizers\block_organizer.cpp">
+      <Filter>src\organizers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\validate\validate_header.cpp">
+      <Filter>src\validate</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\header_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\populate\populate_header.cpp">
+      <Filter>src\populate</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

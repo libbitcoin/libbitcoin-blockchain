@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/pools/block_organizer.hpp>
+#include <bitcoin/blockchain/organizers/block_organizer.hpp>
 
 #include <cstddef>
 #include <functional>
@@ -46,14 +46,13 @@ using namespace std::placeholders;
 // transaction: { exists, height, output }
 
 block_organizer::block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-    threadpool& thread_pool, fast_chain& chain,  const settings& settings,
-    bool relay_transactions)
+    threadpool& thread_pool, fast_chain& chain, const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     dispatch_(dispatch),
     block_pool_(settings.reorganization_limit),
-    validator_(dispatch, fast_chain_, settings, relay_transactions),
+    validator_(dispatch, chain, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
 }

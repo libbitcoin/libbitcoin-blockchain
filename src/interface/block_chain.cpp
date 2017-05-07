@@ -44,20 +44,25 @@ static const auto hour_seconds = 3600u;
 
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
-    const database::settings& database_settings, bool relay_transactions)
+    const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
     notify_limit_seconds_(chain_settings.notify_limit_hours * hour_seconds),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
-    validation_mutex_(database_settings.flush_writes && relay_transactions),
+
+    // TODO: tune/configure this.
+    validation_mutex_(database_settings.flush_writes),
+
     priority_pool_(thread_ceiling(chain_settings.cores),
         priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
-    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
+    header_organizer_(validation_mutex_, dispatch_, pool, *this,
         chain_settings),
-    block_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings,
-        relay_transactions)
+    block_organizer_(validation_mutex_, dispatch_, pool, *this,
+        chain_settings),
+    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
+        chain_settings)
 {
 }
 
@@ -286,7 +291,7 @@ void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
         return;
     }
 
-    set_chain_state(top->validation.state);
+    set_pool_state(*top->validation.state);
     last_block_.store(top);
 
     handler(error::success);
@@ -294,39 +299,47 @@ void block_chain::handle_reorganize(const code& ec, block_const_ptr top,
 
 // Properties.
 // ----------------------------------------------------------------------------
+// TODO: move pool_state_ into the new transaction_pool.
 
 // For tx validator, call only from inside validate critical section.
 chain::chain_state::ptr block_chain::chain_state() const
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    shared_lock lock(pool_state_mutex_);
+    // If this returns empty pointer it indicates start failed.
+    // The pool state is computed and cached upon top block update.
+    return pool_state_.load();
+}
 
-    // Initialized on start and updated after each successful organization.
-    return pool_state_;
-    ///////////////////////////////////////////////////////////////////////////
+// For header validator, call only from inside validate critical section.
+chain::chain_state::ptr block_chain::chain_state(header_const_ptr header) const
+{
+    // If this returns empty pointer it indicates store corruption.
+    // Promote from header.parent in the header-pool or generate from store if
+    // the header is a new branch, otherwise fail (orphan).
+    //=========================================================================
+    //=========================================================================
+    // TODO: replace *chain_state() with pool parent state if exists...
+    // (otherwise must update parameterization).
+    //=========================================================================
+    //=========================================================================
+    return chain_state_populator_.populate(*chain_state(), header);
 }
 
 // For block validator, call only from inside validate critical section.
 chain::chain_state::ptr block_chain::chain_state(
     branch::const_ptr branch) const
 {
-    // Promote from cache if branch is same height as pool (most typical).
+    // If this returns empty pointer it indicates store corruption.
+    // Promote from tx pool if branch is same height as pool (most typical).
     // Generate from branch/store if the promotion is not successful.
     // If the organize is successful pool state will be updated accordingly.
-    return chain_state_populator_.populate(chain_state(), branch);
+    return chain_state_populator_.populate(*chain_state(), branch);
 }
 
 // private.
-code block_chain::set_chain_state(chain::chain_state::ptr previous)
+void block_chain::set_pool_state(const chain::chain_state& top)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(pool_state_mutex_);
-
-    pool_state_ = chain_state_populator_.populate(previous);
-    return pool_state_ ? error::success : error::operation_failed;
-    ///////////////////////////////////////////////////////////////////////////
+    // Promotion always succeeds.
+    pool_state_.store(std::make_shared<chain::chain_state>(top));
 }
 
 // ============================================================================
@@ -343,10 +356,12 @@ bool block_chain::start()
     if (!database_.open())
         return false;
 
-    // Initialize chain state after database start but before organizers.
-    pool_state_ = chain_state_populator_.populate();
+    // Initialize chain state after database start and before organizers.
+    pool_state_.store(chain_state_populator_.populate());
 
-    return pool_state_ && transaction_organizer_.start() &&
+    return pool_state_.load() &&
+        transaction_organizer_.start() &&
+        header_organizer_.start() &&
         block_organizer_.start();
 }
 
@@ -359,7 +374,10 @@ bool block_chain::stop()
     validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
-    auto result = transaction_organizer_.stop() && block_organizer_.stop();
+    auto result = 
+        transaction_organizer_.stop() &&
+        header_organizer_.stop() &&
+        block_organizer_.stop();
 
     // The priority pool must not be stopped while organizing.
     priority_pool_.shutdown();
@@ -981,7 +999,7 @@ void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
 // Filters.
 //-----------------------------------------------------------------------------
 
-// This may execute up to 500 queries.
+// This may execute up to 500 queries (protocol limit).
 // This filters against the block pool and then the block chain.
 void block_chain::filter_blocks(get_data_ptr message,
     result_handler handler) const
@@ -1008,6 +1026,7 @@ void block_chain::filter_blocks(get_data_ptr message,
     handler(error::success);
 }
 
+// This may execute up to 50,000 queries (protocol limit).
 // This filters against all transactions (confirmed and unconfirmed).
 void block_chain::filter_transactions(get_data_ptr message,
     result_handler handler) const
@@ -1059,19 +1078,26 @@ void block_chain::unsubscribe()
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    // This cannot call organize or stop (lock safe).
+    // This cannot call organize oand must progress (lock safe).
     block_organizer_.organize(block, handler);
+}
+
+void block_chain::organize(header_const_ptr header, result_handler handler)
+{
+    // This cannot call organize oand must progress (lock safe).
+    header_organizer_.organize(header, handler);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    // This cannot call organize or stop (lock safe).
+    // This cannot call organize oand must progress (lock safe).
     transaction_organizer_.organize(tx, handler);
 }
 
 // Properties (thread safe).
 // ----------------------------------------------------------------------------
 
+// This satisfies the same virtual method on both safe_chain and fast_chain.
 bool block_chain::is_stale() const
 {
     // If there is no limit set the chain is never considered stale.

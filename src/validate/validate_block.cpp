@@ -47,12 +47,12 @@ using namespace std::placeholders;
 // will never be invoked, resulting in a threadpool.join indefinite hang.
 
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
-    const settings& settings, bool relay_transactions)
+    const settings& settings)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
     fast_chain_(chain),
     priority_dispatch_(dispatch),
-    block_populator_(dispatch, chain, relay_transactions)
+    block_populator_(dispatch, chain)
 {
 }
 
@@ -142,18 +142,6 @@ void validate_block::accept(branch::const_ptr branch,
 {
     const auto block = branch->top();
     BITCOIN_ASSERT(block);
-
-    // The block has no population timer, so set externally.
-    block->validation.start_populate = asio::steady_clock::now();
-
-    // Populate chain state for the next block.
-    block->validation.state = fast_chain_.chain_state(branch);
-
-    if (!block->validation.state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
 
     // Populate block state for the top block (others are valid).
     block_populator_.populate(branch,

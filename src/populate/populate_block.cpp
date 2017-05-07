@@ -35,10 +35,8 @@ using namespace bc::machine;
 
 // Database access is limited to calling populate_base.
 
-populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain,
-    bool relay_transactions)
-  : populate_base(dispatch, chain),
-    relay_transactions_(relay_transactions)
+populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
+  : populate_base(dispatch, chain)
 {
 }
 
@@ -48,8 +46,18 @@ void populate_block::populate(branch::const_ptr branch,
     const auto block = branch->top();
     BITCOIN_ASSERT(block);
 
-    const auto state = block->validation.state;
-    BITCOIN_ASSERT(state);
+    // The block has no population timer, so set externally.
+    block->validation.start_populate = asio::steady_clock::now();
+
+    // Populate chain state for the next block (promote tx pool).
+    const auto state = fast_chain_.chain_state(branch);
+    block->validation.state = state;
+
+    if (!state)
+    {
+        handler(error::operation_failed);
+        return;
+    }
 
     // Return if this blocks is under a checkpoint, block state not requried.
     if (state->is_under_checkpoint())
@@ -137,6 +145,7 @@ void populate_block::populate_transactions(branch::const_ptr branch,
     const auto state = block->validation.state;
     const auto forks = state->enabled_forks();
     const auto collide = state->is_enabled(rule_fork::allow_collisions);
+    const auto stale = is_stale();
 
     // Must skip coinbase here as it is already accounted for.
     const auto first = bucket == 0 ? buckets : bucket;
@@ -147,15 +156,17 @@ void populate_block::populate_transactions(branch::const_ptr branch,
         const auto& tx = txs[position];
 
         //---------------------------------------------------------------------
-        // This prevents output validation and full tx deposit respectively.
+        // Pool discovery prevents output validation and full tx deposit.
         // The tradeoff is a read per tx that may not be cached. This is
         // bypassed by checkpoints. This will be optimized using the tx pool.
         // Until that time this is a material population performance hit.
         // However the hit is necessary in preventing store tx duplication
-        // unless tx relay is disabled. In that case duplication is unlikely.
+        // unless stale, as tx relay is disabled and duplication unlikely.
         //---------------------------------------------------------------------
-        if (relay_transactions_)
+        if (!stale)
+        {
             populate_base::populate_pooled(tx, forks);
+        }
 
         //*********************************************************************
         // CONSENSUS: Satoshi implemented allow collisions in Nov 2015. This is

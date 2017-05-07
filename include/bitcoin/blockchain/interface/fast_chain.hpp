@@ -123,9 +123,16 @@ public:
     /// Get a reference to the chain state relative to the next block.
     virtual chain::chain_state::ptr chain_state() const = 0;
 
+    /// Get chain state for header, relative to header's parent.
+    virtual chain::chain_state::ptr chain_state(
+        header_const_ptr header) const = 0;
+
     /// Get a reference to the chain state relative to the next block.
     virtual chain::chain_state::ptr chain_state(
         branch::const_ptr branch) const = 0;
+
+    /// True if the top block age exceeds the configured limit.
+    virtual bool is_stale() const = 0;
 };
 
 } // namespace blockchain

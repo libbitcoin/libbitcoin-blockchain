@@ -41,6 +41,11 @@ populate_base::populate_base(dispatcher& dispatch, const fast_chain& chain)
 {
 }
 
+bool populate_base::is_stale() const
+{
+    return fast_chain_.is_stale();
+}
+
 // This is the only necessary file system read in block/tx validation.
 void populate_base::populate_duplicate(size_t branch_height,
     const chain::transaction& tx, bool require_confirmed) const

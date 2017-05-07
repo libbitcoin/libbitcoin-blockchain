@@ -29,8 +29,9 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/block_organizer.hpp>
-#include <bitcoin/blockchain/pools/transaction_organizer.hpp>
+#include <bitcoin/blockchain/organizers/block_organizer.hpp>
+#include <bitcoin/blockchain/organizers/header_organizer.hpp>
+#include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
 #include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -47,8 +48,7 @@ public:
     /// in-memory cache of tx pool metadata, as the costly query will go away.
     block_chain(threadpool& pool,
         const blockchain::settings& chain_settings,
-        const database::settings& database_settings,
-        bool relay_transactions=true);
+        const database::settings& database_settings);
 
     /// The database is closed on destruct, threads must be joined.
     ~block_chain();
@@ -136,8 +136,11 @@ public:
     // Properties
     // ------------------------------------------------------------------------
 
-    /// Get forks chain state relative to chain top.
+    /// Get chain state for transaction pool, relative to chain top.
     chain::chain_state::ptr chain_state() const;
+
+    /// Get chain state for header, relative to header's parent.
+    chain::chain_state::ptr chain_state(header_const_ptr header) const;
 
     /// Get full chain state relative to the branch top.
     chain::chain_state::ptr chain_state(branch::const_ptr branch) const;
@@ -256,10 +259,10 @@ public:
     // Filters.
     //-------------------------------------------------------------------------
 
-    /// Filter out block by hash that exist in the block pool or store.
+    /// Filter inventory by block hash confirmed or pooled.
     void filter_blocks(get_data_ptr message, result_handler handler) const;
 
-    /// Filter out confirmed and unconfirmed transactions by hash.
+    /// Filter inventory by transaction confirmed and unconfirmed hash.
     void filter_transactions(get_data_ptr message,
         result_handler handler) const;
 
@@ -278,8 +281,11 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Organize a block into the block pool if valid and sufficient.
+    /// Organize a block into the block pool if valid.
     void organize(block_const_ptr block, result_handler handler);
+
+    /// Organize a header into the header pool if valid.
+    void organize(header_const_ptr header, result_handler handler);
 
     /// Store a transaction to the pool if valid.
     void organize(transaction_const_ptr tx, result_handler handler);
@@ -287,7 +293,7 @@ public:
     // Properties.
     //-------------------------------------------------------------------------
 
-    /// True if the blockchain is stale based on configured age limit.
+    /// True if the top block age exceeds the configured limit.
     bool is_stale() const;
 
     /// Get a reference to the blockchain configuration settings.
@@ -302,7 +308,7 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
-    code set_chain_state(chain::chain_state::ptr previous);
+    void set_pool_state(const chain::chain_state& top);
     void handle_transaction(const code& ec, transaction_const_ptr tx,
         result_handler handler) const;
     void handle_block(const code& ec, block_const_ptr block,
@@ -317,18 +323,16 @@ private:
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<transaction_const_ptr> last_transaction_;
     const populate_chain_state chain_state_populator_;
+    bc::atomic<chain::chain_state::ptr> pool_state_;
     database::data_base database_;
-
-    // This is protected by mutex.
-    chain::chain_state::ptr pool_state_;
-    mutable shared_mutex pool_state_mutex_;
 
     // These are thread safe.
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;
-    transaction_organizer transaction_organizer_;
+    header_organizer header_organizer_;
     block_organizer block_organizer_;
+    transaction_organizer transaction_organizer_;
 };
 
 } // namespace blockchain
