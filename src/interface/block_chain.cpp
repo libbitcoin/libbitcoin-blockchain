@@ -81,7 +81,7 @@ bool block_chain::get_gaps(block_database::heights& out_gaps) const
 
 bool block_chain::get_block_exists(const hash_digest& block_hash) const
 {
-    return database_.blocks().get(block_hash);
+    return database_.blocks().get(block_hash, true);
 }
 
 bool block_chain::get_block_hash(hash_digest& out_hash, size_t height) const
@@ -129,7 +129,7 @@ bool block_chain::get_header(chain::header& out_header, size_t height) const
 bool block_chain::get_height(size_t& out_height,
     const hash_digest& block_hash) const
 {
-    auto result = database_.blocks().get(block_hash);
+    auto result = database_.blocks().get(block_hash, true);
     if (!result)
         return false;
 
@@ -477,7 +477,7 @@ void block_chain::fetch_block(const hash_digest& hash,
         return;
     }
 
-    const auto block_result = database_.blocks().get(hash);
+    const auto block_result = database_.blocks().get(hash, true);
 
     if (!block_result)
     {
@@ -542,7 +542,7 @@ void block_chain::fetch_block_header(const hash_digest& hash,
         return;
     }
 
-    const auto result = database_.blocks().get(hash);
+    const auto result = database_.blocks().get(hash, true);
 
     if (!result)
     {
@@ -585,7 +585,7 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
         return;
     }
 
-    const auto result = database_.blocks().get(hash);
+    const auto result = database_.blocks().get(hash, true);
 
     if (!result)
     {
@@ -621,7 +621,7 @@ void block_chain::fetch_block_height(const hash_digest& hash,
         return;
     }
 
-    const auto result = database_.blocks().get(hash);
+    const auto result = database_.blocks().get(hash, true);
 
     if (!result)
     {
@@ -730,7 +730,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     size_t start = 0;
     for (const auto& hash: locator->start_hashes())
     {
-        const auto result = database_.blocks().get(hash);
+        const auto result = database_.blocks().get(hash, true);
         if (result)
         {
             start = result.height();
@@ -748,7 +748,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     if (locator->stop_hash() != null_hash)
     {
         // If the stop block is not on chain we treat it as a null stop.
-        const auto result = database_.blocks().get(locator->stop_hash());
+        const auto result = database_.blocks().get(locator->stop_hash(), true);
 
         // Otherwise limit the end height to the stop block height.
         // If end precedes begin floor_subtract will handle below.
@@ -760,7 +760,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     if (threshold != null_hash)
     {
         // If the threshold is not on chain we ignore it.
-        const auto result = database_.blocks().get(threshold);
+        const auto result = database_.blocks().get(threshold, true);
 
         // Otherwise limit the begin height to the threshold block height.
         // If begin exceeds end floor_subtract will handle below.
@@ -809,7 +809,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     size_t start = 0;
     for (const auto& hash: locator->start_hashes())
     {
-        const auto result = database_.blocks().get(hash);
+        const auto result = database_.blocks().get(hash, true);
         if (result)
         {
             start = result.height();
@@ -827,7 +827,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     if (locator->stop_hash() != null_hash)
     {
         // If the stop block is not on chain we treat it as a null stop.
-        const auto result = database_.blocks().get(locator->stop_hash());
+        const auto result = database_.blocks().get(locator->stop_hash(), true);
 
         // Otherwise limit the end height to the stop block height.
         // If end precedes begin floor_subtract will handle below.
@@ -839,7 +839,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     if (threshold != null_hash)
     {
         // If the threshold is not on chain we ignore it.
-        const auto result = database_.blocks().get(threshold);
+        const auto result = database_.blocks().get(threshold, true);
 
         // Otherwise limit the begin height to the threshold block height.
         // If begin exceeds end floor_subtract will handle below.
@@ -1017,7 +1017,7 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     for (auto it = inventories.begin(); it != inventories.end();)
     {
-        if (it->is_block_type() && blocks.get(it->hash()))
+        if (it->is_block_type() && blocks.get(it->hash(), true))
             it = inventories.erase(it);
         else
             ++it;
