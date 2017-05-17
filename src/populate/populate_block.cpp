@@ -69,7 +69,7 @@ void populate_block::populate(branch::const_ptr branch,
     // Handle the coinbase as a special case tx.
     populate_coinbase(branch, block);
 
-    const auto non_coinbase_inputs = block->total_inputs(false);
+    const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
     // Return if there are no non-coinbase inputs to validate.
     if (non_coinbase_inputs == 0)

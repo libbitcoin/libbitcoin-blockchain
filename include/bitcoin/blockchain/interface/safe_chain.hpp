@@ -43,8 +43,8 @@ public:
     typedef handle1<size_t> block_height_fetch_handler;
     typedef handle1<chain::output> output_fetch_handler;
     typedef handle1<chain::input_point> spend_fetch_handler;
-    typedef handle1<chain::history_compact::list> history_fetch_handler;
-    typedef handle1<chain::stealth_compact::list> stealth_fetch_handler;
+    typedef handle1<chain::payment_record::list> history_fetch_handler;
+    typedef handle1<chain::stealth_record::list> stealth_fetch_handler;
     typedef handle2<size_t, size_t> transaction_index_fetch_handler;
 
     // Smart pointer parameters must not be passed by reference.

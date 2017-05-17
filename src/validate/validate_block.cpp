@@ -258,7 +258,7 @@ void validate_block::connect(branch::const_ptr branch,
         return;
     }
 
-    const auto non_coinbase_inputs = block->total_inputs(false);
+    const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
     // Return if there are no non-coinbase inputs to validate.
     if (non_coinbase_inputs == 0)

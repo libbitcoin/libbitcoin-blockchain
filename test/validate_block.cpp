@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(validate_block__native__block_438513_tx__valid)
     auto& input = tx.inputs()[input_index];
     auto& prevout = input.previous_output().validation.cache;
 
-    prevout.set_script(script::factory_from_data(decoded_script, false));
+    prevout.set_script(script::factory(decoded_script, false));
     BOOST_REQUIRE(prevout.script().is_valid());
 
     // [3045022100ba555ac17a084e2a1b621c2171fa563bc4fb75cd5c0968153f44ba7203cb876f022036626f4579de16e3ad160df01f649ffb8dbf47b504ee56dc3ad7260af24ca0db01] [00] [632102768e47607c52e581595711e27faffa7cb646b4f481fe269bd49691b2fbc12106ad6704355e2658b1756821028a5af8284a12848d69a25a0ac5cea20be905848eb645fd03d3b065df88a9117cac]

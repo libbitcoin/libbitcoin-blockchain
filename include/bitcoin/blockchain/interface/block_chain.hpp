@@ -308,6 +308,10 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
+    bool get_transactions(chain::transaction::list& out_transactions,
+        const database::offset_list& offsets) const;
+    bool get_transaction_hashes(hash_list& out_hashes,
+        const database::offset_list& offsets) const;
     void set_pool_state(const chain::chain_state& top);
     void handle_transaction(const code& ec, transaction_const_ptr tx,
         result_handler handler) const;
