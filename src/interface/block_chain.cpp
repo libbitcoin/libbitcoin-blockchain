@@ -1008,7 +1008,7 @@ void block_chain::fetch_stealth(const binary& filter, size_t from_height,
         return;
     }
 
-    handler(error::success, database_.stealth().scan(filter, from_height));
+    handler(error::success, database_.stealth().get(filter, from_height));
 }
 
 // Transaction Pool.
