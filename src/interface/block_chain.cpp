@@ -109,7 +109,7 @@ bool block_chain::get_branch_work(uint256_t& out_work,
         if (!result)
             return false;
 
-        out_work += chain::block::proof(result.bits());
+        out_work += chain::header::proof(result.bits());
     }
 
     return true;
