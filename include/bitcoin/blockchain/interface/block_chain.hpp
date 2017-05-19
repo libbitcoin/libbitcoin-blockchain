@@ -81,13 +81,13 @@ public:
     bool get_height(size_t& out_height, const hash_digest& block_hash) const;
 
     /// Get the bits of the block with the given height.
-    bool get_bits(uint32_t& out_bits, const size_t& height) const;
+    bool get_bits(uint32_t& out_bits, size_t height) const;
 
     /// Get the timestamp of the block with the given height.
-    bool get_timestamp(uint32_t& out_timestamp, const size_t& height) const;
+    bool get_timestamp(uint32_t& out_timestamp, size_t height) const;
 
     /// Get the version of the block with the given height.
-    bool get_version(uint32_t& out_version, const size_t& height) const;
+    bool get_version(uint32_t& out_version, size_t height) const;
 
     /// Get height of latest block.
     bool get_last_height(size_t& out_height) const;

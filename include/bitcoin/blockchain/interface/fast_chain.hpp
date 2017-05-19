@@ -64,15 +64,14 @@ public:
         const hash_digest& block_hash) const = 0;
 
     /// Get the bits of the block with the given height.
-    virtual bool get_bits(uint32_t& out_bits, const size_t& height) const = 0;
+    virtual bool get_bits(uint32_t& out_bits, size_t height) const = 0;
 
     /// Get the timestamp of the block with the given height.
     virtual bool get_timestamp(uint32_t& out_timestamp,
-        const size_t& height) const = 0;
+        size_t height) const = 0;
 
     /// Get the version of the block with the given height.
-    virtual bool get_version(uint32_t& out_version,
-        const size_t& height) const = 0;
+    virtual bool get_version(uint32_t& out_version, size_t height) const = 0;
 
     /// Get height of latest block.
     virtual bool get_last_height(size_t& out_height) const = 0;
