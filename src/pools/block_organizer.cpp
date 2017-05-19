@@ -228,18 +228,18 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     top->validation.start_notify = asio::steady_clock::now();
 
     const auto first_height = branch->height() + 1u;
-    const auto maximum = branch->work();
+    const auto work = branch->work();
     uint256_t threshold;
 
-    // The chain query will stop if it reaches the maximum.
-    if (!fast_chain_.get_branch_work(threshold, maximum, first_height))
+    // The chain query will stop if it reaches work level.
+    if (!fast_chain_.get_branch_work(threshold, work, first_height))
     {
         handler(error::operation_failed);
         return;
     }
 
     // TODO: consider relay of pooled blocks by modifying subscriber semantics.
-    if (branch->work() <= threshold)
+    if (work <= threshold)
     {
         if (!top->validation.simulate)
             block_pool_.add(branch->top());
