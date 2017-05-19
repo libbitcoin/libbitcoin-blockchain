@@ -69,8 +69,9 @@ private:
         branch_ptr branch) const;
 
     // These are thread safe.
-    const uint32_t configured_forks_;
     const config::checkpoint::list checkpoints_;
+    const uint32_t configured_forks_;
+    const uint32_t stale_seconds_;
 
     // Populate is guarded against concurrent callers but because it uses the fast
     // chain it must not be invoked during chain writes.

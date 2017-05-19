@@ -39,14 +39,11 @@ using namespace std::placeholders;
 
 #define NAME "block_chain"
 
-static const auto hour_seconds = 3600u;
-
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
-    notify_limit_seconds_(chain_settings.notify_limit_hours * hour_seconds),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
 
@@ -1137,14 +1134,8 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 // This satisfies the same virtual method on both safe_chain and fast_chain.
 bool block_chain::is_stale() const
 {
-    // If there is no limit set the chain is never considered stale.
-    if (notify_limit_seconds_ == 0)
-        return false;
-
-    // The chain is stale after start until first new block is cached.
-    const auto top = last_block_.load();
-    const auto timestamp = top ? top->header().timestamp() : uint32_t(0);
-    return timestamp < floor_subtract(zulu_time(), notify_limit_seconds_);
+    const auto state = pool_state_.load();
+    return state && state->is_stale();
 }
 
 const settings& block_chain::chain_settings() const

@@ -325,7 +325,6 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
-    const time_t notify_limit_seconds_;
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<transaction_const_ptr> last_transaction_;
     const populate_chain_state chain_state_populator_;

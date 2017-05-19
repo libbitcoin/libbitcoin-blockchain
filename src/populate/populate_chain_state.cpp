@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -34,6 +35,7 @@ using namespace bc::chain;
 
 // This value should never be read, but may be useful in debugging.
 static constexpr uint32_t unspecified = max_uint32;
+static constexpr uint32_t hour_seconds = 3600u;
 
 // Database access is limited to:
 // get_last_height
@@ -41,8 +43,9 @@ static constexpr uint32_t unspecified = max_uint32;
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
     const settings& settings)
-  : configured_forks_(settings.enabled_forks()),
-    checkpoints_(config::checkpoint::sort(settings.checkpoints)),
+  : checkpoints_(config::checkpoint::sort(settings.checkpoints)),
+    configured_forks_(settings.enabled_forks()),
+    stale_seconds_(settings.notify_limit_hours * hour_seconds),
     fast_chain_(chain)
 {
 }
@@ -227,7 +230,7 @@ chain_state::ptr populate_chain_state::populate() const
         return nullptr;
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_,
-        configured_forks_);
+        configured_forks_, stale_seconds_);
 }
 
 // Caller should test result, but failure implies store corruption.
@@ -249,7 +252,7 @@ chain_state::ptr populate_chain_state::populate(const chain_state& pool,
         return nullptr;
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_,
-        configured_forks_);
+        configured_forks_, stale_seconds_);
 }
 
 // Caller should test result, but failure implies store corruption.
