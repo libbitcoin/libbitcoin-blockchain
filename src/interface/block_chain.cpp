@@ -69,12 +69,6 @@ block_chain::block_chain(threadpool& pool,
 // Readers.
 // ----------------------------------------------------------------------------
 
-bool block_chain::get_gaps(block_database::heights& out_gaps) const
-{
-    database_.blocks().gaps(out_gaps);
-    return true;
-}
-
 bool block_chain::get_block_exists(const hash_digest& block_hash) const
 {
     return database_.blocks().get(block_hash, true);

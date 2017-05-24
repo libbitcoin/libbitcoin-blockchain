@@ -140,31 +140,6 @@ BOOST_AUTO_TEST_CASE(block_chain__insert__unflushed__expected_block)
     BOOST_REQUIRE(instance.get_block_exists(chain::block::genesis_mainnet().hash()));
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_gaps__none__none)
-{
-    START_BLOCKCHAIN(instance, false);
-
-    const auto block1 = NEW_BLOCK(1);
-    BOOST_REQUIRE(instance.insert(block1, 1));
-
-    database::block_database::heights heights;
-    BOOST_REQUIRE(instance.get_gaps(heights));
-    BOOST_REQUIRE(heights.empty());
-}
-
-BOOST_AUTO_TEST_CASE(block_chain__get_gaps__one__one)
-{
-    START_BLOCKCHAIN(instance, false);
-
-    const auto block2 = NEW_BLOCK(2);
-    BOOST_REQUIRE(instance.insert(block2, 2));
-
-    database::block_database::heights heights;
-    BOOST_REQUIRE(instance.get_gaps(heights));
-    BOOST_REQUIRE_EQUAL(heights.size(), 1u);
-    BOOST_REQUIRE_EQUAL(heights[0], 1u);
-}
-
 BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__not_found__false)
 {
     START_BLOCKCHAIN(instance, false);

@@ -61,9 +61,6 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe, unprotected by sequential lock.
 
-    /// Get the set of block gaps in the chain.
-    bool get_gaps(database::block_database::heights& out_gaps) const;
-
     /// Get a determination of whether the block hash exists in the store.
     bool get_block_exists(const hash_digest& block_hash) const;
 
