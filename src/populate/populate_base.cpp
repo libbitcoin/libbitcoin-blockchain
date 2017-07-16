@@ -79,19 +79,16 @@ void populate_base::populate_prevout(size_t branch_height,
     prevout.spent = false;
     prevout.confirmed = false;
     prevout.cache = chain::output{};
-    prevout.height = output_point::validation_type::not_specified;
 
     // If the input is a coinbase there is no prevout to populate.
     if (outpoint.is_null())
         return;
 
-    size_t output_height;
-    bool output_coinbase;
-
-    // Get the script, value and spender height (if any) for the prevout.
+    // Get the prevout/cache (and spender height) and its metadata.
     // The output (prevout.cache) is populated only if the return is true.
-    if (!fast_chain_.get_output(prevout.cache, output_height, output_coinbase,
-        outpoint, branch_height, require_confirmed))
+    if (!fast_chain_.get_output(prevout.cache, prevout.height,
+        prevout.median_time_past, prevout.coinbase, outpoint, branch_height,
+        require_confirmed))
         return;
 
     //*************************************************************************
@@ -99,12 +96,8 @@ void populate_base::populate_prevout(size_t branch_height,
     // consequence of satoshi not including it in the utxo set for block
     // database initialization. Only he knows why, probably an oversight.
     //*************************************************************************
-    if (output_height == 0)
+    if (prevout.height == 0)
         return;
-
-    // Set height only if the prevout is a coinbase tx (for maturity).
-    if (output_coinbase)
-        prevout.height = output_height;
 
     // BUGBUG: Spends are not marked as spent by unconfirmed transactions.
     // So tx pool transactions currently have no double spend limitation.

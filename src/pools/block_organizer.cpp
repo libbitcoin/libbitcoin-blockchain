@@ -219,17 +219,17 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
-    // The top block is valid even if the branch has insufficient work.
-    // We aren't summing the chain work computation cost, but this is trivial
-    // unless there is a reorganization as it just gets the top block height.
-    const auto top = branch->top();
-    top->header().validation.height = branch->top_height();
-    top->validation.error = error::success;
-    top->validation.start_notify = asio::steady_clock::now();
+    auto& top_block = branch->top()->validation;
+    top_block.error = error::success;
 
-    const auto first_height = branch->height() + 1u;
-    const auto work = branch->work();
+    auto& top_header = branch->top()->header().validation;
+    top_header.median_time_past = top_block.state->median_time_past();
+    top_header.height = branch->top_height();
+
     uint256_t threshold;
+    const auto work = branch->work();
+    const auto first_height = branch->height() + 1u;
+    top_block.start_notify = asio::steady_clock::now();
 
     // The chain query will stop if it reaches work level.
     if (!fast_chain_.get_branch_work(threshold, work, first_height))
@@ -241,7 +241,7 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     // TODO: consider relay of pooled blocks by modifying subscriber semantics.
     if (work <= threshold)
     {
-        if (!top->validation.simulate)
+        if (!top_block.simulate)
             block_pool_.add(branch->top());
 
         handler(error::insufficient_work);
@@ -249,7 +249,7 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
     }
 
     // TODO: create a simulated validation path that does not block others.
-    if (top->validation.simulate)
+    if (top_block.simulate)
     {
         handler(error::success);
         return;
@@ -264,12 +264,14 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
 
     // Replace! Switch!
     //#########################################################################
+    // Incoming blocks must have median_time_past set.
     fast_chain_.reorganize(branch->fork_point(), branch->blocks(), out_blocks,
         dispatch_, reorganized_handler);
     //#########################################################################
 }
 
 // private
+// Outgoing blocks must have median_time_past set.
 void block_organizer::handle_reorganized(const code& ec,
     branch::const_ptr branch, block_const_ptr_list_ptr outgoing,
     result_handler handler)

@@ -151,7 +151,7 @@ bool populate_chain_state::populate_timestamps(chain_state::data& data,
     return get_timestamp(data.timestamp.self, map.timestamp_self, branch);
 }
 
-bool populate_chain_state::populate_checkpoint(chain_state::data& data,
+bool populate_chain_state::populate_collision(chain_state::data& data,
     const chain_state::map& map, branch::const_ptr branch) const
 {
     if (map.allow_collisions_height == chain_state::map::unrequested)
@@ -162,6 +162,19 @@ bool populate_chain_state::populate_checkpoint(chain_state::data& data,
 
     return get_block_hash(data.allow_collisions_hash,
         map.allow_collisions_height, branch);
+}
+
+bool populate_chain_state::populate_bip9_bit0(chain_state::data& data,
+    const chain_state::map& map, branch::const_ptr branch) const
+{
+    if (map.bip9_bit0_height == chain_state::map::unrequested)
+    {
+        data.bip9_bit0_hash = null_hash;
+        return true;
+    }
+
+    return get_block_hash(data.bip9_bit0_hash,
+        map.bip9_bit0_height, branch);
 }
 
 bool populate_chain_state::populate_all(chain_state::data& data,
@@ -178,7 +191,8 @@ bool populate_chain_state::populate_all(chain_state::data& data,
     return (populate_bits(data, map, branch) &&
         populate_versions(data, map, branch) &&
         populate_timestamps(data, map, branch) &&
-        populate_checkpoint(data, map, branch));
+        populate_collision(data, map, branch) &&
+        populate_bip9_bit0(data, map, branch));
     ///////////////////////////////////////////////////////////////////////////
 }
 
