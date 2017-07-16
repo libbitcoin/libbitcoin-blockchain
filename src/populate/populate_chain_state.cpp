@@ -160,12 +160,6 @@ bool populate_chain_state::populate_checkpoint(chain_state::data& data,
         return true;
     }
 
-    if (is_transaction_pool(branch))
-    {
-        data.allow_collisions_hash = null_hash;
-        return true;
-    }
-
     return get_block_hash(data.allow_collisions_hash,
         map.allow_collisions_height, branch);
 }
