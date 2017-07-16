@@ -241,8 +241,11 @@ chain_state::ptr populate_chain_state::populate(chain_state::ptr top) const
     // Create pool state from top block chain state.
     const auto state = std::make_shared<chain_state>(*top);
 
-    // If is a retarget height or reorganization must populate from store.
-    return state->is_valid() ? state : populate();
+    // Invalidity is not possible unless next height is zero.
+    // This can only happen when the chain size overflows size_t.
+    BITCOIN_ASSERT(state->is_valid());
+
+    return state;
 }
 
 } // namespace blockchain
