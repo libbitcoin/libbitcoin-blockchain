@@ -32,13 +32,17 @@ settings::settings()
     minimum_output_satoshis(500),
     notify_limit_hours(24),
     reorganization_limit(256),
+    allow_collisions(true),
     easy_blocks(false),
     bip16(true),
     bip30(true),
     bip34(true),
     bip66(true),
     bip65(true),
-    bip90(true)
+    bip90(true),
+    bip68(true),
+    bip112(true),
+    bip113(true)
 {
 }
 
@@ -99,7 +103,7 @@ uint32_t settings::enabled_forks() const
 {
     using namespace machine;
 
-    uint32_t forks = no_rules;
+    uint32_t forks = rule_fork::no_rules;
     forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
     forks |= (bip16 ? rule_fork::bip16_rule : 0);
     forks |= (bip30 ? rule_fork::bip30_rule : 0);
@@ -107,6 +111,9 @@ uint32_t settings::enabled_forks() const
     forks |= (bip66 ? rule_fork::bip66_rule : 0);
     forks |= (bip65 ? rule_fork::bip65_rule : 0);
     forks |= (bip90 ? rule_fork::bip90_rule : 0);
+    forks |= (bip68 ? rule_fork::bip68_rule : 0);
+    forks |= (bip112 ? rule_fork::bip112_rule : 0);
+    forks |= (bip113 ? rule_fork::bip113_rule : 0);
     return forks;
 }
 
