@@ -47,14 +47,17 @@ public:
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
     config::checkpoint::list checkpoints;
+    bool allow_collisions;
     bool easy_blocks;
     bool bip16;
     bool bip30;
     bool bip34;
     bool bip66;
     bool bip65;
-    bool allow_collisions;
     bool bip90;
+    bool bip68;
+    bool bip112;
+    bool bip113;
 };
 
 } // namespace blockchain

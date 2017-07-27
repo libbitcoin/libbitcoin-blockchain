@@ -79,8 +79,9 @@ public:
 
     /// Get the output that is referenced by the outpoint.
     virtual bool get_output(chain::output& out_output, size_t& out_height,
-        bool& out_coinbase, const chain::output_point& outpoint,
-        size_t branch_height, bool require_confirmed) const = 0;
+        uint32_t& out_median_time_past, bool& out_coinbase, 
+        const chain::output_point& outpoint, size_t branch_height,
+        bool require_confirmed) const = 0;
 
     /// Determine if an unspent transaction exists with the given hash.
     virtual bool get_is_unspent_transaction(const hash_digest& hash,

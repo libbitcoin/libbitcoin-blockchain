@@ -117,6 +117,13 @@ size_t branch::height_at(size_t index) const
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
+// private
+uint32_t branch::median_time_past_at(size_t index) const
+{
+    BITCOIN_ASSERT(index < size());
+    return (*blocks_)[index]->header().validation.median_time_past;
+}
+
 // TODO: absorb into the main chain for speed and code consolidation.
 // The branch work check is both a consensus check and denial of service
 // protection. It is necessary here that total claimed work exceeds that of the
@@ -211,64 +218,44 @@ void branch::populate_spent(const output_point& outpoint) const
 // TODO: absorb into the main chain for speed and code consolidation.
 void branch::populate_prevout(const output_point& outpoint) const
 {
-    const auto count = size();
     auto& prevout = outpoint.validation;
-    struct result { size_t height; size_t position; output out; };
-
-    const auto get_output = [this, count, &outpoint]() -> result
-    {
-        const auto& blocks = *blocks_;
-
-        // Reverse search because of BIP30.
-        for (size_t forward = 0; forward < count; ++forward)
-        {
-            const size_t index = count - forward - 1u;
-            const auto& txs = blocks[index]->transactions();
-
-            for (size_t position = 0; position < txs.size(); ++position)
-            {
-                const auto& tx = txs[position];
-
-                if (outpoint.hash() == tx.hash() &&
-                    outpoint.index() < tx.outputs().size())
-                {
-                    return
-                    {
-                        height_at(index),
-                        position,
-                        tx.outputs()[outpoint.index()]
-                    };
-                }
-            }
-        }
-
-        return{};
-    };
 
     // In case this input is a coinbase or the prevout is spent.
     prevout.cache = chain::output{};
+    prevout.coinbase = false;
+    prevout.height = 0;
+    prevout.median_time_past = 0;
 
-    // The height of the prevout must be set iff the prevout is coinbase.
-    prevout.height = output_point::validation_type::not_specified;
-
-    // The input is a coinbase, so there is no prevout to populate.
+    // If the input is a coinbase there is no prevout to populate.
     if (outpoint.is_null())
         return;
 
-    // We continue even if prevout spent and/or missing.
+    // Get the input's previous output and its validation metadata.
+    const auto count = size();
+    const auto& blocks = *blocks_;
 
-    // Get the script and value for the prevout.
-    const auto finder = get_output();
+    // Reverse iterate because of BIP30.
+    for (size_t forward = 0; forward < count; ++forward)
+    {
+        const size_t index = count - forward - 1u;
+        const auto& txs = blocks[index]->transactions();
+        prevout.coinbase = true;
 
-    if (!finder.out.is_valid())
-        return;
+        for (const auto& tx: txs)
+        {
+            // Found the prevout at or below the indexed block.
+            if (outpoint.hash() == tx.hash() &&
+                outpoint.index() < tx.outputs().size())
+            {
+                prevout.height = height_at(index);
+                prevout.median_time_past = median_time_past_at(index);
+                prevout.cache = tx.outputs()[outpoint.index()];
+                return;
+            }
 
-    // Found the prevout at or below the indexed block.
-    prevout.cache = finder.out;
-
-    // Set height iff the prevout is coinbase (first tx is coinbase).
-    if (finder.position == 0)
-        prevout.height = finder.height;
+            prevout.coinbase = false;
+        }
+    }
 }
 
 // TODO: absorb into the main chain for speed and code consolidation.

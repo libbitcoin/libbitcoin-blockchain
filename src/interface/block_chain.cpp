@@ -170,13 +170,15 @@ bool block_chain::get_last_height(size_t& out_height) const
 }
 
 bool block_chain::get_output(chain::output& out_output, size_t& out_height,
-    bool& out_coinbase, const chain::output_point& outpoint,
-    size_t branch_height, bool require_confirmed) const
+    uint32_t& out_median_time_past, bool& out_coinbase,
+    const chain::output_point& outpoint, size_t branch_height,
+    bool require_confirmed) const
 {
     // This includes a cached value for spender height (or not_spent).
     // Get the highest tx with matching hash, at or below the branch height.
     return database_.transactions().get_output(out_output, out_height,
-        out_coinbase, outpoint, branch_height, require_confirmed);
+        out_median_time_past, out_coinbase, outpoint, branch_height,
+        require_confirmed);
 }
 
 bool block_chain::get_is_unspent_transaction(const hash_digest& hash,
