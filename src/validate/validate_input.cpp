@@ -49,6 +49,9 @@ uint32_t validate_input::convert_flags(uint32_t native_forks)
     if (script::is_enabled(native_forks, rule_fork::bip66_rule))
         flags |= verify_flags_dersig;
 
+    if (script::is_enabled(native_forks, rule_fork::bip112_rule))
+        flags |= verify_flags_checksequenceverify;
+
     return flags;
 }
 
@@ -105,7 +108,7 @@ code validate_input::convert_result(verify_result_type result)
         case verify_result_type::verify_result_cleanstack:
             return error::operation_failed;
 
-        // BIP65 errors.
+        // BIP65/BIP112 (shared codes).
         case verify_result_type::verify_result_negative_locktime:
         case verify_result_type::verify_result_unsatisfied_locktime:
             return error::invalid_script;

@@ -48,6 +48,7 @@ void block_pool::add(block_const_ptr valid_block)
     ////BITCOIN_ASSERT(!block->validation.error);
     block_entry entry{ valid_block };
 
+    // Not all blocks will have validation state.
     ////BITCOIN_ASSERT(block->validation.state);
     auto height = valid_block->header().validation.height;
     const auto& left = blocks_.left;

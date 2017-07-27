@@ -94,8 +94,9 @@ public:
 
     /// Get the output that is referenced by the outpoint.
     bool get_output(chain::output& out_output, size_t& out_height,
-        bool& out_coinbase, const chain::output_point& outpoint,
-        size_t branch_height, bool require_confirmed) const;
+        uint32_t& out_median_time_past, bool& out_coinbase,
+        const chain::output_point& outpoint, size_t branch_height,
+        bool require_confirmed) const;
 
     /// Determine if an unspent transaction exists with the given hash.
     bool get_is_unspent_transaction(const hash_digest& hash,
