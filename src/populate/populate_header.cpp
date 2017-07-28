@@ -46,6 +46,7 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
+    // TODO: why does the branch not already know its height?
     // The header could not be connected to the header index.
     if (!set_branch_height(branch))
     {
@@ -56,10 +57,18 @@ void populate_header::populate(header_branch::ptr branch,
     const auto header = branch->top();
     fast_chain_.populate_header(*header);
 
+    // TODO: return error::duplicate_block here.
     // There is a permanent previous validation error on the block.
     if (header->validation.error != error::success)
     {
         handler(header->validation.error);
+        return;
+    }
+
+    // The header is already indexed (nothing to do).
+    if (header->validation.duplicate)
+    {
+        handler(error::duplicate_block);
         return;
     }
 

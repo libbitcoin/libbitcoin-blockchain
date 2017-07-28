@@ -188,28 +188,34 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
 }
 
 // TODO: move into block database.
-void block_chain::populate_header(const chain::header& header) const
+void block_chain::populate_header(const chain::header& header,
+    size_t fork_height) const
 {
     const auto result = database_.blocks().get(header.hash());
 
-    // Default height and error are correct for indication of not found.
+    // Default values are correct for indication of not found.
     if (!result)
         return;
 
+    const auto state = result.state();
     header.validation.error = result.error();
     header.validation.height = result.height();
+    header.validation.duplicate = is_indexed(state) ||
+        (is_confirmed(state) && result.height() <= fork_height);
 }
 
 // TODO: move into tx database.
 void block_chain::populate_transaction(const chain::transaction& tx,
     uint32_t forks, size_t fork_height) const
 {
-    // TODO: change tx.get(...) to always populate offset.
     const auto result = database_.transactions().get(tx.hash());
-    ////tx.validation.offset = ...;
 
-    tx.validation.error = result.error();
+    // Default values are correct for indication of not found.
+    if (!result)
+        return;
+
     const auto state = result.state();
+    tx.validation.error = result.error();
 
     const auto require_confirmed = (fork_height != max_size_t);
     const auto confirmed =
@@ -221,6 +227,8 @@ void block_chain::populate_transaction(const chain::transaction& tx,
         (state == transaction_state::indexed && !require_confirmed)) &&
         forks == result.height();
 
+    // TODO: change tx.get(...) to always populate offset.
+    ////tx.validation.offset = ...;
     tx.validation.pooled = pooled;
     tx.validation.duplicate = confirmed || (!require_confirmed && pooled);
 
@@ -244,7 +252,6 @@ void block_chain::populate_transaction(const chain::transaction& tx,
 void block_chain::populate_output(const chain::output_point& outpoint,
     size_t fork_height) const
 {
-    // TODO: change to void.
     database_.transactions().get_output(outpoint, fork_height);
 }
 

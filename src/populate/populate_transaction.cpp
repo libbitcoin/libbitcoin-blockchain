@@ -56,6 +56,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
     tx->validation.state = state;
     fast_chain_.populate_transaction(*tx, state->enabled_forks());
 
+    // TODO: return error::duplicate_transaction here.
     // There is a permanent previous validation error on the tx.
     if (tx->validation.error != error::success)
     {

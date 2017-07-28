@@ -78,7 +78,8 @@ public:
         size_t above_height, bool block_index) const = 0;
 
     /// Populate metadata of the given block header.
-    virtual void populate_header(const chain::header& header) const = 0;
+    virtual void populate_header(const chain::header& header,
+        size_t fork_height=max_size_t) const = 0;
 
     /// Populate metadata of the given transaction.
     /// Sets metadata based on fork point, ignore indexing if max fork point.
