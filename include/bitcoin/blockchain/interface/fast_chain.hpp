@@ -101,15 +101,18 @@ public:
     // Writers.
     // ------------------------------------------------------------------------
 
+    /// Push a validated header branch to the header index.
+    virtual void reindex(const config::checkpoint& fork_point,
+        header_const_ptr_list_const_ptr incoming,
+        header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
+        complete_handler handler) = 0;
+
     /// Push an validated transaction to the tx table and index outputs.
     virtual void push(transaction_const_ptr tx, dispatcher& dispatch,
         complete_handler handler) = 0;
 
-    /// Push a validated header branch to the header index.
-    virtual void reorganize(const config::checkpoint& fork_point,
-        header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-        complete_handler handler) = 0;
+    /// Push a block to the blockchain, height is validated.
+    virtual bool push(block_const_ptr block, size_t height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------

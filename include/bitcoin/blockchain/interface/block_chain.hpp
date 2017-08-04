@@ -119,19 +119,19 @@ public:
 
     // Writers.
     // ------------------------------------------------------------------------
-    // Thread safe (except for insert, which is totally unsafe).
+    // Thread safe (except for push block).
+
+    /// Push a validated header to the header index.
+    void reindex(const config::checkpoint& fork_point,
+        header_const_ptr_list_const_ptr incoming,
+        header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
+        complete_handler handler);
 
     /// Push an unconfirmed transaction to the tx table and index outputs.
     void push(transaction_const_ptr tx, dispatcher& dispatch,
         result_handler handler);
 
-    /// Push a validated header to the header index.
-    void reorganize(const config::checkpoint& fork_point,
-        header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-        complete_handler handler);
-
-    /// Insert a block to the blockchain, height is checked for existence.
+    /// Push a block to the blockchain, height is validated.
     bool push(block_const_ptr block, size_t height);
 
     // Properties
@@ -280,7 +280,10 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    /// Subscribe to blockchain reorganizations, get branch/height.
+    /// Subscribe to indexed header reorganizations, get branch/height.
+    void subscribe_headers(reindex_handler&& handler);
+
+    /// Subscribe to confirmed block reorganizations, get branch/height.
     void subscribe_blockchain(reorganize_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
@@ -292,11 +295,11 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Organize a block into the block pool if valid.
-    void organize(block_const_ptr block, result_handler handler);
-
     /// Organize a header into the header pool if valid.
     void organize(header_const_ptr header, result_handler handler);
+
+    /// Organize a block into the block pool if valid.
+    void organize(block_const_ptr block, result_handler handler);
 
     /// Store a transaction to the pool if valid.
     void organize(transaction_const_ptr tx, result_handler handler);
@@ -331,7 +334,7 @@ private:
     bool get_transaction_hashes(hash_list& out_hashes,
         const database::offset_list& offsets) const;
 
-    void handle_reorganize(const code& ec, header_const_ptr top_header,
+    void handle_reindex(const code& ec, header_const_ptr top_header,
         result_handler handler);
 
     // These are thread safe.

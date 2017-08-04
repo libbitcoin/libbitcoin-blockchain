@@ -41,14 +41,16 @@ using namespace std::placeholders;
 
 // Database access is limited to { bits, version, timestamp }.
 
-header_organizer::header_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-    threadpool&, fast_chain& chain, const settings& settings)
+header_organizer::header_organizer(prioritized_mutex& mutex,
+    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
+    const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     dispatch_(dispatch),
     header_pool_(settings.reorganization_limit),
-    validator_(dispatch, chain, settings)
+    validator_(dispatch, chain, settings),
+    subscriber_(std::make_shared<reindex_subscriber>(thread_pool, NAME))
 {
 }
 
@@ -66,14 +68,17 @@ bool header_organizer::stopped() const
 bool header_organizer::start()
 {
     stopped_ = false;
+    subscriber_->start();
     validator_.start();
     return true;
 }
 
 bool header_organizer::stop()
 {
-    stopped_ = true;
     validator_.stop();
+    subscriber_->stop();
+    subscriber_->invoke(error::service_stopped, 0, {}, {});
+    stopped_ = true;
     return true;
 }
 
@@ -186,19 +191,19 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     // Get the outgoing headers to forward to reorg handler.
     const auto outgoing = std::make_shared<header_const_ptr_list>();
 
-    const auto reorganized_handler =
-        std::bind(&header_organizer::handle_reorganized,
+    const auto reindexed_handler =
+        std::bind(&header_organizer::handle_reindexed,
             this, _1, branch, outgoing, handler);
 
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reorganize(branch->fork_point(), branch->headers(), outgoing,
-        dispatch_, reorganized_handler);
+    fast_chain_.reindex(branch->fork_point(), branch->headers(), outgoing,
+        dispatch_, reindexed_handler);
     //#########################################################################
 }
 
 // private
-void header_organizer::handle_reorganized(const code& ec,
+void header_organizer::handle_reindexed(const code& ec,
     header_branch::const_ptr branch, header_const_ptr_list_ptr outgoing,
     result_handler handler)
 {
@@ -215,7 +220,32 @@ void header_organizer::handle_reorganized(const code& ec,
     header_pool_.prune(branch->top_height());
     header_pool_.add(outgoing);
 
+    notify(branch->height(), branch->headers(), outgoing);
     handler(error::success);
+}
+
+// Subscription.
+//-----------------------------------------------------------------------------
+
+// private
+void header_organizer::notify(size_t fork_height,
+    header_const_ptr_list_const_ptr incoming,
+    header_const_ptr_list_const_ptr outgoing)
+{
+    // This invokes handlers within the criticial section (deadlock risk).
+    subscriber_->invoke(error::success, fork_height, incoming, outgoing);
+}
+
+// This allows subscriber to become aware of pending and obsolete downloads.
+void header_organizer::subscribe(reindex_handler&& handler)
+{
+    subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
+}
+
+void header_organizer::unsubscribe()
+{
+    subscriber_->relay(error::success, 0, {}, {});
 }
 
 // Queries.

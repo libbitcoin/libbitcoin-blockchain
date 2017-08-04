@@ -269,6 +269,41 @@ database::transaction_state block_chain::get_transaction_state(
 // Writers
 // ----------------------------------------------------------------------------
 
+void block_chain::reindex(const config::checkpoint& fork_point,
+    header_const_ptr_list_const_ptr incoming,
+    header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
+    result_handler handler)
+{
+    if (incoming->empty())
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    // The top (back) block is used to update the chain state.
+    const auto complete =
+        std::bind(&block_chain::handle_reindex,
+            this, _1, incoming->back(), handler);
+
+    database_.reorganize(fork_point, incoming, outgoing, dispatch, complete);
+}
+
+// Due to accept/population bypass, chain_state may not be populated.
+void block_chain::handle_reindex(const code& ec,
+    header_const_ptr top_header, result_handler handler)
+{
+    if (ec)
+    {
+        handler(ec);
+        return;
+    }
+
+    // We could alternatively just read the pool state from last header cache.
+    set_header_pool_state(top_header->validation.state);
+    last_header_.store(top_header);
+    handler(error::success);
+}
+
 void block_chain::push(transaction_const_ptr tx, dispatcher&,
     result_handler handler)
 {
@@ -284,41 +319,6 @@ void block_chain::push(transaction_const_ptr tx, dispatcher&,
 
     // Transaction push is currently sequential so dispatch is not used.
     handler(database_.push(*tx, state->enabled_forks()));
-}
-
-void block_chain::reorganize(const config::checkpoint& fork_point,
-    header_const_ptr_list_const_ptr incoming,
-    header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-    result_handler handler)
-{
-    if (incoming->empty())
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // The top (back) block is used to update the chain state.
-    const auto complete =
-        std::bind(&block_chain::handle_reorganize,
-            this, _1, incoming->back(), handler);
-
-    database_.reorganize(fork_point, incoming, outgoing, dispatch, complete);
-}
-
-// Due to accept/population bypass, chain_state may not be populated.
-void block_chain::handle_reorganize(const code& ec,
-    header_const_ptr top_header, result_handler handler)
-{
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
-    // We could alternatively just read the pool state from last header cache.
-    set_header_pool_state(top_header->validation.state);
-    last_header_.store(top_header);
-    handler(error::success);
 }
 
 bool block_chain::push(block_const_ptr block, size_t height)
@@ -1207,6 +1207,12 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
+void block_chain::subscribe_headers(reindex_handler&& handler)
+{
+    // Pass this through to the organizer, which issues the notifications.
+    header_organizer_.subscribe(std::move(handler));
+}
+
 void block_chain::subscribe_blockchain(reorganize_handler&& handler)
 {
     // Pass this through to the organizer, which issues the notifications.
@@ -1228,16 +1234,16 @@ void block_chain::unsubscribe()
 // Organizers.
 //-----------------------------------------------------------------------------
 
-void block_chain::organize(block_const_ptr block, result_handler handler)
-{
-    // This cannot call organize and must progress (lock safe).
-    ////block_organizer_.organize(block, handler);
-}
-
 void block_chain::organize(header_const_ptr header, result_handler handler)
 {
     // This cannot call organize and must progress (lock safe).
     header_organizer_.organize(header, handler);
+}
+
+void block_chain::organize(block_const_ptr block, result_handler handler)
+{
+    // This cannot call organize and must progress (lock safe).
+    ////block_organizer_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
