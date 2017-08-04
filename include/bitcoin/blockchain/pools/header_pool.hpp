@@ -68,7 +68,7 @@ protected:
     // This produces the effect of a circular buffer hash table header forest.
     typedef boost::bimaps::bimap<
         boost::bimaps::unordered_set_of<header_entry>,
-        boost::bimaps::multiset_of<size_t >> header_entries;
+        boost::bimaps::multiset_of<size_t>> header_entries;
 
     bool exists(const hash_digest& hash) const;
     void prune(const hash_list& hashes, size_t minimum_height);
