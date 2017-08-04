@@ -59,6 +59,10 @@ bool header_pool::exists(header_const_ptr candidate_header) const
     return exists(candidate_header->hash());
 }
 
+// TODO: as blocks are popped from the confirmed chain they are pushed here
+// which can result in existing dependent branches becoming disconnected from
+// those blocks. To prevent this existing branch roots must be reparented
+// following a reorg. For each add query for root of next height and connect.
 void header_pool::add(header_const_ptr valid_header)
 {
     // The header must be successfully validated.
