@@ -105,7 +105,7 @@ void validate_header::handle_populated(const code& ec,
     const auto header = branch->top();
 
     // Skip validation when valid header is already stored.
-    if (header->validation.height != 0)
+    if (header->validation.pooled)
     {
         handler(error::success);
         return;

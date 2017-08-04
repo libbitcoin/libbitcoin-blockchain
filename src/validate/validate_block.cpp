@@ -139,7 +139,7 @@ void validate_block::check(block_const_ptr block, result_handler handler) const
 void validate_block::accept(block_const_ptr block,
     result_handler handler) const
 {
-    // TODO: this requires fork height.
+    // TODO: set this to the block index top since we don't reorg full blocks.
     size_t fork_height = 42;
 
     // Populate block state for the top block (others are valid).

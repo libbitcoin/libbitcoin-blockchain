@@ -144,6 +144,10 @@ void header_organizer::handle_check(const code& ec, header_const_ptr header,
 void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     result_handler handler)
 {
+    // A header-pooled (duplicate) header is returned here.
+    // An existing (duplicate) indexed or confirmed header is returned here.
+    // A stored but invalid block is returned with validation code here.
+    // A pooled header skips validation and only updates on store.
     if (ec)
     {
         handler(ec);
