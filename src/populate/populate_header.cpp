@@ -89,8 +89,16 @@ bool populate_header::set_branch_height(header_branch::ptr branch) const
 {
     size_t height;
 
+    // Reject header if above fork point, it doesn't connect to indexed header.
+    // This will cause rebuild of a confirmed block chain in the header pool
+    // before it can overtake the header chain. Long branch competition can be
+    // costly in terms of pool push/pop of headers in this scenario, however by
+    // adding outgoing headers to the pool the cost is somewhat mitigated.
+    // The greater cost of deep reorgs between stored blocks is updating state.
+    const auto fork_height = fast_chain_.get_fork_point();
+
     // Get header index height of parent of the oldest branch block.
-    if (!fast_chain_.get_block_height(height, branch->hash(), false))
+    if (!fast_chain_.get_block_height(height, branch->hash(), fork_height))
         return false;
 
     branch->set_height(height);
