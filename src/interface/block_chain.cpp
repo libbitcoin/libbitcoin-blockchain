@@ -229,6 +229,9 @@ void block_chain::populate_header(const chain::header& header,
     // All headers have a fixed height, independent of indexing.
     header.validation.height = height;
 
+    // Transactions are populated (count population is atomic).
+    header.validation.populated = result.transaction_count() != 0;
+
     // Stored headers are always valid, error refers to the block.
     header.validation.pooled = true;
 
