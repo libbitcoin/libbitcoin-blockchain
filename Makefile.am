@@ -41,9 +41,6 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizers/header_organizer.cpp \
     src/organizers/transaction_organizer.cpp \
     src/pools/anchor_converter.cpp \
-    src/pools/block_entry.cpp \
-    src/pools/block_pool.cpp \
-    src/pools/branch.cpp \
     src/pools/child_closure_calculator.cpp \
     src/pools/conflicting_spend_remover.cpp \
     src/pools/header_branch.cpp \
