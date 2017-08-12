@@ -182,6 +182,7 @@ public:
     virtual void organize(header_const_ptr header, result_handler handler) = 0;
     virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
+    virtual bool update(block_const_ptr block, size_t height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------

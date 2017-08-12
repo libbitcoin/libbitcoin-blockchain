@@ -310,6 +310,9 @@ public:
     /// Store a transaction to the pool if valid.
     void organize(transaction_const_ptr tx, result_handler handler);
 
+    /// Add the block's transactions to the header, height is validated.
+    bool update(block_const_ptr block, size_t height);
+
     // Properties.
     //-------------------------------------------------------------------------
 
