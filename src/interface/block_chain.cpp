@@ -1294,7 +1294,7 @@ void block_chain::organize(block_const_ptr block, result_handler handler)
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    // This cannot call organize oand must progress (lock safe).
+    // This cannot call organize and must progress (lock safe).
     transaction_organizer_.organize(tx, handler);
 }
 
