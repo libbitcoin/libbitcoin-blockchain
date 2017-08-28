@@ -1282,27 +1282,27 @@ void block_chain::unsubscribe()
 
 void block_chain::organize(header_const_ptr header, result_handler handler)
 {
-    // This cannot call organize and must progress (lock safe).
+    // The handler must not call organize (lock safety).
     header_organizer_.organize(header, handler);
 }
 
 void block_chain::organize(block_const_ptr block, result_handler handler)
 {
-    // This cannot call organize and must progress (lock safe).
+    // TODO: implement block organize.
+    // The handler must not call organize (lock safety).
     ////block_organizer_.organize(block, handler);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
-    // This cannot call organize and must progress (lock safe).
+    // The handler must not call organize (lock safety).
     transaction_organizer_.organize(tx, handler);
 }
 
-bool block_chain::update(block_const_ptr block, size_t height)
+void block_chain::update(block_const_ptr block, size_t height,
+    result_handler handler)
 {
-    // TODO: implement.
-    ////return database_.update(*block, height) == error::success;
-    return false;
+    database_.update(block, height, dispatch_, handler);
 }
 
 // Properties.
