@@ -52,6 +52,10 @@ public:
     virtual bool get_top_height(size_t& out_height,
         bool block_index) const = 0;
 
+    /// False if the block is not pending (for caller loop).
+    virtual bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
+        size_t height) const = 0;
+
     /// Get height in the block or header index of block with the given hash.
     virtual bool get_block_height(size_t& out_height,
         const hash_digest& block_hash,

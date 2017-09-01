@@ -92,6 +92,19 @@ bool block_chain::get_top_height(size_t& out_height, bool block_index) const
     return database_.blocks().top(out_height, block_index);
 }
 
+bool block_chain::get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
+    size_t height) const
+{
+    const auto result = database_.blocks().get(height, false);
+
+    if (!result || !is_pent(result.state()))
+        return false;
+
+    out_hash = result.hash();
+    out_empty = result.transaction_count() == 0;
+    return true;
+}
+
 // Header indexing controlled by fork_height.
 // All blocks have height but this limits to indexed|confirmed as applicable.
 bool block_chain::get_block_height(size_t& out_height,
@@ -1310,6 +1323,8 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 void block_chain::update(block_const_ptr block, size_t height,
     result_handler handler)
 {
+    // TODO: set:
+    // block->validation.end_push = asio::steady_clock::now();
     database_.update(block, height, dispatch_, handler);
 }
 
