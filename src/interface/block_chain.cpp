@@ -892,11 +892,15 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
         return;
     }
 
+    // BUGBUG: an intervening reorg can produce an invalid chain of hashes.
+    // TODO: instead walk backwards using parent hash lookups. 
+
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
 
     // Find the start block height.
     // If no start block is on our chain we start with block 0.
+    // TODO: we could return error or empty and drop peer for missing genesis.
     size_t start = 0;
     for (const auto& hash: locator->start_hashes())
     {
@@ -971,11 +975,15 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
         return;
     }
 
+    // BUGBUG: an intervening reorg can produce an invalid chain of headers.
+    // TODO: instead walk backwards using parent hash lookups. 
+
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
 
     // Find the start block height.
     // If no start block is on our chain we start with block 0.
+    // TODO: we could return error or empty and drop peer for missing genesis.
     size_t start = 0;
     for (const auto& hash: locator->start_hashes())
     {
