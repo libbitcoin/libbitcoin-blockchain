@@ -1295,6 +1295,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 void block_chain::unsubscribe()
 {
     ////block_organizer_.unsubscribe();
+    header_organizer_.unsubscribe();
     transaction_organizer_.unsubscribe();
 }
 
