@@ -48,7 +48,7 @@ block_chain::block_chain(threadpool& pool,
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
 
-    // TODO: tune/configure this.
+    // Enable block priority when write flushing is enabled (performance).
     validation_mutex_(database_settings.flush_writes),
 
     priority_pool_(thread_ceiling(chain_settings.cores),
