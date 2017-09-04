@@ -1321,12 +1321,11 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
     transaction_organizer_.organize(tx, handler);
 }
 
-void block_chain::update(block_const_ptr block, size_t height,
-    result_handler handler)
+code block_chain::update(block_const_ptr block, size_t height)
 {
     // TODO: set:
     // block->validation.end_push = asio::steady_clock::now();
-    database_.update(block, height, dispatch_, handler);
+    return database_.update(block, height);
 }
 
 // Properties.

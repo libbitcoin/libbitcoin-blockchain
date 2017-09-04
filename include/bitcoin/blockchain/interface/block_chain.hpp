@@ -315,7 +315,7 @@ public:
     void organize(transaction_const_ptr tx, result_handler handler);
 
     /// Add the block's transactions to the header, height is validated.
-    void update(block_const_ptr block, size_t height, result_handler handler);
+    code update(block_const_ptr block, size_t height);
 
     // Properties.
     //-------------------------------------------------------------------------
