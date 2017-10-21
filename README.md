@@ -21,3 +21,16 @@ libbitcoin-blockchain is now installed in `/usr/local/`.
 ## Configure Options
 
 The default configuration requires `libbitcoin-consensus`. This ensures consensus parity with the Satoshi client. To eliminate the `libbitcoin-consensus` dependency use the `--without-consensus` option. This results in use of `libbitcoin` consensus checks.
+
+## Installation
+
+### Macintosh
+
+#### Using Homebrew
+
+##### Installing from Formula
+
+Instead of building, libbitcoin can be installed from a formula:
+```sh
+$ brew install libbitcoin-blockchain
+```
