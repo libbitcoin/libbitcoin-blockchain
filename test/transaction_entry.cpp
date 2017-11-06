@@ -41,12 +41,27 @@ static chain_state::data data()
     return value;
 }
 
+static transaction_const_ptr make_tx(uint32_t version, uint32_t locktime)
+{
+    const auto tx = std::make_shared<const message::transaction>(version,
+            locktime, chain::input::list{}, chain::output::list{});
+    tx->validation.state = std::make_shared<chain_state>(
+        chain_state{ data(), {}, 0 });
+    return tx;
+}
+
 static transaction_const_ptr make_tx()
 {
     const auto tx = std::make_shared<const message::transaction>();
     tx->validation.state = std::make_shared<chain_state>(
         chain_state{ data(), {}, 0 });
     return tx;
+}
+
+static transaction_entry::ptr make_instance(uint32_t version, uint32_t locktime)
+{
+    return std::make_shared<transaction_entry>(transaction_entry(make_tx(
+            version, locktime)));
 }
 
 static transaction_entry::ptr make_instance()
@@ -67,7 +82,6 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_tx__expected_values)
     BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
     BOOST_REQUIRE_EQUAL(instance.size(), 10u);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
-    BOOST_REQUIRE(!instance.is_marked());
     BOOST_REQUIRE(instance.parents().empty());
     BOOST_REQUIRE(instance.children().empty());
 }
@@ -83,7 +97,6 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_block_hash__expected
     BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
     BOOST_REQUIRE_EQUAL(instance.size(), 0);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
-    BOOST_REQUIRE(!instance.is_marked());
     BOOST_REQUIRE(instance.parents().empty());
     BOOST_REQUIRE(instance.children().empty());
 }
@@ -102,41 +115,41 @@ BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__children__true)
 {
     transaction_entry instance(make_tx());
     const auto child = make_instance();
-    instance.add_child(child);
+    instance.add_child(1, child);
     BOOST_REQUIRE(instance.is_anchor());
 }
 
 // mark
 
-BOOST_AUTO_TEST_CASE(transaction_entry__mark__true__expected)
-{
-    transaction_entry instance(make_tx());
-    instance.mark(true);
-    BOOST_REQUIRE(instance.is_marked());
-}
-
-BOOST_AUTO_TEST_CASE(transaction_entry__mark__true_false__expected)
-{
-    transaction_entry instance(make_tx());
-    instance.mark(true);
-    instance.mark(false);
-    BOOST_REQUIRE(!instance.is_marked());
-}
+//BOOST_AUTO_TEST_CASE(transaction_entry__mark__true__expected)
+//{
+//    transaction_entry instance(make_tx());
+//    instance.mark(true);
+//    BOOST_REQUIRE(instance.is_marked());
+//}
+//
+//BOOST_AUTO_TEST_CASE(transaction_entry__mark__true_false__expected)
+//{
+//    transaction_entry instance(make_tx());
+//    instance.mark(true);
+//    instance.mark(false);
+//    BOOST_REQUIRE(!instance.is_marked());
+//}
 
 // is_marked
 
-BOOST_AUTO_TEST_CASE(transaction_entry__mark__default__false)
-{
-    const transaction_entry instance(make_tx());
-    BOOST_REQUIRE(!instance.is_marked());
-}
-
-BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
-{
-    transaction_entry instance(make_tx());
-    instance.mark(true);
-    BOOST_REQUIRE(instance.is_marked());
-}
+//BOOST_AUTO_TEST_CASE(transaction_entry__mark__default__false)
+//{
+//    const transaction_entry instance(make_tx());
+//    BOOST_REQUIRE(!instance.is_marked());
+//}
+//
+//BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
+//{
+//    transaction_entry instance(make_tx());
+//    instance.mark(true);
+//    BOOST_REQUIRE(instance.is_marked());
+//}
 
 // add_parent
 
@@ -155,14 +168,63 @@ BOOST_AUTO_TEST_CASE(transaction_entry__add_child__one__expected_children)
 {
     transaction_entry instance(make_tx());
     const auto child = make_instance();
-    instance.add_child(child);
+    instance.add_child(1, child);
     BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
-    BOOST_REQUIRE_EQUAL(instance.children().front(), child);
+    auto index_result = instance.children().left.find(1);
+    BOOST_REQUIRE(index_result != instance.children().left.end());
+    BOOST_REQUIRE_EQUAL(index_result->second, child);
+    auto retriever = std::make_shared<transaction_entry>(child->hash());
+    auto child_result = instance.children().right.find(retriever);
+    BOOST_REQUIRE(child_result != instance.children().right.end());
+    BOOST_REQUIRE_EQUAL(child_result->first, child);
 }
 
 // remove_child
 
-BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__not_found__empty)
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_1__not_found__empty)
+{
+    transaction_entry instance(make_tx());
+    uint32_t index = 1;
+    instance.remove_child(index);
+    BOOST_REQUIRE(instance.children().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_1__only_found__empty)
+{
+    transaction_entry instance(make_tx());
+    uint32_t index = 1;
+    const auto child = make_instance();
+    instance.add_child(index, child);
+    BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
+    instance.remove_child(index);
+    BOOST_REQUIRE(instance.children().empty());
+}
+
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_1__one_of_two__expected_one_remains)
+{
+    auto instance = make_instance(0, 0);
+    uint32_t index1 = 1;
+    const auto child1 = make_instance(1, 0);
+    child1->add_parent(instance);
+    BOOST_REQUIRE_EQUAL(child1->parents().size(), 1u);
+    uint32_t index2 = 2;
+    const auto child2 = make_instance(2, 0);
+    child2->add_parent(instance);
+    BOOST_REQUIRE_EQUAL(child2->parents().size(), 1u);
+    instance->add_child(index1, child1);
+    instance->add_child(index2, child2);
+    BOOST_REQUIRE_EQUAL(instance->children().size(), 2u);
+    instance->remove_child(index2);
+    BOOST_REQUIRE_EQUAL(child1->parents().size(), 1u);
+    BOOST_REQUIRE_EQUAL(child2->parents().size(), 0u);
+    BOOST_REQUIRE_EQUAL(instance->children().size(), 1u);
+    auto result = instance->children().right.find(child1);
+    BOOST_REQUIRE(result != instance->children().right.end());
+    BOOST_REQUIRE_EQUAL(result->first, child1);
+    BOOST_REQUIRE_EQUAL(result->second, index1);
+}
+
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_2__not_found__empty)
 {
     transaction_entry instance(make_tx());
     const auto child = make_instance();
@@ -170,27 +232,36 @@ BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__not_found__empty)
     BOOST_REQUIRE(instance.children().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__only_found__empty)
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_2__only_found__empty)
 {
     transaction_entry instance(make_tx());
+    uint32_t index = 1;
     const auto child = make_instance();
-    instance.add_child(child);
+    instance.add_child(index, child);
     BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
     instance.remove_child(child);
     BOOST_REQUIRE(instance.children().empty());
 }
 
-BOOST_AUTO_TEST_CASE(transaction_entry__remove_child__one_of_two__expected_one_remains)
+BOOST_AUTO_TEST_CASE(transaction_entry__remove_child_2__one_of_two__expected_one_remains)
 {
-    transaction_entry instance(make_tx());
-    const auto child1 = make_instance();
-    const auto child2 = make_instance();
-    instance.add_child(child1);
-    instance.add_child(child2);
-    BOOST_REQUIRE_EQUAL(instance.children().size(), 2u);
-    instance.remove_child(child1);
-    BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
-    BOOST_REQUIRE_EQUAL(instance.children().front(), child2);
+    auto instance = make_instance(3, 0);
+    uint32_t index1 = 1;
+    auto child1 = make_instance(2, 0);
+    instance->add_child(index1, child1);
+    child1->add_parent(instance);
+    BOOST_REQUIRE_EQUAL(child1->parents().size(), 1u);
+    uint32_t index2 = 2;
+    auto child2 = make_instance(1, 0);
+    instance->add_child(index2, child2);
+    child2->add_parent(instance);
+    BOOST_REQUIRE_EQUAL(instance->children().size(), 2u);
+    BOOST_REQUIRE_EQUAL(child2->parents().size(), 1u);
+    instance->remove_child(child2);
+    BOOST_REQUIRE_EQUAL(child1->parents().size(), 1u);
+    BOOST_REQUIRE_EQUAL(child2->parents().size(), 0u);
+    BOOST_REQUIRE_EQUAL(instance->children().size(), 1u);
+    BOOST_REQUIRE_EQUAL(instance->children().right.find(child1)->first, child1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
