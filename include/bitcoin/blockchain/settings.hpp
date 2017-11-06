@@ -58,6 +58,12 @@ public:
     bool bip68;
     bool bip112;
     bool bip113;
+
+    // Mining/Template inputs
+    bc::config::script coinbase_input;
+    bc::config::script coinbase_output;
+    size_t block_sigop_limit;
+    size_t block_bytes_limit;
 };
 
 } // namespace blockchain
