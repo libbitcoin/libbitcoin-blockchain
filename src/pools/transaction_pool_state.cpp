@@ -34,5 +34,19 @@ transaction_pool_state::transaction_pool_state(const settings& settings)
 {
 }
 
+transaction_pool_state::~transaction_pool_state()
+{
+    disconnect_entries();
+}
+
+void transaction_pool_state::disconnect_entries()
+{
+    for (auto it : pool.left)
+    {
+        it.first->remove_children();
+        it.first->remove_parents();
+    }
+}
+
 } // namespace blockchain
 } // namespace libbitcoin
