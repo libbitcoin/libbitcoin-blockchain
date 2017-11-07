@@ -52,6 +52,8 @@ public:
 
     transaction_pool_state(const settings& settings);
 
+    ~transaction_pool_state();
+
     size_t block_template_bytes;
     size_t block_template_sigops;
     prioritized_transactions block_template;
@@ -64,6 +66,9 @@ public:
 
     std::map<transaction_entry::ptr, transaction_entry::list> cached_child_closures;
     transaction_entry::list ordered_block_template;
+
+private:
+    void disconnect_entries();
 };
 
 } // namespace blockchain
