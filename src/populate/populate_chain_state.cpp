@@ -96,7 +96,8 @@ bool populate_chain_state::populate_bits(chain_state::data& data,
 
     if (is_transaction_pool(branch))
     {
-        data.bits.self = proof_of_work_limit;
+        // This is an unused value.
+        data.bits.self = work_limit(true);
         return true;
     }
 
