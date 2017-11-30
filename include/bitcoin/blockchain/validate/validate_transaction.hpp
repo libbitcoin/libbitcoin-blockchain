@@ -61,6 +61,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const bool retarget_;
     const bool use_libconsensus_;
     const fast_chain& fast_chain_;
     dispatcher& dispatch_;

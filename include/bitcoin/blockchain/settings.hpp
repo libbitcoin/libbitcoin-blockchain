@@ -49,6 +49,7 @@ public:
     config::checkpoint::list checkpoints;
     bool allow_collisions;
     bool easy_blocks;
+    bool retarget;
     bool bip16;
     bool bip30;
     bool bip34;

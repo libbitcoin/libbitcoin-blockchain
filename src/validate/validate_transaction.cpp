@@ -46,6 +46,7 @@ using namespace std::placeholders;
 validate_transaction::validate_transaction(dispatcher& dispatch,
     const fast_chain& chain, const settings& settings)
   : stopped_(true),
+    retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     dispatch_(dispatch),
     transaction_populator_(dispatch, chain),
@@ -74,7 +75,7 @@ void validate_transaction::check(transaction_const_ptr tx,
     result_handler handler) const
 {
     // Run context free checks.
-    handler(tx->check());
+    handler(tx->check(true, retarget_));
 }
 
 // Accept sequence.
