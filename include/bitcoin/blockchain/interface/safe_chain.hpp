@@ -81,10 +81,10 @@ public:
     // Node Queries.
     // ------------------------------------------------------------------------
 
-    virtual void fetch_block(size_t height,
+    virtual void fetch_block(size_t height, bool witness,
         block_fetch_handler handler) const = 0;
 
-    virtual void fetch_block(const hash_digest& hash,
+    virtual void fetch_block(const hash_digest& hash, bool witness,
         block_fetch_handler handler) const = 0;
 
     virtual void fetch_block_header(size_t height,
@@ -112,7 +112,8 @@ public:
         last_height_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction(const hash_digest& hash,
-        bool require_confirmed, transaction_fetch_handler handler) const = 0;
+        bool require_confirmed, bool witness,
+        transaction_fetch_handler handler) const = 0;
 
     virtual void fetch_transaction_position(const hash_digest& hash,
         bool require_confirmed,
