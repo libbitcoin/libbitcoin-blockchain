@@ -34,6 +34,7 @@ settings::settings()
     reorganization_limit(256),
     allow_collisions(true),
     easy_blocks(false),
+    retarget(true),
     bip16(true),
     bip30(true),
     bip34(true),
@@ -92,6 +93,14 @@ settings::settings(config::settings context)
             break;
         }
 
+        case config::settings::regtest:
+        {
+            retarget = false;
+
+            checkpoints.emplace_back("06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f", 0);
+            break;
+        }
+
         default:
         case config::settings::none:
         {
@@ -105,6 +114,7 @@ uint32_t settings::enabled_forks() const
 
     uint32_t forks = rule_fork::no_rules;
     forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
+    forks |= (retarget ? rule_fork::retarget : 0);
     forks |= (bip16 ? rule_fork::bip16_rule : 0);
     forks |= (bip30 ? rule_fork::bip30_rule : 0);
     forks |= (bip34 ? rule_fork::bip34_rule : 0);

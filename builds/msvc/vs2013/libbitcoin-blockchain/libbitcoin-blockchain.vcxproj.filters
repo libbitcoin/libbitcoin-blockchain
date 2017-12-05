@@ -123,6 +123,30 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_header.hpp">
       <Filter>include\bitcoin\blockchain\populate</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\child_closure_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\conflicting_spend_remover.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\parent_closure_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\priority_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\stack_evaluator.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_order_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_state.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
@@ -184,6 +208,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\populate\populate_header.cpp">
       <Filter>src\populate</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\conflicting_spend_remover.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\parent_closure_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\priority_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\stack_evaluator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\transaction_order_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\transaction_pool_state.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\anchor_converter.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\child_closure_calculator.cpp">
+      <Filter>src\pools</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
