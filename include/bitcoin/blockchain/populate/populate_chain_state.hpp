@@ -59,6 +59,7 @@ private:
     bool populate_timestamps(data& data, const map& map, branch_ptr branch) const;
     bool populate_collision(data& data, const map& map, branch_ptr branch) const;
     bool populate_bip9_bit0(data& data, const map& map, branch_ptr branch) const;
+    bool populate_bip9_bit1(data& data, const map& map, branch_ptr branch) const;
 
     bool get_bits(uint32_t& out_bits, size_t height, branch_ptr branch) const;
     bool get_version(uint32_t& out_version, size_t height, branch_ptr branch) const;
