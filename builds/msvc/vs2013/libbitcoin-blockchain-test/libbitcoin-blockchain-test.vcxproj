@@ -99,6 +99,13 @@
     <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\branch.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\parent_closure_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
@@ -144,5 +151,8 @@
     <ProjectReference Include="..\libbitcoin-blockchain\libbitcoin-blockchain.vcxproj">
       <Project>{868DAB9E-FD33-497F-9468-C9000B3D7801}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\pools\utilities.hpp" />
   </ItemGroup>
 </Project>

@@ -28,6 +28,27 @@
     <ClCompile Include="..\..\..\..\test\validate_transaction.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\parent_closure_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -36,5 +57,13 @@
     <Filter Include="src">
       <UniqueIdentifier>{06e89e32-13d0-4dde-9a91-875885613217}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\pools">
+      <UniqueIdentifier>{13747cd3-1955-4206-8309-8047b9de151e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\pools\utilities.hpp">
+      <Filter>src\pools</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
