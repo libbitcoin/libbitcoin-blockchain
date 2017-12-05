@@ -189,9 +189,11 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto state = block->validation.state;
     BITCOIN_ASSERT(state);
 
+    const auto bip141 = state->is_enabled(rule_fork::bip141_rule);
+
     result_handler complete_handler =
         std::bind(&validate_block::handle_accepted,
-            this, _1, block, sigops, handler);
+            this, _1, block, sigops, bip141, handler);
 
     if (state->is_under_checkpoint())
     {
@@ -209,11 +211,11 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::accept_transactions,
-            this, block, bucket, buckets, sigops, bip16, join_handler);
+            this, block, bucket, buckets, sigops, bip16, bip141, join_handler);
 }
 
 void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
-    size_t buckets, atomic_counter_ptr sigops, bool bip16,
+    size_t buckets, atomic_counter_ptr sigops, bool bip16, bool bip141,
     result_handler handler) const
 {
     if (stopped())
@@ -232,14 +234,14 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     {
         const auto& transaction = txs[tx];
         ec = transaction.accept(state, false);
-        *sigops += transaction.signature_operations(bip16);
+        *sigops += transaction.signature_operations(bip16, bip141);
     }
 
     handler(ec);
 }
 
 void validate_block::handle_accepted(const code& ec, block_const_ptr block,
-    atomic_counter_ptr sigops, result_handler handler) const
+    atomic_counter_ptr sigops, bool bip141, result_handler handler) const
 {
     if (ec)
     {
@@ -247,7 +249,8 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
         return;
     }
 
-    const auto exceeded = *sigops > max_block_sigops;
+    const auto max_sigops = bip141 ? max_fast_sigops : max_block_sigops;
+    const auto exceeded = *sigops > max_sigops;
     handler(exceeded ? error::block_embedded_sigop_limit : error::success);
 }
 
@@ -393,7 +396,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl
         << " inpoint      : " << tx_hash << ":" << input_index << std::endl
-        << " transaction  : " << encode_base16(tx.to_data(true));
+        << " transaction  : " << encode_base16(tx.to_data(true, true));
 }
 
 } // namespace blockchain
