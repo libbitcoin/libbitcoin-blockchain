@@ -416,7 +416,7 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
         bool purge = true;
         auto closure_element = state_.cached_child_closures.find(entry->second);
 
-        if (closure_element != state_.cached_child_closures.end());
+        if (closure_element != state_.cached_child_closures.end())
         {
             for (auto child : closure_element->second)
             {
