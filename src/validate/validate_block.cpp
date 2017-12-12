@@ -383,6 +383,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
         << " forks        : " << forks << std::endl
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl
+        << " value        : " << prevout.validation.cache.value() << std::endl
         << " inpoint      : " << tx_hash << ":" << input_index << std::endl
         << " transaction  : " << encode_base16(tx.to_data(true, true));
 }
