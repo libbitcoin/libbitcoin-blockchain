@@ -408,7 +408,7 @@ block_chain::~block_chain()
 
 // private
 bool block_chain::get_transactions(transaction::list& out_transactions,
-    const offset_list& tx_offsets) const
+    const offset_list& tx_offsets, bool witness) const
 {
     out_transactions.reserve(tx_offsets.size());
     const auto& tx_store = database_.transactions();
@@ -421,7 +421,7 @@ bool block_chain::get_transactions(transaction::list& out_transactions,
         if (!result)
             return false;
 
-        out_transactions.push_back(result.transaction());
+        out_transactions.push_back(result.transaction(witness));
     }
 
     return true;
@@ -448,7 +448,8 @@ bool block_chain::get_transaction_hashes(hash_list& out_hashes,
     return true;
 }
 
-void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
+void block_chain::fetch_block(size_t height, bool witness,
+    block_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -477,7 +478,7 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
     transaction::list txs;
     BITCOIN_ASSERT(block_result.height() == height);
 
-    if (!get_transactions(txs, block_result.transaction_offsets()))
+    if (!get_transactions(txs, block_result.transaction_offsets(), witness))
     {
         handler(error::operation_failed, nullptr, 0);
         return;
@@ -488,7 +489,7 @@ void block_chain::fetch_block(size_t height, block_fetch_handler handler) const
     handler(error::success, message, height);
 }
 
-void block_chain::fetch_block(const hash_digest& hash,
+void block_chain::fetch_block(const hash_digest& hash, bool witness,
     block_fetch_handler handler) const
 {
     if (stopped())
@@ -517,7 +518,7 @@ void block_chain::fetch_block(const hash_digest& hash,
 
     transaction::list txs;
 
-    if (!get_transactions(txs, block_result.transaction_offsets()))
+    if (!get_transactions(txs, block_result.transaction_offsets(), witness))
     {
         handler(error::operation_failed, nullptr, 0);
         return;
@@ -689,7 +690,8 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
 }
 
 void block_chain::fetch_transaction(const hash_digest& hash,
-    bool require_confirmed, transaction_fetch_handler handler) const
+    bool require_confirmed, bool witness,
+    transaction_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -722,7 +724,8 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         return;
     }
 
-    const auto tx = std::make_shared<const transaction>(result.transaction());
+    const auto tx = std::make_shared<const transaction>(
+        result.transaction(witness));
     handler(error::success, tx, result.position(), result.height());
 }
 
