@@ -59,6 +59,9 @@ public:
     bool bip68;
     bool bip112;
     bool bip113;
+    bool bip141;
+    bool bip143;
+    bool bip147;
 
     // Mining/Template inputs
     bc::config::script coinbase_input;

@@ -169,10 +169,11 @@ public:
     // ------------------------------------------------------------------------
 
     /// fetch a block by height.
-    void fetch_block(size_t height, block_fetch_handler handler) const;
+    void fetch_block(size_t height, bool witness,
+        block_fetch_handler handler) const;
 
     /// fetch a block by hash.
-    void fetch_block(const hash_digest& hash,
+    void fetch_block(const hash_digest& hash, bool witness,
         block_fetch_handler handler) const;
 
     /// fetch block header by height.
@@ -208,7 +209,7 @@ public:
 
     /// fetch transaction by hash.
     void fetch_transaction(const hash_digest& hash, bool require_confirmed,
-        transaction_fetch_handler handler) const;
+        bool witness, transaction_fetch_handler handler) const;
 
     /// fetch position and height within block of transaction by hash.
     void fetch_transaction_position(const hash_digest& hash,
@@ -310,7 +311,7 @@ private:
     //-------------------------------------------------------------------------
 
     bool get_transactions(chain::transaction::list& out_transactions,
-        const database::offset_list& offsets) const;
+        const database::offset_list& offsets, bool witness) const;
     bool get_transaction_hashes(hash_list& out_hashes,
         const database::offset_list& offsets) const;
     void set_pool_state(const chain::chain_state& top);

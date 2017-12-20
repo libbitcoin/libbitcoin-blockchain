@@ -493,7 +493,7 @@ static int fetch_block_by_height_result(block_chain& instance,
         const auto match = result_height == height && *result_block == *block;
         promise.set_value(match ? error::success : error::operation_failed);
     };
-    instance.fetch_block(height, handler);
+    instance.fetch_block(height, true, handler);
     return promise.get_future().get().value();
 }
 
@@ -544,7 +544,7 @@ static int fetch_block_by_hash_result(block_chain& instance,
         const auto match = result_height == height && *result_block == *block;
         promise.set_value(match ? error::success : error::operation_failed);
     };
-    instance.fetch_block(block->hash(), handler);
+    instance.fetch_block(block->hash(), true, handler);
     return promise.get_future().get().value();
 }
 
