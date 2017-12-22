@@ -27,36 +27,32 @@ namespace test {
 namespace pools {
 
 /// This class is not thread safe.
-class BCB_API utilities
+class utilities
 {
 public:
-    static bc::chain::chain_state::data get_chain_data();
+    static chain::chain_state::data get_chain_data();
 
-    static bc::transaction_const_ptr get_const_tx(uint32_t version,
+    static transaction_const_ptr get_const_tx(uint32_t version,
         uint32_t locktime);
 
-    static bc::blockchain::transaction_entry::ptr get_entry(
-        bc::chain::chain_state::ptr state, uint32_t version,
-        uint32_t locktime);
+    static transaction_entry::ptr get_entry(chain::chain_state::ptr state,
+        uint32_t version, uint32_t locktime);
 
-    static bc::blockchain::transaction_entry::ptr get_fee_entry(
-        bc::chain::chain_state::ptr state, uint32_t version,
-        uint32_t locktime, uint64_t fee);
+    static transaction_entry::ptr get_fee_entry(chain::chain_state::ptr state,
+        uint32_t version, uint32_t locktime, uint64_t fee);
 
-    static void connect(bc::blockchain::transaction_entry::ptr parent,
-        bc::blockchain::transaction_entry::ptr child, uint32_t index);
+    static void connect(transaction_entry::ptr parent,
+        transaction_entry::ptr child, uint32_t index);
 
-    static void sever(bc::blockchain::transaction_entry::ptr entry);
+    static void sever(transaction_entry::ptr entry);
 
-    static void sever(bc::blockchain::transaction_entry::list entries);
+    static void sever(transaction_entry::list entries);
 
-    static bool ordered_entries_equal(
-        bc::blockchain::transaction_entry::list alpha,
-        bc::blockchain::transaction_entry::list beta);
+    static bool ordered_entries_equal(transaction_entry::list left,
+        transaction_entry::list right);
 
-    static bool unordered_entries_equal(
-        bc::blockchain::transaction_entry::list alpha,
-        bc::blockchain::transaction_entry::list beta);
+    static bool unordered_entries_equal(transaction_entry::list left,
+        transaction_entry::list right);
 };
 
 } // namespace pools

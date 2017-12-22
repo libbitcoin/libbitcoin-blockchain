@@ -44,9 +44,9 @@ static chain_state::data data()
 static transaction_const_ptr make_tx(uint32_t version, uint32_t locktime)
 {
     const auto tx = std::make_shared<const message::transaction>(version,
-            locktime, chain::input::list{}, chain::output::list{});
+        locktime, chain::input::list{}, chain::output::list{});
     tx->validation.state = std::make_shared<chain_state>(
-        chain_state{ data(), {}, 0 });
+        chain_state{ data(), {}, 0, 0 });
     return tx;
 }
 
@@ -61,7 +61,7 @@ static transaction_const_ptr make_tx()
 static transaction_entry::ptr make_instance(uint32_t version, uint32_t locktime)
 {
     return std::make_shared<transaction_entry>(transaction_entry(make_tx(
-            version, locktime)));
+        version, locktime)));
 }
 
 static transaction_entry::ptr make_instance()
@@ -77,9 +77,9 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_tx__expected_values)
 {
     const transaction_entry instance(make_tx());
     BOOST_REQUIRE(instance.is_anchor());
-    BOOST_REQUIRE_EQUAL(instance.fees(), 0);
-    BOOST_REQUIRE_EQUAL(instance.forks(), 0);
-    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
+    BOOST_REQUIRE_EQUAL(instance.fees(), 0u);
+    BOOST_REQUIRE_EQUAL(instance.forks(), 0u);
+    BOOST_REQUIRE_EQUAL(instance.sigops(), 0u);
     BOOST_REQUIRE_EQUAL(instance.size(), 10u);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
     BOOST_REQUIRE(instance.parents().empty());
@@ -92,10 +92,10 @@ BOOST_AUTO_TEST_CASE(transaction_entry__construct1__default_block_hash__expected
 {
     const transaction_entry instance(make_tx()->hash());
     BOOST_REQUIRE(instance.is_anchor());
-    BOOST_REQUIRE_EQUAL(instance.fees(), 0);
-    BOOST_REQUIRE_EQUAL(instance.forks(), 0);
-    BOOST_REQUIRE_EQUAL(instance.sigops(), 0);
-    BOOST_REQUIRE_EQUAL(instance.size(), 0);
+    BOOST_REQUIRE_EQUAL(instance.fees(), 0u);
+    BOOST_REQUIRE_EQUAL(instance.forks(), 0u);
+    BOOST_REQUIRE_EQUAL(instance.sigops(), 0u);
+    BOOST_REQUIRE_EQUAL(instance.size(), 0u);
     BOOST_REQUIRE(instance.hash() == default_tx_hash);
     BOOST_REQUIRE(instance.parents().empty());
     BOOST_REQUIRE(instance.children().empty());

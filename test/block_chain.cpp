@@ -339,7 +339,8 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__found__expected)
     instance.populate_output(outpoint, 2);
     BOOST_REQUIRE(outpoint.validation.cache.is_valid());
 
-    BOOST_REQUIRE_EQUAL(outpoint.validation.coinbase_height, 2u);
+    BOOST_REQUIRE(outpoint.validation.coinbase);
+    BOOST_REQUIRE_EQUAL(outpoint.validation.height, 2u);
     BOOST_REQUIRE_EQUAL(outpoint.validation.cache.value(), expected_value);
     BOOST_REQUIRE_EQUAL(outpoint.validation.cache.script().to_string(0), expected_script);
 }

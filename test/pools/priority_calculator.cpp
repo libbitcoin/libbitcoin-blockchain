@@ -21,6 +21,7 @@
 #include "utilities.hpp"
 
 using namespace bc;
+using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
 
@@ -29,83 +30,68 @@ BOOST_AUTO_TEST_SUITE(priority_calculator_tests)
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__no_enqueue__returns_zeros)
 {
     priority_calculator calculator;
-    auto result = calculator.prioritize();
+    const auto result = calculator.prioritize();
     BOOST_REQUIRE_EQUAL(result.first, calculator.get_cumulative_fees());
     BOOST_REQUIRE_EQUAL(result.second, calculator.get_cumulative_size());
-    BOOST_REQUIRE_EQUAL(0u, result.first);
-    BOOST_REQUIRE_EQUAL(0u, result.second);
+    BOOST_REQUIRE_EQUAL(result.first, 0u);
+    BOOST_REQUIRE_EQUAL(result.second, 0u);
 }
 
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__anchor_entry_enqueue__returns_zeros)
 {
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    auto entry = utilities::get_fee_entry(state, 1u, 0u, 123u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto entry = utilities::get_fee_entry(state, 1, 0, 123);
     priority_calculator calculator;
     calculator.enqueue(entry);
-    auto result = calculator.prioritize();
+    const auto result = calculator.prioritize();
     BOOST_REQUIRE_EQUAL(result.first, calculator.get_cumulative_fees());
     BOOST_REQUIRE_EQUAL(result.second, calculator.get_cumulative_size());
-    BOOST_REQUIRE_EQUAL(0u, result.first);
-    BOOST_REQUIRE_EQUAL(0u, result.second);
+    BOOST_REQUIRE_EQUAL(result.first, 0u);
+    BOOST_REQUIRE_EQUAL(result.second, 0u);
 }
 
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__entry_with_immediate_parents__returns_non_anchor_values)
 {
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    auto child = utilities::get_fee_entry(state, 1u, 0u, 123u);
-    auto parent_1 = utilities::get_fee_entry(state, 2u, 0u, 321u);
-    auto parent_2 = utilities::get_fee_entry(state, 3u, 0u, 222u);
-    utilities::connect(parent_1, child, 0u);
-    utilities::connect(parent_2, child, 1u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto child = utilities::get_fee_entry(state, 1, 0, 123);
+    auto parent_1 = utilities::get_fee_entry(state, 2, 0, 321);
+    auto parent_2 = utilities::get_fee_entry(state, 3, 0, 222);
+    utilities::connect(parent_1, child, 0);
+    utilities::connect(parent_2, child, 1);
     priority_calculator calculator;
     calculator.enqueue(child);
-    auto result = calculator.prioritize();
+    const auto result = calculator.prioritize();
     BOOST_REQUIRE_EQUAL(result.first, calculator.get_cumulative_fees());
     BOOST_REQUIRE_EQUAL(result.second, calculator.get_cumulative_size());
-    BOOST_REQUIRE_EQUAL(123u, result.first);
+    BOOST_REQUIRE_EQUAL(result.first, 123);
     BOOST_REQUIRE_EQUAL(child->size(), result.second);
-
     utilities::sever({ parent_1, parent_2, child });
 }
 
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__entry_with_ancestor_depth__returns_non_anchor_cumulative_values)
 {
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    auto child = utilities::get_fee_entry(state, 1u, 0u, 123u);
-    auto parent_1 = utilities::get_fee_entry(state, 2u, 0u, 321u);
-    auto parent_2 = utilities::get_fee_entry(state, 3u, 0u, 222u);
-    auto parent_3 = utilities::get_fee_entry(state, 4u, 0u, 567u);
-    auto parent_4 = utilities::get_fee_entry(state, 5u, 0u, 765u);
-    auto parent_5 = utilities::get_fee_entry(state, 6u, 0u, 987u);
-    auto parent_6 = utilities::get_fee_entry(state, 7u, 0u, 789u);
-    utilities::connect(parent_1, child, 0u);
-    utilities::connect(parent_2, child, 0u);
-    utilities::connect(parent_4, child, 0u);
-    utilities::connect(parent_6, child, 0u);
-    utilities::connect(parent_3, parent_1, 0u);
-    utilities::connect(parent_5, parent_3, 0u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto child = utilities::get_fee_entry(state, 1, 0, 123);
+    auto parent_1 = utilities::get_fee_entry(state, 2, 0, 321);
+    auto parent_2 = utilities::get_fee_entry(state, 3, 0, 222);
+    auto parent_3 = utilities::get_fee_entry(state, 4, 0, 567);
+    auto parent_4 = utilities::get_fee_entry(state, 5, 0, 765);
+    auto parent_5 = utilities::get_fee_entry(state, 6, 0, 987);
+    auto parent_6 = utilities::get_fee_entry(state, 7, 0, 789);
+    utilities::connect(parent_1, child, 0);
+    utilities::connect(parent_2, child, 0);
+    utilities::connect(parent_4, child, 0);
+    utilities::connect(parent_6, child, 0);
+    utilities::connect(parent_3, parent_1, 0);
+    utilities::connect(parent_5, parent_3, 0);
     priority_calculator calculator;
     calculator.enqueue(child);
-    auto result = calculator.prioritize();
+    const auto result = calculator.prioritize();
     BOOST_REQUIRE_EQUAL(result.first, calculator.get_cumulative_fees());
     BOOST_REQUIRE_EQUAL(result.second, calculator.get_cumulative_size());
-    BOOST_REQUIRE_EQUAL(result.first,
-        child->fees() + parent_1->fees() + parent_3->fees());
-
-    BOOST_REQUIRE_EQUAL(result.second,
-        child->size() + parent_1->size() + parent_3->size());
-
-    utilities::sever({ parent_1, parent_2, parent_3, parent_4, parent_5,
-        parent_6, child });
+    BOOST_REQUIRE_EQUAL(result.first, child->fees() + parent_1->fees() + parent_3->fees());
+    BOOST_REQUIRE_EQUAL(result.second, child->size() + parent_1->size() + parent_3->size());
+    utilities::sever({ parent_1, parent_2, parent_3, parent_4, parent_5, parent_6, child });
 }
 
 BOOST_AUTO_TEST_SUITE_END()
