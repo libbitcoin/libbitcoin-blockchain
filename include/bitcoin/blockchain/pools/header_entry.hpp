@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_HEADER_ENTRY_HPP
+#define LIBBITCOIN_BLOCKCHAIN_HEADER_ENTRY_HPP
 
 #include <iostream>
 ////#include <memory>
@@ -29,44 +29,44 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is not thread safe.
-class BCB_API block_entry
+class BCB_API header_entry
 {
 public:
     ////typedef std::shared_ptr<transaction_entry> ptr;
     ////typedef std::vector<ptr> list;
 
     /// Construct an entry for the pool.
-    /// Never store an invalid block in the pool.
-    block_entry(block_const_ptr block);
+    /// Never store an invalid header in the pool.
+    header_entry(header_const_ptr header);
 
     /// Use this construction only as a search key.
-    block_entry(const hash_digest& hash);
+    header_entry(const hash_digest& hash);
 
-    /// The block that the entry contains.
-    block_const_ptr block() const;
+    /// The header that the entry contains.
+    header_const_ptr header() const;
 
     /// The hash table entry identity.
     const hash_digest& hash() const;
 
-    /// The hash table entry's parent (preceding block) hash.
+    /// The hash table entry's parent (preceding header) hash.
     const hash_digest& parent() const;
 
-    /// The hash table entry's child (succeeding block) hashes.
+    /// The hash table entry's child (succeeding header) hashes.
     const hash_list& children() const;
 
-    /// Add block to the list of children of this block.
-    void add_child(block_const_ptr child) const;
+    /// Add header to the list of children of this header.
+    void add_child(header_const_ptr child) const;
 
     /// Serializer for debugging (temporary).
-    friend std::ostream& operator<<(std::ostream& out, const block_entry& of);
+    friend std::ostream& operator<<(std::ostream& out, const header_entry& of);
 
     /// Operators.
-    bool operator==(const block_entry& other) const;
+    bool operator==(const header_entry& other) const;
 
 private:
     // These are non-const to allow for default copy construction.
     hash_digest hash_;
-    block_const_ptr block_;
+    header_const_ptr header_;
 
     // TODO: could save some bytes here by holding the pointer in place of the
     // hash. This would allow navigation to the hash saving 24 bytes per child.
@@ -85,9 +85,9 @@ namespace boost
 
 // Extend boost namespace with our block_const_ptr hash function.
 template <>
-struct hash<bc::blockchain::block_entry>
+struct hash<bc::blockchain::header_entry>
 {
-    size_t operator()(const bc::blockchain::block_entry& entry) const
+    size_t operator()(const bc::blockchain::header_entry& entry) const
     {
         return boost::hash<bc::hash_digest>()(entry.hash());
     }

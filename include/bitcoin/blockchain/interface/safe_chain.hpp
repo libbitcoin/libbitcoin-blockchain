@@ -129,14 +129,17 @@ public:
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const = 0;
+    ////// TODO: must be branch-relative.
+    ////virtual void fetch_block_locator(const chain::block::indexes& heights,
+    ////    block_locator_fetch_handler handler) const = 0;
 
+    // TODO: must be branch-relative.
     virtual void fetch_header_locator(const chain::block::indexes& heights,
         header_locator_fetch_handler handler) const = 0;
 
     // Server Queries.
     //-------------------------------------------------------------------------
+    // Confirmed heights only.
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
@@ -180,7 +183,8 @@ public:
     // Properties
     // ------------------------------------------------------------------------
 
-    virtual bool is_stale() const = 0;
+    virtual bool is_blocks_stale() const = 0;
+    virtual bool is_headers_stale() const = 0;
 };
 
 } // namespace blockchain

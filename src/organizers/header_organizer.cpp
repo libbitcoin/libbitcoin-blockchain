@@ -22,11 +22,10 @@
 #include <functional>
 #include <future>
 #include <memory>
-#include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_header.hpp>
 
@@ -35,17 +34,20 @@ namespace blockchain {
 
 using namespace bc::chain;
 using namespace bc::config;
+using namespace bc::database;
 using namespace std::placeholders;
 
 #define NAME "header_organizer"
 
-// Database access is limited to:
-// block: { bits, version, timestamp }
+// Database access is limited to { bits, version, timestamp }.
 
 header_organizer::header_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
     threadpool&, fast_chain& chain, const settings& settings)
-  : mutex_(mutex),
+  : fast_chain_(chain),
+    mutex_(mutex),
     stopped_(true),
+    dispatch_(dispatch),
+    header_pool_(settings.reorganization_limit),
     validator_(dispatch, chain, settings)
 {
 }
@@ -70,8 +72,8 @@ bool header_organizer::start()
 
 bool header_organizer::stop()
 {
-    validator_.stop();
     stopped_ = true;
+    validator_.stop();
     return true;
 }
 
@@ -86,12 +88,9 @@ void header_organizer::organize(header_const_ptr header,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // Reset the reusable promise.
-    resume_ = std::promise<code>();
-
     const result_handler complete =
-        std::bind(&header_organizer::signal_completion,
-            this, _1);
+        std::bind(&header_organizer::handle_complete,
+            this, _1, handler);
 
     const auto check_handler =
         std::bind(&header_organizer::handle_check,
@@ -99,12 +98,11 @@ void header_organizer::organize(header_const_ptr header,
 
     // Checks that are independent of chain state.
     validator_.check(header, check_handler);
+}
 
-    // Wait on completion signal.
-    // This is necessary in order to continue on a non-priority thread.
-    // If we do not wait on the original thread there may be none left.
-    auto ec = resume_.get_future().get();
-
+// private
+void header_organizer::handle_complete(const code& ec, result_handler handler)
+{
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
 
@@ -112,73 +110,116 @@ void header_organizer::organize(header_const_ptr header,
     handler(ec);
 }
 
-// private
-void header_organizer::signal_completion(const code& ec)
-{
-    // This must be protected so that it is properly cleared.
-    // Signal completion, which results in original handler invoke with code.
-    resume_.set_value(ec);
-}
-
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
 
 // private
+//*****************************************************************************
+// CONSENSUS: Hash existence is the same check performed by satoshi, yet it
+// will produce a chain split in the case of a hash collision. This is because
+// it is not applied at the branch point, so some nodes will not see the
+// collision block and others will, depending on block order of arrival.
+// The hash collision is explicitly ignored for block hashes.
+//*****************************************************************************
 void header_organizer::handle_check(const code& ec, header_const_ptr header,
     result_handler handler)
 {
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
     if (ec)
     {
         handler(ec);
         return;
     }
+
+    const auto branch = header_pool_.get_branch(header);
 
     const auto accept_handler =
         std::bind(&header_organizer::handle_accept,
-            this, _1, header, handler);
+            this, _1, branch, handler);
 
     // Checks that are dependent on chain state.
-    validator_.accept(header, accept_handler);
+    validator_.accept(branch, accept_handler);
 }
 
 // private
-void header_organizer::handle_accept(const code& ec, header_const_ptr header,
+void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     result_handler handler)
 {
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
     if (ec)
     {
         handler(ec);
         return;
     }
 
-    //=========================================================================
-    //=========================================================================
-    // TODO: add header to the store (unconfirmed, empty).
-    //=========================================================================
-    //=========================================================================
+    // The top block is valid even if the branch has insufficient work.
+    const auto top = branch->top();
+    top->validation.height = branch->top_height();
+
+    // TODO: create a simulated validation path that does not block others.
+    if (top->validation.simulate)
+    {
+        handler(error::success);
+        return;
+    }
+
+    const auto work = branch->work();
+    uint256_t required;
+
+    // This stops before the height or at the work level, which ever is first.
+    if (!fast_chain_.get_work(required, work, branch->height(), false))
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
+    if (work <= required)
+    {
+        // Pool.add clears parent header state to preserve memory.
+        header_pool_.add(top);
+        handler(error::insufficient_work);
+        return;
+    }
+
+    // Get the outgoing headers to forward to reorg handler.
+    const auto outgoing = std::make_shared<header_const_ptr_list>();
+
+    const auto reorganized_handler =
+        std::bind(&header_organizer::handle_reorganized,
+            this, _1, branch, outgoing, handler);
+
+    // Replace! Switch!
+    //#########################################################################
+    fast_chain_.reorganize(branch->fork_point(), branch->headers(), outgoing,
+        dispatch_, reorganized_handler);
+    //#########################################################################
+}
+
+// private
+void header_organizer::handle_reorganized(const code& ec,
+    header_branch::const_ptr branch, header_const_ptr_list_ptr outgoing,
+    result_handler handler)
+{
+    if (ec)
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure writing header to store, is now corrupted: "
+            << ec.message();
+        handler(ec);
+        return;
+    }
+
+    header_pool_.remove(branch->headers());
+    header_pool_.prune(branch->top_height());
+    header_pool_.add(outgoing);
+
     handler(error::success);
 }
 
 // Queries.
 //-----------------------------------------------------------------------------
 
-// TODO: once headers are stubbed in the store this moves into store also.
 void header_organizer::filter(get_data_ptr message) const
 {
-    // TODO: implement in the header pool.
-    ////header_pool_.filter(message);
+    header_pool_.filter(message);
 }
 
 } // namespace blockchain

@@ -29,7 +29,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API populate_base
 {
 protected:
@@ -37,20 +37,8 @@ protected:
 
     populate_base(dispatcher& dispatch, const fast_chain& chain);
 
-    bool is_stale() const;
-
-    void populate_duplicate(size_t maximum_height,
-        const chain::transaction& tx, bool require_confirmed) const;
-
-    void populate_pooled(const chain::transaction& tx, uint32_t forks) const;
-
-    void populate_prevout(size_t maximum_height,
-        const chain::output_point& outpoint, bool require_confirmed) const;
-
-    // This is thread safe.
+    // These are thread safe.
     dispatcher& dispatch_;
-
-    // The store is protected by caller not invoking populate concurrently.
     const fast_chain& fast_chain_;
 };
 

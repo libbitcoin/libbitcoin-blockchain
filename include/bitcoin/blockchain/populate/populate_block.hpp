@@ -23,36 +23,27 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_base.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API populate_block
   : public populate_base
 {
 public:
     populate_block(dispatcher& dispatch, const fast_chain& chain);
 
-    /// Populate validation state for the top block.
-    void populate(branch::const_ptr branch, result_handler&& handler) const;
+    /// Populate validation state for the given indexed block.
+    void populate(block_const_ptr block, size_t fork_height,
+        result_handler&& handler) const;
 
 protected:
-    typedef branch::const_ptr branch_ptr;
-
-    void populate_coinbase(branch::const_ptr branch,
-        block_const_ptr block) const;
-
-    ////void populate_duplicate(branch_ptr branch,
-    ////    const chain::transaction& tx) const;
-
-    void populate_transactions(branch::const_ptr branch, size_t bucket,
-        size_t buckets, result_handler handler) const;
-
-    void populate_prevout(branch_ptr branch,
-        const chain::output_point& outpoint) const;
+    void populate_coinbase(block_const_ptr block, size_t fork_height) const;
+    void populate_transactions(block_const_ptr block, size_t fork_height,
+        size_t bucket, size_t buckets, result_handler handler) const;
 };
 
 } // namespace blockchain

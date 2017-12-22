@@ -44,6 +44,12 @@ public:
 
     transaction_pool(const settings& settings);
 
+    /// The tx exists in the pool.
+    bool exists(transaction_const_ptr tx) const;
+
+    /// Remove all message vectors that match transaction hashes.
+    void filter(get_data_ptr message) const;
+
     void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
     void fetch_template(merkle_block_fetch_handler) const;
 

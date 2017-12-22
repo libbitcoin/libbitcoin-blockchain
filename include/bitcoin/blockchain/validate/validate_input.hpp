@@ -30,7 +30,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is static.
+/// This class is thread safe (static).
 class BCB_API validate_input
 {
 public:

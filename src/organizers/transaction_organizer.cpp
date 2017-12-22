@@ -33,6 +33,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::database;
 using namespace std::placeholders;
 
 #define NAME "transaction_organizer"
@@ -129,6 +130,14 @@ void transaction_organizer::signal_completion(const code& ec)
 //-----------------------------------------------------------------------------
 
 // private
+//*****************************************************************************
+// CONSENSUS:
+// It is OK for us to restrict *pool* transactions to those that do not collide
+// with any in the chain (as well as any in the pool) as collision will result
+// in monetary destruction and we don't want to facilitate it. We must allow
+// collisions in *block* validation if that is configured as otherwise will not
+// follow the chain when a collision is mined.
+//*****************************************************************************
 void transaction_organizer::handle_check(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
@@ -141,6 +150,13 @@ void transaction_organizer::handle_check(const code& ec,
     if (ec)
     {
         handler(ec);
+        return;
+    }
+
+    if (transaction_pool_.exists(tx))
+    {
+        // The tx is already memory pooled (nothing to do).
+        handler(error::duplicate_transaction);
         return;
     }
 
@@ -272,6 +288,11 @@ void transaction_organizer::fetch_mempool(size_t maximum,
     inventory_fetch_handler handler) const
 {
     transaction_pool_.fetch_mempool(maximum, handler);
+}
+
+void transaction_organizer::filter(get_data_ptr message) const
+{
+    transaction_pool_.filter(message);
 }
 
 // Utility.

@@ -20,11 +20,11 @@
 #define LIBBITCOIN_BLOCKCHAIN_HEADER_ORGANIZER_HPP
 
 #include <atomic>
-#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_header.hpp>
@@ -59,16 +59,18 @@ private:
     // Verify sub-sequence.
     void handle_check(const code& ec, header_const_ptr header,
         result_handler handler);
-    void handle_accept(const code& ec, header_const_ptr header,
+    void handle_accept(const code& ec, header_branch::ptr branch,
         result_handler handler);
-
-    void signal_completion(const code& ec);
+    void handle_complete(const code& ec, result_handler handler);
+    void handle_reorganized(const code& ec, header_branch::const_ptr branch,
+        header_const_ptr_list_ptr outgoing, result_handler handler);
 
     // These are thread safe.
+    fast_chain& fast_chain_;
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
-    std::promise<code> resume_;
-    ////header_pool header_pool_;
+    dispatcher& dispatch_;
+    header_pool header_pool_;
     validate_header validator_;
 };
 

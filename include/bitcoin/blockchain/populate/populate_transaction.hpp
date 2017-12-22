@@ -28,19 +28,19 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API populate_transaction
   : public populate_base
 {
 public:
     populate_transaction(dispatcher& dispatch, const fast_chain& chain);
 
-    /// Populate validation state for the transaction.
+    /// Populate validation state for the pool transaction.
     void populate(transaction_const_ptr tx, result_handler&& handler) const;
 
 protected:
-    void populate_inputs(transaction_const_ptr tx, size_t chain_height,
-        size_t bucket, size_t buckets, result_handler handler) const;
+    void populate_inputs(transaction_const_ptr tx, size_t bucket,
+        size_t buckets, result_handler handler) const;
 };
 
 } // namespace blockchain

@@ -111,12 +111,11 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\block_organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\header_organizer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\transaction_organizer.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp" />    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\child_closure_calculator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\conflicting_spend_remover.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_branch.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_entry.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_pool.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\parent_closure_calculator.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\priority_calculator.hpp" />

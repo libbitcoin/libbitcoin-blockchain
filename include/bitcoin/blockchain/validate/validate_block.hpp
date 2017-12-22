@@ -26,14 +26,14 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_block.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API validate_block
 {
 public:
@@ -46,15 +46,11 @@ public:
     void stop();
 
     void check(block_const_ptr block, result_handler handler) const;
-    void accept(branch::const_ptr branch, result_handler handler) const;
-    void connect(branch::const_ptr branch, result_handler handler) const;
+    void accept(block_const_ptr block, result_handler handler) const;
+    void connect(block_const_ptr block, result_handler handler) const;
 
 protected:
-    inline bool stopped() const
-    {
-        return stopped_;
-    }
-
+    bool stopped() const;
     float hit_rate() const;
 
 private:
@@ -84,12 +80,9 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool use_libconsensus_;
-    const fast_chain& fast_chain_;
     dispatcher& priority_dispatch_;
     mutable atomic_counter hits_;
     mutable atomic_counter queries_;
-
-    // Caller must not invoke accept/connect concurrently.
     populate_block block_populator_;
 };
 

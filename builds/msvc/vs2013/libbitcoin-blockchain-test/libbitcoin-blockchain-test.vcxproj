@@ -71,9 +71,9 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\block_chain.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_entry.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\branch.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_entry.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_pool.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_branch.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp" />

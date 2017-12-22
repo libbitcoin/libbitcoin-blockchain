@@ -24,8 +24,6 @@
 #include <functional>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_input.hpp>
 
@@ -38,19 +36,22 @@ using namespace std::placeholders;
 
 #define NAME "validate_transaction"
 
-// Database access is limited to: populator:
-// spend: { spender }
-// transaction: { exists, height, output }
-
 validate_transaction::validate_transaction(dispatcher& dispatch,
     const fast_chain& chain, const settings& settings)
   : stopped_(true),
     retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     dispatch_(dispatch),
-    transaction_populator_(dispatch, chain),
-    fast_chain_(chain)
+    transaction_populator_(dispatch, chain)
 {
+}
+
+// Properties.
+//-----------------------------------------------------------------------------
+
+bool validate_transaction::stopped() const
+{
+    return stopped_;
 }
 
 // Start/stop sequences.
@@ -104,6 +105,13 @@ void validate_transaction::handle_populated(const code& ec,
         return;
     }
 
+    // Skip validation when valid tx is already stored with same forks.
+    if (tx->validation.pooled)
+    {
+        handler(error::success);
+        return;
+    }
+
     // Run contextual tx checks.
     handler(tx->accept());
 }
@@ -115,19 +123,10 @@ void validate_transaction::handle_populated(const code& ec,
 void validate_transaction::connect(transaction_const_ptr tx,
     result_handler handler) const
 {
-    BITCOIN_ASSERT(tx->validation.state);
     const auto total_inputs = tx->inputs().size();
-
-    // Return if there are no inputs to validate (will fail later).
-    if (total_inputs == 0)
-    {
-        handler(error::success);
-        return;
-    }
-
     const auto buckets = std::min(dispatch_.size(), total_inputs);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
-    BITCOIN_ASSERT(buckets != 0);
+    BITCOIN_ASSERT_MSG(buckets != 0, "transaction check must require inputs");
 
     // If the priority threadpool is shut down when this is called the handler
     // will never be invoked, resulting in a threadpool.join indefinite hang.
@@ -140,6 +139,8 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
     size_t bucket, size_t buckets, result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
+    BITCOIN_ASSERT(tx->validation.state);
+
     code ec(error::success);
     const auto forks = tx->validation.state->enabled_forks();
     const auto& inputs = tx->inputs();

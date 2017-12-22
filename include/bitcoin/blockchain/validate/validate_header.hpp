@@ -22,14 +22,14 @@
 #include <atomic>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_header.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API validate_header
 {
 public:
@@ -42,23 +42,17 @@ public:
     void stop();
 
     void check(header_const_ptr header, result_handler handler) const;
-    void accept(header_const_ptr header, result_handler handler) const;
+    void accept(header_branch::ptr branch, result_handler handler) const;
 
 protected:
-    inline bool stopped() const
-    {
-        return stopped_;
-    }
+    bool stopped() const;
 
 private:
-    void handle_populated(const code& ec, header_const_ptr header,
+    void handle_populated(const code& ec, header_branch::ptr branch,
         result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const fast_chain& fast_chain_;
-
-    // This is thread safe becuase it is currently a stub.
     populate_header header_populator_;
 };
 

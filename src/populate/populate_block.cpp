@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -33,25 +33,23 @@ using namespace bc::machine;
 
 #define NAME "populate_block"
 
-// Database access is limited to calling populate_base.
-
 populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
   : populate_base(dispatch, chain)
 {
 }
 
-void populate_block::populate(branch::const_ptr branch,
+// Fork height is the last confirmed block considered, or the block that this
+// block's indexed header branch connects to. Confirmed transactions in blocks
+// above the fork point are considered pool blocks for validation purposes.
+void populate_block::populate(block_const_ptr block, size_t fork_height,
     result_handler&& handler) const
 {
-    const auto block = branch->top();
-    BITCOIN_ASSERT(block);
-
-    // The block has no population timer, so set externally.
+    // The block class has no population method, so set timer externally.
     block->validation.start_populate = asio::steady_clock::now();
 
-    // Populate chain state for the next block (promote tx pool).
-    const auto state = fast_chain_.chain_state(branch);
-    block->validation.state = state;
+    // TODO: utilize last-validated-block cache so this can be promoted.
+    const auto state = fast_chain_.chain_state(block);
+    block->header().validation.state = state;
 
     if (!state)
     {
@@ -59,7 +57,7 @@ void populate_block::populate(branch::const_ptr branch,
         return;
     }
 
-    // Return if this blocks is under a checkpoint, block state not requried.
+    // Return if this block is under a checkpoint, block state not requried.
     if (state->is_under_checkpoint())
     {
         handler(error::success);
@@ -67,7 +65,7 @@ void populate_block::populate(branch::const_ptr branch,
     }
 
     // Handle the coinbase as a special case tx.
-    populate_coinbase(branch, block);
+    populate_coinbase(block, fork_height);
 
     const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
@@ -84,23 +82,21 @@ void populate_block::populate(branch::const_ptr branch,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_transactions,
-            this, branch, bucket, buckets, join_handler);
+            this, block, fork_height, bucket, buckets, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.
-void populate_block::populate_coinbase(branch::const_ptr branch,
-    block_const_ptr block) const
+void populate_block::populate_coinbase(block_const_ptr block,
+    size_t fork_height) const
 {
     const auto& txs = block->transactions();
-    const auto state = block->validation.state;
     BITCOIN_ASSERT(!txs.empty());
 
     const auto& coinbase = txs.front();
     BITCOIN_ASSERT(coinbase.is_coinbase());
 
     // A coinbase tx guarantees exactly one input.
-    const auto& input = coinbase.inputs().front();
-    auto& prevout = input.previous_output().validation;
+    auto& prevout = coinbase.inputs().front().previous_output().validation;
 
     // A coinbase input cannot be a double spend since it originates coin.
     prevout.spent = false;
@@ -114,68 +110,34 @@ void populate_block::populate_coinbase(branch::const_ptr branch,
     prevout.height = 0;
     prevout.median_time_past = 0;
 
-    //*************************************************************************
-    // CONSENSUS: Satoshi implemented allow collisions in Nov 2015. This is a
-    // hard fork that destroys unspent outputs in case of hash collision.
-    // The tx duplicate check must apply to coinbase txs, handled here.
-    //*************************************************************************
-    if (!state->is_enabled(rule_fork::allow_collisions))
-    {
-        populate_base::populate_duplicate(branch->height(), coinbase, true);
-        ////populate_duplicate(branch, coinbase);
-    }
+    const auto forks = block->header().validation.state->enabled_forks();
+    fast_chain_.populate_transaction(coinbase, forks, fork_height);
 }
 
-////void populate_block::populate_duplicate(branch::const_ptr branch,
-////    const chain::transaction& tx) const
-////{
-////    if (!tx.validation.duplicate)
-////        branch->populate_duplicate(tx);
-////}
-
-void populate_block::populate_transactions(branch::const_ptr branch,
-    size_t bucket, size_t buckets, result_handler handler) const
+void populate_block::populate_transactions(block_const_ptr block,
+    size_t fork_height, size_t bucket, size_t buckets,
+    result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
-    const auto block = branch->top();
-    const auto branch_height = branch->height();
     const auto& txs = block->transactions();
+    const auto state = block->header().validation.state;
     size_t input_position = 0;
-
-    const auto state = block->validation.state;
-    const auto forks = state->enabled_forks();
-    const auto collide = state->is_enabled(rule_fork::allow_collisions);
-    const auto stale = is_stale();
 
     // Must skip coinbase here as it is already accounted for.
     const auto first = bucket == 0 ? buckets : bucket;
 
-    for (auto position = first; position < txs.size();
-        position = ceiling_add(position, buckets))
+    // If collisions allowed then don't need to test for collisions.
+    // If stale then don't bother checking for the pool optimization.
+    if (!fast_chain_.is_blocks_stale() || 
+        !state->is_enabled(rule_fork::allow_collisions))
     {
-        const auto& tx = txs[position];
+        const auto forks = state->enabled_forks();
 
-        //---------------------------------------------------------------------
-        // Pool discovery prevents output validation and full tx deposit.
-        // The tradeoff is a read per tx that may not be cached. This is
-        // bypassed by checkpoints. This will be optimized using the tx pool.
-        // Until that time this is a material population performance hit.
-        // However the hit is necessary in preventing store tx duplication
-        // unless stale, as tx relay is disabled and duplication unlikely.
-        //---------------------------------------------------------------------
-        if (!stale)
+        for (auto position = first; position < txs.size();
+            position = ceiling_add(position, buckets))
         {
-            populate_base::populate_pooled(tx, forks);
-        }
-
-        //*********************************************************************
-        // CONSENSUS: Satoshi implemented allow collisions in Nov 2015. This is
-        // a hard fork that destroys unspent outputs in case of hash collision.
-        //*********************************************************************
-        if (!collide)
-        {
-            populate_base::populate_duplicate(branch->height(), tx, true);
-            ////populate_duplicate(branch, coinbase);
+            const auto& tx = txs[position];
+            fast_chain_.populate_transaction(tx, forks, fork_height);
         }
     }
 
@@ -192,23 +154,11 @@ void populate_block::populate_transactions(branch::const_ptr branch,
 
             const auto& input = inputs[input_index];
             const auto& prevout = input.previous_output();
-            populate_base::populate_prevout(branch_height, prevout, true);
-            populate_prevout(branch, prevout);
+            fast_chain_.populate_output(prevout, fork_height);
         }
     }
 
     handler(error::success);
-}
-
-void populate_block::populate_prevout(branch::const_ptr branch,
-    const output_point& outpoint) const
-{
-    if (!outpoint.validation.spent)
-        branch->populate_spent(outpoint);
-
-    // Populate the previous output even if it is spent.
-    if (!outpoint.validation.cache.is_valid())
-        branch->populate_prevout(outpoint);
 }
 
 } // namespace blockchain

@@ -27,8 +27,8 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_block.hpp>
 
@@ -57,41 +57,32 @@ public:
     void subscribe(reorganize_handler&& handler);
     void unsubscribe();
 
-    /// Remove all message vectors that match block hashes.
-    void filter(get_data_ptr message) const;
-
 protected:
     bool stopped() const;
 
 private:
-    // Utility.
-    bool set_branch_height(branch::ptr branch);
-
     // Verify sub-sequence.
     void handle_check(const code& ec, block_const_ptr block,
         result_handler handler);
-    void handle_accept(const code& ec, branch::ptr branch,
+    void handle_accept(const code& ec, block_const_ptr branch,
         result_handler handler);
-    void handle_connect(const code& ec, branch::ptr branch,
+    void handle_connect(const code& ec, block_const_ptr branch,
         result_handler handler);
-    void organized(branch::ptr branch, result_handler handler);
-    void handle_reorganized(const code& ec, branch::const_ptr branch,
+    void handle_reorganized(const code& ec, 
+        block_const_ptr_list_const_ptr incoming,
         block_const_ptr_list_ptr outgoing, result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.
-    void notify(size_t branch_height, block_const_ptr_list_const_ptr branch,
-        block_const_ptr_list_const_ptr original);
-
-    // This must be protected by the implementation.
-    fast_chain& fast_chain_;
+    void notify(size_t fork_height, block_const_ptr_list_const_ptr incoming,
+        block_const_ptr_list_const_ptr outgoing);
 
     // These are thread safe.
+    fast_chain& fast_chain_;
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     dispatcher& dispatch_;
-    block_pool block_pool_;
     validate_block validator_;
     reorganize_subscriber::ptr subscriber_;
 };
