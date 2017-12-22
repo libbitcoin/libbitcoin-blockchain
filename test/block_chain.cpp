@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_version__found__true)
     BOOST_REQUIRE_EQUAL(version, block1->header().version());
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_last_height__no_gaps__last_block)
+BOOST_AUTO_TEST_CASE(block_chain__get_top__no_gaps__last_block)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -309,9 +309,9 @@ BOOST_AUTO_TEST_CASE(block_chain__get_last_height__no_gaps__last_block)
     BOOST_REQUIRE(instance.push(block1, 1));
     BOOST_REQUIRE(instance.push(block2, 2));
 
-    size_t height;
-    BOOST_REQUIRE(instance.get_block_height(height, true));
-    BOOST_REQUIRE_EQUAL(height, 2u);
+    config::checkpoint top;
+    BOOST_REQUIRE(instance.get_top(top, true));
+    BOOST_REQUIRE_EQUAL(top.height(), 2u);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__populate_output__not_found__false)
