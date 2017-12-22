@@ -41,13 +41,21 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get height of highest block in the block|header index.
-    virtual bool get_block_height(size_t& out_height,
+    /// Get the highest confirmed block of the header index.
+    virtual size_t get_fork_point() const = 0;
+
+    /// Get highest block or header index checkpoint.
+    virtual bool get_top(config::checkpoint& out_checkpoint,
         bool block_index) const = 0;
 
-    /// Get height in the block|header index of block with the given hash.
+    /// Get height of highest block in the block or header index.
+    virtual bool get_top_height(size_t& out_height,
+        bool block_index) const = 0;
+
+    /// Get height in the block or header index of block with the given hash.
     virtual bool get_block_height(size_t& out_height,
-        const hash_digest& block_hash, bool block_index) const = 0;
+        const hash_digest& block_hash,
+        size_t fork_height=max_size_t) const = 0;
 
     /// Get the hash of the block at the given index height.
     virtual bool get_block_hash(hash_digest& out_hash,

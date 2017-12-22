@@ -68,13 +68,34 @@ block_chain::block_chain(threadpool& pool,
 // Readers.
 // ----------------------------------------------------------------------------
 
-bool block_chain::get_block_height(size_t& out_height, bool block_index) const
+size_t block_chain::get_fork_point() const
+{
+    return database_.blocks().fork_point();
+}
+
+bool block_chain::get_top(config::checkpoint& out_checkpoint,
+    bool block_index) const
+{
+    size_t height;
+    hash_digest hash;
+
+    if (!get_top_height(height, block_index) ||
+        !get_block_hash(hash, height, block_index))
+        return false;
+
+    out_checkpoint = { hash, height };
+    return true;
+}
+
+bool block_chain::get_top_height(size_t& out_height, bool block_index) const
 {
     return database_.blocks().top(out_height, block_index);
 }
 
+// Header indexing controlled by fork_height.
+// All blocks have height but this limits to indexed|confirmed as applicable.
 bool block_chain::get_block_height(size_t& out_height,
-    const hash_digest& block_hash, bool block_index) const
+    const hash_digest& block_hash, size_t fork_height) const
 {
     auto result = database_.blocks().get(block_hash);
 
@@ -82,13 +103,16 @@ bool block_chain::get_block_height(size_t& out_height,
         return false;
 
     const auto state = result.state();
+    const auto height = result.height();
+    const auto relevant = height <= fork_height;
+    const auto confirmed = is_indexed(state) ||
+        (is_confirmed(state) && relevant);
 
-    // This limits returns to header or block indexing.
-    // A block has same height in any context but might not be indexed.
-    if (!is_confirmed(state) && (block_index || !is_indexed(state)))
+    // Cannot have index height unless confirmed in an index.
+    if (!confirmed)
         return false;
 
-    out_height = result.height();
+    out_height = height;
     return true;
 }
 
@@ -187,7 +211,8 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
     return true;
 }
 
-// TODO: move into block database.
+// Header indexing controlled by fork_height.
+// TODO: move into block database (see populate_output/get_output below).
 void block_chain::populate_header(const chain::header& header,
     size_t fork_height) const
 {
@@ -198,13 +223,25 @@ void block_chain::populate_header(const chain::header& header,
         return;
 
     const auto state = result.state();
-    header.validation.error = result.error();
-    header.validation.height = result.height();
+    const auto height = result.height();
+    const auto relevant = height <= fork_height;
+
+    // All headers have a fixed height, independent of indexing.
+    header.validation.height = height;
+
+    // Stored headers are always valid, error refers to the block.
+    header.validation.pooled = true;
+
+    // Duplicate implies that a new header should be ignored.
     header.validation.duplicate = is_indexed(state) ||
-        (is_confirmed(state) && result.height() <= fork_height);
+        (is_confirmed(state) && relevant);
+
+    // An error results from block validation failure after tx download.
+    header.validation.error = result.error();
 }
 
-// TODO: move into tx database.
+// Header indexing or pool controlled by fork_height.
+// TODO: move into tx database (see populate_output/get_output below).
 void block_chain::populate_transaction(const chain::transaction& tx,
     uint32_t forks, size_t fork_height) const
 {
@@ -215,37 +252,47 @@ void block_chain::populate_transaction(const chain::transaction& tx,
         return;
 
     const auto state = result.state();
+    const auto height = result.height();
+    const auto relevant = height <= fork_height;
+    const auto for_pool = fork_height == max_size_t;
+
+    // Indexed transactions retain forks in height.
+    const auto fork_valid = forks == height;
+
+    // Confirmation is relative to header index (not block index).
+    const auto indexed =
+        (state == transaction_state::indexed) ||
+        (state == transaction_state::confirmed && relevant);
+
+    // Pooled implies that the tx should not be revalidated.
+    // Fork-valid is not applicable to indexed txs, as forks are not stored.
+    tx.validation.pooled = !indexed && fork_valid;
+
+    // Duplicate implies that a new tx should be ignored.
+    tx.validation.duplicate = indexed || (for_pool && fork_valid);
+
+    // This is currently always success, since there is no tx invalid state.
     tx.validation.error = result.error();
 
-    const auto require_confirmed = (fork_height != max_size_t);
-    const auto confirmed =
-        (state == transaction_state::indexed && require_confirmed) ||
-        (state == transaction_state::confirmed && result.height() <=
-        fork_height);
-    const auto pooled = (
-        (state == transaction_state::pooled) ||
-        (state == transaction_state::indexed && !require_confirmed)) &&
-        forks == result.height();
-
-    // TODO: change tx.get(...) to always populate offset.
-    ////tx.validation.offset = ...;
-    tx.validation.pooled = pooled;
-    tx.validation.duplicate = confirmed || (!require_confirmed && pooled);
+    // This allows the existing transaction to be associated to a block.
+    tx.validation.offset = result.offset();
 
     //*************************************************************************
     // CONSENSUS: The satoshi hard fork that reverts BIP30 after BIP34 makes a
     // spentness test moot as tx hash collision is presumed impossible. Yet we
-    // prefer correct behavior in "impossible" case vs. deleting money.
+    // prefer correct behavior in the "impossible" case vs. deleting money.
+    // But we can reject the rare scenario for the tx pool as an optimization.
     //*************************************************************************
-    if (tx.validation.duplicate && result.is_spent(fork_height))
+    if (tx.validation.duplicate && !for_pool && result.is_spent(fork_height))
     {
         // Treat a spent duplicate as if it did not exist.
         // The original tx will not be queryable independent of the block.
         // The original tx's block linkage is unbroken by accepting duplicate.
         // If the new block is popped the original tx resurfaces automatically.
-        tx.validation.offset = transaction::validation::undetermined_offset;
         tx.validation.pooled = false;
         tx.validation.duplicate = false;
+        tx.validation.error = error::success;
+        tx.validation.offset = transaction::validation::undetermined_offset;
     }
 }
 
@@ -350,10 +397,6 @@ chain::chain_state::ptr block_chain::transaction_pool_state() const
 chain::chain_state::ptr block_chain::chain_state(block_const_ptr block) const
 {
     const auto height = block->header().validation.height;
-
-    // Valid height is required.
-    if (height == 0)
-        return{};
 
     // Parent height is required.
     if (height == 0)

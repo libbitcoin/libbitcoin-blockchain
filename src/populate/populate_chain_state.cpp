@@ -197,17 +197,17 @@ bool populate_chain_state::populate_all(chain_state::data& data,
 // Get chain state for top block|header.
 chain_state::ptr populate_chain_state::populate(bool block_index) const
 {
-    size_t height;
-    if (!fast_chain_.get_block_height(height, block_index))
+    config::checkpoint top;
+    if (!fast_chain_.get_top(top, block_index))
         return{};
 
     hash_digest hash;
-    if (!fast_chain_.get_block_hash(hash, height, block_index))
+    if (!fast_chain_.get_block_hash(hash, top.height(), block_index))
         return{};
 
     chain_state::data data;
     data.hash = hash;
-    data.height = height;
+    data.height = top.height();
 
     // There is no branch in the startup sceanrio.
     const auto branch = std::make_shared<const header_branch>();

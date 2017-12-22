@@ -62,12 +62,18 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get height of highest block in the block index.
-    bool get_block_height(size_t& out_height, bool block_index) const;
+    /// Get the highest confirmed block of the header index.
+    size_t get_fork_point() const;
 
-    /// Get height in the block index of block with the given hash.
-    bool get_block_height(size_t& out_height,
-        const hash_digest& block_hash, bool block_index) const;
+    /// Get highest block or header index checkpoint.
+    bool get_top(config::checkpoint& out_checkpoint, bool block_index) const;
+
+    /// Get height of highest block in the block or header index.
+    bool get_top_height(size_t& out_height, bool block_index) const;
+
+    /// Get height in the block or header index of block with the given hash.
+    bool get_block_height(size_t& out_height, const hash_digest& block_hash,
+        size_t fork_height=max_size_t) const;
 
     /// Get the hash of the block at the given index height.
     bool get_block_hash(hash_digest& out_hash, size_t height,
