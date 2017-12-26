@@ -132,8 +132,6 @@ include_bitcoin_blockchain_organizers_HEADERS = \
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/anchor_converter.hpp \
-    include/bitcoin/blockchain/pools/block_entry.hpp \
-    include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/child_closure_calculator.hpp \
     include/bitcoin/blockchain/pools/conflicting_spend_remover.hpp \
     include/bitcoin/blockchain/pools/header_branch.hpp \

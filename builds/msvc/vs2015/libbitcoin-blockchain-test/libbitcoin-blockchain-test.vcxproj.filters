@@ -18,13 +18,13 @@
     <ClCompile Include="..\..\..\..\test\block_chain.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\block_entry.cpp">
+    <ClCompile Include="..\..\..\..\test\header_branch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\block_pool.cpp">
+    <ClCompile Include="..\..\..\..\test\header_entry.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\branch.cpp">
+    <ClCompile Include="..\..\..\..\test\header_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\main.cpp">
