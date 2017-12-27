@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ |  Copyright (c) 2014-2015 libbitcoin-blockchain developers (see COPYING).
+ |
+ |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+ |
+ -->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <PlatformToolset>v141</PlatformToolset>
+    <ProjectGuid>{868DAB9E-FD33-497F-9468-C9000B3D7801}</ProjectGuid>
+    <ProjectName>libbitcoin-blockchain</ProjectName>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugDLL|Win32">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugDLL|x64">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLTCG|Win32">
+      <Configuration>DebugLTCG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLTCG|Win32">
+      <Configuration>ReleaseLTCG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLTCG|x64">
+      <Configuration>DebugLTCG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLTCG|x64">
+      <Configuration>ReleaseLTCG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLIB|Win32">
+      <Configuration>DebugLIB</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLIB|Win32">
+      <Configuration>ReleaseLIB</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugLIB|x64">
+      <Configuration>DebugLIB</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseLIB|x64">
+      <Configuration>ReleaseLIB</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) == -1">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="$(Configuration.IndexOf('DLL')) != -1">DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ProjectDir)..\..\properties\$(Configuration).props" />
+    <Import Project="$(ProjectDir)..\..\properties\Output.props" />
+    <Import Project="$(ProjectDir)$(ProjectName).props" />
+  </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\block_organizer.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\branch.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\transaction_entry.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\transaction_organizer.cpp" />
+    <ClCompile Include="..\..\..\..\src\pools\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\src\populate\populate_base.cpp" />
+    <ClCompile Include="..\..\..\..\src\populate\populate_block.cpp" />
+    <ClCompile Include="..\..\..\..\src\populate\populate_chain_state.cpp" />
+    <ClCompile Include="..\..\..\..\src\populate\populate_transaction.cpp" />
+    <ClCompile Include="..\..\..\..\src\settings.cpp" />
+    <ClCompile Include="..\..\..\..\src\validate\validate_block.cpp" />
+    <ClCompile Include="..\..\..\..\src\validate\validate_input.cpp" />
+    <ClCompile Include="..\..\..\..\src\validate\validate_transaction.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_organizer.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_entry.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_organizer.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_base.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_block.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_chain_state.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_transaction.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_block.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_input.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_transaction.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="..\..\..\..\..\..\nuget\boost.1.64.0.0\build\native\boost.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost.1.64.0.0\build\native\boost.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_atomic-vc141.1.64.0.0\build\native\boost_atomic-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_atomic-vc141.1.64.0.0\build\native\boost_atomic-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_chrono-vc141.1.64.0.0\build\native\boost_chrono-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_chrono-vc141.1.64.0.0\build\native\boost_chrono-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_date_time-vc141.1.64.0.0\build\native\boost_date_time-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_date_time-vc141.1.64.0.0\build\native\boost_date_time-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_filesystem-vc141.1.64.0.0\build\native\boost_filesystem-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_filesystem-vc141.1.64.0.0\build\native\boost_filesystem-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_iostreams-vc141.1.64.0.0\build\native\boost_iostreams-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_iostreams-vc141.1.64.0.0\build\native\boost_iostreams-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_locale-vc141.1.64.0.0\build\native\boost_locale-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_locale-vc141.1.64.0.0\build\native\boost_locale-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_log-vc141.1.64.0.0\build\native\boost_log-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_log-vc141.1.64.0.0\build\native\boost_log-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_log_setup-vc141.1.64.0.0\build\native\boost_log_setup-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_log_setup-vc141.1.64.0.0\build\native\boost_log_setup-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_program_options-vc141.1.64.0.0\build\native\boost_program_options-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_program_options-vc141.1.64.0.0\build\native\boost_program_options-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_regex-vc141.1.64.0.0\build\native\boost_regex-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_regex-vc141.1.64.0.0\build\native\boost_regex-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_system-vc141.1.64.0.0\build\native\boost_system-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_system-vc141.1.64.0.0\build\native\boost_system-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\boost_thread-vc141.1.64.0.0\build\native\boost_thread-vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\boost_thread-vc141.1.64.0.0\build\native\boost_thread-vc141.targets')" />
+    <Import Project="..\..\..\..\..\..\nuget\secp256k1_vc141.0.1.0.16\build\native\secp256k1_vc141.targets" Condition="Exists('..\..\..\..\..\..\nuget\secp256k1_vc141.0.1.0.16\build\native\secp256k1_vc141.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost.1.64.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost.1.64.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_atomic-vc141.1.64.0.0\build\native\boost_atomic-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_atomic-vc141.1.64.0.0\build\native\boost_atomic-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_chrono-vc141.1.64.0.0\build\native\boost_chrono-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_chrono-vc141.1.64.0.0\build\native\boost_chrono-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_date_time-vc141.1.64.0.0\build\native\boost_date_time-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_date_time-vc141.1.64.0.0\build\native\boost_date_time-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_filesystem-vc141.1.64.0.0\build\native\boost_filesystem-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_filesystem-vc141.1.64.0.0\build\native\boost_filesystem-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_iostreams-vc141.1.64.0.0\build\native\boost_iostreams-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_iostreams-vc141.1.64.0.0\build\native\boost_iostreams-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_locale-vc141.1.64.0.0\build\native\boost_locale-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_locale-vc141.1.64.0.0\build\native\boost_locale-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_log-vc141.1.64.0.0\build\native\boost_log-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_log-vc141.1.64.0.0\build\native\boost_log-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_log_setup-vc141.1.64.0.0\build\native\boost_log_setup-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_log_setup-vc141.1.64.0.0\build\native\boost_log_setup-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_program_options-vc141.1.64.0.0\build\native\boost_program_options-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_program_options-vc141.1.64.0.0\build\native\boost_program_options-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_regex-vc141.1.64.0.0\build\native\boost_regex-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_regex-vc141.1.64.0.0\build\native\boost_regex-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_system-vc141.1.64.0.0\build\native\boost_system-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_system-vc141.1.64.0.0\build\native\boost_system-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\boost_thread-vc141.1.64.0.0\build\native\boost_thread-vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\boost_thread-vc141.1.64.0.0\build\native\boost_thread-vc141.targets'))" />
+    <Error Condition="!Exists('..\..\..\..\..\..\nuget\secp256k1_vc141.0.1.0.16\build\native\secp256k1_vc141.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\..\nuget\secp256k1_vc141.0.1.0.16\build\native\secp256k1_vc141.targets'))" />
+  </Target>
+</Project>

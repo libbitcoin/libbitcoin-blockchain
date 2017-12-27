@@ -1,6 +1,9 @@
 *.suo
 *.opensdf
 *.sdf
-*.user
 *.log
+*.aps
+*.user
+*.ipch
+*.VC.*
 block_chain__*
