@@ -109,7 +109,16 @@ chain::block read_block(const std::string hex)
     return result;
 }
 
-BOOST_AUTO_TEST_SUITE(fast_chain_tests)
+class block_chain_setup_fixture
+{
+public:
+    block_chain_setup_fixture()
+    {
+        log::initialize();
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(fast_chain_tests, block_chain_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(block_chain__insert__flushed__expected)
 {
