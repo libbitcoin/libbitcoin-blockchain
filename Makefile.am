@@ -73,13 +73,16 @@ check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
-    test/block_chain.cpp \
+    test/fast_chain.cpp \
     test/header_branch.cpp \
     test/header_entry.cpp \
     test/header_pool.cpp \
     test/main.cpp \
+    test/safe_chain.cpp \
     test/transaction_entry.cpp \
     test/transaction_pool.cpp \
+    test/utility.cpp \
+    test/utility.hpp \
     test/validate_block.cpp \
     test/validate_transaction.cpp \
     test/pools/anchor_converter.cpp \
