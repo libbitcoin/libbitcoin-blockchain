@@ -91,8 +91,6 @@ bool create_database(database::settings& out_database)
     out_database.file_growth_rate = 42;
     out_database.block_table_buckets = 42;
     out_database.transaction_table_buckets = 42;
-    out_database.spend_table_buckets = 42;
-    out_database.history_table_buckets = 42;
 
     error_code ec;
     remove_all(out_database.directory, ec);
