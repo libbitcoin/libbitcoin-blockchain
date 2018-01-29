@@ -343,9 +343,9 @@ private:
     void set_transaction_pool_state(chain::chain_state::ptr top);
 
     bool get_transactions(chain::transaction::list& out_transactions,
-        const database::offset_list& offsets, bool witness) const;
+        const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(hash_list& out_hashes,
-        const database::offset_list& offsets) const;
+        const database::block_result& result) const;
 
     void handle_reindex(const code& ec, header_const_ptr top_header,
         result_handler handler);

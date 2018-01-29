@@ -291,7 +291,7 @@ void block_chain::populate_transaction(const chain::transaction& tx,
     tx.validation.error = result.error();
 
     // This allows the existing transaction to be associated to a block.
-    tx.validation.offset = result.offset();
+    tx.validation.link = result.link();
 
     //*************************************************************************
     // CONSENSUS: The satoshi hard fork that reverts BIP30 after BIP34 makes a
@@ -308,7 +308,7 @@ void block_chain::populate_transaction(const chain::transaction& tx,
         tx.validation.pooled = false;
         tx.validation.duplicate = false;
         tx.validation.error = error::success;
-        tx.validation.offset = transaction::validation::undetermined_offset;
+        tx.validation.link = transaction::validation::undetermined_link;
     }
 }
 
@@ -535,14 +535,13 @@ block_chain::~block_chain()
 
 // private
 bool block_chain::get_transactions(transaction::list& out_transactions,
-    const offset_list& tx_offsets, bool witness) const
+    const database::block_result& result, bool witness) const
 {
-    out_transactions.reserve(tx_offsets.size());
+    out_transactions.reserve(result.transaction_count());
     const auto& tx_store = database_.transactions();
 
-    for (const auto offset: tx_offsets)
+    for (const auto offset: result)
     {
-        // We don't care about tx metadata since it's block-aligned.
         const auto result = tx_store.get(offset);
 
         if (!result)
@@ -556,14 +555,13 @@ bool block_chain::get_transactions(transaction::list& out_transactions,
 
 // private
 bool block_chain::get_transaction_hashes(hash_list& out_hashes,
-    const offset_list& tx_offsets) const
+    const database::block_result& result) const
 {
-    out_hashes.reserve(tx_offsets.size());
+    out_hashes.reserve(result.transaction_count());
     const auto& tx_store = database_.transactions();
 
-    for (const auto offset: tx_offsets)
+    for (const auto offset: result)
     {
-        // We don't care about tx metadata since it's block-aligned.
         const auto result = tx_store.get(offset);
 
         if (!result)
@@ -595,24 +593,24 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto block_result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height);
 
-    if (!block_result)
+    if (!result)
     {
         handler(error::not_found, nullptr, 0);
         return;
     }
 
     transaction::list txs;
-    BITCOIN_ASSERT(block_result.height() == height);
+    BITCOIN_ASSERT(result.height() == height);
 
-    if (!get_transactions(txs, block_result.transaction_offsets(), witness))
+    if (!get_transactions(txs, result, witness))
     {
         handler(error::operation_failed, nullptr, 0);
         return;
     }
 
-    const auto message = std::make_shared<const block>(block_result.header(),
+    const auto message = std::make_shared<const block>(result.header(),
         std::move(txs));
     handler(error::success, message, height);
 }
@@ -637,9 +635,9 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    const auto block_result = database_.blocks().get(hash);
+    const auto result = database_.blocks().get(hash);
 
-    if (!block_result)
+    if (!result)
     {
         handler(error::not_found, nullptr, 0);
         return;
@@ -647,15 +645,15 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
 
     transaction::list txs;
 
-    if (!get_transactions(txs, block_result.transaction_offsets(), witness))
+    if (!get_transactions(txs, result, witness))
     {
         handler(error::operation_failed, nullptr, 0);
         return;
     }
 
-    const auto message = std::make_shared<const block>(block_result.header(),
+    const auto message = std::make_shared<const block>(result.header(),
         std::move(txs));
-    handler(error::success, message, block_result.height());
+    handler(error::success, message, result.height());
 }
 
 void block_chain::fetch_block_header(size_t height,
@@ -721,7 +719,7 @@ void block_chain::fetch_merkle_block(size_t height,
     hash_list hashes;
     BITCOIN_ASSERT(result.height() == height);
 
-    if (!get_transaction_hashes(hashes, result.transaction_offsets()))
+    if (!get_transaction_hashes(hashes, result))
     {
         handler(error::not_found, nullptr, 0);
         return;
@@ -751,7 +749,7 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
 
     hash_list hashes;
 
-    if (!get_transaction_hashes(hashes, result.transaction_offsets()))
+    if (!get_transaction_hashes(hashes, result))
     {
         handler(error::not_found, nullptr, 0);
         return;
@@ -1129,6 +1127,7 @@ void block_chain::fetch_header_locator(const block::indexes& heights,
 //-----------------------------------------------------------------------------
 // Confirmed heights only.
 
+// TODO: reimplement in store.
 void block_chain::fetch_spend(const chain::output_point& outpoint,
     spend_fetch_handler handler) const
 {
@@ -1138,19 +1137,22 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
         return;
     }
 
-    auto point = database_.spends().get(outpoint);
+    ////auto point = database_.spends().get(outpoint);
 
-    if (point.hash() == null_hash)
-    {
-        handler(error::not_found, {});
-        return;
-    }
+    ////if (point.hash() == null_hash)
+    ////{
+    ////    handler(error::not_found, {});
+    ////    return;
+    ////}
 
-    handler(error::success, std::move(point));
+    ////handler(error::success, std::move(point));
+
+    handler(error::not_implemented, {});
 }
 
-void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
-    size_t from_height, history_fetch_handler handler) const
+// TODO: rename to addresses, extract result set to list, apply limits.
+void block_chain::fetch_history(const short_hash& address_hash, size_t,
+    size_t, history_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1158,11 +1160,13 @@ void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
         return;
     }
 
-    handler(error::success, database_.history().get(address_hash, limit,
-        from_height));
+    auto result = database_.addresses().get(address_hash);
+
+    handler(error::not_implemented, {});
 }
 
-void block_chain::fetch_stealth(const binary& filter, size_t from_height,
+// TODO: eliminate.
+void block_chain::fetch_stealth(const binary&, size_t,
     stealth_fetch_handler handler) const
 {
     if (stopped())
@@ -1171,7 +1175,7 @@ void block_chain::fetch_stealth(const binary& filter, size_t from_height,
         return;
     }
 
-    handler(error::success, database_.stealth().get(filter, from_height));
+    handler(error::not_implemented, {});
 }
 
 // Transaction Pool.
