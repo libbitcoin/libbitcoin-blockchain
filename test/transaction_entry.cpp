@@ -121,35 +121,35 @@ BOOST_AUTO_TEST_CASE(transaction_entry__is_anchor__children__true)
 
 // mark
 
-//BOOST_AUTO_TEST_CASE(transaction_entry__mark__true__expected)
-//{
-//    transaction_entry instance(make_tx());
-//    instance.mark(true);
-//    BOOST_REQUIRE(instance.is_marked());
-//}
-//
-//BOOST_AUTO_TEST_CASE(transaction_entry__mark__true_false__expected)
-//{
-//    transaction_entry instance(make_tx());
-//    instance.mark(true);
-//    instance.mark(false);
-//    BOOST_REQUIRE(!instance.is_marked());
-//}
+////BOOST_AUTO_TEST_CASE(transaction_entry__mark__true__expected)
+////{
+////    transaction_entry instance(make_tx());
+////    instance.mark(true);
+////    BOOST_REQUIRE(instance.is_marked());
+////}
+////
+////BOOST_AUTO_TEST_CASE(transaction_entry__mark__true_false__expected)
+////{
+////    transaction_entry instance(make_tx());
+////    instance.mark(true);
+////    instance.mark(false);
+////    BOOST_REQUIRE(!instance.is_marked());
+////}
 
 // is_marked
 
-//BOOST_AUTO_TEST_CASE(transaction_entry__mark__default__false)
-//{
-//    const transaction_entry instance(make_tx());
-//    BOOST_REQUIRE(!instance.is_marked());
-//}
-//
-//BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
-//{
-//    transaction_entry instance(make_tx());
-//    instance.mark(true);
-//    BOOST_REQUIRE(instance.is_marked());
-//}
+////BOOST_AUTO_TEST_CASE(transaction_entry__mark__default__false)
+////{
+////    const transaction_entry instance(make_tx());
+////    BOOST_REQUIRE(!instance.is_marked());
+////}
+////
+////BOOST_AUTO_TEST_CASE(transaction_entry__is_marked__true__true)
+////{
+////    transaction_entry instance(make_tx());
+////    instance.mark(true);
+////    BOOST_REQUIRE(instance.is_marked());
+////}
 
 // add_parent
 

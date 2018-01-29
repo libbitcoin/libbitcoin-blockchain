@@ -40,14 +40,14 @@ BOOST_AUTO_TEST_CASE(transaction_pool__add_unconfirmed_transactions__empty_list_
     BOOST_REQUIRE_EQUAL(true, true);
 }
 
-//BOOST_AUTO_TEST_CASE(transaction_pool__add_unconfirmed_transactions__empty_list__noop)
-//{
-//    settings blockchain_settings;
-//    transaction_pool pool(blockchain_settings);
-//
-//    transaction_const_ptr_list txs;
-//    pool.add_unconfirmed_transactions(txs);
-//    BOOST_REQUIRE_EQUAL(true, true);
-//}
+////BOOST_AUTO_TEST_CASE(transaction_pool__add_unconfirmed_transactions__empty_list__noop)
+////{
+////    settings blockchain_settings;
+////    transaction_pool pool(blockchain_settings);
+////
+////    transaction_const_ptr_list txs;
+////    pool.add_unconfirmed_transactions(txs);
+////    BOOST_REQUIRE_EQUAL(true, true);
+////}
 
 BOOST_AUTO_TEST_SUITE_END()
