@@ -38,17 +38,22 @@ populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
 {
 }
 
-// Fork height is the last confirmed block considered, or the block that this
-// block's indexed header branch connects to. Confirmed transactions in blocks
-// above the fork point are considered pool blocks for validation purposes.
-void populate_block::populate(block_const_ptr block, size_t fork_height,
+void populate_block::populate(block_const_ptr block,
     result_handler&& handler) const
 {
     // The block class has no population method, so set timer externally.
     block->validation.start_populate = asio::steady_clock::now();
 
+    // Only validate/populate the next block to be confirmed.
+    size_t top;
+    if (!fast_chain_.get_top_height(top, true))
+    {
+        handler(error::operation_failed);
+        return;
+    }
+
     // TODO: utilize last-validated-block cache so this can be promoted.
-    const auto state = fast_chain_.chain_state(block);
+    const auto state = fast_chain_.chain_state(block, top + 1);
     block->header().validation.state = state;
 
     if (!state)
@@ -65,7 +70,7 @@ void populate_block::populate(block_const_ptr block, size_t fork_height,
     }
 
     // Handle the coinbase as a special case tx.
-    populate_coinbase(block, fork_height);
+    populate_coinbase(block, top);
 
     const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
@@ -82,7 +87,7 @@ void populate_block::populate(block_const_ptr block, size_t fork_height,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_transactions,
-            this, block, fork_height, bucket, buckets, join_handler);
+            this, block, top, bucket, buckets, join_handler);
 }
 
 // Initialize the coinbase input for subsequent validation.

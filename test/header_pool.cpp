@@ -47,27 +47,24 @@ public:
     }
 };
 
-header_const_ptr make_header(uint32_t id, size_t height,
-    const hash_digest& parent)
+header_const_ptr make_header(uint32_t id, const hash_digest& parent)
 {
     const auto header = std::make_shared<const message::header>(chain::header
     {
         id, parent, null_hash, 0, 0, 0
     });
 
-    header->validation.height = height;
     return header;
 }
 
-header_const_ptr make_header(uint32_t id, size_t height,
-    header_const_ptr parent)
+header_const_ptr make_header(uint32_t id,header_const_ptr parent)
 {
-    return make_header(id, height, parent->hash());
+    return make_header(id, parent->hash());
 }
 
-header_const_ptr make_header(uint32_t id, size_t height)
+header_const_ptr make_header(uint32_t id)
 {
-    return make_header(id, height, null_hash);
+    return make_header(id, null_hash);
 }
 
 // construct
@@ -91,10 +88,10 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__one__single)
 {
     header_pool_fixture instance(0);
     static const size_t height = 42;
-    const auto header1 = make_header(1, height);
+    const auto header1 = make_header(1);
 
-    instance.add(header1);
-    instance.add(header1);
+    instance.add(header1, height);
+    instance.add(header1, height);
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
 
     const auto entry = instance.headers().right.find(height);
@@ -108,8 +105,8 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__twice__single)
     header_pool instance(0);
     const auto header = std::make_shared<const message::header>();
 
-    instance.add(header);
-    instance.add(header);
+    instance.add(header, 0);
+    instance.add(header, 0);
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
 }
 
@@ -117,14 +114,14 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__two_different_headers_with_same_hash__fi
 {
     header_pool_fixture instance(0);
     static const size_t height1a = 42;
-    const auto header1a = make_header(1, height1a);
-    const auto header1b = make_header(1, height1a + 1u);
+    const auto header1a = make_header(1);
+    const auto header1b = make_header(1);
 
     // The headers have the same hash value, so second will not be added.
     BOOST_REQUIRE(header1a->hash() == header1b->hash());
 
-    instance.add(header1a);
-    instance.add(header1b);
+    instance.add(header1a, height1a);
+    instance.add(header1b, height1a + 1);
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
 
     const auto entry = instance.headers().right.find(height1a);
@@ -136,15 +133,15 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__two_distinct_hash__two)
 {
     header_pool_fixture instance(0);
     static const size_t height1 = 42;
-    static const size_t height2 = height1 + 1u;
-    const auto header1 = make_header(1, height1);
-    const auto header2 = make_header(2, height2);
+    static const size_t height2 = height1 + 1;
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
 
     // The headers do not have the same hash value, so both will be added.
     BOOST_REQUIRE(header1->hash() != header2->hash());
 
-    instance.add(header1);
-    instance.add(header2);
+    instance.add(header1, height1);
+    instance.add(header2, height2);
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     const auto& entry1 = instance.headers().right.find(height1);
@@ -161,21 +158,21 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__two_distinct_hash__two)
 BOOST_AUTO_TEST_CASE(header_pool__add2__empty__empty)
 {
     header_pool instance(0);
-    instance.add(std::make_shared<const header_const_ptr_list>());
+    instance.add(std::make_shared<const header_const_ptr_list>(), 0);
     BOOST_REQUIRE_EQUAL(instance.size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__add2__distinct__expected)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
     header_const_ptr_list headers{ header1, header2 };
 
     // The headers do not have the same hash value, so both will be added.
     BOOST_REQUIRE(header1->hash() != header2->hash());
 
-    instance.add(std::make_shared<const header_const_ptr_list>(std::move(headers)));
+    instance.add(std::make_shared<const header_const_ptr_list>(std::move(headers)), 42);
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     const auto entry1 = instance.headers().right.find(42);
@@ -192,8 +189,8 @@ BOOST_AUTO_TEST_CASE(header_pool__add2__distinct__expected)
 BOOST_AUTO_TEST_CASE(header_pool__remove__empty__unchanged)
 {
     header_pool instance(0);
-    const auto header1 = make_header(1, 42);
-    instance.add(header1);
+    const auto header1 = make_header(1);
+    instance.add(header1, 42);
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
 
     instance.remove(std::make_shared<const header_const_ptr_list>());
@@ -203,11 +200,11 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__empty__unchanged)
 BOOST_AUTO_TEST_CASE(header_pool__remove__all_distinct__empty)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
-    const auto header3 = make_header(2, 44);
-    instance.add(header1);
-    instance.add(header2);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    const auto header3 = make_header(2);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     header_const_ptr_list path{ header1, header2 };
@@ -218,11 +215,11 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__all_distinct__empty)
 BOOST_AUTO_TEST_CASE(header_pool__remove__all_connected__empty)
 {
     header_pool instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    const auto header3 = make_header(3, 44, header2);
-    instance.add(header1);
-    instance.add(header2);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    const auto header3 = make_header(3, header2);
+    instance.add(header1, 42);
+    instance.add(header2, 42);
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     header_const_ptr_list path{ header1, header2, header3 };
@@ -233,22 +230,22 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__all_connected__empty)
 BOOST_AUTO_TEST_CASE(header_pool__remove__subtree__reorganized)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    const auto header3 = make_header(3, 44, header2);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    const auto header3 = make_header(3, header2);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
     // sub-header_branch of header2
-    const auto header6 = make_header(6, 44, header2);
-    const auto header7 = make_header(7, 45, header2);
+    const auto header6 = make_header(6, header2);
+    const auto header7 = make_header(7, header2);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header5);
-    instance.add(header6);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header5, 46);
+    instance.add(header6, 44);
     BOOST_REQUIRE_EQUAL(instance.size(), 6u);
 
     header_const_ptr_list path{ header1, header2, header6, header7 };
@@ -277,17 +274,17 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__empty_zero_zero__empty)
 BOOST_AUTO_TEST_CASE(header_pool__prune__all_current__unchanged)
 {
     header_pool_fixture instance(10);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
-    const auto header3 = make_header(3, 44);
-    const auto header4 = make_header(4, 45);
-    const auto header5 = make_header(5, 46);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    const auto header3 = make_header(3);
+    const auto header4 = make_header(4);
+    const auto header5 = make_header(5);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header5);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header5, 46);
     BOOST_REQUIRE_EQUAL(instance.size(), 5u);
 
     // Any height less than 42 (52 - 10) should be pruned.
@@ -298,17 +295,17 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__all_current__unchanged)
 BOOST_AUTO_TEST_CASE(header_pool__prune__one_expired__one_deleted)
 {
     header_pool_fixture instance(10);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
-    const auto header3 = make_header(3, 44);
-    const auto header4 = make_header(4, 45);
-    const auto header5 = make_header(5, 46);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    const auto header3 = make_header(3);
+    const auto header4 = make_header(4);
+    const auto header5 = make_header(5);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header5);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header5, 46);
     BOOST_REQUIRE_EQUAL(instance.size(), 5u);
 
     // Any height less than 43 (53 - 10) should be pruned.
@@ -321,19 +318,19 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__whole_header_branch_expired__whole_head
     header_pool_fixture instance(10);
 
     // header_branch1
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
 
     // header_branch2
-    const auto header3 = make_header(3, 44);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header3 = make_header(3);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header5);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header5, 46);
     BOOST_REQUIRE_EQUAL(instance.size(), 5u);
 
     // Any height less than 44 (54 - 10) should be pruned.
@@ -346,39 +343,39 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__partial_header_branch_expired__partial_
     header_pool_fixture instance(10);
 
     // header_branch1
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
 
     // header_branch2
-    const auto header3 = make_header(3, 44);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header3 = make_header(3);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
     // sub-header_branch of header_branch2
-    const auto header6 = make_header(6, 45, header3);
-    const auto header7 = make_header(7, 46, header6);
-    const auto header8 = make_header(8, 47, header7);
+    const auto header6 = make_header(6, header3);
+    const auto header7 = make_header(7, header6);
+    const auto header8 = make_header(8, header7);
 
     // sub-header_branch of header_branch2
-    const auto header9 = make_header(9, 45, header3);
-    const auto header10 = make_header(10, 46, header9);
+    const auto header9 = make_header(9, header3);
+    const auto header10 = make_header(10, header9);
 
     // sub-header_branch of sub-header_branch of header_branch2
-    const auto header11 = make_header(11, 46, header9);
-    const auto header12 = make_header(12, 47, header10);
+    const auto header11 = make_header(11, header9);
+    const auto header12 = make_header(12, header10);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header5);
-    instance.add(header6);
-    instance.add(header7);
-    instance.add(header8);
-    instance.add(header9);
-    instance.add(header10);
-    instance.add(header11);
-    instance.add(header12);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header5, 46);
+    instance.add(header6, 45);
+    instance.add(header7, 46);
+    instance.add(header8, 47);
+    instance.add(header9, 45);
+    instance.add(header10, 46);
+    instance.add(header11, 46);
+    instance.add(header12, 47);
     BOOST_REQUIRE_EQUAL(instance.size(), 12u);
 
     // Any height less than 46 (56 - 10) should be pruned, others replanted.
@@ -407,10 +404,10 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__empty__empty)
 BOOST_AUTO_TEST_CASE(header_pool__filter__empty_filter__unchanged)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 42);
-    instance.add(header1);
-    instance.add(header2);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    instance.add(header1, 42);
+    instance.add(header2, 42);
     const auto message = std::make_shared<message::get_data>();
     instance.filter(message);
     BOOST_REQUIRE(message->inventories().empty());
@@ -419,11 +416,11 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__empty_filter__unchanged)
 BOOST_AUTO_TEST_CASE(header_pool__filter__matched_headers__non_headers_and_mismatches_remain)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
-    const auto header3 = make_header(3, 44);
-    instance.add(header1);
-    instance.add(header2);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    const auto header3 = make_header(3);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
     const message::inventory_vector expected1{ message::inventory::type_id::error, header1->hash() };
     const message::inventory_vector expected2{ message::inventory::type_id::transaction, header3->hash() };
     const message::inventory_vector expected3{ message::inventory::type_id::block, header3->hash() };
@@ -449,24 +446,24 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__matched_headers__non_headers_and_misma
 BOOST_AUTO_TEST_CASE(header_pool__exists__empty__false)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
+    const auto header1 = make_header(1);
     BOOST_REQUIRE(!instance.exists(header1));
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__exists__not_empty_mismatch__false)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    instance.add(header1);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    instance.add(header1, 42);
     BOOST_REQUIRE(!instance.exists(header2));
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__exists__match__true)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    instance.add(header1);
+    const auto header1 = make_header(1);
+    instance.add(header1, 42);
     BOOST_REQUIRE(instance.exists(header1));
 }
 
@@ -475,7 +472,7 @@ BOOST_AUTO_TEST_CASE(header_pool__exists__match__true)
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__empty__self)
 {
     header_pool instance(0);
-    const auto header1 = make_header(1, 42);
+    const auto header1 = make_header(1);
     const auto path = instance.get_branch(header1);
     BOOST_REQUIRE_EQUAL(path->size(), 1u);
     BOOST_REQUIRE(path->headers()->front() == header1);
@@ -484,8 +481,8 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__empty__self)
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__exists__empty)
 {
     header_pool instance(0);
-    const auto header1 = make_header(1, 42);
-    instance.add(header1);
+    const auto header1 = make_header(1);
+    instance.add(header1, 42);
     const auto path = instance.get_branch(header1);
     BOOST_REQUIRE_EQUAL(path->size(), 0u);
 }
@@ -493,12 +490,12 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__exists__empty)
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__disconnected__self)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43);
-    const auto header3 = make_header(3, 44);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2);
+    const auto header3 = make_header(3);
 
-    instance.add(header1);
-    instance.add(header2);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
     BOOST_REQUIRE_EQUAL(instance.size(), 2u);
 
     const auto path = instance.get_branch(header3);
@@ -509,16 +506,16 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__disconnected__self)
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_one_path__expected_path)
 {
     header_pool_fixture instance(0);
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    const auto header3 = make_header(3, 44, header2);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    const auto header3 = make_header(3, header2);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
     BOOST_REQUIRE_EQUAL(instance.size(), 4u);
 
     const auto path = instance.get_branch(header5);
@@ -534,28 +531,28 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_paths__expected
 {
     header_pool_fixture instance(0);
 
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    const auto header3 = make_header(3, 44, header2);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    const auto header3 = make_header(3, header2);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
-    const auto header11 = make_header(11, 420);
-    const auto header12 = make_header(12, 421, header11);
-    const auto header13 = make_header(13, 422, header12);
-    const auto header14 = make_header(14, 423, header13);
-    const auto header15 = make_header(15, 424, header14);
+    const auto header11 = make_header(11);
+    const auto header12 = make_header(12, header11);
+    const auto header13 = make_header(13, header12);
+    const auto header14 = make_header(14, header13);
+    const auto header15 = make_header(15, header14);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
     BOOST_REQUIRE_EQUAL(instance.size(), 4u);
 
-    instance.add(header11);
-    instance.add(header12);
-    instance.add(header13);
-    instance.add(header14);
+    instance.add(header11, 420);
+    instance.add(header12, 421);
+    instance.add(header13, 422);
+    instance.add(header14, 423);
     BOOST_REQUIRE_EQUAL(instance.size(), 8u);
 
     const auto path1 = instance.get_branch(header5);
@@ -580,28 +577,28 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_sub_header_bran
     header_pool_fixture instance(0);
 
     // root header_branch
-    const auto header1 = make_header(1, 42);
-    const auto header2 = make_header(2, 43, header1);
-    const auto header3 = make_header(3, 44, header2);
-    const auto header4 = make_header(4, 45, header3);
-    const auto header5 = make_header(5, 46, header4);
+    const auto header1 = make_header(1);
+    const auto header2 = make_header(2, header1);
+    const auto header3 = make_header(3, header2);
+    const auto header4 = make_header(4, header3);
+    const auto header5 = make_header(5, header4);
 
     // sub-header_branch of header1
-    const auto header11 = make_header(11, 43, header1);
-    const auto header12 = make_header(12, 44, header11);
+    const auto header11 = make_header(11, header1);
+    const auto header12 = make_header(12, header11);
 
     // sub-header_branch of header4
-    const auto header21 = make_header(21, 46, header4);
-    const auto header22 = make_header(22, 47, header21);
-    const auto header23 = make_header(23, 48, header22);
+    const auto header21 = make_header(21, header4);
+    const auto header22 = make_header(22, header21);
+    const auto header23 = make_header(23, header22);
 
-    instance.add(header1);
-    instance.add(header2);
-    instance.add(header3);
-    instance.add(header4);
-    instance.add(header11);
-    instance.add(header21);
-    instance.add(header22);
+    instance.add(header1, 42);
+    instance.add(header2, 43);
+    instance.add(header3, 44);
+    instance.add(header4, 45);
+    instance.add(header11, 43);
+    instance.add(header21, 46);
+    instance.add(header22, 47);
     BOOST_REQUIRE_EQUAL(instance.size(), 7u);
 
     const auto path1 = instance.get_branch(header5);

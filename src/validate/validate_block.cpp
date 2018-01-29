@@ -139,11 +139,8 @@ void validate_block::check(block_const_ptr block, result_handler handler) const
 void validate_block::accept(block_const_ptr block,
     result_handler handler) const
 {
-    // TODO: set this to the block index top since we don't reorg full blocks.
-    size_t fork_height = 42;
-
-    // Populate block state for the top block (others are valid).
-    block_populator_.populate(block, fork_height,
+    // Populate block state for the next block.
+    block_populator_.populate(block, 
         std::bind(&validate_block::handle_populated,
             this, _1, block, handler));
 }

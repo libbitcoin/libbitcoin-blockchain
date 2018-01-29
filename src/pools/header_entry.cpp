@@ -26,20 +26,25 @@
 namespace libbitcoin {
 namespace blockchain {
 
-header_entry::header_entry(header_const_ptr header)
-  : hash_(header->hash()), header_(header)
+header_entry::header_entry(header_const_ptr header, size_t height)
+  : height_(height), hash_(header->hash()), header_(header)
 {
 }
 
 // Create a search key.
 header_entry::header_entry(const hash_digest& hash)
-  : hash_(hash)
+  : height_(0), hash_(hash)
 {
 }
 
 header_const_ptr header_entry::header() const
 {
     return header_;
+}
+
+size_t header_entry::height() const
+{
+    return height_;
 }
 
 const hash_digest& header_entry::hash() const

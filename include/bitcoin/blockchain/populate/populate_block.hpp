@@ -36,9 +36,8 @@ class BCB_API populate_block
 public:
     populate_block(dispatcher& dispatch, const fast_chain& chain);
 
-    /// Populate validation state for the given indexed block.
-    void populate(block_const_ptr block, size_t fork_height,
-        result_handler&& handler) const;
+    /// Populate validation state for the the next block.
+    void populate(block_const_ptr block, result_handler&& handler) const;
 
 protected:
     void populate_coinbase(block_const_ptr block, size_t fork_height) const;

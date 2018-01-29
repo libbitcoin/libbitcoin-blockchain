@@ -236,11 +236,7 @@ void block_chain::populate_header(const chain::header& header,
         return;
 
     const auto state = result.state();
-    const auto height = result.height();
-    const auto relevant = height <= fork_height;
-
-    // All headers have a fixed height, independent of indexing.
-    header.validation.height = height;
+    const auto relevant = result.height() <= fork_height;
 
     // Transactions are populated (count population is atomic).
     header.validation.populated = result.transaction_count() != 0;
@@ -384,9 +380,10 @@ void block_chain::push(transaction_const_ptr tx, dispatcher&,
     handler(database_.push(*tx, state->enabled_forks()));
 }
 
-bool block_chain::push(block_const_ptr block, size_t height)
+bool block_chain::push(block_const_ptr block, size_t height,
+    uint32_t median_time_past)
 {
-    return database_.push(*block, height) == error::success;
+    return database_.push(*block, height, median_time_past) == error::success;
 }
 
 // Properties.
@@ -410,10 +407,9 @@ chain::chain_state::ptr block_chain::transaction_pool_state() const
 }
 
 // For block validator, call only from validate critical section.
-chain::chain_state::ptr block_chain::chain_state(block_const_ptr block) const
+chain::chain_state::ptr block_chain::chain_state(block_const_ptr block,
+    size_t height) const
 {
-    const auto height = block->header().validation.height;
-
     // Parent height is required.
     if (height == 0)
         return{};

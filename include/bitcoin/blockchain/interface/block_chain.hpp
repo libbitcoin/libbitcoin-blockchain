@@ -135,14 +135,14 @@ public:
     void reindex(const config::checkpoint& fork_point,
         header_const_ptr_list_const_ptr incoming,
         header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-        complete_handler handler);
+        result_handler handler);
 
     /// Push an unconfirmed transaction to the tx table and index outputs.
     void push(transaction_const_ptr tx, dispatcher& dispatch,
         result_handler handler);
 
     /// Push a block to the blockchain, height is validated.
-    bool push(block_const_ptr block, size_t height);
+    bool push(block_const_ptr block, size_t height, uint32_t median_time_past);
 
     // Properties
     // ------------------------------------------------------------------------
@@ -154,7 +154,8 @@ public:
     chain::chain_state::ptr transaction_pool_state() const;
 
     /// Get chain state for the given indexed header.
-    chain::chain_state::ptr chain_state(block_const_ptr header) const;
+    chain::chain_state::ptr chain_state(block_const_ptr header,
+        size_t height) const;
 
     /// Get chain state for the last block in the indexed branch.
     chain::chain_state::ptr chain_state(header_branch::const_ptr branch) const;

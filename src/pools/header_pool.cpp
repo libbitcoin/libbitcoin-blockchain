@@ -63,14 +63,11 @@ bool header_pool::exists(header_const_ptr candidate_header) const
 // which can result in existing dependent branches becoming disconnected from
 // those blocks. To prevent this existing branch roots must be reparented
 // following a reorg. For each add query for root of next height and connect.
-void header_pool::add(header_const_ptr valid_header)
+void header_pool::add(header_const_ptr valid_header, size_t height)
 {
     // The header must be successfully validated.
     ////BITCOIN_ASSERT(!valid_header->validation.error);
-    header_entry entry{ valid_header };
-
-    ////BITCOIN_ASSERT(valid_header->validation.state);
-    auto height = valid_header->validation.height;
+    header_entry entry{ valid_header, height };
     const auto& left = headers_.left;
 
     // Caller ensures the entry does not exist by using exists(), but
@@ -96,9 +93,14 @@ void header_pool::add(header_const_ptr valid_header)
     ///////////////////////////////////////////////////////////////////////////
 }
 
-void header_pool::add(header_const_ptr_list_const_ptr valid_headers)
+void header_pool::add(header_const_ptr_list_const_ptr valid_headers,
+    size_t height)
 {
-    const auto insert = [&](const header_const_ptr& header) { add(header); };
+    const auto insert = [&](const header_const_ptr& header)
+    {
+        add(header, height++);
+    };
+
     std::for_each(valid_headers->begin(), valid_headers->end(), insert);
 }
 
@@ -140,14 +142,13 @@ void header_pool::remove(header_const_ptr_list_const_ptr accepted_headers)
 
         // Copy the entry so that it can be deleted and replanted with height.
         const auto copy = it->first;
-        const auto height = copy.header()->validation.height;
         BITCOIN_ASSERT(it->second == 0);
 
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
         unique_lock lock(mutex_);
         left.erase(it);
-        headers_.insert({ copy, height });
+        headers_.insert({ copy, copy.height() });
         ///////////////////////////////////////////////////////////////////////
     }
 }
@@ -164,7 +165,7 @@ void header_pool::prune(const hash_list& hashes, size_t minimum_height)
         const auto it = left.find(header_entry{ hash });
         BITCOIN_ASSERT(it != left.end());
 
-        const auto height = it->first.header()->validation.height;
+        const auto height = it->first.height();
 
         // Delete all roots and expired non-roots and recurse their children.
         if (it->second != 0 || height < minimum_height)

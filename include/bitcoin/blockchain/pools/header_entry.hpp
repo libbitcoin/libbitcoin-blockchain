@@ -19,6 +19,7 @@
 #ifndef LIBBITCOIN_BLOCKCHAIN_HEADER_ENTRY_HPP
 #define LIBBITCOIN_BLOCKCHAIN_HEADER_ENTRY_HPP
 
+#include <cstddef>
 #include <iostream>
 ////#include <memory>
 #include <boost/functional/hash_fwd.hpp>
@@ -37,13 +38,16 @@ public:
 
     /// Construct an entry for the pool.
     /// Never store an invalid header in the pool.
-    header_entry(header_const_ptr header);
+    header_entry(header_const_ptr header, size_t height);
 
     /// Use this construction only as a search key.
     header_entry(const hash_digest& hash);
 
     /// The header that the entry contains.
     header_const_ptr header() const;
+
+    /// The height of the header the entry contains.
+    size_t height() const;
 
     /// The hash table entry identity.
     const hash_digest& hash() const;
@@ -65,6 +69,7 @@ public:
 
 private:
     // These are non-const to allow for default copy construction.
+    size_t height_;
     hash_digest hash_;
     header_const_ptr header_;
 

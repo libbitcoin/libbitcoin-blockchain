@@ -161,7 +161,6 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
 
     // The top block is valid even if the branch has insufficient work.
     const auto top = branch->top();
-    top->validation.height = branch->top_height();
 
     // TODO: create a simulated validation path that does not block others.
     if (top->validation.simulate)
@@ -183,7 +182,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     if (work <= required)
     {
         // Pool.add clears parent header state to preserve memory.
-        header_pool_.add(top);
+        header_pool_.add(top, branch->top_height());
         handler(error::insufficient_work);
         return;
     }
@@ -218,7 +217,7 @@ void header_organizer::handle_reindexed(const code& ec,
 
     header_pool_.remove(branch->headers());
     header_pool_.prune(branch->top_height());
-    header_pool_.add(outgoing);
+    header_pool_.add(outgoing, branch->height() + 1);
 
     notify(branch->height(), branch->headers(), outgoing);
     handler(error::success);

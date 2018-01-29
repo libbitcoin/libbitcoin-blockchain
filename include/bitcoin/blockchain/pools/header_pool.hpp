@@ -45,10 +45,10 @@ public:
     bool exists(header_const_ptr header) const;
 
     /// Add newly-validated header.
-    void add(header_const_ptr valid_header);
+    void add(header_const_ptr valid_header, size_t height);
 
     /// Add root path of reorganized headers (no branches).
-    void add(header_const_ptr_list_const_ptr valid_headers);
+    void add(header_const_ptr_list_const_ptr valid_headers, size_t height);
 
     /// Remove path of accepted headers (sub-branches moved to root).
     void remove(header_const_ptr_list_const_ptr accepted_headers);

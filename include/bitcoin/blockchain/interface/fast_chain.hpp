@@ -124,7 +124,8 @@ public:
         complete_handler handler) = 0;
 
     /// Push a block to the blockchain, height is validated.
-    virtual bool push(block_const_ptr block, size_t height) = 0;
+    virtual bool push(block_const_ptr block, size_t height,
+        uint32_t median_time_past) = 0;
 
     // Properties
     // ------------------------------------------------------------------------
@@ -137,7 +138,7 @@ public:
 
     /// Get chain state for the given indexed header.
     virtual chain::chain_state::ptr chain_state(
-        block_const_ptr header) const = 0;
+        block_const_ptr header, size_t height) const = 0;
 
     /// Get chain state for the last block in an indexed branch.
     virtual chain::chain_state::ptr chain_state(
