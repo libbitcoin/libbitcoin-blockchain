@@ -190,35 +190,23 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     // Get the outgoing headers to forward to reorg handler.
     const auto outgoing = std::make_shared<header_const_ptr_list>();
 
-    const auto reindexed_handler =
-        std::bind(&header_organizer::handle_reindexed,
-            this, _1, branch, outgoing, handler);
-
     // Replace! Switch!
     //#########################################################################
-    fast_chain_.reindex(branch->fork_point(), branch->headers(), outgoing,
-        dispatch_, reindexed_handler);
+    const auto result = fast_chain_.reindex(branch->fork_point(),
+        branch->headers(), outgoing);
     //#########################################################################
-}
 
-// private
-void header_organizer::handle_reindexed(const code& ec,
-    header_branch::const_ptr branch, header_const_ptr_list_ptr outgoing,
-    result_handler handler)
-{
-    if (ec)
+    if (!result)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure writing header to store, is now corrupted: "
-            << ec.message();
-        handler(ec);
+            << "Failure writing header to store, is now corrupted: ";
+        handler(error::operation_failed);
         return;
     }
 
     header_pool_.remove(branch->headers());
     header_pool_.prune(branch->top_height());
     header_pool_.add(outgoing, branch->height() + 1);
-
     notify(branch->height(), branch->headers(), outgoing);
     handler(error::success);
 }

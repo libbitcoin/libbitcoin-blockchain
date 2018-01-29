@@ -131,17 +131,15 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe (except for push block).
 
-    /// Push a validated header to the header index.
-    void reindex(const config::checkpoint& fork_point,
+    /// Push a validated header chain to the header index.
+    bool reindex(const config::checkpoint& fork_point,
         header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-        result_handler handler);
+        header_const_ptr_list_ptr outgoing);
 
-    /// Push an unconfirmed transaction to the tx table and index outputs.
-    void push(transaction_const_ptr tx, dispatcher& dispatch,
-        result_handler handler);
+    /// Push unconfirmed tx to tx table and index outputs (not used by node).
+    bool push(transaction_const_ptr tx);
 
-    /// Push a block to the blockchain, height is validated.
+    /// Push a block to blockchain, height validated (not used by node).
     bool push(block_const_ptr block, size_t height, uint32_t median_time_past);
 
     // Properties
@@ -347,9 +345,6 @@ private:
         const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(hash_list& out_hashes,
         const database::block_result& result) const;
-
-    void handle_reindex(const code& ec, header_const_ptr top_header,
-        result_handler handler);
 
     // These are thread safe.
     std::atomic<bool> stopped_;

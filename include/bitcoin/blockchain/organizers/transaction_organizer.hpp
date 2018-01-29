@@ -76,8 +76,6 @@ private:
         result_handler handler);
     void handle_connect(const code& ec, transaction_const_ptr tx,
         result_handler handler);
-    void handle_pushed(const code& ec, transaction_const_ptr tx,
-        result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.

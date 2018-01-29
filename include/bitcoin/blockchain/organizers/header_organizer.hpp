@@ -68,8 +68,6 @@ private:
     void handle_accept(const code& ec, header_branch::ptr branch,
         result_handler handler);
     void handle_complete(const code& ec, result_handler handler);
-    void handle_reindexed(const code& ec, header_branch::const_ptr branch,
-        header_const_ptr_list_ptr outgoing, result_handler handler);
 
     // Subscription.
     void notify(size_t fork_height, header_const_ptr_list_const_ptr incoming,

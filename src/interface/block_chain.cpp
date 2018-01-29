@@ -328,58 +328,41 @@ database::transaction_state block_chain::get_transaction_state(
 // Writers
 // ----------------------------------------------------------------------------
 
-void block_chain::reindex(const config::checkpoint& fork_point,
+bool block_chain::reindex(const config::checkpoint& fork_point,
     header_const_ptr_list_const_ptr incoming,
-    header_const_ptr_list_ptr outgoing, dispatcher& dispatch,
-    result_handler handler)
+    header_const_ptr_list_ptr outgoing)
 {
     if (incoming->empty())
-    {
-        handler(error::operation_failed);
-        return;
-    }
+        return false;
 
-    // The top (back) block is used to update the chain state.
-    const auto complete =
-        std::bind(&block_chain::handle_reindex,
-            this, _1, incoming->back(), handler);
+    const auto ec = database_.reorganize(fork_point, incoming, outgoing);
 
-    database_.reorganize(fork_point, incoming, outgoing, dispatch, complete);
-}
+    if (!ec)
+        return false;
 
-// Due to accept/population bypass, chain_state may not be populated.
-void block_chain::handle_reindex(const code& ec,
-    header_const_ptr top_header, result_handler handler)
-{
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
-    // We could alternatively just read the pool state from last header cache.
+    // Due to accept/population bypass, chain_state may not be populated.
+    // We could alternatively just read pool state from last header cache.
+    const auto top_header = incoming->back();
     set_header_pool_state(top_header->validation.state);
     last_header_.store(top_header);
-    handler(error::success);
+    return true;
 }
 
-void block_chain::push(transaction_const_ptr tx, dispatcher&,
-    result_handler handler)
+// Utility only.
+bool block_chain::push(transaction_const_ptr tx)
 {
     const auto state = tx->validation.state;
 
     if (!state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
+        return false;
 
     last_transaction_.store(tx);
 
-    // Transaction push is currently sequential so dispatch is not used.
-    handler(database_.push(*tx, state->enabled_forks()));
+    // Transaction store is currently sequential so dispatch is not used.
+    return database_.store(*tx, state->enabled_forks()) == error::success;
 }
 
+// Utility only.
 bool block_chain::push(block_const_ptr block, size_t height,
     uint32_t median_time_past)
 {

@@ -227,31 +227,20 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    const auto pushed_handler =
-        std::bind(&transaction_organizer::handle_pushed,
-            this, _1, tx, handler);
-
     //#########################################################################
-    fast_chain_.push(tx, dispatch_, pushed_handler);
+    const auto result = fast_chain_.push(tx);
     //#########################################################################
-}
 
-// private
-void transaction_organizer::handle_pushed(const code& ec,
-    transaction_const_ptr tx, result_handler handler)
-{
-    if (ec)
+    if (!result)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure writing transaction to store, is now corrupted: "
-            << ec.message();
-        handler(ec);
+            << "Failure writing transaction to store, is now corrupted: ";
+        handler(error::operation_failed);
         return;
     }
 
     // This gets picked up by node tx-out protocol for announcement to peers.
     notify(tx);
-
     handler(error::success);
 }
 
