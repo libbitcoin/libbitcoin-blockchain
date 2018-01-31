@@ -337,7 +337,7 @@ bool block_chain::reindex(const config::checkpoint& fork_point,
 
     const auto ec = database_.reorganize(fork_point, incoming, outgoing);
 
-    if (!ec)
+    if (ec)
         return false;
 
     // Due to accept/population bypass, chain_state may not be populated.
