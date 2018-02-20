@@ -41,6 +41,7 @@ using namespace std::placeholders;
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
     const settings& settings)
   : stopped_(true),
+    retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     priority_dispatch_(dispatch),
     block_populator_(dispatch, chain)
@@ -129,7 +130,7 @@ void validate_block::check(block_const_ptr block, result_handler handler) const
 ////    }
 
     // Run context free checks, sets time internally.
-    handler(block->check());
+    handler(block->check(retarget_));
 }
 
 // Accept sequence.

@@ -79,6 +79,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const bool retarget_;
     const bool use_libconsensus_;
     dispatcher& priority_dispatch_;
     mutable atomic_counter hits_;

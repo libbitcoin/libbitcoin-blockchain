@@ -53,6 +53,7 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
+    const bool retarget_;
     populate_header header_populator_;
 };
 

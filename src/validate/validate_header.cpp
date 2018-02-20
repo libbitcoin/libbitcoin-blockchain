@@ -35,9 +35,10 @@ using namespace std::placeholders;
 
 #define NAME "validate_header"
 
-validate_header::validate_header(dispatcher& dispatch,
-    const fast_chain& chain, const settings& settings)
+validate_header::validate_header(dispatcher& dispatch, const fast_chain& chain,
+    const settings& settings)
   : stopped_(true),
+    retarget_(settings.retarget),
     header_populator_(dispatch, chain)
 {
 }
@@ -71,7 +72,7 @@ void validate_header::check(header_const_ptr header,
     result_handler handler) const
 {
     // Run context free checks.
-    handler(header->check());
+    handler(header->check(retarget_));
 }
 
 // Accept sequence.
