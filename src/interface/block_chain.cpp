@@ -33,7 +33,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::config;
 using namespace bc::message;
 using namespace bc::database;
 using namespace std::placeholders;
@@ -258,7 +257,7 @@ void block_chain::push(transaction_const_ptr tx, dispatcher&,
     handler(database_.push(*tx, state->enabled_forks()));
 }
 
-void block_chain::reorganize(const checkpoint& fork_point,
+void block_chain::reorganize(const config::checkpoint& fork_point,
     block_const_ptr_list_const_ptr incoming_blocks,
     block_const_ptr_list_ptr outgoing_blocks, dispatcher& dispatch,
     result_handler handler)
