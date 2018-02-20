@@ -30,7 +30,6 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::chain;
-using namespace bc::config;
 
 // This will be eliminated once weak block headers are moved to the store.
 branch::branch(size_t height)
