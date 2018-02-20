@@ -29,7 +29,6 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
 using namespace bc::config;
 
 header_branch::header_branch(size_t height)
