@@ -72,7 +72,7 @@ void header_pool::add(header_const_ptr valid_header, size_t height)
 
     // Caller ensures the entry does not exist by using exists(), but
     // insert rejects the header if there is an entry of the same hash.
-    BITCOIN_ASSERT(left.find(entry) == left.end());
+    ////BITCOIN_ASSERT(left.find(entry) == left.end());
 
     // Add a back pointer from the parent for clearing the path later.
     const header_entry parent{ valid_header->previous_block_hash() };
