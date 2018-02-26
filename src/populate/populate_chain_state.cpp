@@ -41,9 +41,9 @@ static constexpr uint32_t hour_seconds = 3600u;
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
     const settings& settings)
-  : checkpoints_(config::checkpoint::sort(settings.checkpoints)),
-    forks_(settings.enabled_forks()),
+  : forks_(settings.enabled_forks()),
     stale_seconds_(settings.notify_limit_hours * hour_seconds),
+    checkpoints_(config::checkpoint::sort(settings.checkpoints)),
     fast_chain_(chain)
 {
 }

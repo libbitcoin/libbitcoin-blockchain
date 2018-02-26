@@ -71,9 +71,9 @@ private:
         bool block) const;
 
     // These are thread safe.
-    const config::checkpoint::list checkpoints_;
     const uint32_t forks_;
     const uint32_t stale_seconds_;
+    const config::checkpoint::list checkpoints_;
 
     // Populate is guarded against concurrent callers but because it uses the fast
     // chain it must not be invoked during chain writes.
