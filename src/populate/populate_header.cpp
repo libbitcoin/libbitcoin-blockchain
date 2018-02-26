@@ -20,6 +20,8 @@
 
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/populate/populate_base.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -34,11 +36,44 @@ populate_header::populate_header(dispatcher& dispatch, const fast_chain& chain)
 {
 }
 
-void populate_header::populate(header_const_ptr header,
+void populate_header::populate(header_branch::ptr branch,
     result_handler&& handler) const
 {
-    // Populate chain state for next block (promote from header pool or store).
-    const auto state = fast_chain_.chain_state(header);
+    // The header is already memory pooled (nothing to do).
+    if (branch->empty())
+    {
+        handler(error::duplicate_block);
+        return;
+    }
+
+    // TODO: why does the branch not already know its height?
+    // The header could not be connected to the header index.
+    if (!set_branch_height(branch))
+    {
+        handler(error::orphan_block);
+        return;
+    }
+
+    const auto header = branch->top();
+    fast_chain_.populate_header(*header);
+
+    // TODO: return error::duplicate_block here.
+    // There is a permanent previous validation error on the block.
+    if (header->validation.error != error::success)
+    {
+        handler(header->validation.error);
+        return;
+    }
+
+    // The header is already indexed (nothing to do).
+    if (header->validation.duplicate)
+    {
+        handler(error::duplicate_block);
+        return;
+    }
+
+    // Always populate chain state so that we never hit the store to do so.
+    const auto state = fast_chain_.chain_state(branch);
     header->validation.state = state;
 
     if (!state)
@@ -48,6 +83,26 @@ void populate_header::populate(header_const_ptr header,
     }
 
     handler(error::success);
+}
+
+bool populate_header::set_branch_height(header_branch::ptr branch) const
+{
+    size_t height;
+
+    // Reject header if above fork point, it doesn't connect to indexed header.
+    // This will cause rebuild of a confirmed block chain in the header pool
+    // before it can overtake the header chain. Long branch competition can be
+    // costly in terms of pool push/pop of headers in this scenario, however by
+    // adding outgoing headers to the pool the cost is somewhat mitigated.
+    // The greater cost of deep reorgs between stored blocks is updating state.
+    const auto fork_height = fast_chain_.get_fork_point();
+
+    // Get header index height of parent of the oldest branch block.
+    if (!fast_chain_.get_block_height(height, branch->hash(), fork_height))
+        return false;
+
+    branch->set_height(height);
+    return true;
 }
 
 } // namespace blockchain

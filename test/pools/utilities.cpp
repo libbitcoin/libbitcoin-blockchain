@@ -24,9 +24,13 @@ namespace blockchain {
 namespace test {
 namespace pools {
 
-bc::chain::chain_state::data utilities::get_chain_data()
+using namespace bc;
+using namespace bc::chain;
+using namespace bc::blockchain;
+
+chain_state::data utilities::get_chain_data()
 {
-    bc::chain::chain_state::data value;
+    chain_state::data value;
     value.height = 1;
     value.bits = { 0, { 0 } };
     value.version = { 1, { 0 } };
@@ -34,129 +38,114 @@ bc::chain::chain_state::data utilities::get_chain_data()
     return value;
 }
 
-bc::transaction_const_ptr utilities::get_const_tx(uint32_t version,
+transaction_const_ptr utilities::get_const_tx(uint32_t version,
     uint32_t locktime)
 {
-    bc::transaction_const_ptr tx = std::make_shared<
-        const bc::message::transaction>(bc::message::transaction{ version, locktime, {}, {} });
-
-    return tx;
+    return std::make_shared<const message::transaction>(
+        message::transaction{ version, locktime, {}, {} });
 }
 
-bc::blockchain::transaction_entry::ptr utilities::get_entry(
-    bc::chain::chain_state::ptr state, uint32_t version, uint32_t locktime)
+transaction_entry::ptr utilities::get_entry(chain_state::ptr state,
+    uint32_t version, uint32_t locktime)
 {
-    bc::transaction_const_ptr tx = get_const_tx(version, locktime);
-
+    auto tx = get_const_tx(version, locktime);
     tx->validation.state = state;
-    bc::blockchain::transaction_entry::ptr entry = std::make_shared<
-            bc::blockchain::transaction_entry>(tx);
-
-    return entry;
+    return std::make_shared<transaction_entry>(tx);
 }
 
-bc::blockchain::transaction_entry::ptr utilities::get_fee_entry(
-    bc::chain::chain_state::ptr state, uint32_t version,
-    uint32_t locktime, uint64_t fee)
+transaction_entry::ptr utilities::get_fee_entry(chain_state::ptr state,
+    uint32_t version, uint32_t locktime, uint64_t fee)
 {
-    bc::message::transaction tx(version, locktime, {}, {});
-    bc::chain::input in;
-    bc::chain::output_point point;
+    message::transaction tx(version, locktime, {}, {});
+    input in;
+    output_point point;
     point.validation.cache.set_value(fee);
     in.set_previous_output(point);
-    bc::chain::input::list ins = { in };
+    input::list ins{ in };
     tx.set_inputs(ins);
-
-    bc::transaction_const_ptr tx_ptr = std::make_shared<
-        const bc::message::transaction>(tx);
-
+    auto tx_ptr = std::make_shared<const message::transaction>(tx);
     tx_ptr->validation.state = state;
-    bc::blockchain::transaction_entry::ptr entry = std::make_shared<
-            bc::blockchain::transaction_entry>(tx_ptr);
-
-    return entry;
+    return std::make_shared<transaction_entry>(tx_ptr);
 }
 
-void utilities::connect(bc::blockchain::transaction_entry::ptr parent,
-    bc::blockchain::transaction_entry::ptr child, uint32_t index)
+void utilities::connect(transaction_entry::ptr parent,
+    transaction_entry::ptr child, uint32_t index)
 {
     parent->add_child(index, child);
     child->add_parent(parent);
 }
 
-void utilities::sever(bc::blockchain::transaction_entry::ptr entry)
+void utilities::sever(transaction_entry::ptr entry)
 {
     entry->remove_children();
     entry->remove_parents();
 }
 
-void utilities::sever(bc::blockchain::transaction_entry::list entries)
+void utilities::sever(transaction_entry::list entries)
 {
-    for (auto entry : entries)
+    for (auto entry: entries)
         sever(entry);
 }
 
-bool utilities::ordered_entries_equal(
-    bc::blockchain::transaction_entry::list alpha,
-    bc::blockchain::transaction_entry::list beta)
+bool utilities::ordered_entries_equal(transaction_entry::list left,
+    transaction_entry::list right)
 {
-    bool result = (alpha.size() == beta.size());
-    auto a_iter = alpha.begin();
-    auto b_iter = beta.begin();
+    auto equal = (left.size() == right.size());
+    auto left_it = left.begin();
+    auto right_it = right.begin();
 
-    while (result && (a_iter != alpha.end()) && (b_iter != beta.end()))
+    while (equal && (left_it != left.end()) && (right_it != right.end()))
     {
-        if (*a_iter != *b_iter)
-            result = false;
+        if (*left_it != *right_it)
+            equal = false;
 
-        a_iter++;
-        b_iter++;
+        ++left_it;
+        ++right_it;
     }
 
-    if (result)
-        result = (a_iter == alpha.end()) && (b_iter == beta.end());
+    if (equal)
+        equal = (left_it == left.end()) && (right_it == right.end());
 
-    return result;
+    return equal;
 }
 
-bool utilities::unordered_entries_equal(
-    bc::blockchain::transaction_entry::list alpha,
-    bc::blockchain::transaction_entry::list beta)
+bool utilities::unordered_entries_equal(transaction_entry::list left,
+    transaction_entry::list right)
 {
-    bool result = (alpha.size() == beta.size());
+    auto equal = (left.size() == right.size());
     std::map<uint32_t, bool> encountered;
 
-    if (result)
+    if (equal)
     {
-        for (auto ith : alpha)
+        for (auto left_value : left)
         {
-            bool found = false;
-            uint32_t j = 0;
+            auto found = false;
+            uint32_t counter = 0;
 
-            for (auto jth : beta)
+            for (auto right_value : right)
             {
-                if (ith == jth)
+                if (left_value == right_value)
                 {
-                    encountered.insert({ j, true });
+                    encountered.insert({ counter, true });
                     found = true;
                     break;
                 }
 
-                j++;
+                ++counter;
             }
 
             if (!found)
             {
-                result = false;
+                equal = false;
                 break;
             }
         }
     }
 
-    if (result)
-        result = (encountered.size() == alpha.size());
+    if (equal)
+        equal = (encountered.size() == left.size());
 
-    return result;
+    return equal;
 }
 
 } // namespace pools

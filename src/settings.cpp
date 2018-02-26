@@ -31,7 +31,7 @@ settings::settings()
     sigop_fee_satoshis(100),
     minimum_output_satoshis(500),
     notify_limit_hours(24),
-    reorganization_limit(256),
+    reorganization_limit(0),
     allow_collisions(true),
     easy_blocks(false),
     retarget(true),

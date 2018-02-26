@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/pools/block_entry.hpp>
+#include <bitcoin/blockchain/pools/header_entry.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -26,48 +26,53 @@
 namespace libbitcoin {
 namespace blockchain {
 
-block_entry::block_entry(block_const_ptr block)
-  : hash_(block->hash()), block_(block)
+header_entry::header_entry(header_const_ptr header, size_t height)
+  : height_(height), hash_(header->hash()), header_(header)
 {
 }
 
 // Create a search key.
-block_entry::block_entry(const hash_digest& hash)
-  : hash_(hash)
+header_entry::header_entry(const hash_digest& hash)
+  : height_(0), hash_(hash)
 {
 }
 
-block_const_ptr block_entry::block() const
+header_const_ptr header_entry::header() const
 {
-    return block_;
+    return header_;
 }
 
-const hash_digest& block_entry::hash() const
+size_t header_entry::height() const
+{
+    return height_;
+}
+
+const hash_digest& header_entry::hash() const
 {
     return hash_;
 }
 
 // Not callable if the entry is a search key.
-const hash_digest& block_entry::parent() const
+const hash_digest& header_entry::parent() const
 {
-    BITCOIN_ASSERT(block_);
-    return block_->header().previous_block_hash();
+    BITCOIN_ASSERT(header_);
+    return header_->previous_block_hash();
 }
 
 // Not valid if the entry is a search key.
-const hash_list& block_entry::children() const
+const hash_list& header_entry::children() const
 {
-    ////BITCOIN_ASSERT(block_);
+    ////BITCOIN_ASSERT(header_);
     return children_;
 }
 
 // This is not guarded against redundant entries.
-void block_entry::add_child(block_const_ptr child) const
+void header_entry::add_child(header_const_ptr child) const
 {
     children_.push_back(child->hash());
 }
 
-std::ostream& operator<<(std::ostream& out, const block_entry& of)
+std::ostream& operator<<(std::ostream& out, const header_entry& of)
 {
     out << encode_hash(of.hash_)
         << " " << encode_hash(of.parent())
@@ -76,7 +81,7 @@ std::ostream& operator<<(std::ostream& out, const block_entry& of)
 }
 
 // For the purpose of bimap identity only the tx hash matters.
-bool block_entry::operator==(const block_entry& other) const
+bool header_entry::operator==(const header_entry& other) const
 {
     return hash_ == other.hash_;
 }

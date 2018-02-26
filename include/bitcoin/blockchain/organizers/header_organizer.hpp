@@ -20,11 +20,12 @@
 #define LIBBITCOIN_BLOCKCHAIN_HEADER_ORGANIZER_HPP
 
 #include <atomic>
-#include <future>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/interface/safe_chain.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_header.hpp>
@@ -39,6 +40,9 @@ class BCB_API header_organizer
 public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<header_organizer> ptr;
+    typedef safe_chain::reindex_handler reindex_handler;
+    typedef resubscriber<code, size_t, header_const_ptr_list_const_ptr,
+        header_const_ptr_list_const_ptr> reindex_subscriber;
 
     /// Construct an instance.
     header_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
@@ -48,6 +52,8 @@ public:
     bool stop();
 
     void organize(header_const_ptr header, result_handler handler);
+    void subscribe(reindex_handler&& handler);
+    void unsubscribe();
 
     /// Remove all message vectors that match header hashes.
     void filter(get_data_ptr message) const;
@@ -59,17 +65,22 @@ private:
     // Verify sub-sequence.
     void handle_check(const code& ec, header_const_ptr header,
         result_handler handler);
-    void handle_accept(const code& ec, header_const_ptr header,
+    void handle_accept(const code& ec, header_branch::ptr branch,
         result_handler handler);
+    void handle_complete(const code& ec, result_handler handler);
 
-    void signal_completion(const code& ec);
+    // Subscription.
+    void notify(size_t fork_height, header_const_ptr_list_const_ptr incoming,
+        header_const_ptr_list_const_ptr outgoing);
 
     // These are thread safe.
+    fast_chain& fast_chain_;
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
-    std::promise<code> resume_;
-    ////header_pool header_pool_;
+    dispatcher& dispatch_;
+    header_pool header_pool_;
     validate_header validator_;
+    reindex_subscriber::ptr subscriber_;
 };
 
 } // namespace blockchain

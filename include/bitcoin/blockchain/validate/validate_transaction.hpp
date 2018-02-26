@@ -23,15 +23,13 @@
 #include <cstddef>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
 #include <bitcoin/blockchain/populate/populate_transaction.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API validate_transaction
 {
 public:
@@ -48,10 +46,7 @@ public:
     void connect(transaction_const_ptr tx, result_handler handler) const;
 
 protected:
-    inline bool stopped() const
-    {
-        return stopped_;
-    }
+    bool stopped() const;
 
 private:
     void handle_populated(const code& ec, transaction_const_ptr tx,
@@ -63,10 +58,7 @@ private:
     std::atomic<bool> stopped_;
     const bool retarget_;
     const bool use_libconsensus_;
-    const fast_chain& fast_chain_;
     dispatcher& dispatch_;
-
-    // Caller must not invoke accept/connect concurrently.
     populate_transaction transaction_populator_;
 };
 

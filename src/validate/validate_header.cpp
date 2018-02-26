@@ -23,10 +23,8 @@
 #include <functional>
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_input.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -37,15 +35,20 @@ using namespace std::placeholders;
 
 #define NAME "validate_header"
 
-// Database access is limited to: populator:
-// block: { bits, version, timestamp }
-
-validate_header::validate_header(dispatcher& dispatch,
-    const fast_chain& chain, const settings& settings)
+validate_header::validate_header(dispatcher& dispatch, const fast_chain& chain,
+    const settings& settings)
   : stopped_(true),
-    fast_chain_(chain),
+    retarget_(settings.retarget),
     header_populator_(dispatch, chain)
 {
+}
+
+// Properties.
+//-----------------------------------------------------------------------------
+
+bool validate_header::stopped() const
+{
+    return stopped_;
 }
 
 // Start/stop sequences.
@@ -69,23 +72,24 @@ void validate_header::check(header_const_ptr header,
     result_handler handler) const
 {
     // Run context free checks.
-    handler(header->check());
+    handler(header->check(retarget_));
 }
 
 // Accept sequence.
 //-----------------------------------------------------------------------------
 // These checks require chain state (net height and enabled forks).
 
-void validate_header::accept(header_const_ptr header,
+void validate_header::accept(header_branch::ptr branch,
     result_handler handler) const
 {
-    header_populator_.populate(header,
+    // Populate header state for the top header (others are valid).
+    header_populator_.populate(branch,
         std::bind(&validate_header::handle_populated,
-            this, _1, header, handler));
+            this, _1, branch, handler));
 }
 
-void validate_header::handle_populated(const code& ec, header_const_ptr header,
-    result_handler handler) const
+void validate_header::handle_populated(const code& ec,
+    header_branch::ptr branch, result_handler handler) const
 {
     if (stopped())
     {
@@ -96,6 +100,15 @@ void validate_header::handle_populated(const code& ec, header_const_ptr header,
     if (ec)
     {
         handler(ec);
+        return;
+    }
+
+    const auto header = branch->top();
+
+    // Skip validation when valid header is already stored.
+    if (header->validation.pooled)
+    {
+        handler(error::success);
         return;
     }
 

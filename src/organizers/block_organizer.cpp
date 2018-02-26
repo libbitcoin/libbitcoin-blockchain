@@ -25,8 +25,8 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/block_pool.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_block.hpp>
 
@@ -39,19 +39,13 @@ using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
-// Database access is limited to: push, pop, last-height, branch-work,
-// validator->populator:
-// spend: { spender }
-// block: { bits, version, timestamp }
-// transaction: { exists, height, output }
-
-block_organizer::block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-    threadpool& thread_pool, fast_chain& chain, const settings& settings)
+block_organizer::block_organizer(prioritized_mutex& mutex,
+    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
+    const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     dispatch_(dispatch),
-    block_pool_(settings.reorganization_limit),
     validator_(dispatch, chain, settings),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
@@ -88,7 +82,6 @@ bool block_organizer::stop()
 // Organize sequence.
 //-----------------------------------------------------------------------------
 
-// This is called from block_chain::organize.
 void block_organizer::organize(block_const_ptr block, result_handler handler)
 {
     // Critical Section
@@ -148,38 +141,16 @@ void block_organizer::handle_check(const code& ec, block_const_ptr block,
         return;
     }
 
-    // Verify the last branch block (all others are verified).
-    // Get the path through the block forest to the new block.
-    const auto branch = block_pool_.get_path(block);
-
-    //*************************************************************************
-    // CONSENSUS: This is the same check performed by satoshi, yet it will
-    // produce a chain split in the case of a hash collision. This is because
-    // it is not applied at the branch point, so some nodes will not see the
-    // collision block and others will, depending on block order of arrival.
-    //*************************************************************************
-    if (branch->empty() || fast_chain_.get_block_exists(block->hash()))
-    {
-        handler(error::duplicate_block);
-        return;
-    }
-
-    if (!set_branch_height(branch))
-    {
-        handler(error::orphan_block);
-        return;
-    }
-
     const auto accept_handler =
         std::bind(&block_organizer::handle_accept,
-            this, _1, branch, handler);
+            this, _1, block, handler);
 
     // Checks that are dependent on chain state and prevouts.
-    validator_.accept(branch, accept_handler);
+    validator_.accept(block, accept_handler);
 }
 
 // private
-void block_organizer::handle_accept(const code& ec, branch::ptr branch,
+void block_organizer::handle_accept(const code& ec, block_const_ptr block,
     result_handler handler)
 {
     if (stopped())
@@ -196,14 +167,14 @@ void block_organizer::handle_accept(const code& ec, branch::ptr branch,
 
     const auto connect_handler =
         std::bind(&block_organizer::handle_connect,
-            this, _1, branch, handler);
+            this, _1, block, handler);
 
     // Checks that include script validation.
-    validator_.connect(branch, connect_handler);
+    validator_.connect(block, connect_handler);
 }
 
 // private
-void block_organizer::handle_connect(const code& ec, branch::ptr branch,
+void block_organizer::handle_connect(const code& ec, block_const_ptr block,
     result_handler handler)
 {
     if (stopped())
@@ -218,62 +189,37 @@ void block_organizer::handle_connect(const code& ec, branch::ptr branch,
         return;
     }
 
-    auto& top_block = branch->top()->validation;
-    top_block.error = error::success;
+    block->validation.start_notify = asio::steady_clock::now();
 
-    auto& top_header = branch->top()->header().validation;
-    top_header.median_time_past = top_block.state->median_time_past();
-    top_header.height = branch->top_height();
-
-    uint256_t threshold;
-    const auto work = branch->work();
-    const auto first_height = branch->height() + 1u;
-    top_block.start_notify = asio::steady_clock::now();
-
-    // The chain query will stop if it reaches work level.
-    if (!fast_chain_.get_branch_work(threshold, work, first_height))
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // TODO: consider relay of pooled blocks by modifying subscriber semantics.
-    if (work <= threshold)
-    {
-        if (!top_block.simulate)
-            block_pool_.add(branch->top());
-
-        handler(error::insufficient_work);
-        return;
-    }
+    /// TODO: verify set in populate.
+    ////block->header().validation.height = ...;
+    block->header().validation.error = error::success;
 
     // TODO: create a simulated validation path that does not block others.
-    if (top_block.simulate)
+    if (block->header().validation.simulate)
     {
         handler(error::success);
         return;
     }
 
     // Get the outgoing blocks to forward to reorg handler.
-    const auto out_blocks = std::make_shared<block_const_ptr_list>();
+    const auto outgoing = std::make_shared<block_const_ptr_list>();
 
     const auto reorganized_handler =
         std::bind(&block_organizer::handle_reorganized,
-            this, _1, branch, out_blocks, handler);
+            this, _1, block, outgoing, handler);
 
-    // Replace! Switch!
+    // Update block state to valid.
     //#########################################################################
-    // Incoming blocks must have median_time_past set.
-    fast_chain_.reorganize(branch->fork_point(), branch->blocks(), out_blocks,
-        dispatch_, reorganized_handler);
+    ////fast_chain_.set_valid(block);
     //#########################################################################
 }
 
 // private
 // Outgoing blocks must have median_time_past set.
 void block_organizer::handle_reorganized(const code& ec,
-    branch::const_ptr branch, block_const_ptr_list_ptr outgoing,
-    result_handler handler)
+    block_const_ptr_list_const_ptr incoming,
+    block_const_ptr_list_ptr outgoing, result_handler handler)
 {
     if (ec)
     {
@@ -284,12 +230,8 @@ void block_organizer::handle_reorganized(const code& ec,
         return;
     }
 
-    block_pool_.remove(branch->blocks());
-    block_pool_.prune(branch->top_height());
-    block_pool_.add(outgoing);
-
-    // v3 reorg block order is reverse of v2, branch.back() is the new top.
-    notify(branch->height(), branch->blocks(), outgoing);
+    ////// v3 reorg block order is reverse of v2, branch.back() is the new top.
+    ////notify(branch->height(), branch->blocks(), outgoing);
 
     handler(error::success);
 }
@@ -298,12 +240,12 @@ void block_organizer::handle_reorganized(const code& ec,
 //-----------------------------------------------------------------------------
 
 // private
-void block_organizer::notify(size_t branch_height,
-    block_const_ptr_list_const_ptr branch,
-    block_const_ptr_list_const_ptr original)
+void block_organizer::notify(size_t fork_height,
+    block_const_ptr_list_const_ptr incoming,
+    block_const_ptr_list_const_ptr outgoing)
 {
     // This invokes handlers within the criticial section (deadlock risk).
-    subscriber_->invoke(error::success, branch_height, branch, original);
+    subscriber_->invoke(error::success, fork_height, incoming, outgoing);
 }
 
 void block_organizer::subscribe(reorganize_handler&& handler)
@@ -315,30 +257,6 @@ void block_organizer::subscribe(reorganize_handler&& handler)
 void block_organizer::unsubscribe()
 {
     subscriber_->relay(error::success, 0, {}, {});
-}
-
-// Queries.
-//-----------------------------------------------------------------------------
-
-void block_organizer::filter(get_data_ptr message) const
-{
-    block_pool_.filter(message);
-}
-
-// Utility.
-//-----------------------------------------------------------------------------
-
-// TODO: store this in the block pool and avoid this query.
-bool block_organizer::set_branch_height(branch::ptr branch)
-{
-    size_t height;
-
-    // Get blockchain parent of the oldest branch block.
-    if (!fast_chain_.get_height(height, branch->hash()))
-        return false;
-
-    branch->set_height(height);
-    return true;
 }
 
 } // namespace blockchain

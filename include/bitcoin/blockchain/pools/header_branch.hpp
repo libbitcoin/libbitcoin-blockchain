@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_FORK_HPP
-#define LIBBITCOIN_BLOCKCHAIN_FORK_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_BRANCH_HPP
+#define LIBBITCOIN_BLOCKCHAIN_BRANCH_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -30,67 +30,61 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is not thread safe.
-class BCB_API branch
+class BCB_API header_branch
 {
 public:
-    typedef std::shared_ptr<branch> ptr;
-    typedef std::shared_ptr<const branch> const_ptr;
+    typedef std::shared_ptr<header_branch> ptr;
+    typedef std::shared_ptr<const header_branch> const_ptr;
 
-    /// Establish a branch with the given parent height.
-    branch(size_t height=0);
+    /// Establish a header_branch with the given parent height.
+    header_branch(size_t height=max_size_t);
 
     /// Set the height of the parent of this branch (fork point).
     void set_height(size_t height);
 
-    /// Push the block onto the branch, true if successfully chains to parent.
-    bool push_front(block_const_ptr block);
+    /// Push the header onto the branch, true if chains to top.
+    bool push(header_const_ptr header);
 
-    /// The top block of the branch, if it exists.
-    block_const_ptr top() const;
+    /// The parent header of the top header of the branch, if both exist.
+    header_const_ptr top_parent() const;
 
-    /// The top block of the branch, if it exists.
+    /// The top header of the branch, if it exists.
+    header_const_ptr top() const;
+
+    /// The top header of the branch, if it exists.
     size_t top_height() const;
 
-    /////// Populate unspent duplicate state in the context of the branch.
-    ////void populate_duplicate(const chain::transaction& tx) const;
+    /// The member header pointer list.
+    header_const_ptr_list_const_ptr headers() const;
 
-    /// Populate prevout validation spend state in the context of the branch.
-    void populate_spent(const chain::output_point& outpoint) const;
-
-    /// Populate prevout validation output state in the context of the branch.
-    void populate_prevout(const chain::output_point& outpoint) const;
-
-    /// The member block pointer list.
-    block_const_ptr_list_const_ptr blocks() const;
-
-    /// Determine if there are any blocks in the branch.
+    /// True if there are any headers in the branch.
     bool empty() const;
 
-    /// The number of blocks in the branch.
+    /// The number of headers in the branch.
     size_t size() const;
 
     /// Summarize the work of the branch.
     uint256_t work() const;
 
-    /// The hash of the parent of this branch (branch point).
+    /// The hash of the branch parent (branch point).
     hash_digest hash() const;
 
-    /// The height of the parent of this branch (branch point).
+    /// The height of the parent parent (branch point).
     size_t height() const;
 
-    /// A checkpoint of the fork point, identical to { hash(), height() }.
+    /// The branch parent (branch point), identical to { hash(), height() }.
     config::checkpoint fork_point() const;
 
-    /// The bits of the block at the given height in the branch.
+    /// The bits of the header at the given height in the branch.
     bool get_bits(uint32_t& out_bits, size_t height) const;
 
-    /// The bits of the block at the given height in the branch.
+    /// The bits of the header at the given height in the branch.
     bool get_version(uint32_t& out_version, size_t height) const;
 
-    /// The bits of the block at the given height in the branch.
+    /// The bits of the header at the given height in the branch.
     bool get_timestamp(uint32_t& out_timestamp, size_t height) const;
 
-    /// The hash of the block at the given height if it exists in the branch.
+    /// The hash of the header at the given height if it exists in the branch.
     bool get_block_hash(hash_digest& out_hash, size_t height) const;
 
 protected:
@@ -101,8 +95,8 @@ protected:
 private:
     size_t height_;
 
-    /// The chain of blocks in the branch.
-    block_const_ptr_list_ptr blocks_;
+    /// The chain of headers in the branch.
+    header_const_ptr_list_ptr headers_;
 };
 
 } // namespace blockchain

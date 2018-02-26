@@ -68,6 +68,8 @@ public:
         inventory_fetch_handler;
 
     /// Subscription handlers.
+    typedef std::function<bool(code, size_t, header_const_ptr_list_const_ptr,
+        header_const_ptr_list_const_ptr)> reindex_handler;
     typedef std::function<bool(code, size_t, block_const_ptr_list_const_ptr,
         block_const_ptr_list_const_ptr)> reorganize_handler;
     typedef std::function<bool(code, transaction_const_ptr)>
@@ -129,14 +131,17 @@ public:
         const hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_locator(const chain::block::indexes& heights,
-        block_locator_fetch_handler handler) const = 0;
+    ////// TODO: must be branch-relative.
+    ////virtual void fetch_block_locator(const chain::block::indexes& heights,
+    ////    block_locator_fetch_handler handler) const = 0;
 
+    // TODO: must be branch-relative.
     virtual void fetch_header_locator(const chain::block::indexes& heights,
         header_locator_fetch_handler handler) const = 0;
 
     // Server Queries.
     //-------------------------------------------------------------------------
+    // Confirmed heights only.
 
     virtual void fetch_spend(const chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
@@ -166,6 +171,7 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
+    virtual void subscribe_headers(reindex_handler&& handler) = 0;
     virtual void subscribe_blockchain(reorganize_handler&& handler) = 0;
     virtual void subscribe_transaction(transaction_handler&& handler) = 0;
     virtual void unsubscribe() = 0;
@@ -173,14 +179,16 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(header_const_ptr header, result_handler handler) = 0;
+    virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
+    virtual code update(block_const_ptr block, size_t height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------
 
-    virtual bool is_stale() const = 0;
+    virtual bool is_blocks_stale() const = 0;
+    virtual bool is_headers_stale() const = 0;
 };
 
 } // namespace blockchain

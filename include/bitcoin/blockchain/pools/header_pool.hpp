@@ -25,60 +25,61 @@
 #include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/pools/block_entry.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_entry.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe against concurrent filtering only.
-/// There is no search within blocks of the block pool (just hashes).
-/// The branch object contains chain query for new (leaf) block validation.
-/// All pool blocks are valid, lacking only sufficient work for reorganzation.
+/// There is no search within headers of the header pool (just hashes).
 class BCB_API header_pool
 {
 public:
     header_pool(size_t maximum_depth);
 
-    // The number of blocks in the pool.
+    /// The number of headers in the pool.
     size_t size() const;
 
-    /// Add newly-validated block (work insufficient to reorganize).
-    void add(block_const_ptr valid_block);
+    /// The header exists in the pool.
+    bool exists(header_const_ptr header) const;
 
-    /// Add root path of reorganized blocks (no branches).
-    void add(block_const_ptr_list_const_ptr valid_blocks);
+    /// Add newly-validated header.
+    void add(header_const_ptr valid_header, size_t height);
 
-    /// Remove path of accepted blocks (sub-branches moved to root).
-    void remove(block_const_ptr_list_const_ptr accepted_blocks);
+    /// Add root path of reorganized headers (no branches).
+    void add(header_const_ptr_list_const_ptr valid_headers, size_t height);
 
-    /// Purge branches rooted below top minus maximum depth.
+    /// Remove path of accepted headers (sub-branches moved to root).
+    void remove(header_const_ptr_list_const_ptr accepted_headers);
+
+    /// Purge branch rooted below top minus maximum depth.
     void prune(size_t top_height);
 
-    /// Remove all message vectors that match block hashes.
+    /// Remove all message vectors that match header hashes.
     void filter(get_data_ptr message) const;
 
-    /// Get the root path to and including the new block.
-    /// This will be empty if the block already exists in the pool.
-    branch::ptr get_path(block_const_ptr candidate_block) const;
+    /// Get the root path to and including the new header.
+    /// This will be empty if the header already exists in the pool.
+    header_branch::ptr get_branch(header_const_ptr candidate_header) const;
 
 protected:
-    // A bidirectional map is used for efficient block and position retrieval.
-    // This produces the effect of a circular buffer hash table of blocks.
+    // A bidirectional map is used for efficient header and position retrieval.
+    // This produces the effect of a circular buffer hash table header forest.
     typedef boost::bimaps::bimap<
-        boost::bimaps::unordered_set_of<block_entry>,
-        boost::bimaps::multiset_of<size_t>> block_entries;
+        boost::bimaps::unordered_set_of<header_entry>,
+        boost::bimaps::multiset_of<size_t>> header_entries;
 
+    bool exists(const hash_digest& hash) const;
     void prune(const hash_list& hashes, size_t minimum_height);
-    bool exists(block_const_ptr candidate_block) const;
-    block_const_ptr parent(block_const_ptr block) const;
+    header_const_ptr parent(header_const_ptr header) const;
     ////void log_content() const;
 
     // This is thread safe.
     const size_t maximum_depth_;
 
     // This is guarded against filtering concurrent to writing.
-    block_entries blocks_;
+    header_entries headers_;
     mutable upgrade_mutex mutex_;
 };
 

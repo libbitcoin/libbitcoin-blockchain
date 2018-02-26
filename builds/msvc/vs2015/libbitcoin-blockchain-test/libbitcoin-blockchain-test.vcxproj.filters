@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\block_chain.cpp">
+    <ClCompile Include="..\..\..\..\test\fast_chain.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\block_entry.cpp">
+    <ClCompile Include="..\..\..\..\test\header_branch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\block_pool.cpp">
+    <ClCompile Include="..\..\..\..\test\header_entry.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\branch.cpp">
+    <ClCompile Include="..\..\..\..\test\header_pool.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\main.cpp">
@@ -51,10 +51,16 @@
     <ClCompile Include="..\..\..\..\test\pools\utilities.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\safe_chain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\transaction_entry.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utility.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\validate_block.cpp">
@@ -67,6 +73,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\pools\utilities.hpp">
       <Filter>src\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\utility.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -61,6 +61,9 @@ public:
     void fetch_template(merkle_block_fetch_handler) const;
     void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
 
+    /// Remove all message vectors that match block hashes.
+    void filter(get_data_ptr message) const;
+
 protected:
     bool stopped() const;
     uint64_t price(transaction_const_ptr tx) const;
@@ -73,17 +76,13 @@ private:
         result_handler handler);
     void handle_connect(const code& ec, transaction_const_ptr tx,
         result_handler handler);
-    void handle_pushed(const code& ec, transaction_const_ptr tx,
-        result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.
     void notify(transaction_const_ptr tx);
 
-    // This must be protected by the implementation.
-    fast_chain& fast_chain_;
-
     // These are thread safe.
+    fast_chain& fast_chain_;
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;

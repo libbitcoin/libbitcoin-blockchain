@@ -41,11 +41,10 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizers/header_organizer.cpp \
     src/organizers/transaction_organizer.cpp \
     src/pools/anchor_converter.cpp \
-    src/pools/block_entry.cpp \
-    src/pools/block_pool.cpp \
-    src/pools/branch.cpp \
     src/pools/child_closure_calculator.cpp \
     src/pools/conflicting_spend_remover.cpp \
+    src/pools/header_branch.cpp \
+    src/pools/header_entry.cpp \
     src/pools/header_pool.cpp \
     src/pools/parent_closure_calculator.cpp \
     src/pools/priority_calculator.cpp \
@@ -74,13 +73,16 @@ check_PROGRAMS = test/libbitcoin_blockchain_test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
-    test/block_chain.cpp \
-    test/block_entry.cpp \
-    test/block_pool.cpp \
-    test/branch.cpp \
+    test/fast_chain.cpp \
+    test/header_branch.cpp \
+    test/header_entry.cpp \
+    test/header_pool.cpp \
     test/main.cpp \
+    test/safe_chain.cpp \
     test/transaction_entry.cpp \
     test/transaction_pool.cpp \
+    test/utility.cpp \
+    test/utility.hpp \
     test/validate_block.cpp \
     test/validate_transaction.cpp \
     test/pools/anchor_converter.cpp \
@@ -133,11 +135,10 @@ include_bitcoin_blockchain_organizers_HEADERS = \
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/anchor_converter.hpp \
-    include/bitcoin/blockchain/pools/block_entry.hpp \
-    include/bitcoin/blockchain/pools/block_pool.hpp \
-    include/bitcoin/blockchain/pools/branch.hpp \
     include/bitcoin/blockchain/pools/child_closure_calculator.hpp \
     include/bitcoin/blockchain/pools/conflicting_spend_remover.hpp \
+    include/bitcoin/blockchain/pools/header_branch.hpp \
+    include/bitcoin/blockchain/pools/header_entry.hpp \
     include/bitcoin/blockchain/pools/header_pool.hpp \
     include/bitcoin/blockchain/pools/parent_closure_calculator.hpp \
     include/bitcoin/blockchain/pools/priority_calculator.hpp \

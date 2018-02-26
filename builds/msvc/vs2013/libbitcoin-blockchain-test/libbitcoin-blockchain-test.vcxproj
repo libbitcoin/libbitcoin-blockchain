@@ -70,10 +70,10 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\block_chain.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_entry.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\branch.cpp" />
+    <ClCompile Include="..\..\..\..\test\fast_chain.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_branch.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_entry.cpp" />
+    <ClCompile Include="..\..\..\..\test\header_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp" />
@@ -82,13 +82,16 @@
     <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\utilities.cpp" />
+    <ClCompile Include="..\..\..\..\test\safe_chain.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
+    <ClCompile Include="..\..\..\..\test\utility.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\test\validate_transaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\pools\utilities.hpp" />
+    <ClInclude Include="..\..\..\..\test\utility.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

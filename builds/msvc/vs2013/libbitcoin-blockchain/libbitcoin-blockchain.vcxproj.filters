@@ -69,19 +69,16 @@
     <ClCompile Include="..\..\..\..\src\pools\anchor_converter.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\branch.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\child_closure_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\conflicting_spend_remover.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\header_branch.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\header_entry.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\header_pool.cpp">
@@ -167,19 +164,16 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\branch.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\child_closure_calculator.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\conflicting_spend_remover.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_branch.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_entry.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_pool.hpp">

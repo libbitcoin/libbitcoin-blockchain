@@ -21,6 +21,7 @@
 #include "utilities.hpp"
 
 using namespace bc;
+using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
 
@@ -30,40 +31,34 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__nullptr__returns_em
 {
     transaction_pool_state pool_state;
     parent_closure_calculator calculator(pool_state);
-    auto result = calculator.get_closure(nullptr);
-    BOOST_REQUIRE_EQUAL(0u, result.size());
+    const auto result = calculator.get_closure(nullptr);
+    BOOST_REQUIRE(result.empty());
 }
 
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__anchor_entry__returns_list_with_single_anchor)
 {
     transaction_pool_state pool_state;
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
     parent_closure_calculator calculator(pool_state);
-    transaction_entry::ptr entry = utilities::get_entry(state, 1u, 0u);
-    auto result = calculator.get_closure(entry);
-    BOOST_REQUIRE_EQUAL(1u, result.size());
-    BOOST_REQUIRE(entry == result.front());
+    auto entry = utilities::get_entry(state, 1, 0);
+    const auto result = calculator.get_closure(entry);
+    BOOST_REQUIRE_EQUAL(result.size(), 1u);
+    BOOST_REQUIRE(result.front() == entry);
 }
 
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_immediate_parents__returns_entry_plus_parent_list)
 {
     transaction_pool_state pool_state;
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    transaction_entry::ptr parent1_entry = utilities::get_entry(state, 1u, 0u);
-    transaction_entry::ptr parent2_entry = utilities::get_entry(state, 2u, 0u);
-    transaction_entry::ptr child_entry = utilities::get_entry(state, 3u, 0u);
-    utilities::connect(parent1_entry, child_entry, 0u);
-    utilities::connect(parent2_entry, child_entry, 0u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto parent1_entry = utilities::get_entry(state, 1, 0);
+    auto parent2_entry = utilities::get_entry(state, 2, 0);
+    auto child_entry = utilities::get_entry(state, 3, 0);
+    utilities::connect(parent1_entry, child_entry, 0);
+    utilities::connect(parent2_entry, child_entry, 0);
     parent_closure_calculator calculator(pool_state);
-    auto result = calculator.get_closure(child_entry);
-    BOOST_REQUIRE_EQUAL(3u, result.size());
-    BOOST_REQUIRE(utilities::unordered_entries_equal(result,
-        { child_entry, parent1_entry, parent2_entry }));
+    const auto result = calculator.get_closure(child_entry);
+    BOOST_REQUIRE_EQUAL(result.size(), 3u);
+    BOOST_REQUIRE(utilities::unordered_entries_equal(result, { child_entry, parent1_entry, parent2_entry }));
 
     // cleanup
     utilities::sever({ parent1_entry, parent2_entry, child_entry });
@@ -72,22 +67,18 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_immediat
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_multi_child_parent__returns_entry_plus_parent_list)
 {
     transaction_pool_state pool_state;
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    transaction_entry::ptr parent1_entry = utilities::get_entry(state, 1u, 0u);
-    transaction_entry::ptr parent2_entry = utilities::get_entry(state, 2u, 0u);
-    transaction_entry::ptr child1_entry = utilities::get_entry(state, 3u, 0u);
-    transaction_entry::ptr child2_entry = utilities::get_entry(state, 4u, 0u);
-    utilities::connect(parent1_entry, child1_entry, 0u);
-    utilities::connect(parent2_entry, child1_entry, 0u);
-    utilities::connect(parent1_entry, child2_entry, 1u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto parent1_entry = utilities::get_entry(state, 1, 0);
+    auto parent2_entry = utilities::get_entry(state, 2, 0);
+    auto child1_entry = utilities::get_entry(state, 3, 0);
+    auto child2_entry = utilities::get_entry(state, 4, 0);
+    utilities::connect(parent1_entry, child1_entry, 0);
+    utilities::connect(parent2_entry, child1_entry, 0);
+    utilities::connect(parent1_entry, child2_entry, 1);
     parent_closure_calculator calculator(pool_state);
-    auto result = calculator.get_closure(child1_entry);
-    BOOST_REQUIRE_EQUAL(3u, result.size());
-    BOOST_REQUIRE(utilities::unordered_entries_equal(result,
-        { child1_entry, parent1_entry, parent2_entry }));
+    const auto result = calculator.get_closure(child1_entry);
+    BOOST_REQUIRE_EQUAL(result.size(), 3u);
+    BOOST_REQUIRE(utilities::unordered_entries_equal(result, { child1_entry, parent1_entry, parent2_entry }));
 
     // cleanup
     utilities::sever({ parent1_entry, parent2_entry, child1_entry, child2_entry });
@@ -96,26 +87,22 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_multi_ch
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_ancestors__returns_entry_plus_ancestor_list)
 {
     transaction_pool_state pool_state;
-    chain::chain_state::ptr state = std::make_shared<chain::chain_state>(
-        chain::chain_state{ utilities::get_chain_data(), {}, 0u });
-
-    transaction_entry::ptr alpha = utilities::get_entry(state, 1u, 0u);
-    transaction_entry::ptr beta = utilities::get_entry(state, 2u, 0u);
-    transaction_entry::ptr gamma = utilities::get_entry(state, 3u, 0u);
-    transaction_entry::ptr delta = utilities::get_entry(state, 4u, 0u);
-    transaction_entry::ptr epsilon = utilities::get_entry(state, 5u, 0u);
-    transaction_entry::ptr eta = utilities::get_entry(state, 6u, 0u);
-    utilities::connect(alpha, epsilon, 0u);
-    utilities::connect(beta, epsilon, 0u);
-    utilities::connect(alpha, eta, 1u);
-    utilities::connect(gamma, alpha, 0u);
-    utilities::connect(delta, gamma, 0u);
-
+    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto alpha = utilities::get_entry(state, 1, 0);
+    auto beta = utilities::get_entry(state, 2, 0);
+    auto gamma = utilities::get_entry(state, 3, 0);
+    auto delta = utilities::get_entry(state, 4, 0);
+    auto epsilon = utilities::get_entry(state, 5, 0);
+    auto eta = utilities::get_entry(state, 6, 0);
+    utilities::connect(alpha, epsilon, 0);
+    utilities::connect(beta, epsilon, 0);
+    utilities::connect(alpha, eta, 1);
+    utilities::connect(gamma, alpha, 0);
+    utilities::connect(delta, gamma, 0);
     parent_closure_calculator calculator(pool_state);
-    auto result = calculator.get_closure(epsilon);
-    BOOST_REQUIRE_EQUAL(5u, result.size());
-    BOOST_REQUIRE(utilities::unordered_entries_equal(result,
-        { alpha, beta, gamma, delta, epsilon }));
+    const auto result = calculator.get_closure(epsilon);
+    BOOST_REQUIRE_EQUAL(result.size(), 5u);
+    BOOST_REQUIRE(utilities::unordered_entries_equal(result, { alpha, beta, gamma, delta, epsilon }));
 
     // cleanup
     utilities::sever({ alpha, beta, gamma, delta, epsilon, eta });

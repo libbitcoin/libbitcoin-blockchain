@@ -25,7 +25,7 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_input.hpp>
 
@@ -38,22 +38,22 @@ using namespace std::placeholders;
 
 #define NAME "validate_block"
 
-// Database access is limited to: populator:
-// spend: { spender }
-// block: { bits, version, timestamp }
-// transaction: { exists, height, output }
-
-// If the priority threadpool is shut down when this is running the handlers
-// will never be invoked, resulting in a threadpool.join indefinite hang.
-
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
     const settings& settings)
   : stopped_(true),
+    retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
-    fast_chain_(chain),
     priority_dispatch_(dispatch),
     block_populator_(dispatch, chain)
 {
+}
+
+// Properties.
+//-----------------------------------------------------------------------------
+
+bool validate_block::stopped() const
+{
+    return stopped_;
 }
 
 // Start/stop sequences.
@@ -75,13 +75,13 @@ void validate_block::stop()
 
 void validate_block::check(block_const_ptr block, result_handler handler) const
 {
-////    // Guard aganst zero threads dispatch.
-////    if (block->transactions().empty())
-////    {
-////        handler(error::empty_block);
-////        return;
-////    }
-////
+    // Guard aganst zero threads dispatch.
+    if (block->transactions().empty())
+    {
+        handler(error::empty_block);
+        return;
+    }
+
 ////    result_handler complete_handler =
 ////        std::bind(&validate_block::handle_checked,
 ////            this, _1, block, handler);
@@ -130,21 +130,18 @@ void validate_block::check(block_const_ptr block, result_handler handler) const
 ////    }
 
     // Run context free checks, sets time internally.
-    handler(block->check());
+    handler(block->check(retarget_));
 }
 
 // Accept sequence.
 //-----------------------------------------------------------------------------
 // These checks require chain state, and block state if not under checkpoint.
 
-void validate_block::accept(branch::const_ptr branch,
+void validate_block::accept(block_const_ptr block,
     result_handler handler) const
 {
-    const auto block = branch->top();
-    BITCOIN_ASSERT(block);
-
-    // Populate block state for the top block (others are valid).
-    block_populator_.populate(branch,
+    // Populate block state for the next block.
+    block_populator_.populate(block, 
         std::bind(&validate_block::handle_populated,
             this, _1, block, handler));
 }
@@ -174,7 +171,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     }
 
     const auto sigops = std::make_shared<atomic_counter>(0);
-    const auto state = block->validation.state;
+    const auto state = block->header().validation.state;
     BITCOIN_ASSERT(state);
 
     const auto bip141 = state->is_enabled(rule_fork::bip141_rule);
@@ -192,7 +189,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     const auto count = block->transactions().size();
     const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
     const auto buckets = std::min(priority_dispatch_.size(), count);
-    BITCOIN_ASSERT(buckets != 0);
+    BITCOIN_ASSERT_MSG(buckets != 0, "block check must require transactions");
 
     const auto join_handler = synchronize(std::move(complete_handler), buckets,
         NAME "_accept");
@@ -213,7 +210,7 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     }
 
     code ec(error::success);
-    const auto& state = *block->validation.state;
+    const auto& state = *block->header().validation.state;
     const auto& txs = block->transactions();
     const auto count = txs.size();
 
@@ -246,16 +243,16 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 //-----------------------------------------------------------------------------
 // These checks require chain state, block state and perform script validation.
 
-void validate_block::connect(branch::const_ptr branch,
+void validate_block::connect(block_const_ptr block,
     result_handler handler) const
 {
-    const auto block = branch->top();
-    BITCOIN_ASSERT(block && block->validation.state);
-
     // We are reimplementing connect, so must set timer externally.
     block->validation.start_connect = asio::steady_clock::now();
 
-    if (block->validation.state->is_under_checkpoint())
+    const auto state = block->header().validation.state;
+    BITCOIN_ASSERT(state);
+
+    if (state->is_under_checkpoint())
     {
         handler(error::success);
         return;
@@ -294,8 +291,10 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     size_t buckets, result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
+
     code ec(error::success);
-    const auto forks = block->validation.state->enabled_forks();
+    const auto state = block->header().validation.state;
+    const auto forks = state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
 
@@ -305,7 +304,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         ++queries_;
 
         // The tx is pooled with current fork state so outputs are validated.
-        if (tx->validation.current)
+        if (tx->validation.pooled)
         {
             ++hits_;
             continue;
@@ -343,7 +342,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
 
         if (ec)
         {
-            const auto height = block->validation.state->height();
+            const auto height = state->height();
             dump(ec, *tx, input_index, forks, height, use_libconsensus_);
             break;
         }

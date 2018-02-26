@@ -22,21 +22,24 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/branch.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_base.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is NOT thread safe.
+/// This class is thread safe.
 class BCB_API populate_header
   : public populate_base
 {
 public:
     populate_header(dispatcher& dispatch, const fast_chain& chain);
 
-    /// Populate validation state for the top block.
-    void populate(header_const_ptr header, result_handler&& handler) const;
+    /// Populate validation state for the top indexed block.
+    void populate(header_branch::ptr branch, result_handler&& handler) const;
+
+private:
+    bool set_branch_height(header_branch::ptr branch) const;
 };
 
 } // namespace blockchain
