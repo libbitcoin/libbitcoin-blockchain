@@ -1180,9 +1180,9 @@ void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
 // Filters.
 //-----------------------------------------------------------------------------
 
-inline bool is_needed(uint8_t block_state)
+inline bool is_needed(uint8_t state)
 {
-    return block_state == block_state::missing || is_pooled(block_state);
+    return state == block_state::missing || is_pooled(state);
 }
 
 // This may execute up to 500 queries (protocol limit).
