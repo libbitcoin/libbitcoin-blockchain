@@ -1129,7 +1129,6 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     handler(error::not_implemented, {});
 }
 
-// TODO: rename to addresses, extract result set to list, apply limits.
 void block_chain::fetch_history(const short_hash& address_hash, size_t,
     size_t, history_fetch_handler handler) const
 {
@@ -1139,10 +1138,12 @@ void block_chain::fetch_history(const short_hash& address_hash, size_t,
         return;
     }
 
-    // TODO: have payment result return payment_offset iteration.
     auto result = database_.addresses().get(address_hash);
 
-    // TODO: use transactions_ to convert payment_offset to payment_record.
+    // TODO: iterate result set, apply limits and populate tx hashes.
+    // TODO: could return an iterator with an internal tx store reference,
+    // TODO: which would eliminate problem of excessive memory allocation.
+    // TODO: however the allocation lock cost may be problematic.
     handler(error::not_implemented, {});
 }
 
