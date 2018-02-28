@@ -1139,8 +1139,10 @@ void block_chain::fetch_history(const short_hash& address_hash, size_t,
         return;
     }
 
+    // TODO: have payment result return payment_offset iteration.
     auto result = database_.addresses().get(address_hash);
 
+    // TODO: use transactions_ to convert payment_offset to payment_record.
     handler(error::not_implemented, {});
 }
 
