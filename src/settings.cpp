@@ -32,8 +32,7 @@ settings::settings()
     minimum_output_satoshis(500),
     notify_limit_hours(24),
     reorganization_limit(0),
-    allow_collisions(true),
-    easy_blocks(false),
+    difficult(true),
     retarget(true),
     bip16(true),
     bip30(true),
@@ -83,7 +82,7 @@ settings::settings(config::settings context)
 
         case config::settings::testnet:
         {
-            easy_blocks = true;
+            difficult = false;
 
             checkpoints.reserve(7);
             checkpoints.emplace_back("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", 0);
@@ -116,7 +115,7 @@ uint32_t settings::enabled_forks() const
     using namespace machine;
 
     uint32_t forks = rule_fork::no_rules;
-    forks |= (easy_blocks ? rule_fork::easy_blocks : 0);
+    forks |= (difficult ? rule_fork::difficult : 0);
     forks |= (retarget ? rule_fork::retarget : 0);
     forks |= (bip16 ? rule_fork::bip16_rule : 0);
     forks |= (bip30 ? rule_fork::bip30_rule : 0);
