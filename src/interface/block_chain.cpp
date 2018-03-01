@@ -1129,8 +1129,11 @@ void block_chain::fetch_spend(const chain::output_point& outpoint,
     handler(error::not_implemented, {});
 }
 
-void block_chain::fetch_history(const short_hash& address_hash, size_t,
-    size_t, history_fetch_handler handler) const
+// TODO: could return an iterator with an internal tx store reference, which
+// would eliminate problem of excessive memory allocation, however the
+// allocation lock cost may be problematic.
+void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
+    size_t from_height, history_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1138,13 +1141,29 @@ void block_chain::fetch_history(const short_hash& address_hash, size_t,
         return;
     }
 
-    auto result = database_.addresses().get(address_hash);
+    // Cannot know size without reading all, so dynamically allocate.
+    chain::payment_record::list payments;
+    size_t count = 0;
 
-    // TODO: iterate result set, apply limits and populate tx hashes.
-    // TODO: could return an iterator with an internal tx store reference,
-    // TODO: which would eliminate problem of excessive memory allocation.
-    // TODO: however the allocation lock cost may be problematic.
-    handler(error::not_implemented, {});
+    // Result set is ordered most recent tx first (reverse point order in tx).
+    for (auto payment: database_.addresses().get(address_hash))
+    {
+        if (count++ == limit)
+            break;
+
+        const auto tx = database_.transactions().get(payment.link());
+        const auto height = tx.height();
+
+        if (height < from_height)
+            break;
+
+        // Copy of each payment record above so can be modified here.
+        payment.set_height(height);
+        payment.set_hash(tx.hash());
+        payments.push_back(payment);
+    }
+
+    handler(error::success, std::move(payments));
 }
 
 // TODO: eliminate.
