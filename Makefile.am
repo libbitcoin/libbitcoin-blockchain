@@ -63,13 +63,13 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/validate/validate_input.cpp \
     src/validate/validate_transaction.cpp
 
-# local: test/libbitcoin_blockchain_test
+# local: test/libbitcoin-blockchain-test
 #------------------------------------------------------------------------------
 if WITH_TESTS
 
-TESTS = libbitcoin_blockchain_test_runner.sh
+TESTS = libbitcoin-blockchain-test_runner.sh
 
-check_PROGRAMS = test/libbitcoin_blockchain_test
+check_PROGRAMS = test/libbitcoin-blockchain-test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
