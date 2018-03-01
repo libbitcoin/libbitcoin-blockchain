@@ -131,10 +131,14 @@ void populate_block::populate_transactions(block_const_ptr block,
     // Must skip coinbase here as it is already accounted for.
     const auto first = bucket == 0 ? buckets : bucket;
 
-    // If collisions allowed then don't need to test for collisions.
-    // If stale then don't bother checking for the pool optimization.
-    if (!fast_chain_.is_blocks_stale() || 
-        !state->is_enabled(rule_fork::allow_collisions))
+    // Without bip30 collisions are allowed and with bip34 presumed impossible.
+    // In either case allow them to occur (i.e. don't check for collisions).
+    const auto allow_collisions = !state->is_enabled(rule_fork::bip30_rule) ||
+        state->is_enabled(rule_fork::bip34_rule);
+
+    // If collisions are disallowed then need to test for them.
+    // If not stale then populate for the pool optimizations.
+    if (!allow_collisions || !fast_chain_.is_blocks_stale())
     {
         const auto forks = state->enabled_forks();
 

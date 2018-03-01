@@ -47,8 +47,7 @@ public:
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
     config::checkpoint::list checkpoints;
-    bool allow_collisions;
-    bool easy_blocks;
+    bool difficult;
     bool retarget;
     bool bip16;
     bool bip30;
