@@ -162,9 +162,8 @@ bool populate_chain_state::populate_bip9_bit1(chain_state::data& data,
 bool populate_chain_state::populate_all(chain_state::data& data,
     header_branch::const_ptr branch, bool block) const
 {
-    // Construct a map to inform chain state data population.
-    const auto map = chain_state::get_map(data.height, checkpoints_,
-        forks_);
+    // Construct the map to inform chain state data population.
+    const auto map = chain_state::get_map(data.height, checkpoints_, forks_);
 
     return
         populate_bits(data, map, branch, block) &&
