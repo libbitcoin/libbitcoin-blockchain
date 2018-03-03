@@ -44,12 +44,7 @@ size_t header_pool::size() const
 bool header_pool::exists(const hash_digest& hash) const
 {
     const auto& left = headers_.left;
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    shared_lock lock(mutex_);
     return left.find(header_entry{ hash }) != left.end();
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool header_pool::exists(header_const_ptr candidate_header) const
@@ -215,6 +210,7 @@ void header_pool::prune(size_t top_height)
         prune(hashes, minimum_height);
 }
 
+// This is guarded against concurrent write (the only reason for the mutex).
 void header_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
@@ -223,9 +219,19 @@ void header_pool::filter(get_data_ptr message) const
     for (auto it = inventories.begin(); it != inventories.end();)
     {
         if (!it->is_block_type())
+        {
             ++it;
-        else
-            it = (exists(it->hash()) ? inventories.erase(it) : it + 1);
+            continue;
+        }
+
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        mutex_.lock_shared();
+        const auto found = exists(it->hash());
+        mutex_.unlock_shared();
+        ///////////////////////////////////////////////////////////////////////
+
+        it = (found ? inventories.erase(it) : it + 1);
     }
 }
 
@@ -236,12 +242,8 @@ header_const_ptr header_pool::parent(header_const_ptr header) const
     const header_entry parent_entry{ header->previous_block_hash() };
     const auto& left = headers_.left;
 
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    shared_lock lock(mutex_);
     const auto parent = left.find(parent_entry);
     return parent == left.end() ? nullptr : parent->first.header();
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 header_branch::ptr header_pool::get_branch(header_const_ptr header) const
