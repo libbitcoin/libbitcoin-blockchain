@@ -73,10 +73,8 @@ private:
     const uint32_t stale_seconds_;
     const config::checkpoint::list checkpoints_;
 
-    // Populate is guarded against concurrent callers but because it uses the fast
-    // chain it must not be invoked during chain writes.
+    // This is used in a thread safe manner, as headers are never changed.
     const fast_chain& fast_chain_;
-    mutable shared_mutex mutex_;
 };
 
 } // namespace blockchain

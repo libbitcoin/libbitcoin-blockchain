@@ -162,10 +162,6 @@ bool populate_chain_state::populate_bip9_bit1(chain_state::data& data,
 bool populate_chain_state::populate_all(chain_state::data& data,
     header_branch::const_ptr branch, bool block) const
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
-
     // Construct a map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_,
         forks_);
@@ -176,7 +172,6 @@ bool populate_chain_state::populate_all(chain_state::data& data,
         populate_timestamps(data, map, branch, block) &&
         populate_bip9_bit0(data, map, branch, block) &&
         populate_bip9_bit1(data, map, branch, block);
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 // Get chain state for top block|header.
