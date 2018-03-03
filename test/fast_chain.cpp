@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_height__not_found__false)
     START_BLOCKCHAIN(instance, false);
 
     size_t height;
-    BOOST_REQUIRE(!instance.get_block_height(height, null_hash, true));
+    BOOST_REQUIRE(!instance.get_block_height(height, null_hash, max_size_t));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_height__found__true)
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_height__found__true)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
 
     size_t height;
-    BOOST_REQUIRE(instance.get_block_height(height, block1->hash(), true));
+    BOOST_REQUIRE(instance.get_block_height(height, block1->hash(), max_size_t));
     BOOST_REQUIRE_EQUAL(height, 1u);
 }
 
