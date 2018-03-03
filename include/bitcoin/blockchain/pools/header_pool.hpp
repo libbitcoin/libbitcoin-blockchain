@@ -79,6 +79,7 @@ protected:
     const size_t maximum_depth_;
 
     // This is guarded against filtering concurrent to writing.
+    // All other operations are presumed to be externally protected.
     header_entries headers_;
     mutable upgrade_mutex mutex_;
 };
