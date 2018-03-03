@@ -200,7 +200,7 @@ void transaction_organizer::handle_accept(const code& ec,
         std::bind(&transaction_organizer::handle_connect,
             this, _1, tx, handler);
 
-    // Checks that include script validation.
+    // Checks that include script metadata.
     validator_.connect(tx, connect_handler);
 }
 
@@ -221,7 +221,7 @@ void transaction_organizer::handle_connect(const code& ec,
     }
 
     // TODO: create a simulated validation path that does not block others.
-    if (tx->validation.simulate)
+    if (tx->metadata.simulate)
     {
         handler(error::success);
         return;

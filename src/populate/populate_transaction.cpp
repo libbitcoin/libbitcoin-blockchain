@@ -53,19 +53,19 @@ void populate_transaction::populate(transaction_const_ptr tx,
     }
 
     // Populate based on max height (header indexing excluded).
-    tx->validation.state = state;
+    tx->metadata.state = state;
     fast_chain_.populate_transaction(*tx, state->enabled_forks());
 
     // TODO: return error::duplicate_transaction here.
     // There is a permanent previous validation error on the tx.
-    if (tx->validation.error != error::success)
+    if (tx->metadata.error != error::success)
     {
-        handler(tx->validation.error);
+        handler(tx->metadata.error);
         return;
     }
 
     // The tx is already confirmed (nothing to do).
-    if (tx->validation.duplicate)
+    if (tx->metadata.duplicate)
     {
         handler(error::duplicate_transaction);
         return;
@@ -73,7 +73,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
 
     // Bypass population/validation when valid tx w/same forks is stored.
     // This means that any given tx may not have chain state populated.
-    if (tx->validation.pooled)
+    if (tx->metadata.pooled)
     {
         handler(error::success);
         return;

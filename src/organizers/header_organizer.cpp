@@ -163,7 +163,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     const auto top = branch->top();
 
     // TODO: create a simulated validation path that does not block others.
-    if (top->validation.simulate)
+    if (top->metadata.simulate)
     {
         handler(error::success);
         return;

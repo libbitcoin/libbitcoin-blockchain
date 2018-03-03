@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(validate_block__native__block_438513_tx__valid)
     BOOST_REQUIRE(tx.from_data(decoded_tx));
 
     const auto& input = tx.inputs()[index];
-    auto& prevout = input.previous_output().validation.cache;
+    auto& prevout = input.previous_output().metadata.cache;
 
     prevout.set_value(0);
     prevout.set_script(script::factory(decoded_script, false));

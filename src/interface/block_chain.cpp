@@ -239,17 +239,17 @@ void block_chain::populate_header(const chain::header& header,
     const auto relevant = result.height() <= fork_height;
 
     // Transactions are populated (count population is atomic).
-    header.validation.populated = result.transaction_count() != 0;
+    header.metadata.populated = result.transaction_count() != 0;
 
     // Stored headers are always valid, error refers to the block.
-    header.validation.pooled = true;
+    header.metadata.pooled = true;
 
     // Duplicate implies that a new header should be ignored.
-    header.validation.duplicate = is_indexed(state) ||
+    header.metadata.duplicate = is_indexed(state) ||
         (is_confirmed(state) && relevant);
 
     // An error results from block validation failure after tx download.
-    header.validation.error = result.error();
+    header.metadata.error = result.error();
 }
 
 // Header indexing or pool controlled by fork_height.
@@ -278,16 +278,16 @@ void block_chain::populate_transaction(const chain::transaction& tx,
 
     // Pooled implies that the tx should not be revalidated.
     // Fork-valid is not applicable to indexed txs, as forks are not stored.
-    tx.validation.pooled = !indexed && fork_valid;
+    tx.metadata.pooled = !indexed && fork_valid;
 
     // Duplicate implies that a new tx should be ignored.
-    tx.validation.duplicate = indexed || (for_pool && fork_valid);
+    tx.metadata.duplicate = indexed || (for_pool && fork_valid);
 
     // This is currently always success, since there is no tx invalid state.
-    tx.validation.error = result.error();
+    tx.metadata.error = result.error();
 
     // This allows the existing transaction to be associated to a block.
-    tx.validation.link = result.link();
+    tx.metadata.link = result.link();
 
     //*************************************************************************
     // CONSENSUS: The satoshi hard fork that reverts BIP30 after BIP34 makes a
@@ -295,16 +295,16 @@ void block_chain::populate_transaction(const chain::transaction& tx,
     // prefer correct behavior in the "impossible" case vs. deleting money.
     // But we can reject the rare scenario for the tx pool as an optimization.
     //*************************************************************************
-    if (tx.validation.duplicate && !for_pool && result.is_spent(fork_height))
+    if (tx.metadata.duplicate && !for_pool && result.is_spent(fork_height))
     {
         // Treat a spent duplicate as if it did not exist.
         // The original tx will not be queryable independent of the block.
         // The original tx's block linkage is unbroken by accepting duplicate.
         // If the new block is popped the original tx resurfaces automatically.
-        tx.validation.pooled = false;
-        tx.validation.duplicate = false;
-        tx.validation.error = error::success;
-        tx.validation.link = transaction::validation::undetermined_link;
+        tx.metadata.pooled = false;
+        tx.metadata.duplicate = false;
+        tx.metadata.error = error::success;
+        tx.metadata.link = transaction::validation::undetermined_link;
     }
 }
 
@@ -343,7 +343,7 @@ bool block_chain::reindex(const config::checkpoint& fork_point,
     // Due to accept/population bypass, chain_state may not be populated.
     // We could alternatively just read pool state from last header cache.
     const auto top_header = incoming->back();
-    set_header_pool_state(top_header->validation.state);
+    set_header_pool_state(top_header->metadata.state);
     last_header_.store(top_header);
     return true;
 }
@@ -351,7 +351,7 @@ bool block_chain::reindex(const config::checkpoint& fork_point,
 // Utility only.
 bool block_chain::push(transaction_const_ptr tx)
 {
-    const auto state = tx->validation.state;
+    const auto state = tx->metadata.state;
 
     if (!state)
         return false;
@@ -565,8 +565,8 @@ void block_chain::fetch_block(size_t height, bool witness,
     const auto cached = last_block_.load();
 
     // Try the cached block first.
-    if (cached && cached->header().validation.state &&
-        cached->header().validation.state->height() == height)
+    if (cached && cached->header().metadata.state &&
+        cached->header().metadata.state->height() == height)
     {
         handler(error::success, cached, height);
         return;
@@ -607,9 +607,9 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
     const auto cached = last_block_.load();
 
     // Try the cached block first.
-    if (cached && cached->header().validation.state && cached->hash() == hash)
+    if (cached && cached->header().metadata.state && cached->hash() == hash)
     {
-        const auto height = cached->header().validation.state->height();
+        const auto height = cached->header().metadata.state->height();
         handler(error::success, cached, height);
         return;
     }
@@ -807,12 +807,12 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     {
         const auto cached = last_transaction_.load();
 
-        if (cached && cached->validation.state && cached->hash() == hash)
+        if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
 
             // Simulate the position and height overloading of the database.
-            const auto height = cached->validation.state->height();
+            const auto height = cached->metadata.state->height();
             handler(error::success, cached, 0, height);
             return;
         }
@@ -848,12 +848,12 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     {
         const auto cached = last_transaction_.load();
 
-        if (cached && cached->validation.state && cached->hash() == hash)
+        if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
 
             // Simulate the position and height overloading of the database.
-            const auto height = cached->validation.state->height();
+            const auto height = cached->metadata.state->height();
             handler(error::success, 0, height);
             return;
         }
@@ -1329,7 +1329,7 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 code block_chain::update(block_const_ptr block, size_t height)
 {
     // TODO: set:
-    // block->validation.end_push = asio::steady_clock::now();
+    // block->metadata.end_push = asio::steady_clock::now();
     return database_.update(block, height);
 }
 

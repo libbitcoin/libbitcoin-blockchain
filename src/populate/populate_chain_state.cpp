@@ -216,11 +216,11 @@ chain::chain_state::ptr populate_chain_state::populate(
     const auto top_parent = branch->top_parent();
 
     // Promote from immediate parent state if avialable (most common and fast).
-    if (top_parent && top_parent->validation.state)
+    if (top_parent && top_parent->metadata.state)
     {
         const auto state = std::make_shared<chain::chain_state>(
-            *top_parent->validation.state, *top_header);
-        top_header->validation.state = state;
+            *top_parent->metadata.state, *top_header);
+        top_header->metadata.state = state;
         return state;
     }
 

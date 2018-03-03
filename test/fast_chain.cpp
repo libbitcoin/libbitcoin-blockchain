@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__not_found__false)
     const chain::output_point outpoint{ null_hash, 42 };
     size_t header_branch_height = 0;
     instance.populate_output(outpoint, header_branch_height);
-    BOOST_REQUIRE(!outpoint.validation.cache.is_valid());
+    BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__populate_output__found__expected)
@@ -257,12 +257,12 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__found__expected)
     const auto expected_value = initial_block_subsidy_satoshi();
     const auto expected_script = block2->transactions()[0].outputs()[0].script().to_string(0);
     instance.populate_output(outpoint, 2);
-    BOOST_REQUIRE(outpoint.validation.cache.is_valid());
+    BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 
-    BOOST_REQUIRE(outpoint.validation.coinbase);
-    BOOST_REQUIRE_EQUAL(outpoint.validation.height, 2u);
-    BOOST_REQUIRE_EQUAL(outpoint.validation.cache.value(), expected_value);
-    BOOST_REQUIRE_EQUAL(outpoint.validation.cache.script().to_string(0), expected_script);
+    BOOST_REQUIRE(outpoint.metadata.coinbase);
+    BOOST_REQUIRE_EQUAL(outpoint.metadata.height, 2u);
+    BOOST_REQUIRE_EQUAL(outpoint.metadata.cache.value(), expected_value);
+    BOOST_REQUIRE_EQUAL(outpoint.metadata.cache.script().to_string(0), expected_script);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__populate_output__below_fork__true)
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__below_fork__true)
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
     instance.populate_output(outpoint, 3);
-    BOOST_REQUIRE(outpoint.validation.cache.is_valid());
+    BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__populate_output__at_fork__true)
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__at_fork__true)
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
     instance.populate_output(outpoint, 2);
-    BOOST_REQUIRE(outpoint.validation.cache.is_valid());
+    BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__populate_output__above_fork__false)
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__above_fork__false)
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
     instance.populate_output(outpoint, 1);
-    BOOST_REQUIRE(!outpoint.validation.cache.is_valid());
+    BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

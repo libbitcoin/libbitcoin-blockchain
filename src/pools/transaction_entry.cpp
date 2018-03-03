@@ -35,12 +35,12 @@ inline uint32_t cap(size_t value)
 }
 
 // TODO: implement size, sigops, and fees caching on chain::transaction.
-// This requires the full population of transaction.validation metadata.
+// This requires the full population of transaction.metadata metadata.
 transaction_entry::transaction_entry(transaction_const_ptr tx)
  : size_(cap(tx->serialized_size(message::version::level::canonical))),
    sigops_(cap(tx->signature_operations())),
    fees_(tx->fees()),
-   forks_(tx->validation.state->enabled_forks()),
+   forks_(tx->metadata.state->enabled_forks()),
    hash_(tx->hash()),
    parents_(),
    children_()

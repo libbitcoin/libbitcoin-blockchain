@@ -49,7 +49,7 @@ transaction_entry::ptr utilities::get_entry(chain_state::ptr state,
     uint32_t version, uint32_t locktime)
 {
     auto tx = get_const_tx(version, locktime);
-    tx->validation.state = state;
+    tx->metadata.state = state;
     return std::make_shared<transaction_entry>(tx);
 }
 
@@ -59,12 +59,12 @@ transaction_entry::ptr utilities::get_fee_entry(chain_state::ptr state,
     message::transaction tx(version, locktime, {}, {});
     input in;
     output_point point;
-    point.validation.cache.set_value(fee);
+    point.metadata.cache.set_value(fee);
     in.set_previous_output(point);
     input::list ins{ in };
     tx.set_inputs(ins);
     auto tx_ptr = std::make_shared<const message::transaction>(tx);
-    tx_ptr->validation.state = state;
+    tx_ptr->metadata.state = state;
     return std::make_shared<transaction_entry>(tx_ptr);
 }
 

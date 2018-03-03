@@ -169,7 +169,7 @@ void block_organizer::handle_accept(const code& ec, block_const_ptr block,
         std::bind(&block_organizer::handle_connect,
             this, _1, block, handler);
 
-    // Checks that include script validation.
+    // Checks that include script metadata.
     validator_.connect(block, connect_handler);
 }
 
@@ -189,14 +189,14 @@ void block_organizer::handle_connect(const code& ec, block_const_ptr block,
         return;
     }
 
-    block->validation.start_notify = asio::steady_clock::now();
+    block->metadata.start_notify = asio::steady_clock::now();
 
     /// TODO: verify set in populate.
-    ////block->header().validation.height = ...;
-    block->header().validation.error = error::success;
+    ////block->header().metadata.height = ...;
+    block->header().metadata.error = error::success;
 
     // TODO: create a simulated validation path that does not block others.
-    if (block->header().validation.simulate)
+    if (block->header().metadata.simulate)
     {
         handler(error::success);
         return;
