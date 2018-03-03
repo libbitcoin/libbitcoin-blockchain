@@ -218,7 +218,6 @@ void header_pool::prune(size_t top_height)
 void header_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
-    const auto& left = headers_.left;
 
     // TODO: optimize (prevent repeating vector erase moves).
     for (auto it = inventories.begin(); it != inventories.end();)
