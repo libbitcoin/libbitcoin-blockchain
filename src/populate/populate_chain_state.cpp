@@ -206,20 +206,20 @@ chain::chain_state::ptr populate_chain_state::populate(
     if (branch->empty())
         return{};
 
-    const auto top_header = branch->top();
-    const auto top_parent = branch->top_parent();
+    const auto top = branch->top();
+    const auto parent = branch->top_parent();
+    auto metadata = parent->metadata;
 
     // Promote from immediate parent state if avialable (most common and fast).
-    if (top_parent && top_parent->metadata.state)
+    if (parent && metadata.state)
     {
-        const auto state = std::make_shared<chain::chain_state>(
-            *top_parent->metadata.state, *top_header);
-        top_header->metadata.state = state;
+        const auto state = std::make_shared<chain_state>(*metadata.state, *top);
+        metadata.state = state;
         return state;
     }
 
     chain_state::data data;
-    data.hash = top_header->hash();
+    data.hash = top->hash();
     data.height = branch->top_height();
 
     if (!populate_all(data, branch, false))
