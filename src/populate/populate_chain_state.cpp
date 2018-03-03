@@ -131,20 +131,6 @@ bool populate_chain_state::populate_timestamps(chain_state::data& data,
         block);
 }
 
-bool populate_chain_state::populate_collision(chain_state::data& data,
-    const chain_state::map& map, header_branch::const_ptr branch,
-    bool block) const
-{
-    if (map.allow_collisions_height == chain_state::map::unrequested)
-    {
-        data.allow_collisions_hash = null_hash;
-        return true;
-    }
-
-    return get_block_hash(data.allow_collisions_hash,
-        map.allow_collisions_height, branch, block);
-}
-
 bool populate_chain_state::populate_bip9_bit0(chain_state::data& data,
     const chain_state::map& map, header_branch::const_ptr branch,
     bool block) const
@@ -188,7 +174,6 @@ bool populate_chain_state::populate_all(chain_state::data& data,
         populate_bits(data, map, branch, block) &&
         populate_versions(data, map, branch, block) &&
         populate_timestamps(data, map, branch, block) &&
-        populate_collision(data, map, branch, block) &&
         populate_bip9_bit0(data, map, branch, block) &&
         populate_bip9_bit1(data, map, branch, block);
     ///////////////////////////////////////////////////////////////////////////

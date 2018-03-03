@@ -63,8 +63,6 @@ private:
         bool block) const;
     bool populate_timestamps(data& data, const map& map, headers branch,
         bool block) const;
-    bool populate_collision(data& data, const map& map, headers branch,
-        bool block) const;
     bool populate_bip9_bit0(data& data, const map& map, headers branch,
         bool block) const;
     bool populate_bip9_bit1(data& data, const map& map, headers branch,
