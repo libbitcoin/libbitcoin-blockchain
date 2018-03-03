@@ -78,7 +78,9 @@ void header_pool::add(header_const_ptr valid_header, size_t height)
     {
         height = 0;
         it->first.add_child(valid_header);
-        it->first.header()->metadata.state.reset();
+
+        // Disabling this line ensures all headers retain chain state.
+        ////it->first.header()->metadata.state.reset();
     }
 
     // Critical Section
