@@ -395,7 +395,7 @@ chain::chain_state::ptr block_chain::chain_state(block_const_ptr block,
 {
     // Parent height is required.
     if (height == 0)
-        return{};
+        return {};
 
     // TODO: bury this into chain state populator.
     const auto parent_height = height - 1u;

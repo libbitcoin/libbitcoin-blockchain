@@ -178,11 +178,11 @@ chain_state::ptr populate_chain_state::populate(bool block_index) const
 {
     config::checkpoint top;
     if (!fast_chain_.get_top(top, block_index))
-        return{};
+        return {};
 
     hash_digest hash;
     if (!fast_chain_.get_block_hash(hash, top.height(), block_index))
-        return{};
+        return {};
 
     chain_state::data data;
     data.hash = hash;
@@ -192,7 +192,7 @@ chain_state::ptr populate_chain_state::populate(bool block_index) const
     const auto branch = std::make_shared<const header_branch>();
 
     if (!populate_all(data, branch, block_index))
-        return{};
+        return {};
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_, forks_,
         stale_seconds_);
@@ -204,7 +204,7 @@ chain::chain_state::ptr populate_chain_state::populate(
 {
     // An index chain state query must provide a non-empty branch.
     if (branch->empty())
-        return{};
+        return {};
 
     const auto top = branch->top();
     const auto parent = branch->top_parent();
@@ -222,7 +222,7 @@ chain::chain_state::ptr populate_chain_state::populate(
     data.height = branch->top_height();
 
     if (!populate_all(data, branch, false))
-        return{};
+        return {};
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_, forks_,
         stale_seconds_);

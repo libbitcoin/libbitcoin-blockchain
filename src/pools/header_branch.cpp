@@ -104,7 +104,7 @@ hash_digest header_branch::hash() const
 
 config::checkpoint header_branch::fork_point() const
 {
-    return{ hash(), height() };
+    return { hash(), height() };
 }
 
 // private
