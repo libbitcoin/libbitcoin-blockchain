@@ -46,7 +46,6 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    // TODO: why does the branch not already know its height?
     // The header could not be connected to the header index.
     if (!set_branch_height(branch))
     {
@@ -57,10 +56,10 @@ void populate_header::populate(header_branch::ptr branch,
     const auto header = branch->top();
     fast_chain_.populate_header(*header);
 
-    // TODO: return error::duplicate_block here.
     // There is a permanent previous validation error on the block.
-    if (header->metadata.error != error::success)
+    if (header->metadata.error)
     {
+        // Could return error::duplicate_block here to avoid fingerprint.
         handler(header->metadata.error);
         return;
     }
@@ -72,11 +71,21 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    // Always populate chain state so that we never hit the store to do so.
-    const auto state = fast_chain_.chain_state(branch);
-    header->metadata.state = state;
+    ////// TODO: If branch has multiple entries, promote state from its parent.
+    ////// TODO: The above implies all pooled headers retain their chain state.
+    ////// TODO: If branch header attaches to top header, promote from pool state.
+    ////// TODO: Otherwise query for header state.
+    ////const auto state = fast_chain_.header_pool_state();
+    ////if (!state)
+    ////{
+    ////    handler(error::operation_failed);
+    ////    return;
+    ////}
 
-    if (!state)
+    // TODO: This is very expensive, use header_pool_state for most cases.
+    header->metadata.state = fast_chain_.chain_state(branch);
+
+    if (!header->metadata.state)
     {
         handler(error::operation_failed);
         return;
@@ -87,14 +96,14 @@ void populate_header::populate(header_branch::ptr branch,
 
 bool populate_header::set_branch_height(header_branch::ptr branch) const
 {
-    size_t height;
+    // If the branch was populated from the pool it must already have height.
+    if (branch->size() > 1u)
+    {
+        BITCOIN_ASSERT(branch->height() != max_size_t);
+        return true;
+    }
 
-    // Reject header if above fork point, it doesn't connect to indexed header.
-    // This will cause rebuild of a confirmed block chain in the header pool
-    // before it can overtake the header chain. Long branch competition can be
-    // costly in terms of pool push/pop of headers in this scenario, however by
-    // adding outgoing headers to the pool the cost is somewhat mitigated.
-    // The greater cost of deep reorgs between stored blocks is updating state.
+    size_t height;
     const auto fork_height = fast_chain_.get_fork_point();
 
     // Get header index height of parent of the oldest branch block.

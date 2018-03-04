@@ -208,14 +208,13 @@ chain::chain_state::ptr populate_chain_state::populate(
 
     const auto top = branch->top();
     const auto parent = branch->top_parent();
-    auto metadata = parent->metadata;
 
-    // Promote from immediate parent state if avialable (most common and fast).
-    if (parent && metadata.state)
+    // Promote from immediate parent state if available (most common and fast).
+    if (parent && parent->metadata.state)
     {
-        const auto state = std::make_shared<chain_state>(*metadata.state, *top);
-        metadata.state = state;
-        return state;
+        top->metadata.state = std::make_shared<chain_state>(
+            *parent->metadata.state, *top);
+        return top->metadata.state;
     }
 
     chain_state::data data;
