@@ -192,7 +192,7 @@ chain_state::ptr populate_chain_state::populate(bool block_index) const
     const auto branch = std::make_shared<const header_branch>();
 
     if (!populate_all(data, branch, block_index))
-        return nullptr;
+        return{};
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_, forks_,
         stale_seconds_);
@@ -222,7 +222,7 @@ chain::chain_state::ptr populate_chain_state::populate(
     data.height = branch->top_height();
 
     if (!populate_all(data, branch, false))
-        return nullptr;
+        return{};
 
     return std::make_shared<chain_state>(std::move(data), checkpoints_, forks_,
         stale_seconds_);
