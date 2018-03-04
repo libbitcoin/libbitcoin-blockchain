@@ -73,6 +73,7 @@ protected:
     bool exists(const hash_digest& hash) const;
     void prune(const hash_list& hashes, size_t minimum_height);
     header_const_ptr parent(header_const_ptr header) const;
+    size_t height(const hash_digest& hash) const;
     ////void log_content() const;
 
     // This is thread safe.
