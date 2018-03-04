@@ -42,7 +42,7 @@ void populate_block::populate(block_const_ptr block,
     result_handler&& handler) const
 {
     // The block class has no population method, so set timer externally.
-    block->validation.start_populate = asio::steady_clock::now();
+    block->metadata.start_populate = asio::steady_clock::now();
 
     // Only validate/populate the next block to be confirmed.
     size_t top;
@@ -54,7 +54,7 @@ void populate_block::populate(block_const_ptr block,
 
     // TODO: utilize last-validated-block cache so this can be promoted.
     const auto state = fast_chain_.chain_state(block, top + 1);
-    block->header().validation.state = state;
+    block->header().metadata.state = state;
 
     if (!state)
     {
@@ -90,7 +90,7 @@ void populate_block::populate(block_const_ptr block,
             this, block, top, bucket, buckets, join_handler);
 }
 
-// Initialize the coinbase input for subsequent validation.
+// Initialize the coinbase input for subsequent metadata.
 void populate_block::populate_coinbase(block_const_ptr block,
     size_t fork_height) const
 {
@@ -101,7 +101,7 @@ void populate_block::populate_coinbase(block_const_ptr block,
     BITCOIN_ASSERT(coinbase.is_coinbase());
 
     // A coinbase tx guarantees exactly one input.
-    auto& prevout = coinbase.inputs().front().previous_output().validation;
+    auto& prevout = coinbase.inputs().front().previous_output().metadata;
 
     // A coinbase input cannot be a double spend since it originates coin.
     prevout.spent = false;
@@ -115,7 +115,7 @@ void populate_block::populate_coinbase(block_const_ptr block,
     prevout.height = 0;
     prevout.median_time_past = 0;
 
-    const auto forks = block->header().validation.state->enabled_forks();
+    const auto forks = block->header().metadata.state->enabled_forks();
     fast_chain_.populate_transaction(coinbase, forks, fork_height);
 }
 
@@ -125,7 +125,7 @@ void populate_block::populate_transactions(block_const_ptr block,
 {
     BITCOIN_ASSERT(bucket < buckets);
     const auto& txs = block->transactions();
-    const auto state = block->header().validation.state;
+    const auto state = block->header().metadata.state;
     size_t input_position = 0;
 
     // Must skip coinbase here as it is already accounted for.

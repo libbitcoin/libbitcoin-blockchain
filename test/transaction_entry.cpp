@@ -45,7 +45,7 @@ static transaction_const_ptr make_tx(uint32_t version, uint32_t locktime)
 {
     const auto tx = std::make_shared<const message::transaction>(version,
         locktime, chain::input::list{}, chain::output::list{});
-    tx->validation.state = std::make_shared<chain_state>(
+    tx->metadata.state = std::make_shared<chain_state>(
         chain_state{ data(), {}, 0, 0 });
     return tx;
 }
@@ -53,7 +53,7 @@ static transaction_const_ptr make_tx(uint32_t version, uint32_t locktime)
 static transaction_const_ptr make_tx()
 {
     const auto tx = std::make_shared<const message::transaction>();
-    tx->validation.state = std::make_shared<chain_state>(
+    tx->metadata.state = std::make_shared<chain_state>(
         chain_state{ data(), {}, 0, 0 });
     return tx;
 }

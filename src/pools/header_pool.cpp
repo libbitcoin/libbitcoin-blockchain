@@ -55,7 +55,7 @@ bool header_pool::exists(const hash_digest& hash) const
 bool header_pool::exists(header_const_ptr candidate_header) const
 {
     // The header must not yet be successfully validated.
-    ////BITCOIN_ASSERT(candidate_header->validation.error);
+    ////BITCOIN_ASSERT(candidate_header->metadata.error);
     return exists(candidate_header->hash());
 }
 
@@ -66,7 +66,7 @@ bool header_pool::exists(header_const_ptr candidate_header) const
 void header_pool::add(header_const_ptr valid_header, size_t height)
 {
     // The header must be successfully validated.
-    ////BITCOIN_ASSERT(!valid_header->validation.error);
+    ////BITCOIN_ASSERT(!valid_header->metadata.error);
     header_entry entry{ valid_header, height };
     const auto& left = headers_.left;
 
@@ -83,7 +83,7 @@ void header_pool::add(header_const_ptr valid_header, size_t height)
     {
         height = 0;
         it->first.add_child(valid_header);
-        it->first.header()->validation.state.reset();
+        it->first.header()->metadata.state.reset();
     }
 
     // Critical Section

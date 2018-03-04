@@ -171,7 +171,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     }
 
     const auto sigops = std::make_shared<atomic_counter>(0);
-    const auto state = block->header().validation.state;
+    const auto state = block->header().metadata.state;
     BITCOIN_ASSERT(state);
 
     const auto bip141 = state->is_enabled(rule_fork::bip141_rule);
@@ -210,7 +210,7 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     }
 
     code ec(error::success);
-    const auto& state = *block->header().validation.state;
+    const auto& state = *block->header().metadata.state;
     const auto& txs = block->transactions();
     const auto count = txs.size();
 
@@ -241,15 +241,15 @@ void validate_block::handle_accepted(const code& ec, block_const_ptr block,
 
 // Connect sequence.
 //-----------------------------------------------------------------------------
-// These checks require chain state, block state and perform script validation.
+// These checks require chain state, block state and perform script metadata.
 
 void validate_block::connect(block_const_ptr block,
     result_handler handler) const
 {
     // We are reimplementing connect, so must set timer externally.
-    block->validation.start_connect = asio::steady_clock::now();
+    block->metadata.start_connect = asio::steady_clock::now();
 
-    const auto state = block->header().validation.state;
+    const auto state = block->header().metadata.state;
     BITCOIN_ASSERT(state);
 
     if (state->is_under_checkpoint())
@@ -293,7 +293,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
     BITCOIN_ASSERT(bucket < buckets);
 
     code ec(error::success);
-    const auto state = block->header().validation.state;
+    const auto state = block->header().metadata.state;
     const auto forks = state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
@@ -304,7 +304,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         ++queries_;
 
         // The tx is pooled with current fork state so outputs are validated.
-        if (tx->validation.pooled)
+        if (tx->metadata.pooled)
         {
             ++hits_;
             continue;
@@ -327,7 +327,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
 
             const auto& prevout = inputs[input_index].previous_output();
 
-            if (!prevout.validation.cache.is_valid())
+            if (!prevout.metadata.cache.is_valid())
             {
                 ec = error::missing_previous_output;
                 break;
@@ -361,7 +361,7 @@ float validate_block::hit_rate() const
 void validate_block::handle_connected(const code& ec, block_const_ptr block,
     result_handler handler) const
 {
-    block->validation.cache_efficiency = hit_rate();
+    block->metadata.cache_efficiency = hit_rate();
     handler(ec);
 }
 
@@ -372,7 +372,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
     uint32_t input_index, uint32_t forks, size_t height, bool use_libconsensus)
 {
     const auto& prevout = tx.inputs()[input_index].previous_output();
-    const auto script = prevout.validation.cache.script().to_data(false);
+    const auto script = prevout.metadata.cache.script().to_data(false);
     const auto hash = encode_hash(prevout.hash());
     const auto tx_hash = encode_hash(tx.hash());
 
@@ -382,7 +382,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
         << " forks        : " << forks << std::endl
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl
-        << " value        : " << prevout.validation.cache.value() << std::endl
+        << " value        : " << prevout.metadata.cache.value() << std::endl
         << " inpoint      : " << tx_hash << ":" << input_index << std::endl
         << " transaction  : " << encode_base16(tx.to_data(true, true));
 }

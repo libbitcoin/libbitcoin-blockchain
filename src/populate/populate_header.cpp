@@ -59,14 +59,14 @@ void populate_header::populate(header_branch::ptr branch,
 
     // TODO: return error::duplicate_block here.
     // There is a permanent previous validation error on the block.
-    if (header->validation.error != error::success)
+    if (header->metadata.error != error::success)
     {
-        handler(header->validation.error);
+        handler(header->metadata.error);
         return;
     }
 
     // The header is already indexed (nothing to do).
-    if (header->validation.duplicate)
+    if (header->metadata.duplicate)
     {
         handler(error::duplicate_block);
         return;
@@ -74,7 +74,7 @@ void populate_header::populate(header_branch::ptr branch,
 
     // Always populate chain state so that we never hit the store to do so.
     const auto state = fast_chain_.chain_state(branch);
-    header->validation.state = state;
+    header->metadata.state = state;
 
     if (!state)
     {

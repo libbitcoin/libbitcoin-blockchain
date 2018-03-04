@@ -158,7 +158,7 @@ code validate_input::verify_script(const transaction& tx, uint32_t input_index,
         return script::verify(tx, input_index, forks);
 
     BITCOIN_ASSERT(input_index < tx.inputs().size());
-    const auto& prevout = tx.inputs()[input_index].previous_output().validation;
+    const auto& prevout = tx.inputs()[input_index].previous_output().metadata;
     const auto script_data = prevout.cache.script().to_data(false);
     const auto prevout_value = prevout.cache.value();
 

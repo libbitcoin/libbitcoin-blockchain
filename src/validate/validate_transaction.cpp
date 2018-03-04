@@ -106,7 +106,7 @@ void validate_transaction::handle_populated(const code& ec,
     }
 
     // Skip validation when valid tx is already stored with same forks.
-    if (tx->validation.pooled)
+    if (tx->metadata.pooled)
     {
         handler(error::success);
         return;
@@ -118,7 +118,7 @@ void validate_transaction::handle_populated(const code& ec,
 
 // Connect sequence.
 //-----------------------------------------------------------------------------
-// These checks require chain state, block state and perform script validation.
+// These checks require chain state, block state and perform script metadata.
 
 void validate_transaction::connect(transaction_const_ptr tx,
     result_handler handler) const
@@ -139,10 +139,10 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
     size_t bucket, size_t buckets, result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
-    BITCOIN_ASSERT(tx->validation.state);
+    BITCOIN_ASSERT(tx->metadata.state);
 
     code ec(error::success);
-    const auto forks = tx->validation.state->enabled_forks();
+    const auto forks = tx->metadata.state->enabled_forks();
     const auto& inputs = tx->inputs();
 
     for (auto input_index = bucket; input_index < inputs.size();
@@ -156,7 +156,7 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
 
         const auto& prevout = inputs[input_index].previous_output();
 
-        if (!prevout.validation.cache.is_valid())
+        if (!prevout.metadata.cache.is_valid())
         {
             ec = error::missing_previous_output;
             break;

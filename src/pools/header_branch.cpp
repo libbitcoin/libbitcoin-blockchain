@@ -130,7 +130,7 @@ size_t header_branch::height_at(size_t index) const
  // work required by the header accept check. It is possible that longer chain
  // of lower work blocks could meet both above criteria. However this requires
  // the same amount of work as a shorter segment, so an attacker gains no
- // advantage from that option, and it will be caught in validation.
+ // advantage from that option, and it will be caught in metadata.
 uint256_t header_branch::work() const
 {
     uint256_t total;
