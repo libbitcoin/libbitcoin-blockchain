@@ -90,7 +90,6 @@ public:
 protected:
     size_t index_of(size_t height) const;
     size_t height_at(size_t index) const;
-    uint32_t median_time_past_at(size_t index) const;
 
 private:
     size_t height_;
