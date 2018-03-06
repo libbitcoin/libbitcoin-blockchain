@@ -73,6 +73,13 @@ size_t block_chain::get_fork_point() const
     return database_.blocks().fork_point();
 }
 
+bool block_chain::get_top(chain::header& out_header, size_t& out_height,
+    bool block_index) const
+{
+    return get_top_height(out_height, block_index) &&
+        get_header(out_header, out_height, block_index);
+}
+
 bool block_chain::get_top(config::checkpoint& out_checkpoint,
     bool block_index) const
 {
@@ -92,25 +99,25 @@ bool block_chain::get_top_height(size_t& out_height, bool block_index) const
     return database_.blocks().top(out_height, block_index);
 }
 
-bool block_chain::get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-    size_t height) const
+bool block_chain::get_header(chain::header& out_header, size_t height,
+    bool block_index) const
 {
-    const auto result = database_.blocks().get(height, false);
+    auto result = database_.blocks().get(height, block_index);
 
-    if (!result || !is_pent(result.state()))
+    if (!result)
         return false;
 
-    out_hash = result.hash();
-    out_empty = result.transaction_count() == 0;
+    // Since header() is const this may not actually move without a cast.
+    out_header = std::move(result.header());
     return true;
 }
 
-// Header indexing controlled by fork_height.
-// All blocks have height but this limits to indexed|confirmed as applicable.
-bool block_chain::get_block_height(size_t& out_height,
-    const hash_digest& block_hash, size_t fork_height) const
+bool block_chain::get_header(chain::header& out_header, size_t& out_height,
+    const hash_digest& block_hash, bool block_index) const
 {
     auto result = database_.blocks().get(block_hash);
+    const auto fork_height = block_index ? max_size_t :
+        database_.blocks().fork_point();
 
     if (!result)
         return false;
@@ -121,11 +128,24 @@ bool block_chain::get_block_height(size_t& out_height,
     const auto confirmed = is_indexed(state) ||
         (is_confirmed(state) && relevant);
 
-    // Cannot have index height unless confirmed in an index.
     if (!confirmed)
         return false;
 
+    out_header = result.header();
     out_height = height;
+    return true;
+}
+
+bool block_chain::get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
+    size_t height) const
+{
+    const auto result = database_.blocks().get(height, false);
+
+    if (!result || !is_pent(result.state()))
+        return false;
+
+    out_hash = result.hash();
+    out_empty = result.transaction_count() == 0;
     return true;
 }
 
@@ -340,8 +360,7 @@ bool block_chain::reindex(const config::checkpoint& fork_point,
     if (ec)
         return false;
 
-    // Due to accept/population bypass, chain_state may not be populated.
-    // We could alternatively just read pool state from last header cache.
+    // We never skip header validation and so must always have chain state.
     const auto top_header = incoming->back();
     set_header_pool_state(top_header->metadata.state);
     last_header_.store(top_header);
@@ -380,7 +399,7 @@ chain::chain_state::ptr block_chain::header_pool_state() const
     return header_pool_state_.load();
 }
 
-// TODO: move transaction_pool_state_ into the new transaction_pool.
+// TODO: move transaction_pool_state_ into the transaction_pool.
 // For tx validator, call only from validate critical section.
 chain::chain_state::ptr block_chain::transaction_pool_state() const
 {
@@ -389,28 +408,32 @@ chain::chain_state::ptr block_chain::transaction_pool_state() const
     return transaction_pool_state_.load();
 }
 
-// For block validator, call only from validate critical section.
-chain::chain_state::ptr block_chain::chain_state(block_const_ptr block,
+// For header index validator, call only from validate critical section.
+chain::chain_state::ptr block_chain::chain_state(const chain::header& header,
     size_t height) const
 {
-    // Parent height is required.
-    if (height == 0)
-        return {};
-
-    // TODO: bury this into chain state populator.
-    const auto parent_height = height - 1u;
-    const auto branch = std::make_shared<header_branch>(parent_height);
-    branch->push(std::make_shared<const header>(block->header()));
-    return chain_state(branch);
+    return chain_state_populator_.populate(header, height, false);
 }
 
-// For header validator, call only from validate critical section.
-chain::chain_state::ptr block_chain::chain_state(
+// Promote chain state from the given parent header.
+chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
+    chain::chain_state::ptr parent) const
+{
+    if (!parent)
+        return {};
+
+    return std::make_shared<chain::chain_state>(*parent, header);
+}
+
+// Promote chain state for the last block in the multi-header branch.
+chain::chain_state::ptr block_chain::promote_state(
     header_branch::const_ptr branch) const
 {
-    // Get chain state for the last block in the branch.
-    // Empty result indicates empty branch or missing branch header/ancestor.
-    return chain_state_populator_.populate(branch);
+    const auto parent = branch->top_parent();
+    if (!parent || !parent->metadata.state)
+        return {};
+
+    return promote_state(*branch->top(), parent->metadata.state);
 }
 
 // private.

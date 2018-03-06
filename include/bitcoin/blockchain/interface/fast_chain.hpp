@@ -44,6 +44,10 @@ public:
     /// Get the highest confirmed block of the header index.
     virtual size_t get_fork_point() const = 0;
 
+    /// Get top block or header-indexed header.
+    virtual bool get_top(chain::header& out_header, size_t& out_height,
+        bool block_index) const = 0;
+
     /// Get highest block or header index checkpoint.
     virtual bool get_top(config::checkpoint& out_checkpoint,
         bool block_index) const = 0;
@@ -52,14 +56,17 @@ public:
     virtual bool get_top_height(size_t& out_height,
         bool block_index) const = 0;
 
+    /// Get the block or header-indexed header by height.
+    virtual bool get_header(chain::header& out_header, size_t height,
+        bool block_index) const = 0;
+
+    /// Get the block or header-indexed header by hash.
+    virtual bool get_header(chain::header& out_header, size_t& out_height,
+        const hash_digest& block_hash, bool block_index) const = 0;
+
     /// False if the block is not pending (for caller loop).
     virtual bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
         size_t height) const = 0;
-
-    /// Get height in the block or header index of block with the given hash.
-    virtual bool get_block_height(size_t& out_height,
-        const hash_digest& block_hash,
-        size_t fork_height=max_size_t) const = 0;
 
     /// Get the hash of the block at the given index height.
     virtual bool get_block_hash(hash_digest& out_hash,
@@ -135,11 +142,15 @@ public:
     virtual chain::chain_state::ptr transaction_pool_state() const = 0;
 
     /// Get chain state for the given indexed header.
-    virtual chain::chain_state::ptr chain_state(
-        block_const_ptr header, size_t height) const = 0;
+    virtual chain::chain_state::ptr chain_state(const chain::header& header,
+        size_t height) const = 0;
 
-    /// Get chain state for the last block in an indexed branch.
-    virtual chain::chain_state::ptr chain_state(
+    /// Promote chain state from the given parent header.
+    virtual chain::chain_state::ptr promote_state(const chain::header& header,
+        chain::chain_state::ptr parent) const = 0;
+
+    /// Promote chain state for the last header in the multi-header branch.
+    virtual chain::chain_state::ptr promote_state(
         header_branch::const_ptr branch) const = 0;
 
     /// True if the top block age exceeds the configured limit.

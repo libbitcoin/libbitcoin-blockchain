@@ -103,17 +103,17 @@ void validate_header::handle_populated(const code& ec,
         return;
     }
 
-    const auto header = branch->top();
+    const auto& header = *branch->top();
 
     // Skip validation when valid header is already stored.
-    if (header->metadata.pooled)
+    if (header.metadata.pooled)
     {
         handler(error::success);
         return;
     }
 
     // Run contextual header checks.
-    handler(header->accept());
+    handler(header.accept());
 }
 
 } // namespace blockchain

@@ -39,7 +39,7 @@ public:
     void populate(header_branch::ptr branch, result_handler&& handler) const;
 
 private:
-    bool set_branch_height(header_branch::ptr branch) const;
+    bool set_branch_state(header_branch::ptr branch) const;
 };
 
 } // namespace blockchain

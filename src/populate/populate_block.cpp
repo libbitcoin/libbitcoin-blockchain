@@ -53,7 +53,7 @@ void populate_block::populate(block_const_ptr block,
     }
 
     // TODO: utilize last-validated-block cache so this can be promoted.
-    const auto state = fast_chain_.chain_state(block, top + 1);
+    const auto state = fast_chain_.chain_state(block->header(), top + 1u);
     block->header().metadata.state = state;
 
     if (!state)

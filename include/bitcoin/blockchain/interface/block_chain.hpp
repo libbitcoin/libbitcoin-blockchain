@@ -65,19 +65,27 @@ public:
     /// Get the highest confirmed block of the header index.
     size_t get_fork_point() const;
 
+    /// Get top block or header-indexed header.
+    bool get_top(chain::header& out_header, size_t& out_height,
+        bool block_index) const;
+
     /// Get highest block or header index checkpoint.
     bool get_top(config::checkpoint& out_checkpoint, bool block_index) const;
 
     /// Get height of highest block in the block or header index.
     bool get_top_height(size_t& out_height, bool block_index) const;
 
+    /// Get the block or header-indexed header by height.
+    bool get_header(chain::header& out_header, size_t height,
+        bool block_index) const;
+
+    /// Get the block or header-indexed header by hash.
+    bool get_header(chain::header& out_header, size_t& out_height,
+        const hash_digest& block_hash, bool block_index) const;
+
     /// False if the block is not pending (for caller loop).
     bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
         size_t height) const;
-
-    /// Get height in the block or header index of block with the given hash.
-    bool get_block_height(size_t& out_height, const hash_digest& block_hash,
-        size_t fork_height=max_size_t) const;
 
     /// Get the hash of the block at the given index height.
     bool get_block_hash(hash_digest& out_hash, size_t height,
@@ -152,11 +160,15 @@ public:
     chain::chain_state::ptr transaction_pool_state() const;
 
     /// Get chain state for the given indexed header.
-    chain::chain_state::ptr chain_state(block_const_ptr header,
+    chain::chain_state::ptr chain_state(const chain::header& header,
         size_t height) const;
 
-    /// Get chain state for the last block in the indexed branch.
-    chain::chain_state::ptr chain_state(header_branch::const_ptr branch) const;
+    /// Promote chain state from the given parent header.
+    chain::chain_state::ptr promote_state(const chain::header& header,
+        chain::chain_state::ptr parent) const;
+
+    /// Promote chain state for the last header in the multi-header branch.
+    chain::chain_state::ptr promote_state(header_branch::const_ptr branch) const;
 
     /// True if the top block age exceeds the configured limit.
     bool is_blocks_stale() const;
