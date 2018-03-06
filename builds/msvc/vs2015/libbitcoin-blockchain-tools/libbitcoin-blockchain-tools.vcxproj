@@ -9,8 +9,8 @@
   <PropertyGroup Label="Globals">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v140</PlatformToolset>
-    <ProjectGuid>{CEC6DE45-B67A-487F-B3AD-3D14E83AD032}</ProjectGuid>
-    <ProjectName>libbitcoin-blockchain-test</ProjectName>
+    <ProjectGuid>{B9CED930-2EC0-4639-9427-D8EDB9A677AC}</ProjectGuid>
+    <ProjectName>libbitcoin-blockchain-tools</ProjectName>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugDEXE|Win32">
@@ -70,15 +70,7 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\block_chain.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_entry.cpp" />
-    <ClCompile Include="..\..\..\..\test\block_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\branch.cpp" />
-    <ClCompile Include="..\..\..\..\test\main.cpp" />
-    <ClCompile Include="..\..\..\..\test\transaction_entry.cpp" />
-    <ClCompile Include="..\..\..\..\test\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\validate_block.cpp" />
-    <ClCompile Include="..\..\..\..\test\validate_transaction.cpp" />
+    <ClCompile Include="..\..\..\..\tools\initchain\initchain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -100,7 +92,6 @@
     <Import Project="$(NuGetPackageRoot)boost_system-vc140.1.64.0.0\build\native\boost_system-vc140.targets" Condition="Exists('$(NuGetPackageRoot)boost_system-vc140.1.64.0.0\build\native\boost_system-vc140.targets')" />
     <Import Project="$(NuGetPackageRoot)boost_thread-vc140.1.64.0.0\build\native\boost_thread-vc140.targets" Condition="Exists('$(NuGetPackageRoot)boost_thread-vc140.1.64.0.0\build\native\boost_thread-vc140.targets')" />
     <Import Project="$(NuGetPackageRoot)secp256k1_vc140.0.1.0.15\build\native\secp256k1_vc140.targets" Condition="Exists('$(NuGetPackageRoot)secp256k1_vc140.0.1.0.15\build\native\secp256k1_vc140.targets')" />
-    <Import Project="$(NuGetPackageRoot)boost_unit_test_framework-vc140.1.64.0.0\build\native\boost_unit_test_framework-vc140.targets" Condition="Exists('$(NuGetPackageRoot)boost_unit_test_framework-vc140.1.64.0.0\build\native\boost_unit_test_framework-vc140.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -120,7 +111,6 @@
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_system-vc140.1.64.0.0\build\native\boost_system-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_system-vc140.1.64.0.0\build\native\boost_system-vc140.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)boost_thread-vc140.1.64.0.0\build\native\boost_thread-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_thread-vc140.1.64.0.0\build\native\boost_thread-vc140.targets'))" />
     <Error Condition="!Exists('$(NuGetPackageRoot)secp256k1_vc140.0.1.0.15\build\native\secp256k1_vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)secp256k1_vc140.0.1.0.15\build\native\secp256k1_vc140.targets'))" />
-    <Error Condition="!Exists('$(NuGetPackageRoot)boost_unit_test_framework-vc140.1.64.0.0\build\native\boost_unit_test_framework-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(NuGetPackageRoot)boost_unit_test_framework-vc140.1.64.0.0\build\native\boost_unit_test_framework-vc140.targets'))" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\libbitcoin-blockchain\libbitcoin-blockchain.vcxproj">
