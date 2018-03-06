@@ -44,12 +44,7 @@ size_t header_pool::size() const
 bool header_pool::exists(const hash_digest& hash) const
 {
     const auto& left = headers_.left;
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    shared_lock lock(mutex_);
     return left.find(header_entry{ hash }) != left.end();
-    ///////////////////////////////////////////////////////////////////////////
 }
 
 bool header_pool::exists(header_const_ptr candidate_header) const
@@ -83,7 +78,9 @@ void header_pool::add(header_const_ptr valid_header, size_t height)
     {
         height = 0;
         it->first.add_child(valid_header);
-        it->first.header()->metadata.state.reset();
+
+        // Disabling this line ensures all headers retain chain state.
+        ////it->first.header()->metadata.state.reset();
     }
 
     // Critical Section
@@ -215,18 +212,28 @@ void header_pool::prune(size_t top_height)
         prune(hashes, minimum_height);
 }
 
+// This is guarded against concurrent write (the only reason for the mutex).
 void header_pool::filter(get_data_ptr message) const
 {
     auto& inventories = message->inventories();
-    const auto& left = headers_.left;
 
     // TODO: optimize (prevent repeating vector erase moves).
     for (auto it = inventories.begin(); it != inventories.end();)
     {
         if (!it->is_block_type())
+        {
             ++it;
-        else
-            it = (exists(it->hash()) ? inventories.erase(it) : it + 1);
+            continue;
+        }
+
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        mutex_.lock_shared();
+        const auto found = exists(it->hash());
+        mutex_.unlock_shared();
+        ///////////////////////////////////////////////////////////////////////
+
+        it = (found ? inventories.erase(it) : it + 1);
     }
 }
 
@@ -234,46 +241,44 @@ void header_pool::filter(get_data_ptr message) const
 header_const_ptr header_pool::parent(header_const_ptr header) const
 {
     // The header may be validated (pool) or not (new).
-    const header_entry parent_entry{ header->previous_block_hash() };
     const auto& left = headers_.left;
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    shared_lock lock(mutex_);
-    const auto parent = left.find(parent_entry);
+    auto parent = left.find(header_entry{ header->previous_block_hash() });
     return parent == left.end() ? nullptr : parent->first.header();
-    ///////////////////////////////////////////////////////////////////////////
+}
+
+// protected
+size_t header_pool::height(const hash_digest& hash) const
+{
+    const auto& left = headers_.left;
+    const auto entry = left.find(header_entry{ hash });
+    BITCOIN_ASSERT(entry != left.end());
+
+    return entry->first.height();
 }
 
 header_branch::ptr header_pool::get_branch(header_const_ptr header) const
 {
-    ////log_content();
     const auto trace = std::make_shared<header_branch>();
+    auto root = header;
 
+    // Empty list indicates duplicate.
     if (exists(header))
         return trace;
 
     while (header)
     {
         trace->push(header);
+        root = header;
         header = parent(header);
     }
 
+    // A preexisting root header must have a non-zero height.
+    // This precludes the need to search for the fork point for previous item.
+    if (trace->size() > 1u)
+        trace->set_height(height(root->hash()) - 1u);
+
     return trace;
 }
-
-////// private
-////void header_pool::log_content() const
-////{
-////    LOG_INFO(LOG_BLOCKCHAIN) << "pool: ";
-////
-////    // Dump in hash order with height suffix (roots have height).
-////    for (const auto& entry: headers_.left)
-////    {
-////        LOG_INFO(LOG_BLOCKCHAIN)
-////            << entry.first << " " << entry.second;
-////    }
-////}
 
 } // namespace blockchain
 } // namespace libbitcoin

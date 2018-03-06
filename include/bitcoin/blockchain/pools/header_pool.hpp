@@ -73,12 +73,14 @@ protected:
     bool exists(const hash_digest& hash) const;
     void prune(const hash_list& hashes, size_t minimum_height);
     header_const_ptr parent(header_const_ptr header) const;
+    size_t height(const hash_digest& hash) const;
     ////void log_content() const;
 
     // This is thread safe.
     const size_t maximum_depth_;
 
     // This is guarded against filtering concurrent to writing.
+    // All other operations are presumed to be externally protected.
     header_entries headers_;
     mutable upgrade_mutex mutex_;
 };

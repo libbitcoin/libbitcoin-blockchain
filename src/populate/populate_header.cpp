@@ -46,9 +46,8 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    // TODO: why does the branch not already know its height?
     // The header could not be connected to the header index.
-    if (!set_branch_height(branch))
+    if (!set_branch_state(branch))
     {
         handler(error::orphan_block);
         return;
@@ -57,10 +56,10 @@ void populate_header::populate(header_branch::ptr branch,
     const auto header = branch->top();
     fast_chain_.populate_header(*header);
 
-    // TODO: return error::duplicate_block here.
-    // There is a permanent previous validation error on the block.
-    if (header->metadata.error != error::success)
+    // There is a permanent previous validation error on the (full) block.
+    if (header->metadata.error)
     {
+        // Could return error::duplicate_block here to avoid fingerprint.
         handler(header->metadata.error);
         return;
     }
@@ -72,37 +71,51 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    // Always populate chain state so that we never hit the store to do so.
-    const auto state = fast_chain_.chain_state(branch);
-    header->metadata.state = state;
-
-    if (!state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
     handler(error::success);
 }
 
-bool populate_header::set_branch_height(header_branch::ptr branch) const
+// private
+bool populate_header::set_branch_state(header_branch::ptr branch) const
 {
-    size_t height;
+    BITCOIN_ASSERT(!branch->empty());
+    const auto branch_top = branch->top();
+    auto& metadata = branch_top->metadata;
+    metadata.state = fast_chain_.promote_state(branch);
 
-    // Reject header if above fork point, it doesn't connect to indexed header.
-    // This will cause rebuild of a confirmed block chain in the header pool
-    // before it can overtake the header chain. Long branch competition can be
-    // costly in terms of pool push/pop of headers in this scenario, however by
-    // adding outgoing headers to the pool the cost is somewhat mitigated.
-    // The greater cost of deep reorgs between stored blocks is updating state.
-    const auto fork_height = fast_chain_.get_fork_point();
+    // If set this implies a grounded ancestor and height already set.
+    if (metadata.state)
+    {
+        BITCOIN_ASSERT(branch->height() != max_size_t);
+        return true;
+    }
 
-    // Get header index height of parent of the oldest branch block.
-    if (!fast_chain_.get_block_height(height, branch->hash(), fork_height))
-        return false;
+    config::checkpoint chain_top;
+    const auto& parent = branch_top->previous_block_hash();
 
-    branch->set_height(height);
-    return true;
+    // This grounds the branch at the top of header chain using state cache.
+    if (fast_chain_.get_top(chain_top, false) && parent == chain_top.hash())
+    {
+        branch->set_height(chain_top.height());
+        const auto chain_top_state = fast_chain_.header_pool_state();
+        metadata.state = fast_chain_.promote_state(*branch_top, chain_top_state);
+        return true;
+    }
+
+    size_t fork_height;
+    chain::header fork_header;
+    const auto fork_hash = branch->hash();
+
+    // This grounds the branch at any point in header chain using new state.
+    // This is the only case in which the chain is hit for state after startup.
+    if (fast_chain_.get_header(fork_header, fork_height, fork_hash, false))
+    {
+        branch->set_height(fork_height);
+        metadata.state = fast_chain_.chain_state(fork_header, fork_height);
+        return true;
+    }
+
+    // Parent hash not found in header index.
+    return false;
 }
 
 } // namespace blockchain

@@ -135,6 +135,7 @@ void header_organizer::handle_check(const code& ec, header_const_ptr header,
         return;
     }
 
+    // This sets height and presumes the fork point is an indexed header.
     const auto branch = header_pool_.get_branch(header);
 
     const auto accept_handler =
@@ -181,7 +182,6 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
 
     if (work <= required)
     {
-        // Pool.add clears parent header state to preserve memory.
         header_pool_.add(top, branch->top_height());
         handler(error::insufficient_work);
         return;
