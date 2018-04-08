@@ -45,6 +45,7 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
+    last_validated_(0),
     chain_state_populator_(*this, chain_settings),
     database_(database_settings),
 
@@ -71,6 +72,23 @@ block_chain::block_chain(threadpool& pool,
 size_t block_chain::get_fork_point() const
 {
     return database_.blocks().fork_point();
+}
+
+size_t block_chain::get_last_validated() const
+{
+    return last_validated_;
+}
+
+bool block_chain::get_if_empty(hash_digest& out_hash, size_t height) const
+{
+    const auto result = database_.blocks().get(height, false);
+
+    // TODO: must we also verify: !is_pent(result.state())?
+    if (!result || result.transaction_count() != 0)
+        return false;
+
+    out_hash = result.hash();
+    return true;
 }
 
 bool block_chain::get_top(chain::header& out_header, size_t& out_height,
@@ -133,19 +151,6 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
 
     out_header = result.header();
     out_height = height;
-    return true;
-}
-
-bool block_chain::get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-    size_t height) const
-{
-    const auto result = database_.blocks().get(height, false);
-
-    if (!result || !is_pent(result.state()))
-        return false;
-
-    out_hash = result.hash();
-    out_empty = result.transaction_count() == 0;
     return true;
 }
 
@@ -334,6 +339,11 @@ void block_chain::populate_output(const chain::output_point& outpoint,
     database_.transactions().get_output(outpoint, fork_height);
 }
 
+uint8_t block_chain::get_block_state(size_t height, bool block_index) const
+{
+    return database_.blocks().get(height, block_index).state();
+}
+
 uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
 {
     return database_.blocks().get(block_hash).state();
@@ -436,6 +446,28 @@ chain::chain_state::ptr block_chain::promote_state(
     return promote_state(*branch->top(), parent->metadata.state);
 }
 
+// Should not actually see failed state in the header index.
+inline bool is_validated(uint8_t state)
+{
+    return is_valid(state) || is_failed(state);
+}
+
+// private.
+bool block_chain::set_last_validated()
+{
+    size_t height;
+    if (!get_top_height(height, false))
+        return false;
+
+    // The loop mustat least terminate on the genesis block.
+    BITCOIN_ASSERT(is_validated(get_block_state(0, false)));
+    while (!is_validated(get_block_state(height, false)))
+        --height;
+
+    last_validated_ = height;
+    return true;
+}
+
 // private.
 bool block_chain::set_pool_states()
 {
@@ -491,6 +523,7 @@ bool block_chain::start()
         return false;
 
     return set_pool_states() &&
+        set_last_validated() &&
         header_organizer_.start() &&
         ////block_organizer_.start() &&
         transaction_organizer_.start();
@@ -1351,9 +1384,18 @@ void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 
 code block_chain::update(block_const_ptr block, size_t height)
 {
-    // TODO: set:
-    // block->metadata.end_push = asio::steady_clock::now();
-    return database_.update(block, height);
+    auto ec = database_.update(block, height);
+
+    if (!ec)
+    {
+        // TODO: Set block->metadata.end_push = asio::steady_clock::now();
+        // TODO: If block is the validation target, populate and validate it,
+        // TODO: then advance the target and loop until top or download gap.
+        // TODO: Resolve race between download and validation.
+    }
+
+    // Validation failure produces a reorg notification, not an error code.
+    return ec;
 }
 
 // Properties.

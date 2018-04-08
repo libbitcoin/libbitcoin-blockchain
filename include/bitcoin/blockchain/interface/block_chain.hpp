@@ -65,6 +65,12 @@ public:
     /// Get the highest confirmed block of the header index.
     size_t get_fork_point() const;
 
+    /// Get the highest validated block of the header index.
+    size_t get_last_validated() const;
+
+    /// Get the block hash of an empty block, or false if missing or not empty.
+    bool get_if_empty(hash_digest& out_hash, size_t height) const;
+
     /// Get top block or header-indexed header.
     bool get_top(chain::header& out_header, size_t& out_height,
         bool block_index) const;
@@ -82,10 +88,6 @@ public:
     /// Get the block or header-indexed header by hash.
     bool get_header(chain::header& out_header, size_t& out_height,
         const hash_digest& block_hash, bool block_index) const;
-
-    /// False if the block is not pending (for caller loop).
-    bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-        size_t height) const;
 
     /// Get the hash of the block at the given index height.
     bool get_block_hash(hash_digest& out_hash, size_t height,
@@ -127,6 +129,9 @@ public:
     /// Sets metadata based on fork point and confirmation requirement. 
     void populate_output(const chain::output_point& outpoint,
         size_t fork_height=max_size_t) const;
+
+    /// Get the state of the given block (flags).
+    uint8_t get_block_state(size_t height, bool block_index) const;
 
     /// Get the state of the given block (flags).
     uint8_t get_block_state(const hash_digest& block_hash) const;
@@ -349,6 +354,7 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
+    bool set_last_validated();
     bool set_pool_states();
     void set_header_pool_state(chain::chain_state::ptr top);
     void set_transaction_pool_state(chain::chain_state::ptr top);
@@ -363,6 +369,7 @@ private:
     const settings& settings_;
 
     // Last item cache.
+    std::atomic<size_t> last_validated_;
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<header_const_ptr> last_header_;
     bc::atomic<transaction_const_ptr> last_transaction_;

@@ -44,6 +44,12 @@ public:
     /// Get the highest confirmed block of the header index.
     virtual size_t get_fork_point() const = 0;
 
+    /// Get the highest validated block of the header index.
+    virtual size_t get_last_validated() const = 0;
+
+    /// Get the block hash of an empty block, or false if missing or not empty.
+    virtual bool get_if_empty(hash_digest& out_hash, size_t height) const = 0;
+
     /// Get top block or header-indexed header.
     virtual bool get_top(chain::header& out_header, size_t& out_height,
         bool block_index) const = 0;
@@ -63,10 +69,6 @@ public:
     /// Get the block or header-indexed header by hash.
     virtual bool get_header(chain::header& out_header, size_t& out_height,
         const hash_digest& block_hash, bool block_index) const = 0;
-
-    /// False if the block is not pending (for caller loop).
-    virtual bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-        size_t height) const = 0;
 
     /// Get the hash of the block at the given index height.
     virtual bool get_block_hash(hash_digest& out_hash,
