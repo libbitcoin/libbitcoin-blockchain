@@ -131,23 +131,22 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
     const hash_digest& block_hash, bool block_index) const
 {
     auto result = database_.blocks().get(block_hash);
-    const auto fork_height = block_index ? max_size_t : fork_point().height();
 
     if (!result)
         return false;
 
-    const auto state = result.state();
     const auto height = result.height();
-    const auto relevant = height <= fork_height;
-    const auto confirmed = is_indexed(state) ||
-        (is_confirmed(state) && relevant);
 
-    if (!confirmed)
-        return false;
+    // The only way to know if a header is indexed is from its presence in the
+    // index. It will not be marked as a candidate until validated as such.
+    if (database_.blocks().get(height, block_index))
+    {
+        out_header = result.header();
+        out_height = height;
+        return true;
+    }
 
-    out_header = result.header();
-    out_height = height;
-    return true;
+    return false;
 }
 
 bool block_chain::get_block_hash(hash_digest& out_hash, size_t height,
@@ -268,7 +267,7 @@ void block_chain::populate_header(const chain::header& header) const
     header.metadata.exists = true;
     header.metadata.populated = result.transaction_count() != 0;
     header.metadata.validated = is_valid(state) || is_failed(state);
-    header.metadata.candidate = is_indexed(state);
+    header.metadata.candidate = is_candidate(state);
     header.metadata.confirmed = is_confirmed(state);
 }
 
@@ -303,7 +302,7 @@ void block_chain::populate_block_transaction(const chain::transaction& tx,
     const auto height = result.height();
     const auto relevant = fork_height <= height;
     tx.metadata.link = result.link();
-    tx.metadata.candidate = state == transaction_state::indexed;
+    tx.metadata.candidate = state == transaction_state::candidate;
     tx.metadata.confirmed = state == transaction_state::confirmed && relevant;
     tx.metadata.verified = state != transaction_state::confirmed &&
         height == forks;
@@ -322,7 +321,7 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
     const auto state = result.state();
     const auto height = result.height();
     tx.metadata.link = result.link();
-    tx.metadata.candidate = state == transaction_state::indexed;
+    tx.metadata.candidate = state == transaction_state::candidate;
     tx.metadata.confirmed = state == transaction_state::confirmed;
     tx.metadata.verified = state != transaction_state::confirmed &&
         height == forks;
@@ -666,13 +665,16 @@ bool block_chain::set_top_valid_candidate_state()
         return false;
 
     // The loop must at least terminate on the genesis block.
-    BITCOIN_ASSERT(is_valid(get_block_state(0, false)));
+    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, false)));
 
-    // BUGBUG: This may pick up a higher prevously-valid block.
-    while (!is_valid(get_block_state(height, false)))
+    // Block marked candidate when validated in candidate chain.
+    // Block unmarked candidate when leaves candidate chain.
+    // Block will be valid and unmarked candidate upon reentry.
+    while (!is_valid_candidate(get_block_state(height, false)))
         --height;
 
-    set_top_valid_candidate_state(chain_state_populator_.populate(height, false));
+    const auto state = chain_state_populator_.populate(height, false);
+    set_top_valid_candidate_state(state);
     return top_valid_candidate_state() != nullptr;
 }
 
@@ -1532,11 +1534,6 @@ void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
 // Filters.
 //-----------------------------------------------------------------------------
 
-inline bool is_needed(uint8_t state)
-{
-    return state == block_state::missing || is_pooled(state);
-}
-
 // This may execute up to 500 queries (protocol limit).
 // This filters against the block pool and then the block chain.
 void block_chain::filter_blocks(get_data_ptr message,
@@ -1555,7 +1552,7 @@ void block_chain::filter_blocks(get_data_ptr message,
     auto& inventories = message->inventories();
     for (auto it = inventories.begin(); it != inventories.end();)
     {
-        if (it->is_block_type() && is_needed(get_block_state(it->hash())))
+        if (it->is_block_type() && !database_.blocks().get(it->hash()))
         {
             ++it;
         }
@@ -1570,8 +1567,7 @@ void block_chain::filter_blocks(get_data_ptr message,
 
 inline bool is_needed(transaction_state tx_state)
 {
-    return tx_state == transaction_state::missing ||
-        tx_state == transaction_state::pooled;
+    return tx_state == transaction_state::pooled;
 }
 
 // This may execute up to 50,000 queries (protocol limit).
@@ -1593,7 +1589,7 @@ void block_chain::filter_transactions(get_data_ptr message,
     for (auto it = inventories.begin(); it != inventories.end();)
     {
         if (it->is_transaction_type() &&
-            get_transaction_state(it->hash()) == transaction_state::missing)
+            !database_.transactions().get(it->hash()))
         {
             ++it;
         }
