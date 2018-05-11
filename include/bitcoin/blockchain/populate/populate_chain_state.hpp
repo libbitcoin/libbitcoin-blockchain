@@ -39,7 +39,11 @@ public:
     /// Populate chain state for the top block|header.
     chain::chain_state::ptr populate(bool block_index) const;
 
-    /// Populate chain state for the given block|header index.
+    /// Populate chain state for the given block|header by height.
+    chain::chain_state::ptr populate(size_t header_height,
+        bool block_index) const;
+
+    /// Populate chain state for the given block|header.
     chain::chain_state::ptr populate(const chain::header& header,
         size_t header_height, bool block_index) const;
 

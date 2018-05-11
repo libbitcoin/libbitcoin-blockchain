@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__not_found__false)
 
     const chain::output_point outpoint{ null_hash, 42 };
     size_t header_branch_height = 0;
-    instance.populate_output(outpoint, header_branch_height);
+    instance.populate_output(outpoint, header_branch_height, true);
     BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__found__expected)
     const chain::output_point outpoint{ block2->transactions()[0].hash(), 0 };
     const auto expected_value = initial_block_subsidy_satoshi();
     const auto expected_script = block2->transactions()[0].outputs()[0].script().to_string(0);
-    instance.populate_output(outpoint, 2);
+    instance.populate_output(outpoint, 2, true);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 
     BOOST_REQUIRE(outpoint.metadata.coinbase);
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__below_fork__true)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 3);
+    instance.populate_output(outpoint, 3, true);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__at_fork__true)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 2);
+    instance.populate_output(outpoint, 2, true);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__above_fork__false)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 1);
+    instance.populate_output(outpoint, 1, true);
     BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 

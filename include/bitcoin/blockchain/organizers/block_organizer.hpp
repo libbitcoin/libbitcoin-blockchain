@@ -42,6 +42,8 @@ class BCB_API block_organizer
 public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<block_organizer> ptr;
+    typedef std::function<bool(code, block_const_ptr, size_t)> download_handler;
+    typedef resubscriber<code, block_const_ptr, size_t> download_subscriber;
     typedef safe_chain::reorganize_handler reorganize_handler;
     typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
         block_const_ptr_list_const_ptr> reorganize_subscriber;
@@ -53,7 +55,7 @@ public:
     bool start();
     bool stop();
 
-    void organize(block_const_ptr block, result_handler handler);
+    code organize(block_const_ptr block, size_t height);
     void subscribe(reorganize_handler&& handler);
     void unsubscribe();
 
@@ -62,15 +64,15 @@ protected:
 
 private:
     // Verify sub-sequence.
-    void handle_check(const code& ec, block_const_ptr block,
+    bool handle_check(const code& ec, block_const_ptr block,
+        size_t height);
+    void handle_accept(const code& ec, block_const_ptr block,
         result_handler handler);
-    void handle_accept(const code& ec, block_const_ptr branch,
+    void handle_connect(const code& ec, block_const_ptr block,
         result_handler handler);
-    void handle_connect(const code& ec, block_const_ptr branch,
-        result_handler handler);
-    void handle_reorganized(const code& ec, 
-        block_const_ptr_list_const_ptr incoming,
-        block_const_ptr_list_ptr outgoing, result_handler handler);
+    ////void handle_reorganized(const code& ec, 
+    ////    block_const_ptr_list_const_ptr incoming,
+    ////    block_const_ptr_list_ptr outgoing, result_handler handler);
     void signal_completion(const code& ec);
 
     // Subscription.
@@ -84,6 +86,7 @@ private:
     std::promise<code> resume_;
     dispatcher& dispatch_;
     validate_block validator_;
+    download_subscriber::ptr downloader_;
     reorganize_subscriber::ptr subscriber_;
 };
 

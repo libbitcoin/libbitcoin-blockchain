@@ -101,6 +101,7 @@ void header_organizer::organize(header_const_ptr header,
         std::bind(&header_organizer::handle_check,
             this, _1, header, complete);
 
+    // TODO: move outside of critical section.
     // Checks that are independent of chain state.
     validator_.check(header, check_handler);
 }
@@ -119,16 +120,15 @@ void header_organizer::handle_complete(const code& ec, result_handler handler)
 //-----------------------------------------------------------------------------
 
 // private
-//*****************************************************************************
-// CONSENSUS: Hash existence is the same check performed by satoshi, yet it
-// will produce a chain split in the case of a hash collision. This is because
-// it is not applied at the branch point, so some nodes will not see the
-// collision block and others will, depending on block order of arrival.
-// The hash collision is explicitly ignored for block hashes.
-//*****************************************************************************
 void header_organizer::handle_check(const code& ec, header_const_ptr header,
     result_handler handler)
 {
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
     if (ec)
     {
         handler(ec);
@@ -137,6 +137,14 @@ void header_organizer::handle_check(const code& ec, header_const_ptr header,
 
     // This sets height and presumes the fork point is an indexed header.
     const auto branch = header_pool_.get_branch(header);
+
+    // See symmetry with tx metadata memory pool.
+    // The header is already memory pooled (nothing to do).
+    if (branch->empty())
+    {
+        handler(error::duplicate_block);
+        return;
+    }
 
     const auto accept_handler =
         std::bind(&header_organizer::handle_accept,
@@ -150,10 +158,15 @@ void header_organizer::handle_check(const code& ec, header_const_ptr header,
 void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     result_handler handler)
 {
-    // A header-pooled (duplicate) header is returned here.
-    // An existing (duplicate) indexed or confirmed header is returned here.
-    // A stored but invalid block is returned with validation code here.
-    // A pooled header skips validation and only updates on store.
+    // The header may exist in the store in any not-invalid state.
+    // An invalid state causes an error result and block rejection.
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
     if (ec)
     {
         handler(ec);
@@ -162,53 +175,46 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
 
     // The top block is valid even if the branch has insufficient work.
     const auto top = branch->top();
-
-    // TODO: create a simulated validation path that does not block others.
-    if (top->metadata.simulate)
-    {
-        handler(error::success);
-        return;
-    }
-
     const auto work = branch->work();
-    uint256_t required;
+    uint256_t required_work;
 
     // This stops before the height or at the work level, which ever is first.
-    if (!fast_chain_.get_work(required, work, branch->height(), false))
+    if (!fast_chain_.get_work(required_work, work, branch->height(), false))
     {
         handler(error::operation_failed);
         return;
     }
 
-    if (work <= required)
+    // Consensus.
+    if (work <= required_work)
     {
         header_pool_.add(top, branch->top_height());
         handler(error::insufficient_work);
         return;
     }
 
-    // Get the outgoing headers to forward to reorg handler.
-    const auto outgoing = std::make_shared<header_const_ptr_list>();
-
-    // Replace! Switch!
+    // TODO: ensure this absorbs an existing header of any state.
     //#########################################################################
-    const auto result = fast_chain_.reindex(branch->fork_point(),
-        branch->headers(), outgoing);
+    auto error = fast_chain_.reorganize(branch->fork_point(), branch->headers());
     //#########################################################################
 
-    if (!result)
+    if (error)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure writing header to store, is now corrupted: ";
-        handler(error::operation_failed);
+        handler(error);
         return;
     }
 
-    header_pool_.remove(branch->headers());
-    header_pool_.prune(branch->top_height());
-    header_pool_.add(outgoing, branch->height() + 1);
-    notify(branch->height(), branch->headers(), outgoing);
-    handler(error::success);
+    // TODO: move notifications into fast_chain_.reorganize().
+    ////notify(branch->height(), branch->headers(), outgoing);
+
+    // TODO: do this in a reorg handler (inside fast_chain_.reorganize()).
+    // header_pool_ is only used internally, so can be updated before or after.
+    ////header_pool_.remove(branch->headers());
+    ////header_pool_.prune(branch->top_height());
+    ////header_pool_.add(outgoing, branch->height() + 1);
+    handler(error);
 }
 
 // Subscription.

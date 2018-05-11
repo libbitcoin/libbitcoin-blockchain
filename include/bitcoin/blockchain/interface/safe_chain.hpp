@@ -180,15 +180,14 @@ public:
     //-------------------------------------------------------------------------
 
     virtual void organize(header_const_ptr header, result_handler handler) = 0;
-    virtual void organize(block_const_ptr block, result_handler handler) = 0;
     virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
-    virtual code update(block_const_ptr block, size_t height) = 0;
+    virtual code organize(block_const_ptr block, size_t height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------
 
     virtual bool is_blocks_stale() const = 0;
-    virtual bool is_headers_stale() const = 0;
+    virtual bool is_candidates_stale() const = 0;
 };
 
 } // namespace blockchain

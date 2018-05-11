@@ -62,12 +62,6 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get the highest confirmed block of the header index.
-    size_t get_fork_point() const;
-
-    /// Get the highest validated block of the header index.
-    size_t get_last_validated() const;
-
     /// Get the block hash of an empty block, or false if missing or not empty.
     bool get_if_empty(hash_digest& out_hash, size_t height) const;
 
@@ -117,18 +111,20 @@ public:
         size_t above_height, bool block_index) const;
 
     /// Populate metadata of the given block header.
-    void populate_header(const chain::header& header,
-        size_t fork_height=max_size_t) const;
+    void populate_header(const chain::header& header) const;
 
-    /// Populate metadata of the given transaction.
-    /// Sets metadata based on fork point, ignore indexing if max fork point.
-    void populate_transaction(const chain::transaction& tx,
-        uint32_t forks, size_t fork_height=max_size_t) const;
+    /// Populate metadata of the given transaction for block inclusion.
+    void populate_block_transaction(const chain::transaction& tx,
+        uint32_t forks, size_t fork_height) const;
+
+    /// Populate metadata of the given transaction for pool inclusion.
+    void populate_pool_transaction(const chain::transaction& tx,
+        uint32_t forks) const;
 
     /// Get the output that is referenced by the outpoint.
-    /// Sets metadata based on fork point and confirmation requirement. 
+    /// Sets metadata based on fork point. 
     void populate_output(const chain::output_point& outpoint,
-        size_t fork_height=max_size_t) const;
+        size_t fork_height, bool candidate) const;
 
     /// Get the state of the given block (flags).
     uint8_t get_block_state(size_t height, bool block_index) const;
@@ -140,29 +136,65 @@ public:
     database::transaction_state get_transaction_state(
         const hash_digest& tx_hash) const;
 
+    /// Get the populated header by indexed|confirmed height (or null).
+    header_const_ptr get_header(size_t height, bool block_index) const;
+
+    /// Get the populated block by indexed|confirmed height (or null).
+    block_const_ptr get_block(size_t height, bool witness,
+        bool block_index) const;
+
     // Writers.
     // ------------------------------------------------------------------------
-    // Thread safe (except for push block).
 
-    /// Push a validated header chain to the header index.
-    bool reindex(const config::checkpoint& fork_point,
-        header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_ptr outgoing);
+    /// Store unconfirmed tx that was verified with the given forks.
+    code store(transaction_const_ptr tx);
 
-    /// Push unconfirmed tx to tx table and index outputs (not used by node).
-    bool push(transaction_const_ptr tx);
+    /// Reorganize the header index to fork point, mark/unmark index spends.
+    code reorganize(const config::checkpoint& fork,
+        header_const_ptr_list_const_ptr incoming);
 
-    /// Push a block to blockchain, height validated (not used by node).
-    bool push(block_const_ptr block, size_t height, uint32_t median_time_past);
+    /// Update the stored block with txs.
+    code update(block_const_ptr block, size_t height);
+
+    /// Set the block validation state.
+    code invalidate(block_const_ptr block, size_t height);
+
+    /// Set the block validation state and mark spent outputs.
+    code candidate(block_const_ptr block);
+
+    /// Reorganize the block index to the fork point, unmark index spends.
+    code reorganize(block_const_ptr_list_const_ptr branch_cache,
+        size_t branch_height);
 
     // Properties
     // ------------------------------------------------------------------------
 
-    /// Get chain state for header pool.
-    chain::chain_state::ptr header_pool_state() const;
+    // Get checkpoint representing highest common candidate/confirmed block.
+    config::checkpoint fork_point() const;
 
-    /// Get chain state for transaction pool.
+    /// Get chain state for top candidate block (may not be valid).
+    chain::chain_state::ptr top_candidate_state() const;
+
+    /// Get chain state for top valid candidate (may be higher confirmeds).
+    chain::chain_state::ptr top_valid_candidate_state() const;
+
+    /// Get chain state for transaction pool (top confirmed plus one).
     chain::chain_state::ptr transaction_pool_state() const;
+
+    /// True if the top candidate age exceeds the configured limit.
+    bool is_candidates_stale() const;
+
+    /// True if the top valid candidate age exceeds the configured limit.
+    bool is_validated_stale() const;
+
+    /// True if the top block age exceeds the configured limit.
+    bool is_blocks_stale() const;
+
+    /// The candidate chain has greater valid work than the confirmed chain.
+    bool is_reorganizable() const;
+
+    // Chain State
+    // ------------------------------------------------------------------------
 
     /// Get chain state for the given indexed header.
     chain::chain_state::ptr chain_state(const chain::header& header,
@@ -174,12 +206,6 @@ public:
 
     /// Promote chain state for the last header in the multi-header branch.
     chain::chain_state::ptr promote_state(header_branch::const_ptr branch) const;
-
-    /// True if the top block age exceeds the configured limit.
-    bool is_blocks_stale() const;
-
-    /// True if the top header age exceeds the configured limit.
-    bool is_headers_stale() const;
 
     // ========================================================================
     // SAFE CHAIN
@@ -321,26 +347,17 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Organize a header into the header pool if valid.
+    /// Organize a header into the candidate chain and organize accordinly.
     void organize(header_const_ptr header, result_handler handler);
 
-    /// Organize a block into the block pool if valid.
-    void organize(block_const_ptr block, result_handler handler);
-
-    /// Store a transaction to the pool if valid.
+    /// Store a transaction to the pool.
     void organize(transaction_const_ptr tx, result_handler handler);
 
-    /// Add the block's transactions to the header, height is validated.
-    code update(block_const_ptr block, size_t height);
+    /// Store a block's transactions and organize accordinly.
+    code organize(block_const_ptr block, size_t height);
 
     // Properties.
     //-------------------------------------------------------------------------
-
-    /////// True if the top block age exceeds the configured limit.
-    ////bool is_blocks_stale() const;
-
-    /////// True if the top header age exceeds the configured limit.
-    ////bool is_headers_stale() const;
 
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
@@ -354,9 +371,14 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
-    bool set_last_validated();
-    bool set_pool_states();
-    void set_header_pool_state(chain::chain_state::ptr top);
+    bool set_fork_point();
+    bool set_top_candidate_state();
+    bool set_top_valid_candidate_state();
+    bool set_transaction_pool_state();
+
+    void set_fork_point(const config::checkpoint& fork);
+    void set_top_candidate_state(chain::chain_state::ptr top);
+    void set_top_valid_candidate_state(chain::chain_state::ptr top);
     void set_transaction_pool_state(chain::chain_state::ptr top);
 
     bool get_transactions(chain::transaction::list& out_transactions,
@@ -369,22 +391,24 @@ private:
     const settings& settings_;
 
     // Last item cache.
-    std::atomic<size_t> last_validated_;
     bc::atomic<block_const_ptr> last_block_;
-    bc::atomic<header_const_ptr> last_header_;
     bc::atomic<transaction_const_ptr> last_transaction_;
 
-    // Pool item cache.
-    bc::atomic<chain::chain_state::ptr> header_pool_state_;
+    // Chain state cache.
+    bc::atomic<config::checkpoint> fork_point_;
+    bc::atomic<chain::chain_state::ptr> top_candidate_state_;
+    bc::atomic<chain::chain_state::ptr> top_valid_candidate_state_;
     bc::atomic<chain::chain_state::ptr> transaction_pool_state_;
 
-    const populate_chain_state chain_state_populator_;
     database::data_base database_;
+    const populate_chain_state chain_state_populator_;
+    const bool index_addresses_;
 
     // These are thread safe.
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;
+    block_organizer block_organizer_;
     header_organizer header_organizer_;
     transaction_organizer transaction_organizer_;
 };

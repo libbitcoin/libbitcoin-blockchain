@@ -105,8 +105,8 @@ void validate_header::handle_populated(const code& ec,
 
     const auto& header = *branch->top();
 
-    // Skip validation when valid header is already stored.
-    if (header.metadata.pooled)
+    // Skip validation if full block was validated (and is not invalid).
+    if (header.metadata.validated)
     {
         handler(error::success);
         return;

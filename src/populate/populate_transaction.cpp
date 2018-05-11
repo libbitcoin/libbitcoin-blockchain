@@ -43,39 +43,25 @@ populate_transaction::populate_transaction(dispatcher& dispatch,
 void populate_transaction::populate(transaction_const_ptr tx,
     result_handler&& handler) const
 {
+    auto& metadata = tx->metadata;
+
     // Get the chain state of the next block (tx pool).
-    const auto state = fast_chain_.transaction_pool_state();
+    metadata.state = fast_chain_.transaction_pool_state();
+    BITCOIN_ASSERT(metadata.state);
 
-    if (!state)
-    {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Populate based on max height (header indexing excluded).
-    tx->metadata.state = state;
-    fast_chain_.populate_transaction(*tx, state->enabled_forks());
-
-    // TODO: return error::duplicate_transaction here.
-    // There is a permanent previous validation error on the tx.
-    if (tx->metadata.error != error::success)
-    {
-        handler(tx->metadata.error);
-        return;
-    }
+    fast_chain_.populate_pool_transaction(*tx, metadata.state->enabled_forks());
 
     // The tx is already confirmed (nothing to do).
-    if (tx->metadata.duplicate)
+    if (metadata.confirmed)
     {
         handler(error::duplicate_transaction);
         return;
     }
 
-    // Bypass population/validation when valid tx w/same forks is stored.
-    // This means that any given tx may not have chain state populated.
-    if (tx->metadata.pooled)
+    // The tx is already verified for the pool (nothing to do).
+    if (metadata.verified)
     {
-        handler(error::success);
+        handler(error::duplicate_transaction);
         return;
     }
 
@@ -100,7 +86,9 @@ void populate_transaction::populate_inputs(transaction_const_ptr tx,
     {
         const auto& input = inputs[input_index];
         const auto& prevout = input.previous_output();
-        fast_chain_.populate_output(prevout);
+
+        // TODO: make height and index defaults
+        fast_chain_.populate_output(prevout, max_size_t, true);
     }
 
     handler(error::success);

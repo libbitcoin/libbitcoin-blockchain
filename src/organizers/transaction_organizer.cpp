@@ -103,6 +103,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
         std::bind(&transaction_organizer::handle_check,
             this, _1, tx, complete);
 
+    // TODO: move outside of critical section.
     // Checks that are independent of chain state.
     validator_.check(tx, check_handler);
 
@@ -130,14 +131,6 @@ void transaction_organizer::signal_completion(const code& ec)
 //-----------------------------------------------------------------------------
 
 // private
-//*****************************************************************************
-// CONSENSUS:
-// It is OK for us to restrict *pool* transactions to those that do not collide
-// with any in the chain (as well as any in the pool) as collision will result
-// in monetary destruction and we don't want to facilitate it. We must allow
-// collisions in *block* validation if that is configured as otherwise will not
-// follow the chain when a collision is mined.
-//*****************************************************************************
 void transaction_organizer::handle_check(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
@@ -153,9 +146,13 @@ void transaction_organizer::handle_check(const code& ec,
         return;
     }
 
-    if (transaction_pool_.exists(tx))
+    // This locates only unconfirmed transactions discovered since startup.
+    const auto exists = transaction_pool_.exists(tx);
+
+    // See symmetry with header memory pool.
+    // The tx is already memory pooled (nothing to do).
+    if (exists)
     {
-        // The tx is already memory pooled (nothing to do).
         handler(error::duplicate_transaction);
         return;
     }
@@ -172,6 +169,9 @@ void transaction_organizer::handle_check(const code& ec,
 void transaction_organizer::handle_accept(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
+    // The tx may exist in the store in any state except confirmed or verified.
+    // Either state implies that the tx exists and is valid for its context.
+
     if (stopped())
     {
         handler(error::service_stopped);
@@ -184,12 +184,14 @@ void transaction_organizer::handle_accept(const code& ec,
         return;
     }
 
+    // Policy.
     if (tx->fees() < price(tx))
     {
         handler(error::insufficient_fee);
         return;
     }
 
+    // Policy.
     if (tx->is_dusty(settings_.minimum_output_satoshis))
     {
         handler(error::dusty_transaction);
@@ -220,15 +222,9 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // TODO: create a simulated validation path that does not block others.
-    if (tx->metadata.simulate)
-    {
-        handler(error::success);
-        return;
-    }
-
+    // TODO: ensure this absorbs an existing transaction.
     //#########################################################################
-    const auto result = fast_chain_.push(tx);
+    const auto result = fast_chain_.store(tx);
     //#########################################################################
 
     if (!result)
@@ -239,8 +235,9 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // This gets picked up by node tx-out protocol for announcement to peers.
+    // TODO: move notifications into fast_chain_.store().
     notify(tx);
+
     handler(error::success);
 }
 

@@ -105,13 +105,6 @@ void validate_transaction::handle_populated(const code& ec,
         return;
     }
 
-    // Skip validation when valid tx is already stored with same forks.
-    if (tx->metadata.pooled)
-    {
-        handler(error::success);
-        return;
-    }
-
     // Run contextual tx checks.
     handler(tx->accept());
 }

@@ -185,7 +185,7 @@ bool populate_chain_state::populate_bip9_bit1(chain_state::data& data,
 }
 
 bool populate_chain_state::populate_all(chain_state::data& data,
-    const chain::header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool block_index) const
 {
     // Construct the map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_, forks_);
@@ -201,16 +201,26 @@ bool populate_chain_state::populate_all(chain_state::data& data,
 // Populate chain state for the top block|header.
 chain_state::ptr populate_chain_state::populate(bool block_index) const
 {
+    header header;
     size_t header_height;
-    chain::header header;
 
     return fast_chain_.get_top(header, header_height, block_index) ?
         populate(header, header_height, block_index) : nullptr;
 }
 
+// Get chain state for the given block|header by height.
+chain_state::ptr populate_chain_state::populate(size_t header_height,
+    bool block_index) const
+{
+    header header;
+
+    return fast_chain_.get_header(header, header_height, false)? 
+        populate(header, header_height, block_index) : nullptr;
+}
+
 // Get chain state for the given block|header.
 // Only hash and height are queried from the current block/header.
-chain_state::ptr populate_chain_state::populate(const chain::header& header,
+chain_state::ptr populate_chain_state::populate(const header& header,
     size_t header_height, bool block_index) const
 {
     chain_state::data data;

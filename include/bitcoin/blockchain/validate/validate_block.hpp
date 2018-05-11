@@ -45,7 +45,7 @@ public:
     void start();
     void stop();
 
-    void check(block_const_ptr block, result_handler handler) const;
+    bool check(block_const_ptr block) const;
     void accept(block_const_ptr block, result_handler handler) const;
     void connect(block_const_ptr block, result_handler handler) const;
 

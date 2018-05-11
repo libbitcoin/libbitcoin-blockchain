@@ -39,6 +39,7 @@ using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
+// TODO: ensure intended thread prioritization.
 block_organizer::block_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
@@ -47,6 +48,7 @@ block_organizer::block_organizer(prioritized_mutex& mutex,
     stopped_(true),
     dispatch_(dispatch),
     validator_(dispatch, chain, settings),
+    downloader_(std::make_shared<download_subscriber>(thread_pool, NAME)),
     subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
 {
 }
@@ -65,53 +67,155 @@ bool block_organizer::stopped() const
 bool block_organizer::start()
 {
     stopped_ = false;
+    downloader_->start();
     subscriber_->start();
     validator_.start();
+
+    auto checked =
+        std::bind(&block_organizer::handle_check,
+            this, _1, _2, _3);
+
+    // Each download initiates the validation sequence.
+    downloader_->subscribe(std::move(checked), error::service_stopped, {}, 0);
     return true;
 }
 
 bool block_organizer::stop()
 {
     validator_.stop();
+    downloader_->stop();
+    downloader_->invoke(error::service_stopped, {}, 0);
     subscriber_->stop();
     subscriber_->invoke(error::service_stopped, 0, {}, {});
     stopped_ = true;
     return true;
 }
 
-// Organize sequence.
+// Organize.
 //-----------------------------------------------------------------------------
 
-void block_organizer::organize(block_const_ptr block, result_handler handler)
+// This operates on a caller (network) thread, concurrent execution.
+// Unlike with header and tx organizers, block.organize() is synchronous.
+code block_organizer::organize(block_const_ptr block, size_t height)
 {
+    code error_code;
+
+    // TODO: exclude checks if under checkpoint or milestone (optimization).
+    // TODO: maintain state for top encountered header milestone above valid.
+
+    // Checks that are independent of chain state (header, block, txs).
+    if (validator_.check(block))
+    {
+        // Store txs (if missing) and associate them to candidate block.
+        //#####################################################################
+        error_code = fast_chain_.update(block, height);
+        //#####################################################################
+    }
+
+    // If block is invalid headers will be popped.
+    // Downloader notifications are private to the organizer, so send here.
+    // Post download notification to invoke the validator (on priority thread).
+    downloader_->invoke(error_code, block, height);
+
+    // Validation result is returned by metadata.error.
+    // Failure code implies store corruption, caller should log.
+    return error_code;
+}
+
+// Validate sequence.
+//-----------------------------------------------------------------------------
+
+// This is the start of the validation sequence.
+bool block_organizer::handle_check(const code& ec, block_const_ptr block,
+    size_t height)
+{
+    if (ec)
+        return false;
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // Reset the reusable promise.
-    resume_ = std::promise<code>();
+    // If initial height is misaligned try again on next download.
+    if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
+        return true;
 
-    const result_handler complete =
-        std::bind(&block_organizer::signal_completion,
-            this, _1);
+    // Stack up the validated blocks for possible reorganization.
+    auto branch_cache = std::make_shared<block_const_ptr_list>();
+    const auto branch_height = height;
+    code error_code;
 
-    const auto check_handler =
-        std::bind(&block_organizer::handle_check,
-            this, _1, block, complete);
+    while (!stopped() && block)
+    {
+        const result_handler complete =
+            std::bind(&block_organizer::signal_completion,
+                this, _1);
 
-    // Checks that are independent of chain state.
-    validator_.check(block, check_handler);
+        const auto accept_handler =
+            std::bind(&block_organizer::handle_accept,
+                this, _1, block, complete);
 
-    // Wait on completion signal.
-    // This is necessary in order to continue on a non-priority thread.
-    // If we do not wait on the original thread there may be none left.
-    auto ec = resume_.get_future().get();
+        // Perform contextual block validation.
+        resume_ = std::promise<code>();
+        validator_.accept(block, accept_handler);
+
+        if ((error_code = resume_.get_future().get()))
+        {
+            // Store failure or stop code from validator.
+            break;
+        }
+
+        if (block->header().metadata.error)
+        {
+            // Pop and mark as invalid candidates at and above block.
+            //#################################################################
+            error_code = fast_chain_.invalidate(block, height);
+            //#################################################################
+
+            // Candidate chain is invalid at this point so break here.
+            break;
+        }
+        else
+        {
+            // Mark candidate block as valid and mark candidate-spent outputs.
+            //#################################################################
+            error_code = fast_chain_.candidate(block);
+            //#################################################################
+            branch_cache->push_back(block);
+
+            if (error_code)
+                break;
+        }
+
+        if (fast_chain_.is_reorganizable())
+        {
+            // Reorganize this stronger candidate branch into confirmed chain.
+            //#################################################################
+            error_code = fast_chain_.reorganize(branch_cache, branch_height);
+            //#################################################################
+            branch_cache->clear();
+
+            if (error_code)
+                break;
+        }
+
+        // TODO: use parallel block reader (this is expensive and serial).
+        block = fast_chain_.get_block(++height, true, false);
+    }
 
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
 
-    // Invoke caller handler outside of critical section.
-    handler(ec);
+    // A non-stop error result implies store corruption.
+    if (error_code && error_code != error::service_stopped)
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure in block organization, store is now corrupt: "
+            << ec.message();
+    }
+
+    // Resubscribe if not stop or store failure.
+    return !error_code;
 }
 
 // private
@@ -124,30 +228,6 @@ void block_organizer::signal_completion(const code& ec)
 
 // Verify sub-sequence.
 //-----------------------------------------------------------------------------
-
-// private
-void block_organizer::handle_check(const code& ec, block_const_ptr block,
-    result_handler handler)
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
-    const auto accept_handler =
-        std::bind(&block_organizer::handle_accept,
-            this, _1, block, handler);
-
-    // Checks that are dependent on chain state and prevouts.
-    validator_.accept(block, accept_handler);
-}
 
 // private
 void block_organizer::handle_accept(const code& ec, block_const_ptr block,
@@ -189,52 +269,29 @@ void block_organizer::handle_connect(const code& ec, block_const_ptr block,
         return;
     }
 
-    block->metadata.start_notify = asio::steady_clock::now();
-
-    /// TODO: verify set in populate.
-    ////block->header().metadata.height = ...;
-    block->header().metadata.error = error::success;
-
-    // TODO: create a simulated validation path that does not block others.
-    if (block->header().metadata.simulate)
-    {
-        handler(error::success);
-        return;
-    }
-
-    // Get the outgoing blocks to forward to reorg handler.
-    const auto outgoing = std::make_shared<block_const_ptr_list>();
-
-    const auto reorganized_handler =
-        std::bind(&block_organizer::handle_reorganized,
-            this, _1, block, outgoing, handler);
-
-    // Update block state to valid.
-    //#########################################################################
-    ////fast_chain_.set_valid(block);
-    //#########################################################################
-}
-
-// private
-// Outgoing blocks must have median_time_past set.
-void block_organizer::handle_reorganized(const code& ec,
-    block_const_ptr_list_const_ptr incoming,
-    block_const_ptr_list_ptr outgoing, result_handler handler)
-{
-    if (ec)
-    {
-        LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure writing block to store, is now corrupted: "
-            << ec.message();
-        handler(ec);
-        return;
-    }
-
-    ////// v3 reorg block order is reverse of v2, branch.back() is the new top.
-    ////notify(branch->height(), branch->blocks(), outgoing);
-
     handler(error::success);
 }
+
+////// private
+////// Outgoing blocks must have median_time_past set.
+////void block_organizer::handle_reorganized(const code& ec,
+////    block_const_ptr_list_const_ptr incoming,
+////    block_const_ptr_list_ptr outgoing, result_handler handler)
+////{
+////    if (ec)
+////    {
+////        LOG_FATAL(LOG_BLOCKCHAIN)
+////            << "Failure writing block to store, is now corrupted: "
+////            << ec.message();
+////        handler(ec);
+////        return;
+////    }
+////
+////    ////// v3 reorg block order is reverse of v2, branch.back() is the new top.
+////    ////notify(branch->height(), branch->blocks(), outgoing);
+////
+////    handler(error::success);
+////}
 
 // Subscription.
 //-----------------------------------------------------------------------------
