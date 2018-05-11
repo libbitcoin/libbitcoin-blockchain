@@ -45,6 +45,7 @@ block_chain::block_chain(threadpool& pool,
     const database::settings& database_settings)
   : stopped_(true),
     settings_(chain_settings),
+    fork_point_({ null_hash, 0 }),
     database_(database_settings),
     chain_state_populator_(*this, chain_settings),
     index_addresses_(database_settings.index_addresses),
@@ -221,7 +222,7 @@ bool block_chain::get_version(uint32_t& out_version, size_t height,
     return true;
 }
 
-bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
+bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     size_t above_height, bool block_index) const
 {
     size_t top;
@@ -230,13 +231,20 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
     if (!database_.blocks().top(top, block_index))
         return false;
 
-    for (auto height = top; height > above_height && out_work < maximum;
-        --height)
+    // Set maximum to zero to bypass.
+    const auto no_maximum = overcome.is_zero();
+
+    for (auto height = top; (height > above_height) && 
+        (no_maximum || out_work <= overcome); --height)
     {
         const auto result = database_.blocks().get(height, block_index);
 
         if (!result)
             return false;
+
+        // Candidate chain is counted only to top validated block.
+        if (!block_index && !is_valid(result.state()))
+            break;
 
         out_work += chain::header::proof(result.bits());
     }
@@ -521,7 +529,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 
     // TODO: send notifications (fork, incoming, outgoing).
     set_fork_point({ top->hash(), state->height() });
-    set_transaction_pool_state(state);
+    set_next_confirmed_state(state);
     last_block_.store(top);
     return ec;
 }
@@ -529,9 +537,22 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 // Properties.
 // ----------------------------------------------------------------------------
 
+// private.
 config::checkpoint block_chain::fork_point() const
 {
     return fork_point_.load();
+}
+
+// private.
+uint256_t block_chain::candidate_work() const
+{
+    return candidate_work_.load();
+}
+
+// private.
+uint256_t block_chain::confirmed_work() const
+{
+    return confirmed_work_.load();
 }
 
 chain::chain_state::ptr block_chain::top_candidate_state() const
@@ -544,9 +565,9 @@ chain::chain_state::ptr block_chain::top_valid_candidate_state() const
     return top_valid_candidate_state_.load();
 }
 
-chain::chain_state::ptr block_chain::transaction_pool_state() const
+chain::chain_state::ptr block_chain::next_confirmed_state() const
 {
-    return transaction_pool_state_.load();
+    return next_confirmed_state_.load();
 }
 
 // private.
@@ -578,6 +599,32 @@ bool block_chain::set_fork_point()
 }
 
 // private.
+bool block_chain::set_candidate_work()
+{
+    BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
+
+    uint256_t work_above_fork;
+    if (!get_work(work_above_fork, 0, fork_point().height(), false))
+        return false;
+
+    set_candidate_work(work_above_fork);
+    return true;
+}
+
+// private.
+bool block_chain::set_confirmed_work()
+{
+    BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
+
+    uint256_t work_above_fork;
+    if (!get_work(work_above_fork, 0, fork_point().height(), true))
+        return false;
+
+    set_confirmed_work(work_above_fork);
+    return true;
+}
+
+// private.
 bool block_chain::set_top_candidate_state()
 {
     set_top_candidate_state(chain_state_populator_.populate(false));
@@ -602,16 +649,28 @@ bool block_chain::set_top_valid_candidate_state()
 }
 
 // private.
-bool block_chain::set_transaction_pool_state()
+bool block_chain::set_next_confirmed_state()
 {
-    set_transaction_pool_state(chain_state_populator_.populate(true));
-    return transaction_pool_state() != nullptr;
+    set_next_confirmed_state(chain_state_populator_.populate(true));
+    return next_confirmed_state() != nullptr;
 }
 
 // private.
 void block_chain::set_fork_point(const config::checkpoint& fork)
 {
     fork_point_.store(fork);
+}
+
+// private.
+void block_chain::set_candidate_work(const uint256_t& work_above_fork)
+{
+    candidate_work_.store(work_above_fork);
+}
+
+// private.
+void block_chain::set_confirmed_work(const uint256_t& work_above_fork)
+{
+    confirmed_work_.store(work_above_fork);
 }
 
 // private.
@@ -627,11 +686,11 @@ void block_chain::set_top_valid_candidate_state(chain::chain_state::ptr top)
 }
 
 // private.
-void block_chain::set_transaction_pool_state(chain::chain_state::ptr top)
+void block_chain::set_next_confirmed_state(chain::chain_state::ptr top)
 {
     // Promotion always succeeds.
     // Tx pool state is promoted from the state of the top confirmed block.
-    transaction_pool_state_.store(std::make_shared<chain::chain_state>(*top));
+    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top));
 }
 
 bool block_chain::is_candidates_stale() const
@@ -651,14 +710,13 @@ bool block_chain::is_validated_stale() const
 bool block_chain::is_blocks_stale() const
 {
     // The pool state is as fresh as the last (top) indexed block.
-    const auto state = transaction_pool_state_.load();
+    const auto state = next_confirmed_state_.load();
     return state && state->is_stale();
 }
 
 bool block_chain::is_reorganizable() const
 {
-    // TODO: true if the candidate chain is stronger than the confirmed chain.
-    return false;
+    return candidate_work() > confirmed_work();
 }
 
 // Chain State
@@ -709,8 +767,9 @@ bool block_chain::start()
     return set_fork_point()
         && set_top_candidate_state()
         && set_top_valid_candidate_state()
-        && set_transaction_pool_state()
-
+        && set_next_confirmed_state()
+        && set_candidate_work()
+        && set_confirmed_work()
         && block_organizer_.start()
         && header_organizer_.start()
         && transaction_organizer_.start();

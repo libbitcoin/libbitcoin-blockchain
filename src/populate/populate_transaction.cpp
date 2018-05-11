@@ -46,7 +46,7 @@ void populate_transaction::populate(transaction_const_ptr tx,
     auto& metadata = tx->metadata;
 
     // Get the chain state of the next block (tx pool).
-    metadata.state = fast_chain_.transaction_pool_state();
+    metadata.state = fast_chain_.next_confirmed_state();
     BITCOIN_ASSERT(metadata.state);
 
     fast_chain_.populate_pool_transaction(*tx, metadata.state->enabled_forks());

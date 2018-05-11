@@ -106,8 +106,8 @@ public:
     bool get_version(uint32_t& out_version, size_t height,
         bool block_index) const;
 
-    /// Get the work of blocks above the given index height.
-    bool get_work(uint256_t& out_work, const uint256_t& maximum,
+    /// Get the work of valid blocks above the given index height.
+    bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool block_index) const;
 
     /// Populate metadata of the given block header.
@@ -169,9 +169,6 @@ public:
     // Properties
     // ------------------------------------------------------------------------
 
-    // Get checkpoint representing highest common candidate/confirmed block.
-    config::checkpoint fork_point() const;
-
     /// Get chain state for top candidate block (may not be valid).
     chain::chain_state::ptr top_candidate_state() const;
 
@@ -179,7 +176,7 @@ public:
     chain::chain_state::ptr top_valid_candidate_state() const;
 
     /// Get chain state for transaction pool (top confirmed plus one).
-    chain::chain_state::ptr transaction_pool_state() const;
+    chain::chain_state::ptr next_confirmed_state() const;
 
     /// True if the top candidate age exceeds the configured limit.
     bool is_candidates_stale() const;
@@ -371,15 +368,23 @@ private:
     // Utilities.
     //-------------------------------------------------------------------------
 
+    config::checkpoint fork_point() const;
+    uint256_t candidate_work() const;
+    uint256_t confirmed_work() const;
+
     bool set_fork_point();
+    bool set_candidate_work();
+    bool set_confirmed_work();
     bool set_top_candidate_state();
     bool set_top_valid_candidate_state();
-    bool set_transaction_pool_state();
+    bool set_next_confirmed_state();
 
     void set_fork_point(const config::checkpoint& fork);
+    void set_candidate_work(const uint256_t& work_above_fork);
+    void set_confirmed_work(const uint256_t& work_above_fork);
     void set_top_candidate_state(chain::chain_state::ptr top);
     void set_top_valid_candidate_state(chain::chain_state::ptr top);
-    void set_transaction_pool_state(chain::chain_state::ptr top);
+    void set_next_confirmed_state(chain::chain_state::ptr top);
 
     bool get_transactions(chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
@@ -390,15 +395,15 @@ private:
     std::atomic<bool> stopped_;
     const settings& settings_;
 
-    // Last item cache.
+    // Atomic chain cache (thread safe).
+    bc::atomic<uint256_t> candidate_work_;
+    bc::atomic<uint256_t> confirmed_work_;
+    bc::atomic<config::checkpoint> fork_point_;
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<transaction_const_ptr> last_transaction_;
-
-    // Chain state cache.
-    bc::atomic<config::checkpoint> fork_point_;
     bc::atomic<chain::chain_state::ptr> top_candidate_state_;
     bc::atomic<chain::chain_state::ptr> top_valid_candidate_state_;
-    bc::atomic<chain::chain_state::ptr> transaction_pool_state_;
+    bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
 
     database::data_base database_;
     const populate_chain_state chain_state_populator_;

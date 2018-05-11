@@ -89,7 +89,7 @@ public:
         bool block_index) const = 0;
 
     /// Get the work of blocks above the given index height.
-    virtual bool get_work(uint256_t& out_work, const uint256_t& maximum,
+    virtual bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool block_index) const = 0;
 
     /// Populate metadata of the given block header.
@@ -149,9 +149,6 @@ public:
     // Properties
     // ------------------------------------------------------------------------
     
-    // Get checkpoint representing highest common candidate/confirmed block.
-    virtual config::checkpoint fork_point() const = 0;
-
     /// Get chain state for top candidate block (may not be valid).
     virtual chain::chain_state::ptr top_candidate_state() const = 0;
 
@@ -159,7 +156,7 @@ public:
     virtual chain::chain_state::ptr top_valid_candidate_state() const = 0;
 
     /// Get chain state for transaction pool (top confirmed plus one).
-    virtual chain::chain_state::ptr transaction_pool_state() const = 0;
+    virtual chain::chain_state::ptr next_confirmed_state() const = 0;
 
     /// True if the top candidate age exceeds the configured limit.
     virtual bool is_candidates_stale() const = 0;
