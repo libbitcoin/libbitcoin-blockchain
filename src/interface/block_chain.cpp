@@ -302,6 +302,7 @@ void block_chain::populate_block_transaction(const chain::transaction& tx,
     const auto height = result.height();
     const auto relevant = fork_height <= height;
     tx.metadata.link = result.link();
+    tx.metadata.existed = tx.metadata.link == transaction::validation::unlinked;
     tx.metadata.candidate = state == transaction_state::candidate;
     tx.metadata.confirmed = state == transaction_state::confirmed && relevant;
     tx.metadata.verified = state != transaction_state::confirmed &&
@@ -321,6 +322,7 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
     const auto state = result.state();
     const auto height = result.height();
     tx.metadata.link = result.link();
+    tx.metadata.existed = tx.metadata.link == transaction::validation::unlinked;
     tx.metadata.candidate = state == transaction_state::candidate;
     tx.metadata.confirmed = state == transaction_state::confirmed;
     tx.metadata.verified = state != transaction_state::confirmed &&
@@ -436,6 +438,9 @@ code block_chain::store(transaction_const_ptr tx)
     code ec;
     last_transaction_.store(tx);
 
+    ////// Clear metadata state (but need on stored cache).
+    ////tx->metadata.state.reset();
+
     // Payment indexing is asynchronous, after tx is stored. Therefore
     // it is possible for a tx to be in any existing state and not be indexed.
     if (index_addresses_ && !tx->metadata.existed)
@@ -473,6 +478,10 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
     code ec;
     header_const_ptr_list_ptr outgoing;
+
+    ////// Clear metadata.state (but need on stored cache).
+    ////for (const auto header: *incoming)
+    ////    header->metadata.state.reset();
 
     // This unmarks candidate txs and spent outputs (may have been validated).
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
@@ -539,6 +548,10 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
             error::store_block_missing_parent)))
             return ec;
 
+    ////// Clear metadata.state (but need on stored cache).
+    ////for (const auto header: *incoming)
+    ////    header->metadata.state.reset();
+
     // TODO: check for subscription dependencies on non-empty incoming.
     // This should not have to unmark because none were ever valid.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
@@ -599,7 +612,11 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 
     // Copy all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
+    {
+        ////// Clear metadata state (but need on stored cache).
+        ////block->header().metadata.state.reset();
         incoming->push_back(block);
+    }
 
     // This unmarks candidate txs and spent outputs (because confirmed).
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
