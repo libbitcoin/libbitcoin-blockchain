@@ -54,17 +54,18 @@ block_chain::block_chain(threadpool& pool,
     validation_mutex_(database_settings.flush_writes),
 
     // One dedicated thread is required by the validation subscriber.
-    priority_pool_(thread_ceiling(chain_settings.cores) + 1u,
-        priority(chain_settings.priority)),
+    priority_pool_(thread_ceiling(chain_settings.cores) + 1u, priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
 
     // TODO: review organizer use of mutex and priority thread pool.
-    block_organizer_(validation_mutex_, dispatch_, priority_pool_, *this,
-        chain_settings),
-    header_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings),
-    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings)
+    block_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
+    header_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings),
+    transaction_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings),
+
+    // TODO: review organizer use of mutex and priority thread pool.
+    block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
+    header_subscriber_(std::make_shared<header_subscriber>(pool, NAME "_header")),
+    transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_transaction"))
 {
 }
 
@@ -864,6 +865,10 @@ bool block_chain::start()
     if (!database_.open())
         return false;
 
+    block_subscriber_->start();
+    header_subscriber_->start();
+    transaction_subscriber_->start();
+
     return set_fork_point()
         && set_top_candidate_state()
         && set_top_valid_candidate_state()
@@ -888,6 +893,14 @@ bool block_chain::stop()
         block_organizer_.stop() &&
         header_organizer_.stop() &&
         transaction_organizer_.stop();
+
+    block_subscriber_->stop();
+    header_subscriber_->stop();
+    transaction_subscriber_->stop();
+
+    block_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    header_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    transaction_subscriber_->invoke(error::service_stopped, {});
 
     // The priority pool must not be stopped while organizing.
     priority_pool_.shutdown();
@@ -1675,29 +1688,54 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe_headers(reindex_handler&& handler)
+void block_chain::subscribe(block_handler&& handler)
 {
-    // Pass this through to the organizer, which issues the notifications.
-    header_organizer_.subscribe(std::move(handler));
+    block_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe_blockchain(reorganize_handler&& handler)
+void block_chain::subscribe(header_handler&& handler)
 {
-    // Pass this through to the organizer, which issues the notifications.
-    block_organizer_.subscribe(std::move(handler));
+    header_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe_transaction(transaction_handler&& handler)
+void block_chain::subscribe(transaction_handler&& handler)
 {
-    // Pass this through to the tx organizer, which issues the notifications.
-    transaction_organizer_.subscribe(std::move(handler));
+    transaction_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, {});
 }
 
 void block_chain::unsubscribe()
 {
-    block_organizer_.unsubscribe();
-    header_organizer_.unsubscribe();
-    transaction_organizer_.unsubscribe();
+    block_subscriber_->relay(error::success, 0, {}, {});
+    header_subscriber_->relay(error::success, 0, {}, {});
+    transaction_subscriber_->relay(error::success, {});
+}
+
+// protected
+void block_chain::notify(size_t fork_height,
+    block_const_ptr_list_const_ptr incoming,
+    block_const_ptr_list_const_ptr outgoing)
+{
+    // This invokes handlers within the criticial section (deadlock risk).
+    block_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
+}
+
+// protected
+void block_chain::notify(size_t fork_height,
+    header_const_ptr_list_const_ptr incoming,
+    header_const_ptr_list_const_ptr outgoing)
+{
+    // This invokes handlers within the criticial section (deadlock risk).
+    header_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
+}
+
+// protected
+void block_chain::notify(transaction_const_ptr tx)
+{
+    // This invokes handlers within the criticial section (deadlock risk).
+    transaction_subscriber_->invoke(error::success, tx);
 }
 
 // Organizer/Writers.

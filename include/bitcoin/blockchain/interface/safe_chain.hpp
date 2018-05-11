@@ -69,9 +69,9 @@ public:
 
     /// Subscription handlers.
     typedef std::function<bool(code, size_t, header_const_ptr_list_const_ptr,
-        header_const_ptr_list_const_ptr)> reindex_handler;
+        header_const_ptr_list_const_ptr)> header_handler;
     typedef std::function<bool(code, size_t, block_const_ptr_list_const_ptr,
-        block_const_ptr_list_const_ptr)> reorganize_handler;
+        block_const_ptr_list_const_ptr)> block_handler;
     typedef std::function<bool(code, transaction_const_ptr)>
         transaction_handler;
 
@@ -171,8 +171,8 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    virtual void subscribe_headers(reindex_handler&& handler) = 0;
-    virtual void subscribe_blockchain(reorganize_handler&& handler) = 0;
+    virtual void subscribe_blocks(block_handler&& handler) = 0;
+    virtual void subscribe_headers(header_handler&& handler) = 0;
     virtual void subscribe_transaction(transaction_handler&& handler) = 0;
     virtual void unsubscribe() = 0;
 

@@ -38,18 +38,15 @@ using namespace std::placeholders;
 
 #define NAME "transaction_organizer"
 
-// TODO: create priority pool at blockchain level and use in both organizers. 
 transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    settings_(settings),
-    dispatch_(dispatch),
+    settings_(settings),    ////dispatch_(dispatch),
     transaction_pool_(settings),
-    validator_(dispatch, fast_chain_, settings),
-    subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
+    validator_(dispatch, fast_chain_, settings)
 {
 }
 
@@ -67,7 +64,6 @@ bool transaction_organizer::stopped() const
 bool transaction_organizer::start()
 {
     stopped_ = false;
-    subscriber_->start();
     validator_.start();
     return true;
 }
@@ -75,8 +71,6 @@ bool transaction_organizer::start()
 bool transaction_organizer::stop()
 {
     validator_.stop();
-    subscriber_->stop();
-    subscriber_->invoke(error::service_stopped, {});
     stopped_ = true;
     return true;
 }
@@ -88,63 +82,21 @@ bool transaction_organizer::stop()
 void transaction_organizer::organize(transaction_const_ptr tx,
     result_handler handler)
 {
+    code error_code;
+
+    // Checks that are independent of chain state.
+    if ((error_code = validator_.check(tx)))
+    {
+        handler(error_code);
+        return;
+    }
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
     // Reset the reusable promise.
     resume_ = std::promise<code>();
-
-    const result_handler complete =
-        std::bind(&transaction_organizer::signal_completion,
-            this, _1);
-
-    const auto check_handler =
-        std::bind(&transaction_organizer::handle_check,
-            this, _1, tx, complete);
-
-    // TODO: move outside of critical section.
-    // Checks that are independent of chain state.
-    validator_.check(tx, check_handler);
-
-    // Wait on completion signal.
-    // This is necessary in order to continue on a non-priority thread.
-    // If we do not wait on the original thread there may be none left.
-    auto ec = resume_.get_future().get();
-
-    mutex_.unlock_low_priority();
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Invoke caller handler outside of critical section.
-    handler(ec);
-}
-
-// private
-void transaction_organizer::signal_completion(const code& ec)
-{
-    // This must be protected so that it is properly cleared.
-    // Signal completion, which results in original handler invoke with code.
-    resume_.set_value(ec);
-}
-
-// Verify sub-sequence.
-//-----------------------------------------------------------------------------
-
-// private
-void transaction_organizer::handle_check(const code& ec,
-    transaction_const_ptr tx, result_handler handler)
-{
-    if (stopped())
-    {
-        handler(error::service_stopped);
-        return;
-    }
-
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
 
     // This locates only unconfirmed transactions discovered since startup.
     const auto exists = transaction_pool_.exists(tx);
@@ -157,13 +109,39 @@ void transaction_organizer::handle_check(const code& ec,
         return;
     }
 
+    const result_handler complete =
+        std::bind(&transaction_organizer::signal_completion,
+            this, _1);
+
     const auto accept_handler =
         std::bind(&transaction_organizer::handle_accept,
-            this, _1, tx, handler);
+            this, _1, tx, complete);
 
     // Checks that are dependent on chain state and prevouts.
     validator_.accept(tx, accept_handler);
+
+    // Wait on completion signal.
+    // This is necessary in order to continue on a non-priority thread.
+    // If we do not wait on the original thread there may be none left.
+    error_code = resume_.get_future().get();
+
+    mutex_.unlock_low_priority();
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Invoke caller handler outside of critical section.
+    handler(error_code);
 }
+
+// private
+void transaction_organizer::signal_completion(const code& ec)
+{
+    // This must be protected so that it is properly cleared.
+    // Signal completion, which results in original handler invoke with code.
+    resume_.set_value(ec);
+}
+
+// Verify sub-sequence.
+//-----------------------------------------------------------------------------
 
 // private
 void transaction_organizer::handle_accept(const code& ec,
@@ -235,26 +213,6 @@ void transaction_organizer::handle_connect(const code& ec,
     }
 
     handler(error_code);
-}
-
-// Subscription.
-//-----------------------------------------------------------------------------
-
-// private
-void transaction_organizer::notify(transaction_const_ptr tx)
-{
-    // This invokes handlers within the criticial section (deadlock risk).
-    subscriber_->invoke(error::success, tx);
-}
-
-void transaction_organizer::subscribe(transaction_handler&& handler)
-{
-    subscriber_->subscribe(std::move(handler), error::service_stopped, {});
-}
-
-void transaction_organizer::unsubscribe()
-{
-    subscriber_->relay(error::success, {});
 }
 
 // Queries.

@@ -44,6 +44,12 @@ class BCB_API block_chain
   : public safe_chain, public fast_chain, noncopyable
 {
 public:
+    typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
+        block_const_ptr_list_const_ptr> block_subscriber;
+    typedef resubscriber<code, size_t, header_const_ptr_list_const_ptr,
+        header_const_ptr_list_const_ptr> header_subscriber;
+    typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
+
     /// Relay transactions is network setting that is passed through to block
     /// population as an optimization. This can be removed once there is an
     /// in-memory cache of tx pool metadata, as the costly query will go away.
@@ -329,14 +335,14 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    /// Subscribe to indexed header reorganizations, get branch/height.
-    void subscribe_headers(reindex_handler&& handler);
-
     /// Subscribe to confirmed block reorganizations, get branch/height.
-    void subscribe_blockchain(reorganize_handler&& handler);
+    void subscribe(block_handler&& handler);
+
+    /// Subscribe to indexed header reorganizations, get branch/height.
+    void subscribe(header_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
-    void subscribe_transaction(transaction_handler&& handler);
+    void subscribe(transaction_handler&& handler);
 
     /// Send null data success notification to all subscribers.
     void unsubscribe();
@@ -344,14 +350,14 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Organize a header into the candidate chain and organize accordinly.
+    /// Store a block's transactions and organize accordingly.
+    code organize(block_const_ptr block, size_t height);
+
+    /// Organize a header into the candidate chain and organize accordingly.
     void organize(header_const_ptr header, result_handler handler);
 
     /// Store a transaction to the pool.
     void organize(transaction_const_ptr tx, result_handler handler);
-
-    /// Store a block's transactions and organize accordinly.
-    code organize(block_const_ptr block, size_t height);
 
     // Properties.
     //-------------------------------------------------------------------------
@@ -361,8 +367,15 @@ public:
 
 protected:
 
-    /// Determine if work should terminate early with service stopped code.
+    // Determine if work should terminate early with service stopped code.
     bool stopped() const;
+
+    // Notification senders.
+    void notify(transaction_const_ptr tx);
+    void notify(size_t fork_height, header_const_ptr_list_const_ptr incoming,
+        header_const_ptr_list_const_ptr outgoing);
+    void notify(size_t fork_height, block_const_ptr_list_const_ptr incoming,
+        block_const_ptr_list_const_ptr outgoing);
 
 private:
     static uint256_t work(header_const_ptr_list_const_ptr headers);
@@ -414,9 +427,14 @@ private:
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;
+
     block_organizer block_organizer_;
     header_organizer header_organizer_;
     transaction_organizer transaction_organizer_;
+
+    block_subscriber::ptr block_subscriber_;
+    header_subscriber::ptr header_subscriber_;
+    transaction_subscriber::ptr transaction_subscriber_;
 };
 
 } // namespace blockchain

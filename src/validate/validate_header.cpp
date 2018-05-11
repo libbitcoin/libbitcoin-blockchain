@@ -68,11 +68,10 @@ void validate_header::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-void validate_header::check(header_const_ptr header,
-    result_handler handler) const
+code validate_header::check(header_const_ptr header) const
 {
     // Run context free checks.
-    handler(header->check(retarget_));
+    return header->check(retarget_);
 }
 
 // Accept sequence.

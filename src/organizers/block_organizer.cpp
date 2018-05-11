@@ -39,17 +39,15 @@ using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
-// TODO: ensure intended thread prioritization.
+// TODO: downloader maybe should be a priority thread.
 block_organizer::block_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    dispatch_(dispatch),
     validator_(dispatch, chain, settings),
-    downloader_(std::make_shared<download_subscriber>(thread_pool, NAME)),
-    subscriber_(std::make_shared<reorganize_subscriber>(thread_pool, NAME))
+    downloader_(std::make_shared<download_subscriber>(thread_pool, NAME))
 {
 }
 
@@ -68,14 +66,13 @@ bool block_organizer::start()
 {
     stopped_ = false;
     downloader_->start();
-    subscriber_->start();
     validator_.start();
 
     auto checked =
         std::bind(&block_organizer::handle_check,
             this, _1, _2, _3);
 
-    // Each download initiates the validation sequence.
+    // Each download queues up a validation sequence.
     downloader_->subscribe(std::move(checked), error::service_stopped, {}, 0);
     return true;
 }
@@ -85,8 +82,6 @@ bool block_organizer::stop()
     validator_.stop();
     downloader_->stop();
     downloader_->invoke(error::service_stopped, {}, 0);
-    subscriber_->stop();
-    subscriber_->invoke(error::service_stopped, 0, {}, {});
     stopped_ = true;
     return true;
 }
@@ -94,8 +89,6 @@ bool block_organizer::stop()
 // Organize.
 //-----------------------------------------------------------------------------
 
-// This operates on a caller (network) thread, concurrent execution.
-// Unlike with header and tx organizers, block.organize() is synchronous.
 code block_organizer::organize(block_const_ptr block, size_t height)
 {
     code error_code;
@@ -112,10 +105,8 @@ code block_organizer::organize(block_const_ptr block, size_t height)
         //#####################################################################
     }
 
-    // If block is invalid headers will be popped.
-    // Downloader notifications are private to the organizer, so send here.
-    // Post download notification to invoke the validator (on priority thread).
-    downloader_->invoke(error_code, block, height);
+    // Queue download notification to invoke validation on downloader thread.
+    downloader_->relay(error_code, block, height);
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
@@ -140,6 +131,10 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
         return true;
 
+    const result_handler complete =
+        std::bind(&block_organizer::signal_completion,
+            this, _1);
+
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
     const auto branch_height = height;
@@ -147,10 +142,6 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
     while (!stopped() && block)
     {
-        const result_handler complete =
-            std::bind(&block_organizer::signal_completion,
-                this, _1);
-
         const auto accept_handler =
             std::bind(&block_organizer::handle_accept,
                 this, _1, block, complete);
@@ -271,50 +262,6 @@ void block_organizer::handle_connect(const code& ec, block_const_ptr block,
     }
 
     handler(error::success);
-}
-
-////// private
-////// Outgoing blocks must have median_time_past set.
-////void block_organizer::handle_reorganized(const code& ec,
-////    block_const_ptr_list_const_ptr incoming,
-////    block_const_ptr_list_ptr outgoing, result_handler handler)
-////{
-////    if (ec)
-////    {
-////        LOG_FATAL(LOG_BLOCKCHAIN)
-////            << "Failure writing block to store, is now corrupted: "
-////            << ec.message();
-////        handler(ec);
-////        return;
-////    }
-////
-////    ////// v3 reorg block order is reverse of v2, branch.back() is the new top.
-////    ////notify(branch->height(), branch->blocks(), outgoing);
-////
-////    handler(error::success);
-////}
-
-// Subscription.
-//-----------------------------------------------------------------------------
-
-// private
-void block_organizer::notify(size_t fork_height,
-    block_const_ptr_list_const_ptr incoming,
-    block_const_ptr_list_const_ptr outgoing)
-{
-    // This invokes handlers within the criticial section (deadlock risk).
-    subscriber_->invoke(error::success, fork_height, incoming, outgoing);
-}
-
-void block_organizer::subscribe(reorganize_handler&& handler)
-{
-    subscriber_->subscribe(std::move(handler),
-        error::service_stopped, 0, {}, {});
-}
-
-void block_organizer::unsubscribe()
-{
-    subscriber_->relay(error::success, 0, {}, {});
 }
 
 } // namespace blockchain
