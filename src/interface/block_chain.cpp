@@ -91,14 +91,14 @@ bool block_chain::get_block_hash(hash_digest& out_hash, size_t height) const
 }
 
 bool block_chain::get_branch_work(uint256_t& out_work,
-    const uint256_t& maximum, size_t from_height) const
+    const uint256_t& overcome, size_t from_height) const
 {
     size_t top;
     if (!database_.blocks().top(top))
         return false;
 
     out_work = 0;
-    for (auto height = from_height; height <= top && out_work < maximum;
+    for (auto height = from_height; height <= top && out_work <= overcome;
         ++height)
     {
         const auto result = database_.blocks().get(height);
