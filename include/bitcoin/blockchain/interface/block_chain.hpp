@@ -419,11 +419,13 @@ private:
     bc::atomic<chain::chain_state::ptr> top_valid_candidate_state_;
     bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
 
+    // This is protected by mutex
     database::data_base database_;
+
+    // These are thread safe.
     const populate_chain_state chain_state_populator_;
     const bool index_addresses_;
 
-    // These are thread safe.
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
     mutable dispatcher dispatch_;

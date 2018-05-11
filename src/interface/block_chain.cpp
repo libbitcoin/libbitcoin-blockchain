@@ -438,7 +438,7 @@ code block_chain::store(transaction_const_ptr tx)
 
     last_transaction_.store(tx);
 
-    ////// Clear metadata state (but need on stored cache).
+    ////// Clear metadata state (but need on last_transaction_).
     ////tx->metadata.state.reset();
 
     // Payment indexing is asynchronous, after tx is stored. Therefore
@@ -616,7 +616,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Copy all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
     {
-        ////// Clear metadata state (but need on stored cache).
+        ////// Clear metadata state (but need on last_block_).
         ////block->header().metadata.state.reset();
         incoming->push_back(block);
     }
