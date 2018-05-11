@@ -436,7 +436,6 @@ code block_chain::store(transaction_const_ptr tx)
     if (!state)
         return error::operation_failed;
 
-    code ec;
     last_transaction_.store(tx);
 
     ////// Clear metadata state (but need on stored cache).
@@ -450,8 +449,12 @@ code block_chain::store(transaction_const_ptr tx)
         dispatch_.concurrent(&block_chain::index_transaction, this, tx);
     }
 
-    // TODO: send notifications (tx).
-    return database_.store(*tx, state->enabled_forks());
+    code ec;
+    if ((ec = database_.store(*tx, state->enabled_forks())))
+        return ec;
+
+    notify(tx);
+    return ec;
 }
 
 // private static
@@ -503,8 +506,8 @@ code block_chain::reorganize(const config::checkpoint& fork,
         set_candidate_work(0);
     }
 
-    // TODO: send notifications (fork, incoming, outgoing).
     set_top_candidate_state(top_state);
+    notify(fork_height, incoming, outgoing);
     return ec;
 }
 
@@ -517,7 +520,6 @@ code block_chain::update(block_const_ptr block, size_t height)
 // Mark candidate block and descendants as invalid and pop them.
 code block_chain::invalidate(block_const_ptr block, size_t block_height)
 {
-    code ec;
     const auto& header = block->header();
     BITCOIN_ASSERT(header.metadata.error);
 
@@ -530,6 +532,7 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     if (!get_block_hash(fork_hash, fork_height, false))
         return error::operation_failed;
 
+    code ec;
     const config::checkpoint fork{ fork_hash, fork_height };
     const auto outgoing = std::make_shared<header_const_ptr_list>();
     const auto incoming = std::make_shared<header_const_ptr_list>();
@@ -556,9 +559,10 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
-    // TODO: send notifications (fork, incoming, outgoing).
     // Lower top candidate state to that of the top valid (previous header).
     set_top_candidate_state(top_valid_candidate_state());
+
+    notify(fork_height, incoming, outgoing);
     return ec;
 }
 
@@ -621,13 +625,13 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
-    // TODO: send notifications (fork, incoming, outgoing).
     // Top valid candidate is now top confirmed and the new fork point.
     set_fork_point({ top->hash(), top_state->height() });
     set_candidate_work(0);
     set_confirmed_work(0);
     set_next_confirmed_state(top_state);
     last_block_.store(top);
+    notify(fork.height(), incoming, outgoing);
     return ec;
 }
 
