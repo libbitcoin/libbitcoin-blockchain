@@ -181,40 +181,44 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__true)
     START_BLOCKCHAIN(instance, false);
 
     uint256_t work;
-    uint256_t maximum(max_uint64);
+    uint256_t overcome(max_uint64);
 
     // This is allowed and just returns zero (standard new single block).
-    BOOST_REQUIRE(instance.get_branch_work(work, maximum, 1));
+    BOOST_REQUIRE(instance.get_branch_work(work, overcome, 1));
     BOOST_REQUIRE_EQUAL(work, 0);
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_zero__true)
-{
-    START_BLOCKCHAIN(instance, false);
-
-    uint256_t work;
-    uint256_t maximum(0);
-
-    // This should exit early due to hitting the maximum before the genesis block.
-    BOOST_REQUIRE(instance.get_branch_work(work, maximum, 0));
-    BOOST_REQUIRE_EQUAL(work, 0);
-}
-
-BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_one__true)
+BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__overcome_zero__true)
 {
     START_BLOCKCHAIN(instance, false);
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE(instance.insert(block1, 1));
-    uint256_t work;
-    uint256_t maximum(genesis_mainnet_work);
 
-    // This should exit early due to hitting the maximum on the genesis block.
-    BOOST_REQUIRE(instance.get_branch_work(work, maximum, 0));
+    uint256_t work;
+    uint256_t overcome(0);
+
+    // This should exit early with ojnly genesis work.
+    BOOST_REQUIRE(instance.get_branch_work(work, overcome, 0));
     BOOST_REQUIRE_EQUAL(work, genesis_mainnet_work);
 }
 
-BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded__true)
+BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__overcome_from_genesis__true)
+{
+    START_BLOCKCHAIN(instance, false);
+
+    const auto block1 = NEW_BLOCK(1);
+    BOOST_REQUIRE(instance.insert(block1, 1));
+
+    uint256_t work;
+    uint256_t overcome(genesis_mainnet_work);
+
+    // This should not exit early due to tying on the genesis block.
+    BOOST_REQUIRE(instance.get_branch_work(work, overcome, 0));
+    BOOST_REQUIRE_EQUAL(work, genesis_mainnet_work + block1->proof());
+}
+
+BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded_from_1__true)
 {
     START_BLOCKCHAIN(instance, false);
 
@@ -224,11 +228,11 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded__true)
     BOOST_REQUIRE(instance.insert(block2, 2));
 
     uint256_t work;
-    uint256_t maximum(max_uint64);
+    uint256_t overcome(max_uint64);
 
-    // This should not exit early.
-    BOOST_REQUIRE(instance.get_branch_work(work, maximum, 0));
-    BOOST_REQUIRE_EQUAL(work, 0x0000000300030003);
+    // This should not exit early but skips genesis.
+    BOOST_REQUIRE(instance.get_branch_work(work, overcome, 1));
+    BOOST_REQUIRE_EQUAL(work, block1->proof() + block2->proof());
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_header__not_found__false)
