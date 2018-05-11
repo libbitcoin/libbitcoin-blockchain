@@ -231,7 +231,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     if (!database_.blocks().top(top, block_index))
         return false;
 
-    // Set maximum to zero to bypass.
+    // Set overcome to zero to bypass early exit.
     const auto no_maximum = overcome.is_zero();
 
     for (auto height = top; (height > above_height) && 
@@ -403,6 +403,18 @@ code block_chain::store(transaction_const_ptr tx)
     return database_.store(*tx, state->enabled_forks());
 }
 
+// private static
+uint256_t block_chain::work(header_const_ptr_list_const_ptr headers)
+{
+    uint256_t total;
+
+    // Not using accumulator here avoids repeated copying of uint256 object.
+    for (auto header: *headers)
+        total += header->proof();
+
+    return total;
+}
+
 code block_chain::reorganize(const config::checkpoint& fork,
     header_const_ptr_list_const_ptr incoming)
 {
@@ -410,8 +422,8 @@ code block_chain::reorganize(const config::checkpoint& fork,
         return error::operation_failed;
 
     const auto top = incoming->back();
-    const auto state = top->metadata.state;
-    if (!state)
+    const auto top_state = top->metadata.state;
+    if (!top_state)
         return error::operation_failed;
 
     code ec;
@@ -421,14 +433,25 @@ code block_chain::reorganize(const config::checkpoint& fork,
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
+    const auto fork_height = fork.height();
+
     // If confirmed fork point is above candidate fork point then lower it.
-    if (fork_point().height() > fork.height())
+    if (fork_point().height() > fork_height)
+    {
+        // Set new fork point and recompute confirmed work from it.
         set_fork_point(fork);
+        set_confirmed_work();
+
+        // When fork point is lowered the top valid candidate is at fork point.
+        auto top_valid = chain_state_populator_.populate(fork_height, false);
+        set_top_valid_candidate_state(top_valid);
+        set_candidate_work(0);
+    }
 
     // TODO: send notifications (fork, incoming, outgoing).
     // TODO: create blockchain header reorg subscriber to update block pool.
     // TODO: in handler check headers for invalidity before adding to pool.
-    set_top_candidate_state(state);
+    set_top_candidate_state(top_state);
     return ec;
 }
 
@@ -493,8 +516,9 @@ code block_chain::candidate(block_const_ptr block)
     if ((ec = database_.candidate(*block)))
         return ec;
 
-    // Advance the top valid candidate tracker.
+    // Advance the top valid candidate state and candidate work.
     set_top_valid_candidate_state(header.metadata.state);
+    set_candidate_work(candidate_work() + header.proof());
     return ec;
 }
 
@@ -506,8 +530,8 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
         return error::operation_failed;
 
     const auto top = branch_cache->back();
-    const auto state = top->header().metadata.state;
-    if (!state)
+    const auto top_state = top->header().metadata.state;
+    if (!top_state)
         return error::operation_failed;
 
     code ec;
@@ -528,8 +552,11 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
         return ec;
 
     // TODO: send notifications (fork, incoming, outgoing).
-    set_fork_point({ top->hash(), state->height() });
-    set_next_confirmed_state(state);
+    // Top valid candidate is now top confirmed and the new fork point.
+    set_fork_point({ top->hash(), top_state->height() });
+    set_candidate_work(0);
+    set_confirmed_work(0);
+    set_next_confirmed_state(top_state);
     last_block_.store(top);
     return ec;
 }
@@ -641,6 +668,7 @@ bool block_chain::set_top_valid_candidate_state()
     // The loop must at least terminate on the genesis block.
     BITCOIN_ASSERT(is_valid(get_block_state(0, false)));
 
+    // BUGBUG: This may pick up a higher prevously-valid block.
     while (!is_valid(get_block_state(height, false)))
         --height;
 

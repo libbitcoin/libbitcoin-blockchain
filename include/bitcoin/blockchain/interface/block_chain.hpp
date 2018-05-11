@@ -365,8 +365,7 @@ protected:
     bool stopped() const;
 
 private:
-    // Utilities.
-    //-------------------------------------------------------------------------
+    static uint256_t work(header_const_ptr_list_const_ptr headers);
 
     config::checkpoint fork_point() const;
     uint256_t candidate_work() const;
