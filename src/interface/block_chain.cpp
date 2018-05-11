@@ -449,7 +449,7 @@ code block_chain::store(transaction_const_ptr tx)
         dispatch_.concurrent(&block_chain::index_transaction, this, tx);
     }
 
-    // TODO: send notifications.
+    // TODO: send notifications (tx).
     return database_.store(*tx, state->enabled_forks());
 }
 
@@ -503,8 +503,6 @@ code block_chain::reorganize(const config::checkpoint& fork,
     }
 
     // TODO: send notifications (fork, incoming, outgoing).
-    // TODO: create blockchain header reorg subscriber to update block pool.
-    // TODO: in handler check headers for invalidity before adding to pool.
     set_top_candidate_state(top_state);
     return ec;
 }

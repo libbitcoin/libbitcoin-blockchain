@@ -222,7 +222,6 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
-    // TODO: ensure this absorbs an existing transaction.
     //#########################################################################
     const auto error_code = fast_chain_.store(tx);
     //#########################################################################
@@ -234,9 +233,6 @@ void transaction_organizer::handle_connect(const code& ec,
         handler(error_code);
         return;
     }
-
-    // TODO: move notifications into fast_chain_.store().
-    notify(tx);
 
     handler(error_code);
 }
