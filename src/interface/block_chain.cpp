@@ -390,13 +390,59 @@ header_const_ptr block_chain::get_header(size_t height, bool block_index) const
 // Writers
 // ----------------------------------------------------------------------------
 
+// private
+void block_chain::index_block(block_const_ptr block)
+{
+    if (!index_addresses_)
+        return;
+
+    code ec;
+    if ((ec = database_.index(*block)))
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure in block payment indexing, store is now corrupt: "
+            << ec.message();
+
+        // In the case of a store failure the server stops processing.
+        stop();
+    }
+}
+
+// private
+void block_chain::index_transaction(transaction_const_ptr tx)
+{
+    if (!index_addresses_ || tx->metadata.existed)
+        return;
+
+    code ec;
+    if ((ec = database_.index(*tx)))
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure in transaction payment indexing, store is now corrupt: "
+            << ec.message();
+
+        // In the case of a store failure the server stops processing.
+        stop();
+    }
+}
+
 code block_chain::store(transaction_const_ptr tx)
 {
     const auto state = tx->metadata.state;
+
     if (!state)
         return error::operation_failed;
 
+    code ec;
     last_transaction_.store(tx);
+
+    // Payment indexing is asynchronous, after tx is stored. Therefore
+    // it is possible for a tx to be in any existing state and not be indexed.
+    if (index_addresses_ && !tx->metadata.existed)
+    {
+        // TODO: use low priority thread for this.
+        dispatch_.concurrent(&block_chain::index_transaction, this, tx);
+    }
 
     // TODO: send notifications.
     return database_.store(*tx, state->enabled_forks());
@@ -518,6 +564,15 @@ code block_chain::candidate(block_const_ptr block)
     // Advance the top valid candidate state and candidate work.
     set_top_valid_candidate_state(header.metadata.state);
     set_candidate_work(candidate_work() + header.proof());
+
+    // Payment indexing is asynchronous, after block is candidate. Therefore
+    // it is possible for a block to be in any valid state and not be indexed.
+    if (index_addresses_)
+    {
+        // TODO: use low priority thread for this.
+        dispatch_.concurrent(&block_chain::index_block, this, block);
+    }
+
     return ec;
 }
 
@@ -1614,7 +1669,7 @@ void block_chain::subscribe_headers(reindex_handler&& handler)
 void block_chain::subscribe_blockchain(reorganize_handler&& handler)
 {
     // Pass this through to the organizer, which issues the notifications.
-    ////block_organizer_.subscribe(std::move(handler));
+    block_organizer_.subscribe(std::move(handler));
 }
 
 void block_chain::subscribe_transaction(transaction_handler&& handler)
@@ -1625,7 +1680,7 @@ void block_chain::subscribe_transaction(transaction_handler&& handler)
 
 void block_chain::unsubscribe()
 {
-    ////block_organizer_.unsubscribe();
+    block_organizer_.unsubscribe();
     header_organizer_.unsubscribe();
     transaction_organizer_.unsubscribe();
 }

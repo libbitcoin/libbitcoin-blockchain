@@ -224,21 +224,21 @@ void transaction_organizer::handle_connect(const code& ec,
 
     // TODO: ensure this absorbs an existing transaction.
     //#########################################################################
-    const auto result = fast_chain_.store(tx);
+    const auto error_code = fast_chain_.store(tx);
     //#########################################################################
 
-    if (!result)
+    if (error_code)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure writing transaction to store, is now corrupted: ";
-        handler(error::operation_failed);
+        handler(error_code);
         return;
     }
 
     // TODO: move notifications into fast_chain_.store().
     notify(tx);
 
-    handler(error::success);
+    handler(error_code);
 }
 
 // Subscription.

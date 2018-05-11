@@ -215,6 +215,7 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     }
 
     // Resubscribe if not stop or store failure.
+    // In the case of a store failure the server will stop processing blocks.
     return !error_code;
 }
 

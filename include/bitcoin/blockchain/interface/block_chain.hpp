@@ -385,6 +385,8 @@ private:
     void set_top_valid_candidate_state(chain::chain_state::ptr top);
     void set_next_confirmed_state(chain::chain_state::ptr top);
 
+    void index_block(block_const_ptr block);
+    void index_transaction(transaction_const_ptr tx);
     bool get_transactions(chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(hash_list& out_hashes,
