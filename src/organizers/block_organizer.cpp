@@ -127,6 +127,8 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
+    // TODO: this runs in single thread in low priority except accept fan-outs.
+
     // If initial height is misaligned try again on next download.
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
         return true;

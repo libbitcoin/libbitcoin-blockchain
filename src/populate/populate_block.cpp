@@ -73,8 +73,8 @@ void populate_block::populate(block_const_ptr block,
     if (!metadata.exists)
         fast_chain_.populate_header(block->header());
 
-    // TODO: scan/maintain fork height between candidate and confirmed chains.
-    const auto fork_height = 0u;//// fast_chain_.fork_height();
+    // Above this confirmed are not confirmed in the candidate chain.
+    const auto fork_height = fast_chain_.fork_point().height();
 
     // Populate the coinbase as a special case tx.
     populate_coinbase(block, fork_height);

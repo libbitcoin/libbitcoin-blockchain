@@ -52,17 +52,15 @@ block_chain::block_chain(threadpool& pool,
 
     // Enable block/header priority when write flush enabled (performance).
     validation_mutex_(database_settings.flush_writes),
-
-    // One dedicated thread is required by the validation subscriber.
-    priority_pool_(thread_ceiling(chain_settings.cores) + 1u, priority(chain_settings.priority)),
+    priority_pool_(thread_ceiling(chain_settings.cores), priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
 
-    // TODO: review organizer use of mutex and priority thread pool.
+    // Currently all organizers dispatch at highest priority.
     block_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
-    header_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings),
-    transaction_organizer_(validation_mutex_, dispatch_, pool, *this, chain_settings),
+    header_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
+    transaction_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
 
-    // TODO: review organizer use of mutex and priority thread pool.
+    // Currently the subscriber thread pools are only used for unsubscribe.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
     header_subscriber_(std::make_shared<header_subscriber>(pool, NAME "_header")),
     transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_transaction"))
@@ -638,7 +636,6 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 // Properties.
 // ----------------------------------------------------------------------------
 
-// private.
 config::checkpoint block_chain::fork_point() const
 {
     return fork_point_.load();
@@ -1712,6 +1709,7 @@ void block_chain::subscribe(transaction_handler&& handler)
 
 void block_chain::unsubscribe()
 {
+    // TODO: review use of invoke here (to limit channel drop delay).
     block_subscriber_->relay(error::success, 0, {}, {});
     header_subscriber_->relay(error::success, 0, {}, {});
     transaction_subscriber_->relay(error::success, {});

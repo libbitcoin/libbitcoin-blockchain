@@ -148,7 +148,10 @@ public:
 
     // Properties
     // ------------------------------------------------------------------------
-    
+
+    /// Highest common block between candidate and confirmed chains.
+    virtual config::checkpoint fork_point() const = 0;
+
     /// Get chain state for top candidate block (may not be valid).
     virtual chain::chain_state::ptr top_candidate_state() const = 0;
 

@@ -99,6 +99,8 @@ void header_organizer::organize(header_const_ptr header,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
+    // TODO: this all runs in single thread in low priority.
+
     // This sets height and presumes the fork point is an indexed header.
     const auto branch = header_pool_.get_branch(header);
 

@@ -95,6 +95,8 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
+    // TODO: this runs in single thread in low priority until accept fan-outs.
+
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 

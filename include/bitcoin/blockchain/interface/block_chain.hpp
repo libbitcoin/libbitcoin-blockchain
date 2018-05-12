@@ -175,6 +175,9 @@ public:
     // Properties
     // ------------------------------------------------------------------------
 
+    /// Highest common block between candidate and confirmed chains.
+    config::checkpoint fork_point() const;
+
     /// Get chain state for top candidate block (may not be valid).
     chain::chain_state::ptr top_candidate_state() const;
 
@@ -380,7 +383,6 @@ protected:
 private:
     static uint256_t work(header_const_ptr_list_const_ptr headers);
 
-    config::checkpoint fork_point() const;
     uint256_t candidate_work() const;
     uint256_t confirmed_work() const;
 
