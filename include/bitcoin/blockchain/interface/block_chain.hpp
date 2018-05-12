@@ -405,26 +405,24 @@ private:
     bool get_transaction_hashes(hash_list& out_hashes,
         const database::block_result& result) const;
 
+    // This is protected by mutex.
+    database::data_base database_;
+
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const settings& settings_;
 
-    // Atomic chain cache (thread safe).
+    bc::atomic<config::checkpoint> fork_point_;
     bc::atomic<uint256_t> candidate_work_;
     bc::atomic<uint256_t> confirmed_work_;
-    bc::atomic<config::checkpoint> fork_point_;
     bc::atomic<block_const_ptr> last_block_;
     bc::atomic<transaction_const_ptr> last_transaction_;
     bc::atomic<chain::chain_state::ptr> top_candidate_state_;
     bc::atomic<chain::chain_state::ptr> top_valid_candidate_state_;
     bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
 
-    // This is protected by mutex
-    database::data_base database_;
-
-    // These are thread safe.
-    const populate_chain_state chain_state_populator_;
+    const settings& settings_;
     const bool index_addresses_;
+    const populate_chain_state chain_state_populator_;
 
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;

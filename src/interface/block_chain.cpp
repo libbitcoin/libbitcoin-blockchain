@@ -43,12 +43,12 @@ using namespace std::placeholders;
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
     const database::settings& database_settings)
-  : stopped_(true),
-    settings_(chain_settings),
+  : database_(database_settings),
+    stopped_(true),
     fork_point_({ null_hash, 0 }),
-    database_(database_settings),
-    chain_state_populator_(*this, chain_settings),
+    settings_(chain_settings),
     index_addresses_(database_settings.index_addresses),
+    chain_state_populator_(*this, chain_settings),
 
     // Enable block/header priority when write flush enabled (performance).
     validation_mutex_(database_settings.flush_writes),
