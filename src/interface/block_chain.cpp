@@ -434,10 +434,12 @@ code block_chain::store(transaction_const_ptr tx)
     if (!state)
         return error::operation_failed;
 
-    last_transaction_.store(tx);
+    // Clear chain state for store, index_transaction and notify.
+    tx->metadata.state.reset();
 
-    ////// Clear metadata state (but need on last_transaction_).
-    ////tx->metadata.state.reset();
+    code ec;
+    if ((ec = database_.store(*tx, state->enabled_forks())))
+        return ec;
 
     // Payment indexing is asynchronous, after tx is stored. Therefore
     // it is possible for a tx to be in any existing state and not be indexed.
@@ -447,24 +449,12 @@ code block_chain::store(transaction_const_ptr tx)
         dispatch_.concurrent(&block_chain::index_transaction, this, tx);
     }
 
-    code ec;
-    if ((ec = database_.store(*tx, state->enabled_forks())))
-        return ec;
-
     notify(tx);
+
+    // Restore chain state for last_transaction_ cache.
+    tx->metadata.state = state;
+    last_transaction_.store(tx);
     return ec;
-}
-
-// private static
-uint256_t block_chain::work(header_const_ptr_list_const_ptr headers)
-{
-    uint256_t total;
-
-    // Not using accumulator here avoids repeated copying of uint256 object.
-    for (auto header: *headers)
-        total += header->proof();
-
-    return total;
 }
 
 code block_chain::reorganize(const config::checkpoint& fork,
@@ -475,15 +465,16 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
     const auto top = incoming->back();
     const auto top_state = top->metadata.state;
+
     if (!top_state)
         return error::operation_failed;
 
     code ec;
     header_const_ptr_list_ptr outgoing;
 
-    ////// Clear metadata.state (but need on stored cache).
-    ////for (const auto header: *incoming)
-    ////    header->metadata.state.reset();
+    // Clear chain state for reorganize and notify.
+    std::for_each(incoming->begin(), incoming->end(),
+        [](header_const_ptr header) { header->metadata.state.reset(); });
 
     // This unmarks candidate txs and spent outputs (may have been validated).
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
@@ -548,11 +539,10 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
             error::store_block_missing_parent)))
             return ec;
 
-    ////// Clear metadata.state (but need on stored cache).
-    ////for (const auto header: *incoming)
-    ////    header->metadata.state.reset();
+    // Clear chain state for reorganize.
+    std::for_each(incoming->begin(), incoming->end(),
+        [](header_const_ptr header) { header->metadata.state.reset(); });
 
-    // TODO: check for subscription dependencies on non-empty incoming.
     // This should not have to unmark because none were ever valid.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
@@ -599,6 +589,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 
     const auto top = branch_cache->back();
     const auto top_state = top->header().metadata.state;
+
     if (!top_state)
         return error::operation_failed;
 
@@ -611,11 +602,11 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
         incoming->push_back(get_block(height, true, false));
 
-    // Copy all candidate pointers from the branch cache.
+    // Append all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
     {
-        ////// Clear metadata state (but need on last_block_).
-        ////block->header().metadata.state.reset();
+        // Clear chain state for reorganize and notify.
+        block->header().metadata.state.reset();
         incoming->push_back(block);
     }
 
@@ -628,8 +619,11 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     set_candidate_work(0);
     set_confirmed_work(0);
     set_next_confirmed_state(top_state);
-    last_block_.store(top);
     notify(fork.height(), incoming, outgoing);
+
+    // Restore chain state for last_block_ cache.
+    top->header().metadata.state = top_state;
+    last_block_.store(top);
     return ec;
 }
 
@@ -1720,6 +1714,7 @@ void block_chain::notify(size_t fork_height,
     block_const_ptr_list_const_ptr incoming,
     block_const_ptr_list_const_ptr outgoing)
 {
+    // TODO: check for subscription dependencies on non-empty incoming.
     // This invokes handlers within the criticial section (deadlock risk).
     block_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
 }
@@ -1729,6 +1724,7 @@ void block_chain::notify(size_t fork_height,
     header_const_ptr_list_const_ptr incoming,
     header_const_ptr_list_const_ptr outgoing)
 {
+    // TODO: check for subscription dependencies on non-empty incoming.
     // This invokes handlers within the criticial section (deadlock risk).
     header_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
 }
@@ -1736,6 +1732,7 @@ void block_chain::notify(size_t fork_height,
 // protected
 void block_chain::notify(transaction_const_ptr tx)
 {
+    // TODO: check for subscription dependencies on non-empty incoming.
     // This invokes handlers within the criticial section (deadlock risk).
     transaction_subscriber_->invoke(error::success, tx);
 }
