@@ -353,7 +353,6 @@ database::transaction_state block_chain::get_transaction_state(
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool block_index) const
 {
-    // TODO: not currently populated.
     const auto cached = last_block_.load();
 
     // Try the cached block first.
@@ -971,7 +970,6 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    // TODO: not currently populated.
     const auto cached = last_block_.load();
 
     // Try the cached block first.
@@ -1013,7 +1011,6 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    // TODO: not currently populated.
     const auto cached = last_block_.load();
 
     // Try the cached block first.

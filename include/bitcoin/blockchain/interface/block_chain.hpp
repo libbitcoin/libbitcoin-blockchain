@@ -381,6 +381,7 @@ protected:
         block_const_ptr_list_const_ptr outgoing);
 
 private:
+    // Properties.
     uint256_t candidate_work() const;
     uint256_t confirmed_work() const;
 
@@ -398,6 +399,7 @@ private:
     void set_top_valid_candidate_state(chain::chain_state::ptr top);
     void set_next_confirmed_state(chain::chain_state::ptr top);
 
+    // Utilities.
     void index_block(block_const_ptr block);
     void index_transaction(transaction_const_ptr tx);
     bool get_transactions(chain::transaction::list& out_transactions,
