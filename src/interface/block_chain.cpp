@@ -74,7 +74,7 @@ block_chain::block_chain(threadpool& pool,
 // Readers.
 // ----------------------------------------------------------------------------
 
-bool block_chain::get_if_empty(hash_digest& out_hash, size_t height) const
+bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
 {
     const auto result = database_.blocks().get(height, false);
 

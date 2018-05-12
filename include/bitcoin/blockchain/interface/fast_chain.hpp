@@ -41,8 +41,9 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get the block hash of an empty block, or false if missing or not empty.
-    virtual bool get_if_empty(hash_digest& out_hash, size_t height) const = 0;
+    /// Get the block hash of an empty block, or false if missing or invalid.
+    virtual bool get_downloadable(hash_digest& out_hash,
+        size_t height) const = 0;
 
     /// Get top block or header-indexed header.
     virtual bool get_top(chain::header& out_header, size_t& out_height,

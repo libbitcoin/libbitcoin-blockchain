@@ -68,8 +68,8 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get the block hash of an empty block, or false if missing or not empty.
-    bool get_if_empty(hash_digest& out_hash, size_t height) const;
+    /// Get the block hash of an empty block, or false if missing or invalid.
+    bool get_downloadable(hash_digest& out_hash, size_t height) const;
 
     /// Get top block or header-indexed header.
     bool get_top(chain::header& out_header, size_t& out_height,
