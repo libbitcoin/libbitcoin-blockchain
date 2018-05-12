@@ -381,8 +381,6 @@ protected:
         block_const_ptr_list_const_ptr outgoing);
 
 private:
-    static uint256_t work(header_const_ptr_list_const_ptr headers);
-
     uint256_t candidate_work() const;
     uint256_t confirmed_work() const;
 
