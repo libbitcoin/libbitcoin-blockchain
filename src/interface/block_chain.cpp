@@ -53,15 +53,19 @@ block_chain::block_chain(threadpool& pool,
     // Enable block/header priority when write flush enabled (performance).
     validation_mutex_(database_settings.flush_writes),
 
+    // Metadata pools.
+    header_pool_(settings.reorganization_limit),
+    transaction_pool_(settings),
+
     // Create dispatchers for priority and non-priority operations.
     priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
     priority_(priority_pool_, NAME "_priority"),
     dispatch_(pool, NAME "_dispatch"),
 
     // Organizers use priority dispatch and/or non-priority thread pool.
-    block_organizer_(validation_mutex_, priority_, pool, *this, settings),
-    header_organizer_(validation_mutex_, priority_, pool, *this, settings),
-    transaction_organizer_(validation_mutex_, priority_, pool, *this, settings),
+    block_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
@@ -407,18 +411,25 @@ code block_chain::reorganize(const config::checkpoint& fork,
     if (!top_state)
         return error::operation_failed;
 
-    code ec;
-    header_const_ptr_list_ptr outgoing;
-
-    // Clear chain state for reorganize and notify.
+    // Clear incoming chain state for reorganize and notify.
     std::for_each(incoming->begin(), incoming->end(),
         [](header_const_ptr header) { header->metadata.state.reset(); });
+
+    code ec;
+    auto fork_height = fork.height();
+    header_const_ptr_list_ptr outgoing;
 
     // This unmarks candidate txs and spent outputs (may have been validated).
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
-    const auto fork_height = fork.height();
+    // Don't add outgoing because only populated after reorganize and at that
+    // point the headers are no longer indexed (populator requires indexation).
+    if (!incoming->empty())
+    {
+        header_pool_.remove(incoming);
+        header_pool_.prune(top_state->height());
+    }
 
     // If confirmed fork point is above candidate fork point then lower it.
     if (fork_point().height() > fork_height)
@@ -476,10 +487,6 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
         if ((ec = database_.invalidate(*header,
             error::store_block_missing_parent)))
             return ec;
-
-    // Clear chain state for reorganize.
-    std::for_each(incoming->begin(), incoming->end(),
-        [](header_const_ptr header) { header->metadata.state.reset(); });
 
     // This should not have to unmark because none were ever valid.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
@@ -1529,7 +1536,7 @@ void block_chain::fetch_stealth(const binary&, size_t,
 // limited by total bytes and signature operations.
 void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 {
-    transaction_organizer_.fetch_template(handler);
+    transaction_pool_.fetch_template(handler);
 }
 
 // Fetch a set of currently-valid unconfirmed txs in dependency order.
@@ -1539,7 +1546,7 @@ void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
     inventory_fetch_handler handler) const
 {
-    transaction_organizer_.fetch_mempool(count_limit, handler);
+    transaction_pool_.fetch_mempool(count_limit, minimum_fee, handler);
 }
 
 // Filters.
@@ -1558,7 +1565,7 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     // Filter through header pool first (faster than store filter).
     // Excludes blocks that are known to block memory pool (not block pool).
-    header_organizer_.filter(message);
+    header_pool_.filter(message);
 
     auto& inventories = message->inventories();
     for (auto it = inventories.begin(); it != inventories.end();)
@@ -1594,7 +1601,7 @@ void block_chain::filter_transactions(get_data_ptr message,
 
     // Filter through transaction pool first (faster than store filter).
     // Excludes tx that are known to the tx memory pool (not tx pool).
-    transaction_organizer_.filter(message);
+    transaction_pool_.filter(message);
 
     auto& inventories = message->inventories();
     for (auto it = inventories.begin(); it != inventories.end();)

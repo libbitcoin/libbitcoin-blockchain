@@ -33,6 +33,8 @@
 #include <bitcoin/blockchain/organizers/header_organizer.hpp>
 #include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -429,6 +431,9 @@ private:
     mutable threadpool priority_pool_;
     mutable dispatcher priority_;
     mutable dispatcher dispatch_;
+
+    header_pool header_pool_;
+    transaction_pool transaction_pool_;
 
     block_organizer block_organizer_;
     header_organizer header_organizer_;

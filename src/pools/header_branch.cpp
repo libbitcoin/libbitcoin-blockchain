@@ -121,16 +121,6 @@ size_t header_branch::height_at(size_t index) const
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
- // The branch work check is both a consensus check and denial of service
- // protection. It is necessary here total claimed work exceeds that of the
- // competing chain segment (consensus), and that the work has actually been
- // expended (denial of service protection). The latter ensures we don't query
- // the chain for total segment work path the branch competetiveness. Once work
- // is proven sufficient the blocks are validated, requiring each to have the
- // work required by the header accept check. It is possible that longer chain
- // of lower work blocks could meet both above criteria. However this requires
- // the same amount of work as a shorter segment, so an attacker gains no
- // advantage from that option, and it will be caught in metadata.
 uint256_t header_branch::work() const
 {
     uint256_t total;

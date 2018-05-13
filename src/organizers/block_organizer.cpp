@@ -25,6 +25,7 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -37,13 +38,14 @@ using namespace std::placeholders;
 #define NAME "block_organizer"
 
 block_organizer::block_organizer(prioritized_mutex& mutex,
-    dispatcher& priority_dispatch, threadpool& pool, fast_chain& chain,
-    const settings& settings)
+    dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
+    header_pool& pool, const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
+    pool_(pool),
     validator_(priority_dispatch, chain, settings),
-    downloader_subscriber_(std::make_shared<download_subscriber>(pool, NAME))
+    downloader_subscriber_(std::make_shared<download_subscriber>(threads, NAME))
 {
 }
 
@@ -110,6 +112,8 @@ code block_organizer::organize(block_const_ptr block, size_t height)
 
 // Validate sequence.
 //-----------------------------------------------------------------------------
+// This runs in single thread normal priority except validation fan-outs.
+// Therefore fan-outs may use all threads in the priority threadpool.
 
 // This is the start of the validation sequence.
 bool block_organizer::handle_check(const code& ec, block_const_ptr block,
@@ -121,9 +125,6 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
-
-    // This runs in single thread in low priority except accept fan-outs.
-    // Therefore fan-outs may use all threads in the priority threadpool.
 
     // If initial height is misaligned try again on next download.
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)

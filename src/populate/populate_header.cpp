@@ -60,7 +60,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     auto& metadata = branch_top->metadata;
     metadata.state = fast_chain_.promote_state(branch);
 
-    // If set this implies a grounded ancestor and height already set.
+    // If set this implies a pool ancestor (and height already set).
     if (metadata.state)
     {
         BITCOIN_ASSERT(branch->height() != max_size_t);
@@ -83,7 +83,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     chain::header fork_header;
     const auto fork_hash = branch->hash();
 
-    // TODO: the grounding candidate may not be valid, is this okay?
+    // The grounding candidate may not be valid, but eventually be handled.
     // This grounds the branch at any point in header chain using new state.
     // This is the only case in which the chain is hit for state after startup.
     if (fast_chain_.get_header(fork_header, fork_height, fork_hash, false))

@@ -98,6 +98,7 @@ void header_pool::add(header_const_ptr_list_const_ptr valid_headers,
         add(header, height++);
     };
 
+    // This is an ordered loop.
     std::for_each(valid_headers->begin(), valid_headers->end(), insert);
 }
 

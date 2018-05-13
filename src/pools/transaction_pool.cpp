@@ -59,7 +59,6 @@ void transaction_pool::filter(get_data_ptr /*message*/) const
     BITCOIN_ASSERT_MSG(false, "not implemented");
 }
 
-// TODO: implement block template discovery.
 void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 {
     const size_t height = max_size_t;
@@ -68,20 +67,22 @@ void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 }
 
 // TODO: implement mempool message payload discovery.
-void transaction_pool::fetch_mempool(size_t maximum,
+void transaction_pool::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
     inventory_fetch_handler handler) const
 {
     const auto empty = std::make_shared<message::inventory>();
     handler(error::success, empty);
 }
 
-transaction_entry::list transaction_pool::get_mempool() const
+// TODO: implement block template discovery.
+transaction_entry::list transaction_pool::get_template() const
 {
     transaction_entry::list result;
     return result;
 }
 
-transaction_entry::list transaction_pool::get_template() const
+// TODO: implement mempool message payload discovery.
+transaction_entry::list transaction_pool::get_mempool() const
 {
     transaction_entry::list result;
     return result;
@@ -100,7 +101,7 @@ void transaction_pool::add_unconfirmed_transactions(
         // if an anchor, add parent anchors, for each ancestor, recalculate priority
     // if the entry is new, add it
 
-    for (const auto& tx : unconfirmed_txs)
+    for (const auto& tx: unconfirmed_txs)
     {
         auto unconfirmed_entry = std::make_shared<transaction_entry>(tx);
         uint32_t i = 0;

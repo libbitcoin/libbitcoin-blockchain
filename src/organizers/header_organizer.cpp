@@ -39,11 +39,11 @@ using namespace std::placeholders;
 
 header_organizer::header_organizer(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
-    const settings& settings)
+    header_pool& pool, const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    header_pool_(settings.reorganization_limit),
+    pool_(pool),
     validator_(priority_dispatch, chain, settings)
 {
 }
@@ -75,6 +75,7 @@ bool header_organizer::stop()
 
 // Organize sequence.
 //-----------------------------------------------------------------------------
+// This runs in single thread normal priority.
 
 // This is called from block_chain::organize.
 void header_organizer::organize(header_const_ptr header,
@@ -97,16 +98,15 @@ void header_organizer::organize(header_const_ptr header,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // TODO: this all runs in single thread in low priority.
-
+    // The pool is safe for filtering only, so protect by critical section.
     // This sets height and presumes the fork point is an indexed header.
-    const auto branch = header_pool_.get_branch(header);
+    const auto branch = pool_.get_branch(header);
 
     // See symmetry with tx metadata memory pool.
     // The header is already memory pooled (nothing to do).
     if (branch->empty())
     {
-        handler(error::duplicate_block);
+        complete(error::duplicate_block);
         return;
     }
 
@@ -165,7 +165,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     // Consensus.
     if (work <= required_work)
     {
-        header_pool_.add(top, branch->top_height());
+        pool_.add(top, branch->top_height());
         handler(error::insufficient_work);
         return;
     }
@@ -183,22 +183,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
         return;
     }
 
-    // TODO: do this in a reorg handler (inside fast_chain_.reorganize()).
-    // TODO: create blockchain header reorg subscriber to update block pool.
-    // header_pool_ is only used internally, so can be updated before or after.
-    // TODO: In handler check headers for invalidity before adding to pool.
-    ////header_pool_.remove(branch->headers());
-    ////header_pool_.prune(branch->top_height());
-    ////header_pool_.add(outgoing, branch->height() + 1);
     handler(error_code);
-}
-
-// Queries.
-//-----------------------------------------------------------------------------
-
-void header_organizer::filter(get_data_ptr message) const
-{
-    header_pool_.filter(message);
 }
 
 } // namespace blockchain

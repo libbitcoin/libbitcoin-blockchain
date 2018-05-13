@@ -47,8 +47,8 @@ public:
 
     /// Construct an instance.
     transaction_organizer(prioritized_mutex& mutex,
-        dispatcher& priority_dispatch, threadpool& thread, fast_chain& chain,
-        const settings& settings);
+        dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
+        transaction_pool& pool, const settings& settings);
 
     // Start/stop the organizer.
     bool start();
@@ -56,12 +56,6 @@ public:
 
     /// validate and organize a transaction into tx metadata pool and store.
     void organize(transaction_const_ptr tx, result_handler handler);
-
-    void fetch_template(merkle_block_fetch_handler) const;
-    void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
-
-    /// Remove all vectors that match exsting tx hashes.
-    void filter(get_data_ptr message) const;
 
 protected:
     bool stopped() const;
@@ -79,7 +73,7 @@ private:
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     const settings& settings_;
-    transaction_pool transaction_pool_;
+    transaction_pool& pool_;
     validate_transaction validator_;
 };
 

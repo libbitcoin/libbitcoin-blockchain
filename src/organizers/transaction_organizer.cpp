@@ -27,6 +27,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -39,12 +40,12 @@ using namespace std::placeholders;
 
 transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
-    const settings& settings)
+    transaction_pool& pool, const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     settings_(settings),
-    transaction_pool_(settings),
+    pool_(pool),
     validator_(priority_dispatch, fast_chain_, settings)
 {
 }
@@ -76,6 +77,8 @@ bool transaction_organizer::stop()
 
 // Organize sequence.
 //-----------------------------------------------------------------------------
+// This runs in single thread normal priority except for validation fan-outs.
+// Therefore fan-outs may use all threads in the priority threadpool.
 
 // This is called from block_chain::organize.
 void transaction_organizer::organize(transaction_const_ptr tx,
@@ -94,21 +97,22 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
-    // TODO: this runs in single thread in low priority until accept fan-outs.
-
-    // Reset the reusable promise.
-    resume_ = std::promise<code>();
-
+    // The pool is safe for filtering only, so protect by critical section.
     // This locates only unconfirmed transactions discovered since startup.
-    const auto exists = transaction_pool_.exists(tx);
+    const auto exists = pool_.exists(tx);
 
     // See symmetry with header memory pool.
     // The tx is already memory pooled (nothing to do).
     if (exists)
     {
+        mutex_.unlock_low_priority();
+        //---------------------------------------------------------------------
         handler(error::duplicate_transaction);
         return;
     }
+
+    // Reset the reusable promise.
+    resume_ = std::promise<code>();
 
     const result_handler complete =
         std::bind(&transaction_organizer::signal_completion,
@@ -201,6 +205,7 @@ void transaction_organizer::handle_connect(const code& ec,
         return;
     }
 
+    // TODO: add to pool_.
     //#########################################################################
     const auto error_code = fast_chain_.store(tx);
     //#########################################################################
@@ -214,26 +219,6 @@ void transaction_organizer::handle_connect(const code& ec,
     }
 
     handler(error_code);
-}
-
-// Queries.
-//-----------------------------------------------------------------------------
-
-void transaction_organizer::fetch_template(
-    merkle_block_fetch_handler handler) const
-{
-    transaction_pool_.fetch_template(handler);
-}
-
-void transaction_organizer::fetch_mempool(size_t maximum,
-    inventory_fetch_handler handler) const
-{
-    transaction_pool_.fetch_mempool(maximum, handler);
-}
-
-void transaction_organizer::filter(get_data_ptr message) const
-{
-    transaction_pool_.filter(message);
 }
 
 // Utility.
