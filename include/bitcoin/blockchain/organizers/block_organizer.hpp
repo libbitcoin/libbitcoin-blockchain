@@ -43,8 +43,8 @@ public:
     typedef resubscriber<code, block_const_ptr, size_t> download_subscriber;
 
     /// Construct an instance.
-    block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+    block_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
+        threadpool& pool, fast_chain& chain, const settings& settings);
 
     // Start/stop the organizer.
     bool start();
@@ -69,7 +69,7 @@ private:
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     validate_block validator_;
-    download_subscriber::ptr downloader_;
+    download_subscriber::ptr downloader_subscriber_;
 };
 
 } // namespace blockchain

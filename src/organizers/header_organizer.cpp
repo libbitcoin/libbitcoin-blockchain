@@ -25,9 +25,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
-#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_header.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -40,13 +38,13 @@ using namespace std::placeholders;
 #define NAME "header_organizer"
 
 header_organizer::header_organizer(prioritized_mutex& mutex,
-    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
+    dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     header_pool_(settings.reorganization_limit),
-    validator_(dispatch, chain, settings)
+    validator_(priority_dispatch, chain, settings)
 {
 }
 

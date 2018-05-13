@@ -28,7 +28,6 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_transaction.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,14 +38,14 @@ using namespace std::placeholders;
 #define NAME "transaction_organizer"
 
 transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
-    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
+    dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    settings_(settings),    ////dispatch_(dispatch),
+    settings_(settings),
     transaction_pool_(settings),
-    validator_(dispatch, fast_chain_, settings)
+    validator_(priority_dispatch, fast_chain_, settings)
 {
 }
 

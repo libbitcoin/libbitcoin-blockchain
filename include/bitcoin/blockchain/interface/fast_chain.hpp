@@ -41,10 +41,6 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get the block hash of an empty block, or false if missing or invalid.
-    virtual bool get_downloadable(hash_digest& out_hash,
-        size_t height) const = 0;
-
     /// Get top block or header-indexed header.
     virtual bool get_top(chain::header& out_header, size_t& out_height,
         bool block_index) const = 0;
@@ -92,6 +88,10 @@ public:
     /// Get the work of blocks above the given index height.
     virtual bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool block_index) const = 0;
+
+    /// Get the block hash of an empty block, or false if missing or invalid.
+    virtual bool get_downloadable(hash_digest& out_hash,
+        size_t height) const = 0;
 
     /// Populate metadata of the given block header.
     virtual void populate_header(const chain::header& header) const = 0;

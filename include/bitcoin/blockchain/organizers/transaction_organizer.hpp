@@ -46,8 +46,9 @@ public:
     typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
 
     /// Construct an instance.
-    transaction_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+    transaction_organizer(prioritized_mutex& mutex,
+        dispatcher& priority_dispatch, threadpool& thread, fast_chain& chain,
+        const settings& settings);
 
     // Start/stop the organizer.
     bool start();

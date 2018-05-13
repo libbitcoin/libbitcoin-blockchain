@@ -25,10 +25,7 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/header_pool.hpp>
-#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_block.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,15 +36,14 @@ using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
-// TODO: downloader maybe should be a priority thread.
 block_organizer::block_organizer(prioritized_mutex& mutex,
-    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
+    dispatcher& priority_dispatch, threadpool& pool, fast_chain& chain,
     const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    validator_(dispatch, chain, settings),
-    downloader_(std::make_shared<download_subscriber>(thread_pool, NAME))
+    validator_(priority_dispatch, chain, settings),
+    downloader_subscriber_(std::make_shared<download_subscriber>(pool, NAME))
 {
 }
 
@@ -65,23 +61,22 @@ bool block_organizer::stopped() const
 bool block_organizer::start()
 {
     stopped_ = false;
-    downloader_->start();
+    downloader_subscriber_->start();
     validator_.start();
 
-    auto checked =
-        std::bind(&block_organizer::handle_check,
-            this, _1, _2, _3);
-
     // Each download queues up a validation sequence.
-    downloader_->subscribe(std::move(checked), error::service_stopped, {}, 0);
+    downloader_subscriber_->subscribe(
+        std::bind(&block_organizer::handle_check,
+            this, _1, _2, _3), error::service_stopped, {}, 0);
+
     return true;
 }
 
 bool block_organizer::stop()
 {
     validator_.stop();
-    downloader_->stop();
-    downloader_->invoke(error::service_stopped, {}, 0);
+    downloader_subscriber_->stop();
+    downloader_subscriber_->invoke(error::service_stopped, {}, 0);
     stopped_ = true;
     return true;
 }
@@ -106,7 +101,7 @@ code block_organizer::organize(block_const_ptr block, size_t height)
     }
 
     // Queue download notification to invoke validation on downloader thread.
-    downloader_->relay(error_code, block, height);
+    downloader_subscriber_->relay(error_code, block, height);
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
@@ -127,7 +122,8 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // TODO: this runs in single thread in low priority except accept fan-outs.
+    // This runs in single thread in low priority except accept fan-outs.
+    // Therefore fan-outs may use all threads in the priority threadpool.
 
     // If initial height is misaligned try again on next download.
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
@@ -139,22 +135,23 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
-    const auto branch_height = height;
+    auto current_height = height;
     code error_code;
 
     while (!stopped() && block)
     {
+        resume_ = std::promise<code>();
+
         const auto accept_handler =
             std::bind(&block_organizer::handle_accept,
                 this, _1, block, complete);
 
-        // Perform contextual block validation.
-        resume_ = std::promise<code>();
+        // Checks that are dependent upon chain state.
         validator_.accept(block, accept_handler);
 
         if ((error_code = resume_.get_future().get()))
         {
-            // Store failure or stop code from validator.
+            // Store failed or received stop code from validator.
             break;
         }
 
@@ -162,7 +159,7 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
         {
             // Pop and mark as invalid candidates at and above block.
             //#################################################################
-            error_code = fast_chain_.invalidate(block, height);
+            error_code = fast_chain_.invalidate(block, current_height);
             //#################################################################
 
             // Candidate chain is invalid at this point so break here.
@@ -184,7 +181,7 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
         {
             // Reorganize this stronger candidate branch into confirmed chain.
             //#################################################################
-            error_code = fast_chain_.reorganize(branch_cache, branch_height);
+            error_code = fast_chain_.reorganize(branch_cache, height);
             //#################################################################
             branch_cache->clear();
 
@@ -192,8 +189,9 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
                 break;
         }
 
-        // TODO: use parallel block reader (this is expensive and serial).
-        block = fast_chain_.get_block(++height, true, false);
+        // TODO: create parallel block reader (this is expensive and serial).
+        // TODO: this can run in the block populator using priority dispatch.
+        block = fast_chain_.get_block(++current_height, true, false);
     }
 
     mutex_.unlock_high_priority();
@@ -215,8 +213,6 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 // private
 void block_organizer::signal_completion(const code& ec)
 {
-    // This must be protected so that it is properly cleared.
-    // Signal completion, which results in original handler invoke with code.
     resume_.set_value(ec);
 }
 

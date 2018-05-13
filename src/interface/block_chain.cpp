@@ -41,29 +41,32 @@ using namespace std::placeholders;
 #define NAME "block_chain"
 
 block_chain::block_chain(threadpool& pool,
-    const blockchain::settings& chain_settings,
+    const blockchain::settings& settings,
     const database::settings& database_settings)
   : database_(database_settings),
     stopped_(true),
     fork_point_({ null_hash, 0 }),
-    settings_(chain_settings),
+    settings_(settings),
+    chain_state_populator_(*this, settings),
     index_addresses_(database_settings.index_addresses),
-    chain_state_populator_(*this, chain_settings),
 
     // Enable block/header priority when write flush enabled (performance).
     validation_mutex_(database_settings.flush_writes),
-    priority_pool_(thread_ceiling(chain_settings.cores), priority(chain_settings.priority)),
-    dispatch_(priority_pool_, NAME "_priority"),
 
-    // Currently all organizers dispatch at highest priority.
-    block_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
-    header_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
-    transaction_organizer_(validation_mutex_, dispatch_, priority_pool_, *this, chain_settings),
+    // Create dispatchers for priority and non-priority operations.
+    priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
+    priority_(priority_pool_, NAME "_priority"),
+    dispatch_(pool, NAME "_dispatch"),
 
-    // Currently the subscriber thread pools are only used for unsubscribe.
+    // Organizers use priority dispatch and/or non-priority thread pool.
+    block_organizer_(validation_mutex_, priority_, pool, *this, settings),
+    header_organizer_(validation_mutex_, priority_, pool, *this, settings),
+    transaction_organizer_(validation_mutex_, priority_, pool, *this, settings),
+
+    // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
     header_subscriber_(std::make_shared<header_subscriber>(pool, NAME "_header")),
-    transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_transaction"))
+    transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_tx"))
 {
 }
 
@@ -73,19 +76,6 @@ block_chain::block_chain(threadpool& pool,
 
 // Readers.
 // ----------------------------------------------------------------------------
-
-bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
-{
-    const auto result = database_.blocks().get(height, false);
-
-    // Do not download if not found, invalid or already populated.
-    if (!result || is_failed(result.state()) ||
-        result.transaction_count() != 0)
-        return false;
-
-    out_hash = result.hash();
-    return true;
-}
 
 bool block_chain::get_top(chain::header& out_header, size_t& out_height,
     bool block_index) const
@@ -250,82 +240,34 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     return true;
 }
 
-// TODO: move into block database (see populate_output/get_output below).
-void block_chain::populate_header(const chain::header& header) const
+bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
 {
-    const auto result = database_.blocks().get(header.hash());
+    const auto result = database_.blocks().get(height, false);
 
-    // Default values presumed correct for indication of not found.
-    if (!result)
-        return;
+    // Do not download if not found, invalid or already populated.
+    if (!result || is_failed(result.state()) ||
+        result.transaction_count() != 0)
+        return false;
 
-    const auto state = result.state();
-    const auto height = result.height();
-
-    header.metadata.error = result.error();
-    header.metadata.exists = true;
-    header.metadata.populated = result.transaction_count() != 0;
-    header.metadata.validated = is_valid(state) || is_failed(state);
-    header.metadata.candidate = is_candidate(state);
-    header.metadata.confirmed = is_confirmed(state);
+    out_hash = result.hash();
+    return true;
 }
 
-// TODO: move into tx database (see populate_output/get_output below).
+void block_chain::populate_header(const chain::header& header) const
+{
+    return database_.blocks().get_header_metadata(header);
+}
+
 void block_chain::populate_block_transaction(const chain::transaction& tx,
     uint32_t forks, size_t fork_height) const
 {
-    const auto result = database_.transactions().get(tx.hash());
-
-    // Default values are correct for indication of not found.
-    if (!result)
-        return;
-
-    const auto bip34 = chain::script::is_enabled(forks,
-        machine::rule_fork::bip34_rule);
-
-    //*************************************************************************
-    // CONSENSUS: BIP30 treats a spent duplicate as if it did not exist, and
-    // any duplicate of an unspent tx as invalid (with two expcetions).
-    // BIP34 active renders BIP30 moot as duplicates are presumed impossible.
-    //*************************************************************************
-    if (!bip34 && result.is_spent(fork_height, true))
-    {
-        // The original tx will not be queryable independent of the block.
-        // The original tx's block linkage is unbroken by accepting duplicate.
-        // BIP30 exception blocks are not spent (will not be unlinked here).
-        BITCOIN_ASSERT(tx.metadata.link == transaction::validation::unlinked);
-        return;
-    }
-
-    const auto state = result.state();
-    const auto height = result.height();
-    const auto relevant = fork_height <= height;
-    tx.metadata.link = result.link();
-    tx.metadata.existed = tx.metadata.link == transaction::validation::unlinked;
-    tx.metadata.candidate = state == transaction_state::candidate;
-    tx.metadata.confirmed = state == transaction_state::confirmed && relevant;
-    tx.metadata.verified = state != transaction_state::confirmed &&
-        height == forks;
+    return database_.transactions().get_block_metadata(tx, forks, fork_height);
 }
 
-// TODO: move into tx database (see populate_output/get_output below).
 void block_chain::populate_pool_transaction(const chain::transaction& tx,
     uint32_t forks) const
 {
-    const auto result = database_.transactions().get(tx.hash());
-
-    // Default values presumed correct for indication of not found.
-    if (!result)
-        return;
-
-    const auto state = result.state();
-    const auto height = result.height();
-    tx.metadata.link = result.link();
-    tx.metadata.existed = tx.metadata.link == transaction::validation::unlinked;
-    tx.metadata.candidate = state == transaction_state::candidate;
-    tx.metadata.confirmed = state == transaction_state::confirmed;
-    tx.metadata.verified = state != transaction_state::confirmed &&
-        height == forks;
+    return database_.transactions().get_pool_metadata(tx, forks);
 }
 
 void block_chain::populate_output(const chain::output_point& outpoint,
@@ -443,10 +385,7 @@ code block_chain::store(transaction_const_ptr tx)
     // Payment indexing is asynchronous, after tx is stored. Therefore
     // it is possible for a tx to be in any existing state and not be indexed.
     if (index_addresses_ && !tx->metadata.existed)
-    {
-        // TODO: use low priority thread for this.
         dispatch_.concurrent(&block_chain::index_transaction, this, tx);
-    }
 
     notify(tx);
 
@@ -571,10 +510,7 @@ code block_chain::candidate(block_const_ptr block)
     // Payment indexing is asynchronous, after block is candidate. Therefore
     // it is possible for a block to be in any valid state and not be indexed.
     if (index_addresses_)
-    {
-        // TODO: use low priority thread for this.
         dispatch_.concurrent(&block_chain::index_block, this, block);
-    }
 
     return ec;
 }

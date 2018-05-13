@@ -41,8 +41,8 @@ public:
     typedef std::shared_ptr<header_organizer> ptr;
 
     /// Construct an instance.
-    header_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+    header_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
+        threadpool& pool, fast_chain& chain, const settings& settings);
 
     // Start/stop the organizer.
     bool start();

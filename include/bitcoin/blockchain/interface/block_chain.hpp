@@ -53,8 +53,7 @@ public:
     /// Relay transactions is network setting that is passed through to block
     /// population as an optimization. This can be removed once there is an
     /// in-memory cache of tx pool metadata, as the costly query will go away.
-    block_chain(threadpool& pool,
-        const blockchain::settings& chain_settings,
+    block_chain(threadpool& pool, const blockchain::settings& settings,
         const database::settings& database_settings);
 
     /// The database is closed on destruct, threads must be joined.
@@ -67,9 +66,6 @@ public:
     // Readers.
     // ------------------------------------------------------------------------
     // Thread safe.
-
-    /// Get the block hash of an empty block, or false if missing or invalid.
-    bool get_downloadable(hash_digest& out_hash, size_t height) const;
 
     /// Get top block or header-indexed header.
     bool get_top(chain::header& out_header, size_t& out_height,
@@ -115,6 +111,9 @@ public:
     /// Get the work of valid blocks above the given index height.
     bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool block_index) const;
+
+    /// Get the block hash of an empty block, or false if missing or invalid.
+    bool get_downloadable(hash_digest& out_hash, size_t height) const;
 
     /// Populate metadata of the given block header.
     void populate_header(const chain::header& header) const;
@@ -423,11 +422,12 @@ private:
     bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
 
     const settings& settings_;
-    const bool index_addresses_;
     const populate_chain_state chain_state_populator_;
+    const bool index_addresses_;
 
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
+    mutable dispatcher priority_;
     mutable dispatcher dispatch_;
 
     block_organizer block_organizer_;
