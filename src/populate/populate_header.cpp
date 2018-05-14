@@ -70,8 +70,8 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     config::checkpoint chain_top;
     const auto& parent = branch_top->previous_block_hash();
 
-    // This grounds the branch at the top of header chain using state cache.
-    if (fast_chain_.get_top(chain_top, false) && parent == chain_top.hash())
+    // This grounds the branch at the top of candidate chain using state cache.
+    if (fast_chain_.get_top(chain_top, true) && parent == chain_top.hash())
     {
         branch->set_height(chain_top.height());
         const auto chain_top_state = fast_chain_.top_candidate_state();
@@ -86,7 +86,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     // The grounding candidate may not be valid, but eventually be handled.
     // This grounds the branch at any point in header chain using new state.
     // This is the only case in which the chain is hit for state after startup.
-    if (fast_chain_.get_header(fork_header, fork_height, fork_hash, false))
+    if (fast_chain_.get_header(fork_header, fork_height, fork_hash, true))
     {
         branch->set_height(fork_height);
         metadata.state = fast_chain_.chain_state(fork_header, fork_height);

@@ -82,35 +82,35 @@ block_chain::block_chain(threadpool& pool,
 // ----------------------------------------------------------------------------
 
 bool block_chain::get_top(chain::header& out_header, size_t& out_height,
-    bool block_index) const
+    bool candidate) const
 {
-    return get_top_height(out_height, block_index) &&
-        get_header(out_header, out_height, block_index);
+    return get_top_height(out_height, candidate) &&
+        get_header(out_header, out_height, candidate);
 }
 
 bool block_chain::get_top(config::checkpoint& out_checkpoint,
-    bool block_index) const
+    bool candidate) const
 {
     size_t height;
     hash_digest hash;
 
-    if (!get_top_height(height, block_index) ||
-        !get_block_hash(hash, height, block_index))
+    if (!get_top_height(height, candidate) ||
+        !get_block_hash(hash, height, candidate))
         return false;
 
     out_checkpoint = { hash, height };
     return true;
 }
 
-bool block_chain::get_top_height(size_t& out_height, bool block_index) const
+bool block_chain::get_top_height(size_t& out_height, bool candidate) const
 {
-    return database_.blocks().top(out_height, block_index);
+    return database_.blocks().top(out_height, !candidate);
 }
 
 bool block_chain::get_header(chain::header& out_header, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, !candidate);
 
     if (!result)
         return false;
@@ -121,7 +121,7 @@ bool block_chain::get_header(chain::header& out_header, size_t height,
 }
 
 bool block_chain::get_header(chain::header& out_header, size_t& out_height,
-    const hash_digest& block_hash, bool block_index) const
+    const hash_digest& block_hash, bool candidate) const
 {
     auto result = database_.blocks().get(block_hash);
 
@@ -132,7 +132,7 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
 
     // The only way to know if a header is indexed is from its presence in the
     // index. It will not be marked as a candidate until validated as such.
-    if (database_.blocks().get(height, block_index))
+    if (database_.blocks().get(height, !candidate))
     {
         out_header = result.header();
         out_height = height;
@@ -143,9 +143,9 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
 }
 
 bool block_chain::get_block_hash(hash_digest& out_hash, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    const auto result = database_.blocks().get(height, block_index);
+    const auto result = database_.blocks().get(height, !candidate);
 
     if (!result)
         return false;
@@ -166,22 +166,10 @@ bool block_chain::get_block_error(code& out_error,
     return true;
 }
 
-bool block_chain::get_transaction_error(code& out_error,
-    const hash_digest& tx_hash) const
-{
-    auto result = database_.transactions().get(tx_hash);
-
-    if (!result)
-        return false;
-
-    out_error = result.error();
-    return true;
-}
-
 bool block_chain::get_bits(uint32_t& out_bits, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, !candidate);
 
     if (!result)
         return false;
@@ -191,9 +179,9 @@ bool block_chain::get_bits(uint32_t& out_bits, size_t height,
 }
 
 bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, !candidate);
 
     if (!result)
         return false;
@@ -203,9 +191,9 @@ bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
 }
 
 bool block_chain::get_version(uint32_t& out_version, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, !candidate);
 
     if (!result)
         return false;
@@ -215,12 +203,12 @@ bool block_chain::get_version(uint32_t& out_version, size_t height,
 }
 
 bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
-    size_t above_height, bool block_index) const
+    size_t above_height, bool candidate) const
 {
     size_t top;
     out_work = 0;
 
-    if (!database_.blocks().top(top, block_index))
+    if (!database_.blocks().top(top, !candidate))
         return false;
 
     // Set overcome to zero to bypass early exit.
@@ -229,13 +217,13 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     for (auto height = top; (height > above_height) && 
         (no_maximum || out_work <= overcome); --height)
     {
-        const auto result = database_.blocks().get(height, block_index);
+        const auto result = database_.blocks().get(height, !candidate);
 
         if (!result)
             return false;
 
         // Candidate chain is counted only to top validated block.
-        if (!block_index && !is_valid(result.state()))
+        if (candidate && !is_valid(result.state()))
             break;
 
         out_work += chain::header::proof(result.bits());
@@ -280,9 +268,9 @@ void block_chain::populate_output(const chain::output_point& outpoint,
     database_.transactions().get_output(outpoint, fork_height, candidate);
 }
 
-uint8_t block_chain::get_block_state(size_t height, bool block_index) const
+uint8_t block_chain::get_block_state(size_t height, bool candidate) const
 {
-    return database_.blocks().get(height, block_index).state();
+    return database_.blocks().get(height, !candidate).state();
 }
 
 uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
@@ -297,16 +285,16 @@ database::transaction_state block_chain::get_transaction_state(
 }
 
 block_const_ptr block_chain::get_block(size_t height, bool witness,
-    bool block_index) const
+    bool candidate) const
 {
     const auto cached = last_block_.load();
 
     // Try the cached block first.
-    if (block_index && cached && cached->header().metadata.state &&
+    if (!candidate && cached && cached->header().metadata.state &&
         cached->header().metadata.state->height() == height)
         return cached;
 
-    const auto result = database_.blocks().get(height, block_index);
+    const auto result = database_.blocks().get(height, !candidate);
 
     // A populated block was not found at the given height.
     if (!result || result.transaction_count() == 0)
@@ -321,9 +309,9 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     return std::make_shared<const block>(result.header(), std::move(txs));
 }
 
-header_const_ptr block_chain::get_header(size_t height, bool block_index) const
+header_const_ptr block_chain::get_header(size_t height, bool candidate) const
 {
-    const auto result = database_.blocks().get(height, block_index);
+    const auto result = database_.blocks().get(height, !candidate);
 
     // A header was not found at the given height.
     if (!result)
@@ -462,12 +450,12 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     BITCOIN_ASSERT(header.metadata.error);
 
     size_t top;
-    if (!get_top_height(top, false))
+    if (!get_top_height(top, true))
         return error::operation_failed;
 
     hash_digest fork_hash;
     const auto fork_height = block_height - 1u;
-    if (!get_block_hash(fork_hash, fork_height, false))
+    if (!get_block_hash(fork_hash, fork_height, true))
         return error::operation_failed;
 
     code ec;
@@ -480,7 +468,7 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
 
     // Copy all dependant invalid candidates to outgoing.
     for (auto height = block_height + 1u; height <= top; ++height)
-        outgoing->push_back(get_header(height, false));
+        outgoing->push_back(get_header(height, true));
 
     // Mark all outgoing candidate blocks as invalid, in store and metadata.
     for (const auto header: *outgoing)
@@ -542,7 +530,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 
     // Get all missing incoming candidates (expensive reads).
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
-        incoming->push_back(get_block(height, true, false));
+        incoming->push_back(get_block(height, true, true));
 
     // Append all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
@@ -610,8 +598,8 @@ bool block_chain::set_fork_point()
     size_t candidate_height;
     size_t confirmed_height;
 
-    if (!get_top_height(candidate_height, false) ||
-        !get_top_height(confirmed_height, true))
+    if (!get_top_height(candidate_height, true) ||
+        !get_top_height(confirmed_height, false))
         return false;
 
     hash_digest candidate_hash;
@@ -619,12 +607,12 @@ bool block_chain::set_fork_point()
     auto common = std::min(candidate_height, confirmed_height);
 
     // The loop must at least terminate on the genesis block.
-    BITCOIN_ASSERT(get_block_hash(candidate_hash, 0, false));
-    BITCOIN_ASSERT(get_block_hash(confirmed_hash, 0, true));
+    BITCOIN_ASSERT(get_block_hash(candidate_hash, 0, true));
+    BITCOIN_ASSERT(get_block_hash(confirmed_hash, 0, false));
     BITCOIN_ASSERT(candidate_hash == confirmed_hash);
 
-    while (get_block_hash(candidate_hash, common, false) &&
-        get_block_hash(confirmed_hash, common, true) &&
+    while (get_block_hash(candidate_hash, common, true) &&
+        get_block_hash(confirmed_hash, common, false) &&
         candidate_hash != confirmed_hash)
         --common;
 
@@ -638,7 +626,7 @@ bool block_chain::set_candidate_work()
     BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
 
     uint256_t work_above_fork;
-    if (!get_work(work_above_fork, 0, fork_point().height(), false))
+    if (!get_work(work_above_fork, 0, fork_point().height(), true))
         return false;
 
     set_candidate_work(work_above_fork);
@@ -651,7 +639,7 @@ bool block_chain::set_confirmed_work()
     BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
 
     uint256_t work_above_fork;
-    if (!get_work(work_above_fork, 0, fork_point().height(), true))
+    if (!get_work(work_above_fork, 0, fork_point().height(), false))
         return false;
 
     set_confirmed_work(work_above_fork);
@@ -669,16 +657,16 @@ bool block_chain::set_top_candidate_state()
 bool block_chain::set_top_valid_candidate_state()
 {
     size_t height;
-    if (!get_top_height(height, false))
+    if (!get_top_height(height, true))
         return false;
 
     // The loop must at least terminate on the genesis block.
-    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, false)));
+    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, true)));
 
     // Block marked candidate when validated in candidate chain.
     // Block unmarked candidate when leaves candidate chain.
     // Block will be valid and unmarked candidate upon reentry.
-    while (!is_valid_candidate(get_block_state(height, false)))
+    while (!is_valid_candidate(get_block_state(height, true)))
         --height;
 
     const auto state = chain_state_populator_.populate(height, false);

@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__not_found__false)
     START_BLOCKCHAIN(instance, false);
 
     hash_digest hash;
-    BOOST_REQUIRE(!instance.get_block_hash(hash, 1, true));
+    BOOST_REQUIRE(!instance.get_block_hash(hash, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__found__true)
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_block_hash__found__true)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
 
     hash_digest hash;
-    BOOST_REQUIRE(instance.get_block_hash(hash, 1, true));
+    BOOST_REQUIRE(instance.get_block_hash(hash, 1, false));
     BOOST_REQUIRE(hash == block1->hash());
 }
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__height_above_top__true)
     uint256_t overcome(max_uint64);
 
     // This is allowed and just returns zero (standard new single block).
-    BOOST_REQUIRE(instance.get_work(work, overcome, 1, true));
+    BOOST_REQUIRE(instance.get_work(work, overcome, 1, false));
     BOOST_REQUIRE_EQUAL(work, 0);
 }
 
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__overcome_zero__true)
     uint256_t overcome(0);
 
     // This should not exit early.
-    BOOST_REQUIRE(instance.get_work(work, overcome, 0, true));
+    BOOST_REQUIRE(instance.get_work(work, overcome, 0, false));
     BOOST_REQUIRE_EQUAL(work, genesis_mainnet_work);
 }
 
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__maximum_one__true)
     uint256_t overcome(block1->header().proof());
 
     // This should not exit early due to tying on the first block (order matters).
-    BOOST_REQUIRE(instance.get_work(work, overcome, 0, true));
+    BOOST_REQUIRE(instance.get_work(work, overcome, 0, false));
     BOOST_REQUIRE_EQUAL(work, genesis_mainnet_work + block1->header().proof());
 }
 
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_branch_work__unbounded__true)
     uint256_t overcome(max_uint64);
 
     // This should not exit early but skips the genesis block.
-    BOOST_REQUIRE(instance.get_work(work, overcome, 1, true));
+    BOOST_REQUIRE(instance.get_work(work, overcome, 1, false));
     BOOST_REQUIRE_EQUAL(work, block1->header().proof() + block2->header().proof());
 }
 
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_bits__not_found__false)
     START_BLOCKCHAIN(instance, false);
 
     uint32_t bits;
-    BOOST_REQUIRE(!instance.get_bits(bits, 1, true));
+    BOOST_REQUIRE(!instance.get_bits(bits, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_bits__found__true)
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_bits__found__true)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
 
     uint32_t bits;
-    BOOST_REQUIRE(instance.get_bits(bits, 1, true));
+    BOOST_REQUIRE(instance.get_bits(bits, 1, false));
     BOOST_REQUIRE_EQUAL(bits, block1->header().bits());
 }
 
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__not_found__false)
     START_BLOCKCHAIN(instance, false);
 
     uint32_t timestamp;
-    BOOST_REQUIRE(!instance.get_timestamp(timestamp, 1, true));
+    BOOST_REQUIRE(!instance.get_timestamp(timestamp, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__found__true)
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_timestamp__found__true)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
 
     uint32_t timestamp;
-    BOOST_REQUIRE(instance.get_timestamp(timestamp, 1, true));
+    BOOST_REQUIRE(instance.get_timestamp(timestamp, 1, false));
     BOOST_REQUIRE_EQUAL(timestamp, block1->header().timestamp());
 }
 
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_version__not_found__false)
     START_BLOCKCHAIN(instance, false);
 
     uint32_t version;
-    BOOST_REQUIRE(!instance.get_version(version, 1, true));
+    BOOST_REQUIRE(!instance.get_version(version, 1, false));
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__get_version__found__true)
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_version__found__true)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
 
     uint32_t version;
-    BOOST_REQUIRE(instance.get_version(version, 1, true));
+    BOOST_REQUIRE(instance.get_version(version, 1, false));
     BOOST_REQUIRE_EQUAL(version, block1->header().version());
 }
 
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(block_chain__get_top__no_gaps__last_block)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     config::checkpoint top;
-    BOOST_REQUIRE(instance.get_top(top, true));
+    BOOST_REQUIRE(instance.get_top(top, false));
     BOOST_REQUIRE_EQUAL(top.height(), 2u);
 }
 
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__not_found__false)
 
     const chain::output_point outpoint{ null_hash, 42 };
     size_t header_branch_height = 0;
-    instance.populate_output(outpoint, header_branch_height, true);
+    instance.populate_output(outpoint, header_branch_height, false);
     BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__found__expected)
     const chain::output_point outpoint{ block2->transactions()[0].hash(), 0 };
     const auto expected_value = initial_block_subsidy_satoshi();
     const auto expected_script = block2->transactions()[0].outputs()[0].script().to_string(0);
-    instance.populate_output(outpoint, 2, true);
+    instance.populate_output(outpoint, 2, false);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 
     BOOST_REQUIRE(outpoint.metadata.coinbase);
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__below_fork__true)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 3, true);
+    instance.populate_output(outpoint, 3, false);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__at_fork__true)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 2, true);
+    instance.populate_output(outpoint, 2, false);
     BOOST_REQUIRE(outpoint.metadata.cache.is_valid());
 }
 
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(block_chain__populate_output__above_fork__false)
     BOOST_REQUIRE(instance.push(block2, 2, 0));
 
     const chain::output_point outpoint{ block2->transactions().front().hash(), 0 };
-    instance.populate_output(outpoint, 1, true);
+    instance.populate_output(outpoint, 1, false);
     BOOST_REQUIRE(!outpoint.metadata.cache.is_valid());
 }
 

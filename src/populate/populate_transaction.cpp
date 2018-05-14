@@ -86,9 +86,7 @@ void populate_transaction::populate_inputs(transaction_const_ptr tx,
     {
         const auto& input = inputs[input_index];
         const auto& prevout = input.previous_output();
-
-        // TODO: make height and index defaults
-        fast_chain_.populate_output(prevout, max_size_t, true);
+        fast_chain_.populate_output(prevout, max_size_t, false);
     }
 
     handler(error::success);

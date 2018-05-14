@@ -41,53 +41,48 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get top block or header-indexed header.
+    /// Get top confirmed or candidate header.
     virtual bool get_top(chain::header& out_header, size_t& out_height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get highest block or header index checkpoint.
+    /// Get highest confirmed or candidate checkpoint.
     virtual bool get_top(config::checkpoint& out_checkpoint,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get height of highest block in the block or header index.
-    virtual bool get_top_height(size_t& out_height,
-        bool block_index) const = 0;
+    /// Get height of highest confirmed or candidate header.
+    virtual bool get_top_height(size_t& out_height, bool candidate) const = 0;
 
-    /// Get the block or header-indexed header by height.
+    /// Get confirmed or candidate header by height.
     virtual bool get_header(chain::header& out_header, size_t height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get the block or header-indexed header by hash.
+    /// Get confirmed or candidate header by hash.
     virtual bool get_header(chain::header& out_header, size_t& out_height,
-        const hash_digest& block_hash, bool block_index) const = 0;
+        const hash_digest& block_hash, bool candidate) const = 0;
 
-    /// Get the hash of the block at the given index height.
-    virtual bool get_block_hash(hash_digest& out_hash,
-        size_t height, bool block_index) const = 0;
+    /// Get hash of the confirmed or candidate block by index height.
+    virtual bool get_block_hash(hash_digest& out_hash, size_t height,
+        bool candidate) const = 0;
 
     /// Get the cached error result code of a cached invalid block.
     virtual bool get_block_error(code& out_error,
         const hash_digest& block_hash) const = 0;
 
-    /// Get the cached error result code of a cached invalid transaction.
-    virtual bool get_transaction_error(code& out_error,
-        const hash_digest& tx_hash) const = 0;
-
-    /// Get the bits of the block with the given index height.
+    /// Get bits of the confirmed or candidate block by index height.
     virtual bool get_bits(uint32_t& out_bits, size_t height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get the timestamp of the block with the given index height.
+    /// Get timestamp of the confirmed or candidate block by index height.
     virtual bool get_timestamp(uint32_t& out_timestamp, size_t height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get the version of the block with the given index height.
+    /// Get version of the confirmed or candidate block by index height.
     virtual bool get_version(uint32_t& out_version, size_t height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get the work of blocks above the given index height.
+    /// Get work of the confirmed or candidate block by index height.
     virtual bool get_work(uint256_t& out_work, const uint256_t& overcome,
-        size_t above_height, bool block_index) const = 0;
+        size_t above_height, bool candidate) const = 0;
 
     /// Get the block hash of an empty block, or false if missing or invalid.
     virtual bool get_downloadable(hash_digest& out_hash,
@@ -96,6 +91,7 @@ public:
     /// Populate metadata of the given block header.
     virtual void populate_header(const chain::header& header) const = 0;
 
+    /// Sets metadata based on fork point. 
     /// Populate metadata of the given transaction for block inclusion.
     virtual void populate_block_transaction(const chain::transaction& tx,
         uint32_t forks, size_t fork_height) const = 0;
@@ -104,25 +100,28 @@ public:
     virtual void populate_pool_transaction(const chain::transaction& tx,
         uint32_t forks) const = 0;
 
-    /// Get the output that is referenced by the outpoint.
     /// Sets metadata based on fork point. 
+    /// Get the output that is referenced by the outpoint.
     virtual void populate_output(const chain::output_point& outpoint,
         size_t fork_height, bool candidate) const = 0;
 
-    /// Get the state of the given block (flags).
+    /// Get state (flags) of candidate or confirmed block by height.
+    virtual uint8_t get_block_state(size_t height, bool candidate) const = 0;
+
+    /// Get state (flags) of the given block by hash.
     virtual uint8_t get_block_state(const hash_digest& block_hash) const = 0;
 
-    /// Get the state of the given transaction.
+    /// Get state of the given transaction by hash.
     virtual database::transaction_state get_transaction_state(
         const hash_digest& tx_hash) const = 0;
 
-    /// Get the populated header by indexed|confirmed height (or null).
+    /// Get populated confirmed or candidate header by height (or null).
     virtual header_const_ptr get_header(size_t height,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
-    /// Get the populated block by indexed|confirmed height (or null).
+    /// Get populated confirmed or candidate block by height (or null).
     virtual block_const_ptr get_block(size_t height, bool witness,
-        bool block_index) const = 0;
+        bool candidate) const = 0;
 
     // Writers.
     // ------------------------------------------------------------------------

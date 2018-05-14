@@ -36,16 +36,16 @@ class BCB_API populate_chain_state
 public:
     populate_chain_state(const fast_chain& chain, const settings& settings);
 
-    /// Populate chain state for the top block|header.
-    chain::chain_state::ptr populate(bool block_index) const;
+    /// Populate chain state for candidate or confirmed top block|header.
+    chain::chain_state::ptr populate(bool candidate) const;
 
-    /// Populate chain state for the given block|header by height.
+    /// Populate chain state for candidate or confirmed block|header by height.
     chain::chain_state::ptr populate(size_t header_height,
-        bool block_index) const;
+        bool candidate) const;
 
     /// Populate chain state for the given block|header.
     chain::chain_state::ptr populate(const chain::header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
 
 private:
     typedef chain::header header;
@@ -53,27 +53,27 @@ private:
     typedef chain::chain_state::data data;
 
     bool get_bits(uint32_t& bits, size_t height, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool get_version(uint32_t& version, size_t height, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool get_timestamp(uint32_t& time, size_t height, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool get_block_hash(hash_digest& hash, size_t height, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
 
     bool populate_all(data& data, const header& header, size_t header_height,
-        bool block_index) const;
+        bool candidate) const;
 
     bool populate_bits(data& data, const map& map, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool populate_versions(data& data, const map& map, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool populate_timestamps(data& data, const map& map, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool populate_bip9_bit0(data& data, const map& map, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
     bool populate_bip9_bit1(data& data, const map& map, const header& header,
-        size_t header_height, bool block_index) const;
+        size_t header_height, bool candidate) const;
 
     // These are thread safe.
     const uint32_t forks_;

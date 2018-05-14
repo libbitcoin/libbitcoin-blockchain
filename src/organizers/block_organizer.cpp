@@ -192,7 +192,7 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
         // TODO: create parallel block reader (this is expensive and serial).
         // TODO: this can run in the block populator using priority dispatch.
-        block = fast_chain_.get_block(++current_height, true, false);
+        block = fast_chain_.get_block(++current_height, true, true);
     }
 
     mutex_.unlock_high_priority();

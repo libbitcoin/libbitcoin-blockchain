@@ -69,50 +69,46 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get top block or header-indexed header.
+    /// Get highest confirmed or candidate header.
     bool get_top(chain::header& out_header, size_t& out_height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get highest block or header index checkpoint.
-    bool get_top(config::checkpoint& out_checkpoint, bool block_index) const;
+    /// Get highest confirmed or candidate checkpoint.
+    bool get_top(config::checkpoint& out_checkpoint, bool candidate) const;
 
-    /// Get height of highest block in the block or header index.
-    bool get_top_height(size_t& out_height, bool block_index) const;
+    /// Get height of highest confirmed or candidate header.
+    bool get_top_height(size_t& out_height, bool candidate) const;
 
-    /// Get the block or header-indexed header by height.
+    /// Get confirmed or candidate header by height.
     bool get_header(chain::header& out_header, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the block or header-indexed header by hash.
+    /// Get confirmed or candidate header by hash.
     bool get_header(chain::header& out_header, size_t& out_height,
-        const hash_digest& block_hash, bool block_index) const;
+        const hash_digest& block_hash, bool candidate) const;
 
-    /// Get the hash of the block at the given index height.
+    /// Get hash of the confirmed or candidate block by index height.
     bool get_block_hash(hash_digest& out_hash, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
     /// Get the cached error result code of a cached invalid block.
     bool get_block_error(code& out_error, const hash_digest& block_hash) const;
 
-    /// Get the cached error result code of a cached invalid transaction.
-    bool get_transaction_error(code& out_error,
-        const hash_digest& tx_hash) const;
-
-    /// Get the bits of the block with the given index height.
+    /// Get bits of the confirmed or candidate block by index height.
     bool get_bits(uint32_t& out_bits, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the timestamp of the block with the given index height.
+    /// Get timestamp of the confirmed or candidate block by index height.
     bool get_timestamp(uint32_t& out_timestamp, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the version of the block with the given index height.
+    /// Get version of the confirmed or candidate block by index height.
     bool get_version(uint32_t& out_version, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the work of valid blocks above the given index height.
+    /// Get work of the confirmed or candidate block by index height.
     bool get_work(uint256_t& out_work, const uint256_t& overcome,
-        size_t above_height, bool block_index) const;
+        size_t above_height, bool candidate) const;
 
     /// Get the block hash of an empty block, or false if missing or invalid.
     bool get_downloadable(hash_digest& out_hash, size_t height) const;
@@ -133,22 +129,22 @@ public:
     void populate_output(const chain::output_point& outpoint,
         size_t fork_height, bool candidate) const;
 
-    /// Get the state of the given block (flags).
-    uint8_t get_block_state(size_t height, bool block_index) const;
+    /// Get state (flags) of candidate or confirmed block by height.
+    uint8_t get_block_state(size_t height, bool candidate) const;
 
-    /// Get the state of the given block (flags).
+    /// Get state (flags) of the given block by hash.
     uint8_t get_block_state(const hash_digest& block_hash) const;
 
-    /// Get the state of the given transaction.
+    /// Get state of the given transaction by hash.
     database::transaction_state get_transaction_state(
         const hash_digest& tx_hash) const;
 
-    /// Get the populated header by indexed|confirmed height (or null).
-    header_const_ptr get_header(size_t height, bool block_index) const;
+    /// Get populated confirmed or candidate header by height (or null).
+    header_const_ptr get_header(size_t height, bool candidate) const;
 
-    /// Get the populated block by indexed|confirmed height (or null).
+    /// Get populated confirmed or candidate block by height (or null).
     block_const_ptr get_block(size_t height, bool witness,
-        bool block_index) const;
+        bool candidate) const;
 
     // Writers.
     // ------------------------------------------------------------------------
