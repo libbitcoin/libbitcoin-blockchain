@@ -90,17 +90,13 @@ code block_organizer::organize(block_const_ptr block, size_t height)
 {
     code error_code;
 
-    // TODO: exclude checks if under checkpoint or milestone (optimization).
-    // TODO: maintain state for top encountered header milestone above valid.
-
     // Checks that are independent of chain state (header, block, txs).
-    if (validator_.check(block))
-    {
-        // Store txs (if missing) and associate them to candidate block.
-        //#####################################################################
-        error_code = fast_chain_.update(block, height);
-        //#####################################################################
-    }
+    validator_.check(block, height);
+
+    // Store txs (if missing) and associate them to candidate block.
+    //#########################################################################
+    error_code = fast_chain_.update(block, height);
+    //#########################################################################
 
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block, height);
@@ -130,10 +126,6 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
         return true;
 
-    const result_handler complete =
-        std::bind(&block_organizer::signal_completion,
-            this, _1);
-
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
     auto current_height = height;
@@ -141,20 +133,9 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
     while (!stopped() && block)
     {
-        resume_ = std::promise<code>();
-
-        const auto accept_handler =
-            std::bind(&block_organizer::handle_accept,
-                this, _1, block, complete);
-
         // Checks that are dependent upon chain state.
-        validator_.accept(block, accept_handler);
-
-        if ((error_code = resume_.get_future().get()))
-        {
-            // Store failed or received stop code from validator.
+        if ((error_code = validate(block)))
             break;
-        }
 
         if (block->header().metadata.error)
         {
@@ -209,6 +190,27 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
     // Resubscribe if not stop or store failure.
     // In the case of a store failure the server will stop processing blocks.
     return !error_code;
+}
+
+// private
+// Convert validate.accept/connect to a sequential call.
+code block_organizer::validate(block_const_ptr block)
+{
+    resume_ = std::promise<code>();
+
+    const result_handler complete =
+        std::bind(&block_organizer::signal_completion,
+            this, _1);
+
+    const auto accept_handler =
+        std::bind(&block_organizer::handle_accept,
+            this, _1, block, complete);
+
+    // Checks that are dependent upon chain state.
+    validator_.accept(block, accept_handler);
+
+    // Store failed or received stop code from validator.
+    return resume_.get_future().get();
 }
 
 // private

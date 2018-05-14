@@ -43,18 +43,11 @@ void populate_block::populate(block_const_ptr block,
 {
     // The block class has no population method, so set timer externally.
     block->metadata.start_populate = asio::steady_clock::now();
+
+    // This candidate must be that which follows the top valid candidate.
     auto& metadata = block->header().metadata;
-
-    // If previously failed skip validation.
-    if (metadata.error)
-    {
-        handler(error::success);
-        return;
-    }
-
-    // The next candidate must be that which follows the last valid candidate.
-    metadata.state = fast_chain_.promote_state(block->header(),
-        fast_chain_.top_valid_candidate_state());
+    const auto top_valid = fast_chain_.top_valid_candidate_state();
+    metadata.state = fast_chain_.promote_state(block->header(), top_valid);
 
     if (!metadata.state)
     {
@@ -62,25 +55,35 @@ void populate_block::populate(block_const_ptr block,
         return;
     }
 
-    // TODO: if not validating then skip tx/block population.
-    // TODO: if neither validating nor indexing skip prevout population.
-    // TODO: populate header metadata on block read and then skip here.
-    // TODO: populate tx metadata on tx/block read and then skip here.
-
-    // Populate header metadata if it hasn't been populated.
-    // The exists value defaults false but will be true if metadata populated.
-    if (!metadata.exists)
-        fast_chain_.populate_header(block->header());
-
     // Above this confirmed are not confirmed in the candidate chain.
     const auto fork_height = fast_chain_.fork_point().height();
 
-    // Populate the coinbase as a special case tx.
-    populate_coinbase(block, fork_height);
+    if (metadata.state->is_under_checkpoint())
+    {
+        populate_non_coinbase(block, fork_height, false, handler);
+        handler(error::success);
+        return;
+    }
 
+    if (!metadata.exists)
+        fast_chain_.populate_header(block->header());
+
+    if (metadata.validated)
+    {
+        populate_non_coinbase(block, fork_height, false, handler);
+        handler(error::success);
+        return;
+    }
+
+    populate_coinbase(block, fork_height);
+    populate_non_coinbase(block, fork_height, true, handler);
+}
+
+void populate_block::populate_non_coinbase(block_const_ptr block,
+    size_t fork_height, bool use_txs, result_handler handler) const
+{
     const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
-    // Return if there are no non-coinbase inputs to validate.
     if (non_coinbase_inputs == 0)
     {
         handler(error::success);
@@ -93,7 +96,7 @@ void populate_block::populate(block_const_ptr block,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_transactions,
-            this, block, fork_height, bucket, buckets, join_handler);
+            this, block, fork_height, bucket, buckets, use_txs, join_handler);
 }
 
 // Initialize the coinbase input for subsequent metadata.
@@ -127,7 +130,7 @@ void populate_block::populate_coinbase(block_const_ptr block,
 }
 
 void populate_block::populate_transactions(block_const_ptr block,
-    size_t fork_height, size_t bucket, size_t buckets,
+    size_t fork_height, size_t bucket, size_t buckets, bool use_txs,
     result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
@@ -136,12 +139,15 @@ void populate_block::populate_transactions(block_const_ptr block,
     const auto forks = state->enabled_forks();
     size_t input_position = 0;
 
-    // Must skip coinbase here as it is already accounted for.
-    for (auto position = bucket == 0 ? buckets : bucket; position < txs.size();
-        position = ceiling_add(position, buckets))
+    if (use_txs)
     {
-        const auto& tx = txs[position];
-        fast_chain_.populate_block_transaction(tx, forks, fork_height);
+        // Must skip coinbase here as it is already accounted for.
+        for (auto position = (bucket == 0 ? buckets : bucket);
+            position < txs.size(); position = ceiling_add(position, buckets))
+        {
+            const auto& tx = txs[position];
+            fast_chain_.populate_block_transaction(tx, forks, fork_height);
+        }
     }
 
     // Must skip coinbase here as it is already accounted for.

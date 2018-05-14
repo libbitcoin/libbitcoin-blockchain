@@ -42,6 +42,7 @@ validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
   : stopped_(true),
     retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
+    checkpoints_(settings.checkpoints),
     priority_dispatch_(dispatch),
     block_populator_(dispatch, chain)
 {
@@ -72,19 +73,28 @@ void validate_block::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-bool validate_block::check(block_const_ptr block) const
+void validate_block::check(block_const_ptr block, size_t height) const
 {
-    // Run context free checks, sets time internally.
-    const auto ec = block->check(retarget_);
+    auto& metadata = block->header().metadata;
 
-    if (ec)
+    if (!config::checkpoint::validate(block->hash(), height, checkpoints_))
     {
-        auto& metadata = block->header().metadata;
-        metadata.error = ec;
+        // Skip checks due to checkpoint failure, block is invalid.
+        metadata.error = error::checkpoints_failed;
         metadata.validated = true;
     }
-
-    return !ec;
+    else if (config::checkpoint::covered(height, checkpoints_))
+    {
+        // Skip checks due to checkpoint coverage, block is valid.
+        metadata.error = error::success;
+        metadata.validated = true;
+    }
+    else
+    {
+        // Run context free checks, block is not yet fully validated.
+        metadata.error = block->check(retarget_);
+        metadata.validated = false;
+    }
 }
 
 // Accept sequence.
@@ -95,7 +105,7 @@ void validate_block::accept(block_const_ptr block,
     result_handler handler) const
 {
     // Returns store code only.
-    block_populator_.populate(block, 
+    block_populator_.populate(block,
         std::bind(&validate_block::handle_populated,
             this, _1, block, handler));
 }
@@ -116,40 +126,40 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
-    // If previously validated skip validation (error metadata set).
-    if (block->header().metadata.validated)
+    auto& metadata = block->header().metadata;
+
+    if (metadata.validated)
     {
+        handler(error::success);
+        return;
+    }
+
+    if (metadata.state->is_under_checkpoint())
+    {
+        metadata.validated = true;
         handler(error::success);
         return;
     }
 
     // Run contextual block non-tx checks (sets start time).
-    if ((block->header().metadata.error = block->accept(false)))
+    if ((metadata.error = block->accept(false)))
     {
+        metadata.validated = true;
         handler(error::success);
         return;
     }
 
     const auto sigops = std::make_shared<atomic_counter>(0);
-    const auto state = block->header().metadata.state;
-    BITCOIN_ASSERT(state);
-
-    const auto bip141 = state->is_enabled(rule_fork::bip141_rule);
+    const auto bip141 = metadata.state->is_enabled(rule_fork::bip141_rule);
 
     result_handler complete_handler =
         std::bind(&validate_block::handle_accepted,
             this, _1, block, sigops, bip141, handler);
 
-    ////if (state->is_under_checkpoint())
-    ////{
-    ////    complete_handler(error::success);
-    ////    return;
-    ////}
-
     // One dedicated thread is required by the validation subscriber.
     const auto threads = priority_dispatch_.size() - 1u;
     const auto count = block->transactions().size();
-    const auto bip16 = state->is_enabled(rule_fork::bip16_rule);
+    const auto bip16 = metadata.state->is_enabled(rule_fork::bip16_rule);
     const auto buckets = std::min(threads, count);
     BITCOIN_ASSERT_MSG(buckets != 0, "block check must require transactions");
 
@@ -166,7 +176,7 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     size_t buckets, atomic_counter_ptr sigops, bool bip16, bool bip141,
     result_handler handler) const
 {
-    code ec(error::success);
+    code ec;
     const auto& state = *block->header().metadata.state;
     const auto& txs = block->transactions();
     const auto count = txs.size();

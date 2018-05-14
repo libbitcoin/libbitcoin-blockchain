@@ -137,6 +137,10 @@ public:
     virtual code update(block_const_ptr block, size_t height) = 0;
 
     /// Set the block validation state.
+    virtual code invalidate(const chain::header& header,
+        const code& error) = 0;
+
+    /// Set the block validation state and all candidate chain ancestors.
     virtual code invalidate(block_const_ptr block, size_t height) = 0;
 
     /// Set the block validation state and mark spent outputs.

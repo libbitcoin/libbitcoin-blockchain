@@ -439,8 +439,29 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
 code block_chain::update(block_const_ptr block, size_t height)
 {
-    // This stores or connects each transaction and sets tx link metadata.
-    return database_.update(*block, height);
+    code error_code;
+    const auto& metadata = block->header().metadata;
+
+    if (!metadata.error)
+    {
+        // Store or connect each transaction and set tx link metadata.
+        if ((error_code = database_.update(*block, height)))
+            return error_code;
+    }
+
+    if (metadata.validated)
+    {
+        // Set block validation state and error code.
+        error_code = database_.invalidate(block->header(), metadata.error);
+    }
+
+    return error_code;
+}
+
+code block_chain::invalidate(const chain::header& header, const code& error)
+{
+    // Mark candidate header as invalid.
+    return database_.invalidate(header, error);
 }
 
 // Mark candidate block and descendants as invalid and pop them.
@@ -472,8 +493,7 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
 
     // Mark all outgoing candidate blocks as invalid, in store and metadata.
     for (const auto header: *outgoing)
-        if ((ec = database_.invalidate(*header,
-            error::store_block_missing_parent)))
+        if ((ec = invalidate(*header, error::store_block_missing_parent)))
             return ec;
 
     // This should not have to unmark because none were ever valid.

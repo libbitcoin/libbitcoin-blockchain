@@ -160,6 +160,9 @@ public:
     code update(block_const_ptr block, size_t height);
 
     /// Set the block validation state.
+    code invalidate(const chain::header& header, const code& error);
+
+    /// Set the block validation state and all candidate chain ancestors.
     code invalidate(block_const_ptr block, size_t height);
 
     /// Set the block validation state and mark spent outputs.

@@ -60,6 +60,7 @@ protected:
 
 private:
     // Verify sub-sequence.
+    code validate(block_const_ptr block);
     bool handle_check(const code& ec, block_const_ptr block, size_t height);
     void handle_accept(const code& ec, block_const_ptr block, result_handler handler);
     void handle_connect(const code& ec, block_const_ptr block, result_handler handler);

@@ -41,8 +41,11 @@ public:
 
 protected:
     void populate_coinbase(block_const_ptr block, size_t fork_height) const;
+    void populate_non_coinbase(block_const_ptr block, size_t fork_height,
+        bool use_txs, result_handler handler) const;
     void populate_transactions(block_const_ptr block, size_t fork_height,
-        size_t bucket, size_t buckets, result_handler handler) const;
+        size_t bucket, size_t buckets, bool use_txs,
+        result_handler handler) const;
 };
 
 } // namespace blockchain

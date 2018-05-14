@@ -70,7 +70,7 @@ void validate_header::stop()
 
 code validate_header::check(header_const_ptr header) const
 {
-    // Run context free checks.
+    // Run context free checks, even if under checkpoint or milestone.
     return header->check(retarget_);
 }
 
@@ -104,7 +104,7 @@ void validate_header::handle_populated(const code& ec,
 
     const auto& header = *branch->top();
 
-    // Skip validation if full block was validated (and is not invalid).
+    // Skip validation if full block was validated (is valid at this point).
     if (header.metadata.validated)
     {
         handler(error::success);
