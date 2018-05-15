@@ -88,14 +88,12 @@ bool block_organizer::stop()
 
 code block_organizer::organize(block_const_ptr block, size_t height)
 {
-    code error_code;
-
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
 
     // Store txs (if missing) and associate them to candidate block.
     //#########################################################################
-    error_code = fast_chain_.update(block, height);
+    const code error_code = fast_chain_.update(block, height);
     //#########################################################################
 
     // Queue download notification to invoke validation on downloader thread.
