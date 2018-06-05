@@ -92,6 +92,13 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
+    if (stopped())
+    {
+        mutex_.unlock_low_priority();
+        handler(error::service_stopped);
+        return;
+    }
+
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 

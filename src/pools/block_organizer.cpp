@@ -96,6 +96,13 @@ void block_organizer::organize(block_const_ptr block, result_handler handler)
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
+    if (stopped())
+    {
+        mutex_.unlock_high_priority();
+        handler(error::service_stopped);
+        return;
+    }
+
     // Reset the reusable promise.
     resume_ = std::promise<code>();
 
