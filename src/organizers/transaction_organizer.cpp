@@ -97,6 +97,14 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_low_priority();
 
+    if (stopped())
+    {
+        mutex_.unlock_low_priority();
+        //---------------------------------------------------------------------
+        handler(error::service_stopped);
+        return;
+    }
+
     // The pool is safe for filtering only, so protect by critical section.
     // This locates only unconfirmed transactions discovered since startup.
     const auto exists = pool_.exists(tx);
