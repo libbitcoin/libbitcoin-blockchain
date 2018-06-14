@@ -1631,19 +1631,19 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe(block_handler&& handler)
+void block_chain::subscribe_blocks(block_handler&& handler)
 {
     block_subscriber_->subscribe(std::move(handler),
         error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe(header_handler&& handler)
+void block_chain::subscribe_headers(header_handler&& handler)
 {
     header_subscriber_->subscribe(std::move(handler),
         error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe(transaction_handler&& handler)
+void block_chain::subscribe_transactions(transaction_handler&& handler)
 {
     transaction_subscriber_->subscribe(std::move(handler),
         error::service_stopped, {});

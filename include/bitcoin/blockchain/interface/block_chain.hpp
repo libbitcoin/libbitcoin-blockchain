@@ -339,13 +339,13 @@ public:
     //-------------------------------------------------------------------------
 
     /// Subscribe to confirmed block reorganizations, get branch/height.
-    void subscribe(block_handler&& handler);
+    void subscribe_blocks(block_handler&& handler);
 
     /// Subscribe to indexed header reorganizations, get branch/height.
-    void subscribe(header_handler&& handler);
+    void subscribe_headers(header_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
-    void subscribe(transaction_handler&& handler);
+    void subscribe_transactions(transaction_handler&& handler);
 
     /// Send null data success notification to all subscribers.
     void unsubscribe();

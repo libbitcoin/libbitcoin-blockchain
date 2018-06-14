@@ -173,7 +173,7 @@ public:
 
     virtual void subscribe_blocks(block_handler&& handler) = 0;
     virtual void subscribe_headers(header_handler&& handler) = 0;
-    virtual void subscribe_transaction(transaction_handler&& handler) = 0;
+    virtual void subscribe_transactions(transaction_handler&& handler) = 0;
     virtual void unsubscribe() = 0;
 
     // Organizers.
