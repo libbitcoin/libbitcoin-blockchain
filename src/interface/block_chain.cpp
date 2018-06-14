@@ -1168,8 +1168,6 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
-
-            // Simulate the position and height overloading of the database.
             const auto height = cached->metadata.state->height();
             handler(error::success, cached, 0, height);
             return;
@@ -1209,8 +1207,6 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
-
-            // Simulate the position and height overloading of the database.
             const auto height = cached->metadata.state->height();
             handler(error::success, 0, height);
             return;
