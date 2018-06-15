@@ -92,6 +92,7 @@ code block_organizer::organize(block_const_ptr block, size_t height)
     validator_.check(block, height);
 
     // Store txs (if missing) and associate them to candidate block.
+    // Existing txs cannot suffer a state change as they may also be confirmed.
     //#########################################################################
     const code error_code = fast_chain_.update(block, height);
     //#########################################################################
@@ -171,6 +172,7 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
         // TODO: create parallel block reader (this is expensive and serial).
         // TODO: this can run in the block populator using priority dispatch.
+        // TODO: consider metadata population in line with block read.
         block = fast_chain_.get_block(++current_height, true, true);
     }
 
