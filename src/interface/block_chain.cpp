@@ -104,13 +104,13 @@ bool block_chain::get_top(config::checkpoint& out_checkpoint,
 
 bool block_chain::get_top_height(size_t& out_height, bool candidate) const
 {
-    return database_.blocks().top(out_height, !candidate);
+    return database_.blocks().top(out_height, candidate);
 }
 
 bool block_chain::get_header(chain::header& out_header, size_t height,
     bool candidate) const
 {
-    auto result = database_.blocks().get(height, !candidate);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -132,7 +132,7 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
 
     // The only way to know if a header is indexed is from its presence in the
     // index. It will not be marked as a candidate until validated as such.
-    if (database_.blocks().get(height, !candidate))
+    if (database_.blocks().get(height, candidate))
     {
         out_header = result.header();
         out_height = height;
@@ -145,7 +145,7 @@ bool block_chain::get_header(chain::header& out_header, size_t& out_height,
 bool block_chain::get_block_hash(hash_digest& out_hash, size_t height,
     bool candidate) const
 {
-    const auto result = database_.blocks().get(height, !candidate);
+    const auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -169,7 +169,7 @@ bool block_chain::get_block_error(code& out_error,
 bool block_chain::get_bits(uint32_t& out_bits, size_t height,
     bool candidate) const
 {
-    auto result = database_.blocks().get(height, !candidate);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -181,7 +181,7 @@ bool block_chain::get_bits(uint32_t& out_bits, size_t height,
 bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
     bool candidate) const
 {
-    auto result = database_.blocks().get(height, !candidate);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -193,7 +193,7 @@ bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
 bool block_chain::get_version(uint32_t& out_version, size_t height,
     bool candidate) const
 {
-    auto result = database_.blocks().get(height, !candidate);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -208,7 +208,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     size_t top;
     out_work = 0;
 
-    if (!database_.blocks().top(top, !candidate))
+    if (!database_.blocks().top(top, candidate))
         return false;
 
     // Set overcome to zero to bypass early exit.
@@ -217,7 +217,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     for (auto height = top; (height > above_height) && 
         (no_maximum || out_work <= overcome); --height)
     {
-        const auto result = database_.blocks().get(height, !candidate);
+        const auto result = database_.blocks().get(height, candidate);
 
         if (!result)
             return false;
@@ -234,7 +234,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
 
 bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
 {
-    const auto result = database_.blocks().get(height, false);
+    const auto result = database_.blocks().get(height, true);
 
     // Do not download if not found, invalid or already populated.
     if (!result || is_failed(result.state()) ||
@@ -270,7 +270,7 @@ void block_chain::populate_output(const chain::output_point& outpoint,
 
 uint8_t block_chain::get_block_state(size_t height, bool candidate) const
 {
-    return database_.blocks().get(height, !candidate).state();
+    return database_.blocks().get(height, candidate).state();
 }
 
 uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
@@ -294,7 +294,7 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
         cached->header().metadata.state->height() == height)
         return cached;
 
-    const auto result = database_.blocks().get(height, !candidate);
+    const auto result = database_.blocks().get(height, candidate);
 
     // A populated block was not found at the given height.
     if (!result || result.transaction_count() == 0)
@@ -311,7 +311,7 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
 
 header_const_ptr block_chain::get_header(size_t height, bool candidate) const
 {
-    const auto result = database_.blocks().get(height, !candidate);
+    const auto result = database_.blocks().get(height, candidate);
 
     // A header was not found at the given height.
     if (!result)
@@ -931,7 +931,7 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -1002,7 +1002,7 @@ void block_chain::fetch_block_header(size_t height,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -1045,7 +1045,7 @@ void block_chain::fetch_merkle_block(size_t height,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -1141,7 +1141,7 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
 
     size_t last_height;
 
-    if (!database_.blocks().top(last_height))
+    if (!database_.blocks().top(last_height, false))
     {
         handler(error::not_found, 0);
         return;
@@ -1292,7 +1292,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     // Build the hash list until we hit end or the blockchain top.
     for (auto height = begin; height < end; ++height)
     {
-        const auto result = database_.blocks().get(height);
+        const auto result = database_.blocks().get(height, false);
 
         // If not found then we are at our top.
         if (!result)
@@ -1375,7 +1375,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     // Build the hash list until we hit end or the blockchain top.
     for (auto height = begin; height < end; ++height)
     {
-        const auto result = database_.blocks().get(height);
+        const auto result = database_.blocks().get(height, false);
 
         // If not found then we are at our top.
         if (!result)
@@ -1442,7 +1442,7 @@ void block_chain::fetch_header_locator(const block::indexes& heights,
     for (const auto height: heights)
     {
         // Header locators is generated for the header chain.
-        const auto result = database_.blocks().get(height, false);
+        const auto result = database_.blocks().get(height, true);
 
         if (!result)
         {
