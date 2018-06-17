@@ -278,11 +278,11 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
-database::transaction_state block_chain::get_transaction_state(
-    const hash_digest& tx_hash) const
-{
-    return database_.transactions().get(tx_hash).state();
-}
+////database::transaction_state block_chain::get_transaction_state(
+////    const hash_digest& tx_hash) const
+////{
+////    return database_.transactions().get(tx_hash).state();
+////}
 
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool candidate) const
@@ -1176,8 +1176,8 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.state() !=
-        transaction_state::confirmed))
+    if (!result || (require_confirmed && result.position() !=
+        transaction_result::unconfirmed))
     {
         handler(error::not_found, nullptr, 0, 0);
         return;
@@ -1215,8 +1215,8 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.state() !=
-        transaction_state::confirmed))
+    if (!result || (require_confirmed && result.position() !=
+        transaction_result::unconfirmed))
     {
         handler(error::not_found, 0, 0);
         return;
@@ -1585,11 +1585,6 @@ void block_chain::filter_blocks(get_data_ptr message,
     }
 
     handler(error::success);
-}
-
-inline bool is_needed(transaction_state tx_state)
-{
-    return tx_state == transaction_state::pooled;
 }
 
 // This may execute up to 50,000 queries (protocol limit).

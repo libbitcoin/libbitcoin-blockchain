@@ -111,9 +111,9 @@ public:
     /// Get state (flags) of the given block by hash.
     virtual uint8_t get_block_state(const hash_digest& block_hash) const = 0;
 
-    /// Get state of the given transaction by hash.
-    virtual database::transaction_state get_transaction_state(
-        const hash_digest& tx_hash) const = 0;
+    /////// Get state of the given transaction by hash.
+    ////virtual database::transaction_state get_transaction_state(
+    ////    const hash_digest& tx_hash) const = 0;
 
     /// Get populated confirmed or candidate header by height (or null).
     virtual header_const_ptr get_header(size_t height,
