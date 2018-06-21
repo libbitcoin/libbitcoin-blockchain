@@ -42,12 +42,14 @@ using namespace std::placeholders;
 
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& settings,
-    const database::settings& database_settings)
-  : database_(database_settings),
+    const database::settings& database_settings,
+    const bc::settings& bitcoin_settings)
+  : database_(database_settings, bitcoin_settings),
     stopped_(true),
     fork_point_({ null_hash, 0 }),
     settings_(settings),
-    chain_state_populator_(*this, settings),
+    bitcoin_settings_(bitcoin_settings),
+    chain_state_populator_(*this, settings, bitcoin_settings),
     index_addresses_(database_settings.index_addresses),
 
     // Enable block/header priority when write flush enabled (performance).
@@ -55,7 +57,7 @@ block_chain::block_chain(threadpool& pool,
 
     // Metadata pools.
     header_pool_(settings.reorganization_limit),
-    transaction_pool_(settings),
+    transaction_pool_(settings, bitcoin_settings),
 
     // Create dispatchers for priority and non-priority operations.
     priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
@@ -64,7 +66,7 @@ block_chain::block_chain(threadpool& pool,
 
     // Organizers use priority dispatch and/or non-priority thread pool.
     block_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
-    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings, bitcoin_settings),
     transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
@@ -602,6 +604,7 @@ chain::chain_state::ptr block_chain::top_candidate_state() const
     return top_candidate_state_.load();
 }
 
+
 chain::chain_state::ptr block_chain::top_valid_candidate_state() const
 {
     return top_valid_candidate_state_.load();
@@ -782,7 +785,8 @@ chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
     if (!parent || parent->hash() !=header.previous_block_hash())
         return {};
 
-    return std::make_shared<chain::chain_state>(*parent, header);
+    return std::make_shared<chain::chain_state>(*parent, header,
+        bitcoin_settings_);
 }
 
 // Promote chain state for the last block in the multi-header branch.

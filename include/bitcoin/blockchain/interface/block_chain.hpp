@@ -25,6 +25,7 @@
 #include <ctime>
 #include <functional>
 #include <vector>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -56,7 +57,8 @@ public:
     /// population as an optimization. This can be removed once there is an
     /// in-memory cache of tx pool metadata, as the costly query will go away.
     block_chain(threadpool& pool, const blockchain::settings& settings,
-        const database::settings& database_settings);
+        const database::settings& database_settings,
+        const bc::settings& bitcoin_settings);
 
     /// The database is closed on destruct, threads must be joined.
     ~block_chain();
@@ -423,6 +425,7 @@ private:
     bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
 
     const settings& settings_;
+    const bc::settings& bitcoin_settings_;
     const populate_chain_state chain_state_populator_;
     const bool index_addresses_;
 

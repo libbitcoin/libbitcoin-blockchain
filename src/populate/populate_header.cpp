@@ -30,8 +30,10 @@ using namespace bc::machine;
 
 #define NAME "populate_header"
 
-populate_header::populate_header(dispatcher& dispatch, const fast_chain& chain)
-  : populate_base(dispatch, chain)
+populate_header::populate_header(dispatcher& dispatch, const fast_chain& chain,
+    const bc::settings& bitcoin_settings)
+  : populate_base(dispatch, chain),
+    bitcoin_settings_(bitcoin_settings)
 {
 }
 
@@ -80,7 +82,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     }
 
     size_t fork_height;
-    chain::header fork_header;
+    chain::header fork_header(bitcoin_settings_);
     const auto fork_hash = branch->hash();
 
     // The grounding candidate may not be valid, but eventually be handled.
