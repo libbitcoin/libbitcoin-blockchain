@@ -40,10 +40,11 @@ static constexpr uint32_t hour_seconds = 3600u;
 // Database access is limited to { top, hash, bits, version, timestamp }.
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
-    const settings& settings)
+    const settings& settings, const bc::settings& bitcoin_settings)
   : forks_(settings.enabled_forks()),
     stale_seconds_(settings.notify_limit_hours * hour_seconds),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),
+    bitcoin_settings_(bitcoin_settings),
     fast_chain_(chain)
 {
 }
@@ -188,7 +189,8 @@ bool populate_chain_state::populate_all(chain_state::data& data,
     const chain::header& header, size_t header_height, bool block_index) const
 {
     // Construct the map to inform chain state data population.
-    const auto map = chain_state::get_map(data.height, checkpoints_, forks_);
+    const auto map = chain_state::get_map(data.height, checkpoints_, forks_,
+        bitcoin_settings_.retargeting_interval);
 
     return
         populate_bits(data, map, header, header_height, block_index) &&
@@ -202,7 +204,7 @@ bool populate_chain_state::populate_all(chain_state::data& data,
 chain_state::ptr populate_chain_state::populate(bool block_index) const
 {
     size_t header_height;
-    chain::header header;
+    chain::header header(bitcoin_settings_);
 
     return fast_chain_.get_top(header, header_height, block_index) ?
         populate(header, header_height, block_index) : nullptr;
@@ -219,7 +221,7 @@ chain_state::ptr populate_chain_state::populate(const chain::header& header,
 
     return populate_all(data, header, header_height, block_index) ?
         std::make_shared<chain_state>(std::move(data), checkpoints_,
-            forks_, stale_seconds_) : nullptr;
+            forks_, stale_seconds_, bitcoin_settings_) : nullptr;
 }
 
 } // namespace blockchain

@@ -43,13 +43,13 @@ using namespace std::placeholders;
 
 header_organizer::header_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
-    const settings& settings)
+    const settings& settings, const bc::settings& bitcoin_settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     dispatch_(dispatch),
     header_pool_(settings.reorganization_limit),
-    validator_(dispatch, chain, settings),
+    validator_(dispatch, chain, settings, bitcoin_settings),
     subscriber_(std::make_shared<reindex_subscriber>(thread_pool, NAME))
 {
 }

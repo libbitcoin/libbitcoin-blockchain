@@ -47,7 +47,8 @@ BOOST_AUTO_TEST_CASE(block_chain__push__flushed__expected)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
     const auto state1 = instance.get_block_state(block1->hash());
     BOOST_REQUIRE(is_confirmed(state1));
-    const auto state0 = instance.get_block_state(chain::block::genesis_mainnet().hash());
+    const auto state0 = instance.get_block_state(
+        chain::block::genesis_mainnet(bc::settings()).hash());
     BOOST_REQUIRE(is_confirmed(state0));
 }
 
@@ -59,7 +60,8 @@ BOOST_AUTO_TEST_CASE(block_chain__push__unflushed__expected_block)
     BOOST_REQUIRE(instance.push(block1, 1, 0));
     const auto state1 = instance.get_block_state(block1->hash());
     BOOST_REQUIRE(is_confirmed(state1));
-    const auto state0 = instance.get_block_state(chain::block::genesis_mainnet().hash());
+    const auto state0 = instance.get_block_state(
+        chain::block::genesis_mainnet(bc::settings()).hash());
     BOOST_REQUIRE(is_confirmed(state0));
 }
 

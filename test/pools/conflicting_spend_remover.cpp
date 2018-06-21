@@ -52,7 +52,8 @@ BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__empty__returns_zero)
 
 BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__childless_entry_outside_template__returns_zero)
 {
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     transaction_pool_state pool_state;
     conflicting_spend_remover remover(pool_state);
     auto entry = utilities::get_entry(state, 1, 0u);
@@ -65,7 +66,8 @@ BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__childless_entry_outs
 
 BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__childless_entry_within_template__returns_entry_priority)
 {
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     transaction_pool_state pool_state;
     conflicting_spend_remover remover(pool_state);
     auto entry = utilities::get_entry(state, 1, 0);
@@ -78,7 +80,8 @@ BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__childless_entry_with
 
 BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__entry_with_multi_parent_child__returns_max_priority_in_decendant_graph)
 {
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     transaction_pool_state pool_state;
     conflicting_spend_remover remover(pool_state);
     auto parent_1 = utilities::get_entry(state, 1, 0);
@@ -98,7 +101,8 @@ BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__entry_with_multi_par
 
 BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__entry_with_immediate_children__returns_max_priority_in_decendant_graph)
 {
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     transaction_pool_state pool_state;
     conflicting_spend_remover remover(pool_state);
     auto parent = utilities::get_entry(state, 1, 0);
@@ -123,7 +127,8 @@ BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__entry_with_immediate
 
 BOOST_AUTO_TEST_CASE(conflicting_spend_remover__deconflict__entry_with_descendants__returns_max_priority_in_decendant_graph)
 {
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     transaction_pool_state pool_state;
     conflicting_spend_remover remover(pool_state);
     auto parent = utilities::get_entry(state, 1, 0);
