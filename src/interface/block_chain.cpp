@@ -42,11 +42,13 @@ using namespace std::placeholders;
 
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& chain_settings,
-    const database::settings& database_settings)
+    const database::settings& database_settings,
+    const bc::settings& bitcoin_settings)
   : stopped_(true),
     settings_(chain_settings),
-    chain_state_populator_(*this, chain_settings),
-    database_(database_settings),
+    bitcoin_settings_(bitcoin_settings),
+    chain_state_populator_(*this, chain_settings, bitcoin_settings),
+    database_(database_settings, bitcoin_settings),
 
     // Enable block priority when write flushing is enabled (performance).
     validation_mutex_(database_settings.flush_writes),
@@ -55,9 +57,9 @@ block_chain::block_chain(threadpool& pool,
         priority(chain_settings.priority)),
     dispatch_(priority_pool_, NAME "_priority"),
     header_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings),
+        chain_settings, bitcoin_settings),
     transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings)
+        chain_settings, bitcoin_settings)
 {
 }
 
@@ -422,7 +424,8 @@ chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
     if (!parent)
         return {};
 
-    return std::make_shared<chain::chain_state>(*parent, header);
+    return std::make_shared<chain::chain_state>(*parent, header,
+        bitcoin_settings_);
 }
 
 // Promote chain state for the last block in the multi-header branch.

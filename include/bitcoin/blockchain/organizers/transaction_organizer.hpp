@@ -49,7 +49,8 @@ public:
 
     /// Construct an instance.
     transaction_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+        threadpool& thread_pool, fast_chain& chain, const settings& settings,
+        const bc::settings& bitcoin_settings);
 
     bool start();
     bool stop();

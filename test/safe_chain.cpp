@@ -70,7 +70,8 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_block1__unstarted__error_service_stopped
     BOOST_REQUIRE(test::create_database(database_settings));
 
     blockchain::settings blockchain_settings;
-    block_chain instance(pool, blockchain_settings, database_settings);
+    block_chain instance(pool, blockchain_settings, database_settings,
+        bc::settings());
 
     const auto block1 = NEW_BLOCK(1);
     BOOST_REQUIRE_EQUAL(fetch_block_by_height_result(instance, block1, 1), error::service_stopped);

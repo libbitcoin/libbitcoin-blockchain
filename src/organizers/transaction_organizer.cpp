@@ -41,13 +41,13 @@ using namespace std::placeholders;
 // TODO: create priority pool at blockchain level and use in both organizers. 
 transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
     dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
-    const settings& settings)
+    const settings& settings, const bc::settings& bitcoin_settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     settings_(settings),
     dispatch_(dispatch),
-    transaction_pool_(settings),
+    transaction_pool_(settings, bitcoin_settings),
     validator_(dispatch, fast_chain_, settings),
     subscriber_(std::make_shared<transaction_subscriber>(thread_pool, NAME))
 {

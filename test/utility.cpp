@@ -34,7 +34,7 @@ chain::block read_block(const std::string& hex)
 {
     data_chunk data;
     BOOST_REQUIRE(decode_base16(data, hex));
-    chain::block result;
+    chain::block result(bc::settings{});
     BOOST_REQUIRE(result.from_data(data));
     return result;
 }
@@ -51,9 +51,9 @@ bool create_database(database::settings& out_database)
 
     error_code ec;
     remove_all(out_database.directory, ec);
-    database::data_base database(out_database);
+    database::data_base database(out_database, bc::settings{});
     return create_directories(out_database.directory, ec) &&
-        database.create(chain::block::genesis_mainnet());
+        database.create(chain::block::genesis_mainnet(bc::settings()));
 }
 
 } // namespace test

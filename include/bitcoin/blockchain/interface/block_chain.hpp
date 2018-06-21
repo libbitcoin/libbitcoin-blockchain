@@ -25,6 +25,7 @@
 #include <ctime>
 #include <functional>
 #include <vector>
+#include <bitcoin/bitcoin.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
@@ -49,7 +50,8 @@ public:
     /// in-memory cache of tx pool metadata, as the costly query will go away.
     block_chain(threadpool& pool,
         const blockchain::settings& chain_settings,
-        const database::settings& database_settings);
+        const database::settings& database_settings,
+        const bc::settings& bitcoin_settings);
 
     /// The database is closed on destruct, threads must be joined.
     ~block_chain();
@@ -361,6 +363,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const settings& settings_;
+    const bc::settings& bitcoin_settings_;
 
     // Last item cache.
     bc::atomic<block_const_ptr> last_block_;
