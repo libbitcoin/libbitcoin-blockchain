@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(validate_block__native__block_438513_tx__valid)
     prevout.set_script(script::factory(decoded_script, false));
     BOOST_REQUIRE(prevout.script().is_valid());
 
-    const auto result = validate_input::verify_script(tx, index, 62, libconsensus);
+    const auto result = validate_input::verify_script(tx, index, forks, libconsensus);
     BOOST_REQUIRE_EQUAL(result.value(), error::success);
 }
 

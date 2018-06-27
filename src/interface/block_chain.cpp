@@ -505,7 +505,7 @@ bool block_chain::stop()
     validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
-    auto result = 
+    auto result =
         header_organizer_.stop() &&
         ////block_organizer_.stop() &&
         transaction_organizer_.stop();
@@ -762,14 +762,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
     handler(error::success, merkle, result.height());
 }
 
-void block_chain::fetch_compact_block(size_t height,
+void block_chain::fetch_compact_block(size_t ,
     compact_block_fetch_handler handler) const
 {
     // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
-void block_chain::fetch_compact_block(const hash_digest& hash,
+void block_chain::fetch_compact_block(const hash_digest& ,
     compact_block_fetch_handler handler) const
 {
     // TODO: implement compact blocks.
@@ -906,7 +906,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     }
 
     // BUGBUG: an intervening reorg can produce an invalid chain of hashes.
-    // TODO: instead walk backwards using parent hash lookups. 
+    // TODO: instead walk backwards using parent hash lookups.
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
@@ -989,7 +989,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     }
 
     // BUGBUG: an intervening reorg can produce an invalid chain of headers.
-    // TODO: instead walk backwards using parent hash lookups. 
+    // TODO: instead walk backwards using parent hash lookups.
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
@@ -1130,7 +1130,7 @@ void block_chain::fetch_header_locator(const block::indexes& heights,
 // Confirmed heights only.
 
 // TODO: reimplement in store.
-void block_chain::fetch_spend(const chain::output_point& outpoint,
+void block_chain::fetch_spend(const chain::output_point& ,
     spend_fetch_handler handler) const
 {
     if (stopped())
@@ -1216,7 +1216,7 @@ void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 // All txs satisfy the fee minimum and are valid at the next chain state.
 // The set of blocks is limited in count to size. The set may have internal
 // dependencies but all inputs must be satisfied at the current height.
-void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
+void block_chain::fetch_mempool(size_t count_limit, uint64_t ,
     inventory_fetch_handler handler) const
 {
     transaction_organizer_.fetch_mempool(count_limit, handler);
@@ -1308,7 +1308,7 @@ void block_chain::subscribe_headers(reindex_handler&& handler)
     header_organizer_.subscribe(std::move(handler));
 }
 
-void block_chain::subscribe_blockchain(reorganize_handler&& handler)
+void block_chain::subscribe_blockchain(reorganize_handler&& )
 {
     // Pass this through to the organizer, which issues the notifications.
     ////block_organizer_.subscribe(std::move(handler));
@@ -1336,7 +1336,7 @@ void block_chain::organize(header_const_ptr header, result_handler handler)
     header_organizer_.organize(header, handler);
 }
 
-void block_chain::organize(block_const_ptr block, result_handler handler)
+void block_chain::organize(block_const_ptr , result_handler )
 {
     // TODO: implement block organize.
     // The handler must not call organize (lock safety).

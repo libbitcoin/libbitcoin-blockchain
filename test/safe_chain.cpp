@@ -349,7 +349,7 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__full__sequential)
     const size_t limit = 3;
     const auto threshold = null_hash;
     const auto locator = std::make_shared<const message::get_headers>();
-    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, null_hash, 3), error::success);
+    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, threshold, limit), error::success);
 }
 
 BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__limited__sequential)
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(block_chain__fetch_locator_block_headers__limited__sequenti
     const size_t limit = 3;
     const auto threshold = null_hash;
     const auto locator = std::make_shared<const message::get_headers>();
-    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, null_hash, 2), error::success);
+    BOOST_REQUIRE_EQUAL(fetch_locator_block_headers(instance, locator, threshold, limit), error::success);
 }
 
 // TODO: fetch_template

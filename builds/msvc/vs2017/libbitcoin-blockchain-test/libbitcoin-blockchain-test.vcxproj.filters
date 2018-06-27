@@ -10,11 +10,8 @@
     <Filter Include="src">
       <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000000}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\.deps">
-      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000001}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\pools">
-      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000002}</UniqueIdentifier>
+      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000001}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -218,8 +218,8 @@ void block_organizer::handle_connect(const code& ec, block_const_ptr block,
 // private
 // Outgoing blocks must have median_time_past set.
 void block_organizer::handle_reorganized(const code& ec,
-    block_const_ptr_list_const_ptr incoming,
-    block_const_ptr_list_ptr outgoing, result_handler handler)
+    block_const_ptr_list_const_ptr ,
+    block_const_ptr_list_ptr , result_handler handler)
 {
     if (ec)
     {
