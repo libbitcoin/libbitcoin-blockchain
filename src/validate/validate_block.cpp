@@ -141,7 +141,7 @@ void validate_block::accept(block_const_ptr block,
     result_handler handler) const
 {
     // Populate block state for the next block.
-    block_populator_.populate(block, 
+    block_populator_.populate(block,
         std::bind(&validate_block::handle_populated,
             this, _1, block, handler));
 }
@@ -225,7 +225,7 @@ void validate_block::accept_transactions(block_const_ptr block, size_t bucket,
     handler(ec);
 }
 
-void validate_block::handle_accepted(const code& ec, block_const_ptr block,
+void validate_block::handle_accepted(const code& ec, block_const_ptr ,
     atomic_counter_ptr sigops, bool bip141, result_handler handler) const
 {
     if (ec)

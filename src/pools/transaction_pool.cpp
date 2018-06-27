@@ -41,7 +41,7 @@ namespace blockchain {
 
 transaction_pool::priority anchor_priority = 0.0;
 
-transaction_pool::transaction_pool(const settings& settings)
+transaction_pool::transaction_pool(const settings& )
   ////: reject_conflicts_(settings.reject_conflicts),
   ////  minimum_fee_(settings.minimum_fee_satoshis)
 {
@@ -68,7 +68,7 @@ void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 }
 
 // TODO: implement mempool message payload discovery.
-void transaction_pool::fetch_mempool(size_t maximum,
+void transaction_pool::fetch_mempool(size_t ,
     inventory_fetch_handler handler) const
 {
     const auto empty = std::make_shared<message::inventory>();
