@@ -136,7 +136,7 @@ AS_CASE([${enable_shared}], [yes], AC_DEFINE([BOOST_ALL_DYN_LINK]))
 AS_CASE([${CC}], [*],
     [AX_BOOST_BASE([1.62.0],
         [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
-         AC_SUBST([boost_SYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/-I/-isystem/g`])
+         AC_SUBST([boost_SYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
          AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
          AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
          AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
@@ -153,7 +153,7 @@ AS_CASE([${with_tests}], [yes],
 PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 4.0.0])
 AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 4.0.0'])
 AC_SUBST([bitcoin_database_CPPFLAGS], [${bitcoin_database_CFLAGS}])
-AC_SUBST([bitcoin_database_SYS_CPPFLAGS], [`echo ${bitcoin_database_CFLAGS} | $SED s/-I/-isystem/g`])
+AC_SUBST([bitcoin_database_SYS_CPPFLAGS], [`echo ${bitcoin_database_CFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
 AC_MSG_NOTICE([bitcoin_database_CPPFLAGS : ${bitcoin_database_CPPFLAGS}])
 AC_MSG_NOTICE([bitcoin_database_LIBS : ${bitcoin_database_LIBS}])
 
@@ -163,7 +163,7 @@ AS_CASE([${with_consensus}], [yes],
     [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 4.0.0])
      AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 4.0.0'])
      AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
-     AC_SUBST([bitcoin_consensus_SYS_CPPFLAGS], [`echo ${bitcoin_consensus_CFLAGS} | $SED s/-I/-isystem/g`])
+     AC_SUBST([bitcoin_consensus_SYS_CPPFLAGS], [`echo ${bitcoin_consensus_CFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
      AC_MSG_NOTICE([bitcoin_consensus_CPPFLAGS : ${bitcoin_consensus_CPPFLAGS}])
      AC_MSG_NOTICE([bitcoin_consensus_LIBS : ${bitcoin_consensus_LIBS}])],
     [AC_SUBST([bitcoin_consensus_PKG], [])])
