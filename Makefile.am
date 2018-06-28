@@ -32,7 +32,7 @@ doc_DATA = \
 # src/libbitcoin-blockchain.la => ${libdir}
 #------------------------------------------------------------------------------
 lib_LTLIBRARIES = src/libbitcoin-blockchain.la
-src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
+src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_BUILD_CPPFLAGS} ${bitcoin_consensus_BUILD_CPPFLAGS}
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
     src/settings.cpp \
@@ -70,7 +70,7 @@ if WITH_TESTS
 TESTS = libbitcoin-blockchain-test_runner.sh
 
 check_PROGRAMS = test/libbitcoin-blockchain-test
-test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
+test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_BUILD_CPPFLAGS} ${bitcoin_consensus_BUILD_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
     test/fast_chain.cpp \
@@ -101,7 +101,7 @@ endif WITH_TESTS
 if WITH_TOOLS
 
 noinst_PROGRAMS = tools/initchain/initchain
-tools_initchain_initchain_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_CPPFLAGS} ${bitcoin_consensus_CPPFLAGS}
+tools_initchain_initchain_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_BUILD_CPPFLAGS} ${bitcoin_consensus_BUILD_CPPFLAGS}
 tools_initchain_initchain_LDADD = src/libbitcoin-blockchain.la ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 tools_initchain_initchain_SOURCES = \
     tools/initchain/initchain.cpp
