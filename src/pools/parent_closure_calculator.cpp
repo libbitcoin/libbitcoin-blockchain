@@ -23,7 +23,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 parent_closure_calculator::parent_closure_calculator(
-    transaction_pool_state& state)
+    transaction_pool_state& )
 {
 }
 
