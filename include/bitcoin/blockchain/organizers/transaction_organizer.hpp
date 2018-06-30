@@ -36,33 +36,26 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe.
-/// Organises transactions via the transaction pool to the blockchain.
+/// Organises transactions via the tx metadata pool to the store.
 class BCB_API transaction_organizer
 {
 public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<transaction_organizer> ptr;
-    typedef safe_chain::transaction_handler transaction_handler;
     typedef safe_chain::inventory_fetch_handler inventory_fetch_handler;
     typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
-    typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
 
     /// Construct an instance.
-    transaction_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+    transaction_organizer(prioritized_mutex& mutex,
+        dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
+        transaction_pool& pool, const settings& settings);
 
+    // Start/stop the organizer.
     bool start();
     bool stop();
 
+    /// validate and organize a transaction into tx metadata pool and store.
     void organize(transaction_const_ptr tx, result_handler handler);
-    void subscribe(transaction_handler&& handler);
-    void unsubscribe();
-
-    void fetch_template(merkle_block_fetch_handler) const;
-    void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
-
-    /// Remove all message vectors that match block hashes.
-    void filter(get_data_ptr message) const;
 
 protected:
     bool stopped() const;
@@ -70,16 +63,9 @@ protected:
 
 private:
     // Verify sub-sequence.
-    void handle_check(const code& ec, transaction_const_ptr tx,
-        result_handler handler);
-    void handle_accept(const code& ec, transaction_const_ptr tx,
-        result_handler handler);
-    void handle_connect(const code& ec, transaction_const_ptr tx,
-        result_handler handler);
+    void handle_accept(const code& ec, transaction_const_ptr tx, result_handler handler);
+    void handle_connect(const code& ec, transaction_const_ptr tx, result_handler handler);
     void signal_completion(const code& ec);
-
-    // Subscription.
-    void notify(transaction_const_ptr tx);
 
     // These are thread safe.
     fast_chain& fast_chain_;
@@ -87,10 +73,8 @@ private:
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
     const settings& settings_;
-    dispatcher& dispatch_;
-    transaction_pool transaction_pool_;
+    transaction_pool& pool_;
     validate_transaction validator_;
-    transaction_subscriber::ptr subscriber_;
 };
 
 } // namespace blockchain

@@ -26,8 +26,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_block.hpp>
@@ -36,55 +34,46 @@ namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe.
-/// Organises blocks via the block pool to the blockchain.
+/// Organises blocks to the store.
 class BCB_API block_organizer
 {
 public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<block_organizer> ptr;
-    typedef safe_chain::reorganize_handler reorganize_handler;
-    typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
-        block_const_ptr_list_const_ptr> reorganize_subscriber;
+    typedef std::function<bool(code, block_const_ptr, size_t)> download_handler;
+    typedef resubscriber<code, block_const_ptr, size_t> download_subscriber;
 
     /// Construct an instance.
-    block_organizer(prioritized_mutex& mutex, dispatcher& dispatch,
-        threadpool& thread_pool, fast_chain& chain, const settings& settings);
+    block_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
+        threadpool& threads, fast_chain& chain, header_pool& pool,
+        const settings& settings);
 
+    // Start/stop the organizer.
     bool start();
     bool stop();
 
-    void organize(block_const_ptr block, result_handler handler);
-    void subscribe(reorganize_handler&& handler);
-    void unsubscribe();
+    /// validate and organize a block into the store.
+    code organize(block_const_ptr block, size_t height);
 
 protected:
     bool stopped() const;
 
 private:
     // Verify sub-sequence.
-    void handle_check(const code& ec, block_const_ptr block,
-        result_handler handler);
-    void handle_accept(const code& ec, block_const_ptr branch,
-        result_handler handler);
-    void handle_connect(const code& ec, block_const_ptr branch,
-        result_handler handler);
-    void handle_reorganized(const code& ec, 
-        block_const_ptr_list_const_ptr incoming,
-        block_const_ptr_list_ptr outgoing, result_handler handler);
+    code validate(block_const_ptr block);
+    bool handle_check(const code& ec, block_const_ptr block, size_t height);
+    void handle_accept(const code& ec, block_const_ptr block, result_handler handler);
+    void handle_connect(const code& ec, block_const_ptr block, result_handler handler);
     void signal_completion(const code& ec);
-
-    // Subscription.
-    void notify(size_t fork_height, block_const_ptr_list_const_ptr incoming,
-        block_const_ptr_list_const_ptr outgoing);
 
     // These are thread safe.
     fast_chain& fast_chain_;
     prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<code> resume_;
-    dispatcher& dispatch_;
+    header_pool& pool_;
     validate_block validator_;
-    reorganize_subscriber::ptr subscriber_;
+    download_subscriber::ptr downloader_subscriber_;
 };
 
 } // namespace blockchain

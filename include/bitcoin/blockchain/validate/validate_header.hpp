@@ -41,7 +41,7 @@ public:
     void start();
     void stop();
 
-    void check(header_const_ptr header, result_handler handler) const;
+    code check(header_const_ptr block) const;
     void accept(header_branch::ptr branch, result_handler handler) const;
 
 protected:

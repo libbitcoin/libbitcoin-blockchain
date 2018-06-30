@@ -33,6 +33,8 @@
 #include <bitcoin/blockchain/organizers/header_organizer.hpp>
 #include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
+#include <bitcoin/blockchain/pools/transaction_pool.hpp>
 #include <bitcoin/blockchain/populate/populate_chain_state.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
@@ -44,11 +46,16 @@ class BCB_API block_chain
   : public safe_chain, public fast_chain, noncopyable
 {
 public:
+    typedef resubscriber<code, size_t, block_const_ptr_list_const_ptr,
+        block_const_ptr_list_const_ptr> block_subscriber;
+    typedef resubscriber<code, size_t, header_const_ptr_list_const_ptr,
+        header_const_ptr_list_const_ptr> header_subscriber;
+    typedef resubscriber<code, transaction_const_ptr> transaction_subscriber;
+
     /// Relay transactions is network setting that is passed through to block
     /// population as an optimization. This can be removed once there is an
     /// in-memory cache of tx pool metadata, as the costly query will go away.
-    block_chain(threadpool& pool,
-        const blockchain::settings& chain_settings,
+    block_chain(threadpool& pool, const blockchain::settings& settings,
         const database::settings& database_settings);
 
     /// The database is closed on destruct, threads must be joined.
@@ -62,102 +69,138 @@ public:
     // ------------------------------------------------------------------------
     // Thread safe.
 
-    /// Get the highest confirmed block of the header index.
-    size_t get_fork_point() const;
-
-    /// Get top block or header-indexed header.
+    /// Get highest confirmed or candidate header.
     bool get_top(chain::header& out_header, size_t& out_height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get highest block or header index checkpoint.
-    bool get_top(config::checkpoint& out_checkpoint, bool block_index) const;
+    /// Get highest confirmed or candidate checkpoint.
+    bool get_top(config::checkpoint& out_checkpoint, bool candidate) const;
 
-    /// Get height of highest block in the block or header index.
-    bool get_top_height(size_t& out_height, bool block_index) const;
+    /// Get height of highest confirmed or candidate header.
+    bool get_top_height(size_t& out_height, bool candidate) const;
 
-    /// Get the block or header-indexed header by height.
+    /// Get confirmed or candidate header by height.
     bool get_header(chain::header& out_header, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the block or header-indexed header by hash.
+    /// Get confirmed or candidate header by hash.
     bool get_header(chain::header& out_header, size_t& out_height,
-        const hash_digest& block_hash, bool block_index) const;
+        const hash_digest& block_hash, bool candidate) const;
 
-    /// False if the block is not pending (for caller loop).
-    bool get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-        size_t height) const;
-
-    /// Get the hash of the block at the given index height.
+    /// Get hash of the confirmed or candidate block by index height.
     bool get_block_hash(hash_digest& out_hash, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
     /// Get the cached error result code of a cached invalid block.
     bool get_block_error(code& out_error, const hash_digest& block_hash) const;
 
-    /// Get the cached error result code of a cached invalid transaction.
-    bool get_transaction_error(code& out_error,
-        const hash_digest& tx_hash) const;
-
-    /// Get the bits of the block with the given index height.
+    /// Get bits of the confirmed or candidate block by index height.
     bool get_bits(uint32_t& out_bits, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the timestamp of the block with the given index height.
+    /// Get timestamp of the confirmed or candidate block by index height.
     bool get_timestamp(uint32_t& out_timestamp, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the version of the block with the given index height.
+    /// Get version of the confirmed or candidate block by index height.
     bool get_version(uint32_t& out_version, size_t height,
-        bool block_index) const;
+        bool candidate) const;
 
-    /// Get the work of blocks above the given index height.
-    bool get_work(uint256_t& out_work, const uint256_t& maximum,
-        size_t above_height, bool block_index) const;
+    /// Get work of the confirmed or candidate block by index height.
+    bool get_work(uint256_t& out_work, const uint256_t& overcome,
+        size_t above_height, bool candidate) const;
+
+    /// Get the block hash of an empty block, or false if missing or invalid.
+    bool get_downloadable(hash_digest& out_hash, size_t height) const;
 
     /// Populate metadata of the given block header.
-    void populate_header(const chain::header& header,
-        size_t fork_height=max_size_t) const;
+    void populate_header(const chain::header& header) const;
 
-    /// Populate metadata of the given transaction.
-    /// Sets metadata based on fork point, ignore indexing if max fork point.
-    void populate_transaction(const chain::transaction& tx,
-        uint32_t forks, size_t fork_height=max_size_t) const;
+    /// Populate metadata of the given transaction for block inclusion.
+    void populate_block_transaction(const chain::transaction& tx,
+        uint32_t forks, size_t fork_height) const;
+
+    /// Populate metadata of the given transaction for pool inclusion.
+    void populate_pool_transaction(const chain::transaction& tx,
+        uint32_t forks) const;
 
     /// Get the output that is referenced by the outpoint.
-    /// Sets metadata based on fork point and confirmation requirement. 
+    /// Sets metadata based on fork point. 
     void populate_output(const chain::output_point& outpoint,
-        size_t fork_height=max_size_t) const;
+        size_t fork_height, bool candidate) const;
 
-    /// Get the state of the given block (flags).
+    /// Get state (flags) of candidate or confirmed block by height.
+    uint8_t get_block_state(size_t height, bool candidate) const;
+
+    /// Get state (flags) of the given block by hash.
     uint8_t get_block_state(const hash_digest& block_hash) const;
 
-    /// Get the state of the given transaction.
-    database::transaction_state get_transaction_state(
-        const hash_digest& tx_hash) const;
+    /////// Get state of the given transaction by hash.
+    ////database::transaction_state get_transaction_state(
+    ////    const hash_digest& tx_hash) const;
+
+    /// Get populated confirmed or candidate header by height (or null).
+    header_const_ptr get_header(size_t height, bool candidate) const;
+
+    /// Get populated confirmed or candidate block by height (or null).
+    block_const_ptr get_block(size_t height, bool witness,
+        bool candidate) const;
 
     // Writers.
     // ------------------------------------------------------------------------
-    // Thread safe (except for push block).
 
-    /// Push a validated header chain to the header index.
-    bool reindex(const config::checkpoint& fork_point,
-        header_const_ptr_list_const_ptr incoming,
-        header_const_ptr_list_ptr outgoing);
+    /// Store unconfirmed tx that was verified with the given forks.
+    code store(transaction_const_ptr tx);
 
-    /// Push unconfirmed tx to tx table and index outputs (not used by node).
-    bool push(transaction_const_ptr tx);
+    /// Reorganize the header index to fork point, mark/unmark index spends.
+    code reorganize(const config::checkpoint& fork,
+        header_const_ptr_list_const_ptr incoming);
 
-    /// Push a block to blockchain, height validated (not used by node).
-    bool push(block_const_ptr block, size_t height, uint32_t median_time_past);
+    /// Update the stored block with txs.
+    code update(block_const_ptr block, size_t height);
+
+    /// Set the block validation state.
+    code invalidate(const chain::header& header, const code& error);
+
+    /// Set the block validation state and all candidate chain ancestors.
+    code invalidate(block_const_ptr block, size_t height);
+
+    /// Set the block validation state and mark spent outputs.
+    code candidate(block_const_ptr block);
+
+    /// Reorganize the block index to the fork point, unmark index spends.
+    code reorganize(block_const_ptr_list_const_ptr branch_cache,
+        size_t branch_height);
 
     // Properties
     // ------------------------------------------------------------------------
 
-    /// Get chain state for header pool.
-    chain::chain_state::ptr header_pool_state() const;
+    /// Highest common block between candidate and confirmed chains.
+    config::checkpoint fork_point() const;
 
-    /// Get chain state for transaction pool.
-    chain::chain_state::ptr transaction_pool_state() const;
+    /// Get chain state for top candidate block (may not be valid).
+    chain::chain_state::ptr top_candidate_state() const;
+
+    /// Get chain state for top valid candidate (may be higher confirmeds).
+    chain::chain_state::ptr top_valid_candidate_state() const;
+
+    /// Get chain state for transaction pool (top confirmed plus one).
+    chain::chain_state::ptr next_confirmed_state() const;
+
+    /// True if the top candidate age exceeds the configured limit.
+    bool is_candidates_stale() const;
+
+    /// True if the top valid candidate age exceeds the configured limit.
+    bool is_validated_stale() const;
+
+    /// True if the top block age exceeds the configured limit.
+    bool is_blocks_stale() const;
+
+    /// The candidate chain has greater valid work than the confirmed chain.
+    bool is_reorganizable() const;
+
+    // Chain State
+    // ------------------------------------------------------------------------
 
     /// Get chain state for the given indexed header.
     chain::chain_state::ptr chain_state(const chain::header& header,
@@ -169,12 +212,6 @@ public:
 
     /// Promote chain state for the last header in the multi-header branch.
     chain::chain_state::ptr promote_state(header_branch::const_ptr branch) const;
-
-    /// True if the top block age exceeds the configured limit.
-    bool is_blocks_stale() const;
-
-    /// True if the top header age exceeds the configured limit.
-    bool is_headers_stale() const;
 
     // ========================================================================
     // SAFE CHAIN
@@ -301,14 +338,14 @@ public:
     // Subscribers.
     //-------------------------------------------------------------------------
 
-    /// Subscribe to indexed header reorganizations, get branch/height.
-    void subscribe_headers(reindex_handler&& handler);
-
     /// Subscribe to confirmed block reorganizations, get branch/height.
-    void subscribe_blockchain(reorganize_handler&& handler);
+    void subscribe_blocks(block_handler&& handler);
+
+    /// Subscribe to indexed header reorganizations, get branch/height.
+    void subscribe_headers(header_handler&& handler);
 
     /// Subscribe to memory pool additions, get transaction.
-    void subscribe_transaction(transaction_handler&& handler);
+    void subscribe_transactions(transaction_handler&& handler);
 
     /// Send null data success notification to all subscribers.
     void unsubscribe();
@@ -316,70 +353,94 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    /// Organize a header into the header pool if valid.
+    /// Store a block's transactions and organize accordingly.
+    code organize(block_const_ptr block, size_t height);
+
+    /// Organize a header into the candidate chain and organize accordingly.
     void organize(header_const_ptr header, result_handler handler);
 
-    /// Organize a block into the block pool if valid.
-    void organize(block_const_ptr block, result_handler handler);
-
-    /// Store a transaction to the pool if valid.
+    /// Store a transaction to the pool.
     void organize(transaction_const_ptr tx, result_handler handler);
-
-    /// Add the block's transactions to the header, height is validated.
-    code update(block_const_ptr block, size_t height);
 
     // Properties.
     //-------------------------------------------------------------------------
-
-    /////// True if the top block age exceeds the configured limit.
-    ////bool is_blocks_stale() const;
-
-    /////// True if the top header age exceeds the configured limit.
-    ////bool is_headers_stale() const;
 
     /// Get a reference to the blockchain configuration settings.
     const settings& chain_settings() const;
 
 protected:
 
-    /// Determine if work should terminate early with service stopped code.
+    // Determine if work should terminate early with service stopped code.
     bool stopped() const;
 
+    // Notification senders.
+    void notify(transaction_const_ptr tx);
+    void notify(size_t fork_height, header_const_ptr_list_const_ptr incoming,
+        header_const_ptr_list_const_ptr outgoing);
+    void notify(size_t fork_height, block_const_ptr_list_const_ptr incoming,
+        block_const_ptr_list_const_ptr outgoing);
+
 private:
+    // Properties.
+    uint256_t candidate_work() const;
+    uint256_t confirmed_work() const;
+
+    bool set_fork_point();
+    bool set_candidate_work();
+    bool set_confirmed_work();
+    bool set_top_candidate_state();
+    bool set_top_valid_candidate_state();
+    bool set_next_confirmed_state();
+
+    void set_fork_point(const config::checkpoint& fork);
+    void set_candidate_work(const uint256_t& work_above_fork);
+    void set_confirmed_work(const uint256_t& work_above_fork);
+    void set_top_candidate_state(chain::chain_state::ptr top);
+    void set_top_valid_candidate_state(chain::chain_state::ptr top);
+    void set_next_confirmed_state(chain::chain_state::ptr top);
+
     // Utilities.
-    //-------------------------------------------------------------------------
-
-    bool set_pool_states();
-    void set_header_pool_state(chain::chain_state::ptr top);
-    void set_transaction_pool_state(chain::chain_state::ptr top);
-
+    void index_block(block_const_ptr block);
+    void index_transaction(transaction_const_ptr tx);
     bool get_transactions(chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(hash_list& out_hashes,
         const database::block_result& result) const;
 
-    // These are thread safe.
-    std::atomic<bool> stopped_;
-    const settings& settings_;
-
-    // Last item cache.
-    bc::atomic<block_const_ptr> last_block_;
-    bc::atomic<header_const_ptr> last_header_;
-    bc::atomic<transaction_const_ptr> last_transaction_;
-
-    // Pool item cache.
-    bc::atomic<chain::chain_state::ptr> header_pool_state_;
-    bc::atomic<chain::chain_state::ptr> transaction_pool_state_;
-
-    const populate_chain_state chain_state_populator_;
+    // This is protected by mutex.
     database::data_base database_;
 
     // These are thread safe.
+    std::atomic<bool> stopped_;
+
+    bc::atomic<config::checkpoint> fork_point_;
+    bc::atomic<uint256_t> candidate_work_;
+    bc::atomic<uint256_t> confirmed_work_;
+    bc::atomic<block_const_ptr> last_block_;
+    bc::atomic<transaction_const_ptr> last_transaction_;
+    bc::atomic<chain::chain_state::ptr> top_candidate_state_;
+    bc::atomic<chain::chain_state::ptr> top_valid_candidate_state_;
+    bc::atomic<chain::chain_state::ptr> next_confirmed_state_;
+
+    const settings& settings_;
+    const populate_chain_state chain_state_populator_;
+    const bool index_addresses_;
+
     mutable prioritized_mutex validation_mutex_;
     mutable threadpool priority_pool_;
+    mutable dispatcher priority_;
     mutable dispatcher dispatch_;
+
+    header_pool header_pool_;
+    transaction_pool transaction_pool_;
+
+    block_organizer block_organizer_;
     header_organizer header_organizer_;
     transaction_organizer transaction_organizer_;
+
+    block_subscriber::ptr block_subscriber_;
+    header_subscriber::ptr header_subscriber_;
+    transaction_subscriber::ptr transaction_subscriber_;
 };
 
 } // namespace blockchain

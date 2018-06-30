@@ -25,7 +25,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -49,7 +48,7 @@ populate_chain_state::populate_chain_state(const fast_chain& chain,
 }
 
 bool populate_chain_state::get_bits(uint32_t& bits, size_t height,
-    const header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool candidate) const
 {
     if (height == header_height)
     {
@@ -57,11 +56,11 @@ bool populate_chain_state::get_bits(uint32_t& bits, size_t height,
         return true;
     }
 
-    return fast_chain_.get_bits(bits, height, block_index);
+    return fast_chain_.get_bits(bits, height, candidate);
 }
 
 bool populate_chain_state::get_version(uint32_t& version, size_t height,
-    const header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool candidate) const
 {
     if (height == header_height)
     {
@@ -69,11 +68,11 @@ bool populate_chain_state::get_version(uint32_t& version, size_t height,
         return true;
     }
 
-    return fast_chain_.get_version(version, height, block_index);
+    return fast_chain_.get_version(version, height, candidate);
 }
 
 bool populate_chain_state::get_timestamp(uint32_t& time, size_t height,
-    const header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool candidate) const
 {
     if (height == header_height)
     {
@@ -81,11 +80,11 @@ bool populate_chain_state::get_timestamp(uint32_t& time, size_t height,
         return true;
     }
 
-    return fast_chain_.get_timestamp(time, height, block_index);
+    return fast_chain_.get_timestamp(time, height, candidate);
 }
 
 bool populate_chain_state::get_block_hash(hash_digest& hash, size_t height,
-    const header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool candidate) const
 {
     if (height == header_height)
     {
@@ -93,12 +92,12 @@ bool populate_chain_state::get_block_hash(hash_digest& hash, size_t height,
         return true;
     }
 
-    return fast_chain_.get_block_hash(hash, height, block_index);
+    return fast_chain_.get_block_hash(hash, height, candidate);
 }
 
 bool populate_chain_state::populate_bits(chain_state::data& data,
     const chain_state::map& map, const header& header, size_t header_height,
-    bool block_index) const
+    bool confirmed) const
 {
     auto& bits = data.bits.ordered;
     bits.resize(map.bits.count);
@@ -106,16 +105,16 @@ bool populate_chain_state::populate_bits(chain_state::data& data,
 
     for (auto& bit: bits)
         if (!get_bits(bit, ++height,
-            header, header_height, block_index))
+            header, header_height, confirmed))
             return false;
 
     return get_bits(data.bits.self, map.bits_self,
-        header, header_height, block_index);
+        header, header_height, confirmed);
 }
 
 bool populate_chain_state::populate_versions(chain_state::data& data,
     const chain_state::map& map, const header& header, size_t header_height,
-    bool block_index) const
+    bool candidate) const
 {
     auto& versions = data.version.ordered;
     versions.resize(map.version.count);
@@ -123,16 +122,16 @@ bool populate_chain_state::populate_versions(chain_state::data& data,
 
     for (auto& version: versions)
         if (!get_version(version, ++height,
-            header, header_height, block_index))
+            header, header_height, candidate))
             return false;
 
     return get_version(data.version.self, map.version_self,
-        header, header_height, block_index);
+        header, header_height, candidate);
 }
 
 bool populate_chain_state::populate_timestamps(chain_state::data& data,
     const chain_state::map& map, const header& header, size_t header_height,
-    bool block_index) const
+    bool candidate) const
 {
     data.timestamp.retarget = unspecified_timestamp;
     auto& timestamps = data.timestamp.ordered;
@@ -141,24 +140,24 @@ bool populate_chain_state::populate_timestamps(chain_state::data& data,
 
     for (auto& timestamp: timestamps)
         if (!get_timestamp(timestamp, ++height,
-            header, header_height, block_index))
+            header, header_height, candidate))
             return false;
 
     // Retarget is required if timestamp_retarget is not unrequested.
     if (map.timestamp_retarget != chain_state::map::unrequested &&
         !get_timestamp(data.timestamp.retarget, map.timestamp_retarget,
-            header, header_height, block_index))
+            header, header_height, candidate))
     {
         return false;
     }
 
     return get_timestamp(data.timestamp.self, map.timestamp_self,
-        header, header_height, block_index);
+        header, header_height, candidate);
 }
 
 bool populate_chain_state::populate_bip9_bit0(chain_state::data& data,
     const chain_state::map& map, const header& header, size_t header_height,
-    bool block_index) const
+    bool candidate) const
 {
     if (map.bip9_bit0_height == chain_state::map::unrequested)
     {
@@ -167,12 +166,12 @@ bool populate_chain_state::populate_bip9_bit0(chain_state::data& data,
     }
 
     return get_block_hash(data.bip9_bit0_hash, map.bip9_bit0_height,
-        header, header_height, block_index);
+        header, header_height, candidate);
 }
 
 bool populate_chain_state::populate_bip9_bit1(chain_state::data& data,
     const chain_state::map& map, const header& header, size_t header_height,
-    bool block_index) const
+    bool candidate) const
 {
     if (map.bip9_bit1_height == chain_state::map::unrequested)
     {
@@ -181,43 +180,53 @@ bool populate_chain_state::populate_bip9_bit1(chain_state::data& data,
     }
 
     return get_block_hash(data.bip9_bit1_hash, map.bip9_bit1_height,
-        header, header_height, block_index);
+        header, header_height, candidate);
 }
 
 bool populate_chain_state::populate_all(chain_state::data& data,
-    const chain::header& header, size_t header_height, bool block_index) const
+    const header& header, size_t header_height, bool candidate) const
 {
     // Construct the map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_, forks_);
 
     return
-        populate_bits(data, map, header, header_height, block_index) &&
-        populate_versions(data, map, header, header_height, block_index) &&
-        populate_timestamps(data, map, header, header_height, block_index) &&
-        populate_bip9_bit0(data, map, header, header_height, block_index) &&
-        populate_bip9_bit1(data, map, header, header_height, block_index);
+        populate_bits(data, map, header, header_height, candidate) &&
+        populate_versions(data, map, header, header_height, candidate) &&
+        populate_timestamps(data, map, header, header_height, candidate) &&
+        populate_bip9_bit0(data, map, header, header_height, candidate) &&
+        populate_bip9_bit1(data, map, header, header_height, candidate);
 }
 
 // Populate chain state for the top block|header.
-chain_state::ptr populate_chain_state::populate(bool block_index) const
+chain_state::ptr populate_chain_state::populate(bool candidate) const
 {
+    header header;
     size_t header_height;
-    chain::header header;
 
-    return fast_chain_.get_top(header, header_height, block_index) ?
-        populate(header, header_height, block_index) : nullptr;
+    return fast_chain_.get_top(header, header_height, candidate) ?
+        populate(header, header_height, candidate) : nullptr;
+}
+
+// Get chain state for the given block|header by height.
+chain_state::ptr populate_chain_state::populate(size_t header_height,
+    bool candidate) const
+{
+    header header;
+
+    return fast_chain_.get_header(header, header_height, candidate) ?
+        populate(header, header_height, candidate) : nullptr;
 }
 
 // Get chain state for the given block|header.
 // Only hash and height are queried from the current block/header.
-chain_state::ptr populate_chain_state::populate(const chain::header& header,
-    size_t header_height, bool block_index) const
+chain_state::ptr populate_chain_state::populate(const header& header,
+    size_t header_height, bool candidate) const
 {
     chain_state::data data;
     data.height = header_height;
     data.hash = header.hash();
 
-    return populate_all(data, header, header_height, block_index) ?
+    return populate_all(data, header, header_height, candidate) ?
         std::make_shared<chain_state>(std::move(data), checkpoints_,
             forks_, stale_seconds_) : nullptr;
 }

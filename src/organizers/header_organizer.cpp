@@ -25,9 +25,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
-#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_header.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,18 +37,14 @@ using namespace std::placeholders;
 
 #define NAME "header_organizer"
 
-// Database access is limited to { bits, version, timestamp }.
-
 header_organizer::header_organizer(prioritized_mutex& mutex,
-    dispatcher& dispatch, threadpool& thread_pool, fast_chain& chain,
-    const settings& settings)
+    dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
+    header_pool& pool, const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    dispatch_(dispatch),
-    header_pool_(settings.reorganization_limit),
-    validator_(dispatch, chain, settings),
-    subscriber_(std::make_shared<reindex_subscriber>(thread_pool, NAME))
+    pool_(pool),
+    validator_(priority_dispatch, chain, settings)
 {
 }
 
@@ -68,7 +62,6 @@ bool header_organizer::stopped() const
 bool header_organizer::start()
 {
     stopped_ = false;
-    subscriber_->start();
     validator_.start();
     return true;
 }
@@ -76,33 +69,53 @@ bool header_organizer::start()
 bool header_organizer::stop()
 {
     validator_.stop();
-    subscriber_->stop();
-    subscriber_->invoke(error::service_stopped, 0, {}, {});
     stopped_ = true;
     return true;
 }
 
 // Organize sequence.
 //-----------------------------------------------------------------------------
+// This runs in single thread normal priority.
 
 // This is called from block_chain::organize.
 void header_organizer::organize(header_const_ptr header,
     result_handler handler)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock_high_priority();
+    code error_code;
+
+    // Checks that are independent of chain state.
+    if ((error_code = validator_.check(header)))
+    {
+        handler(error_code);
+        return;
+    }
 
     const result_handler complete =
         std::bind(&header_organizer::handle_complete,
             this, _1, handler);
 
-    const auto check_handler =
-        std::bind(&header_organizer::handle_check,
-            this, _1, header, complete);
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock_high_priority();
 
-    // Checks that are independent of chain state.
-    validator_.check(header, check_handler);
+    // The pool is safe for filtering only, so protect by critical section.
+    // This sets height and presumes the fork point is an indexed header.
+    const auto branch = pool_.get_branch(header);
+
+    // See symmetry with tx metadata memory pool.
+    // The header is already memory pooled (nothing to do).
+    if (branch->empty())
+    {
+        complete(error::duplicate_block);
+        return;
+    }
+
+    const auto accept_handler =
+        std::bind(&header_organizer::handle_accept,
+            this, _1, branch, complete);
+
+    // Checks that are dependent on chain state.
+    validator_.accept(branch, accept_handler);
 }
 
 // private
@@ -119,41 +132,18 @@ void header_organizer::handle_complete(const code& ec, result_handler handler)
 //-----------------------------------------------------------------------------
 
 // private
-//*****************************************************************************
-// CONSENSUS: Hash existence is the same check performed by satoshi, yet it
-// will produce a chain split in the case of a hash collision. This is because
-// it is not applied at the branch point, so some nodes will not see the
-// collision block and others will, depending on block order of arrival.
-// The hash collision is explicitly ignored for block hashes.
-//*****************************************************************************
-void header_organizer::handle_check(const code& ec, header_const_ptr header,
-    result_handler handler)
-{
-    if (ec)
-    {
-        handler(ec);
-        return;
-    }
-
-    // This sets height and presumes the fork point is an indexed header.
-    const auto branch = header_pool_.get_branch(header);
-
-    const auto accept_handler =
-        std::bind(&header_organizer::handle_accept,
-            this, _1, branch, handler);
-
-    // Checks that are dependent on chain state.
-    validator_.accept(branch, accept_handler);
-}
-
-// private
 void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     result_handler handler)
 {
-    // A header-pooled (duplicate) header is returned here.
-    // An existing (duplicate) indexed or confirmed header is returned here.
-    // A stored but invalid block is returned with validation code here.
-    // A pooled header skips validation and only updates on store.
+    // The header may exist in the store in any not-invalid state.
+    // An invalid state causes an error result and block rejection.
+
+    if (stopped())
+    {
+        handler(error::service_stopped);
+        return;
+    }
+
     if (ec)
     {
         handler(ec);
@@ -162,85 +152,38 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
 
     // The top block is valid even if the branch has insufficient work.
     const auto top = branch->top();
-
-    // TODO: create a simulated validation path that does not block others.
-    if (top->metadata.simulate)
-    {
-        handler(error::success);
-        return;
-    }
-
     const auto work = branch->work();
-    uint256_t required;
+    uint256_t required_work;
 
     // This stops before the height or at the work level, which ever is first.
-    if (!fast_chain_.get_work(required, work, branch->height(), false))
+    if (!fast_chain_.get_work(required_work, work, branch->height(), true))
     {
         handler(error::operation_failed);
         return;
     }
 
-    if (work <= required)
+    // Consensus.
+    if (work <= required_work)
     {
-        header_pool_.add(top, branch->top_height());
+        pool_.add(top, branch->top_height());
         handler(error::insufficient_work);
         return;
     }
 
-    // Get the outgoing headers to forward to reorg handler.
-    const auto outgoing = std::make_shared<header_const_ptr_list>();
-
-    // Replace! Switch!
     //#########################################################################
-    const auto result = fast_chain_.reindex(branch->fork_point(),
-        branch->headers(), outgoing);
+    const auto error_code = fast_chain_.reorganize(branch->fork_point(),
+        branch->headers());
     //#########################################################################
 
-    if (!result)
+    if (error_code)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure writing header to store, is now corrupted: ";
-        handler(error::operation_failed);
+        handler(error_code);
         return;
     }
 
-    header_pool_.remove(branch->headers());
-    header_pool_.prune(branch->top_height());
-    header_pool_.add(outgoing, branch->height() + 1);
-    notify(branch->height(), branch->headers(), outgoing);
-    handler(error::success);
-}
-
-// Subscription.
-//-----------------------------------------------------------------------------
-
-// private
-void header_organizer::notify(size_t fork_height,
-    header_const_ptr_list_const_ptr incoming,
-    header_const_ptr_list_const_ptr outgoing)
-{
-    // This invokes handlers within the criticial section (deadlock risk).
-    subscriber_->invoke(error::success, fork_height, incoming, outgoing);
-}
-
-// This allows subscriber to become aware of pending and obsolete downloads.
-void header_organizer::subscribe(reindex_handler&& handler)
-{
-    subscriber_->subscribe(std::move(handler),
-        error::service_stopped, 0, {}, {});
-}
-
-void header_organizer::unsubscribe()
-{
-    subscriber_->relay(error::success, 0, {}, {});
-}
-
-// Queries.
-//-----------------------------------------------------------------------------
-
-void header_organizer::filter(get_data_ptr message) const
-{
-    header_pool_.filter(message);
+    handler(error_code);
 }
 
 } // namespace blockchain

@@ -41,23 +41,36 @@ using namespace std::placeholders;
 #define NAME "block_chain"
 
 block_chain::block_chain(threadpool& pool,
-    const blockchain::settings& chain_settings,
+    const blockchain::settings& settings,
     const database::settings& database_settings)
-  : stopped_(true),
-    settings_(chain_settings),
-    chain_state_populator_(*this, chain_settings),
-    database_(database_settings),
+  : database_(database_settings),
+    stopped_(true),
+    fork_point_({ null_hash, 0 }),
+    settings_(settings),
+    chain_state_populator_(*this, settings),
+    index_addresses_(database_settings.index_addresses),
 
-    // Enable block priority when write flushing is enabled (performance).
+    // Enable block/header priority when write flush enabled (performance).
     validation_mutex_(database_settings.flush_writes),
 
-    priority_pool_(thread_ceiling(chain_settings.cores),
-        priority(chain_settings.priority)),
-    dispatch_(priority_pool_, NAME "_priority"),
-    header_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings),
-    transaction_organizer_(validation_mutex_, dispatch_, pool, *this,
-        chain_settings)
+    // Metadata pools.
+    header_pool_(settings.reorganization_limit),
+    transaction_pool_(settings),
+
+    // Create dispatchers for priority and non-priority operations.
+    priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
+    priority_(priority_pool_, NAME "_priority"),
+    dispatch_(pool, NAME "_dispatch"),
+
+    // Organizers use priority dispatch and/or non-priority thread pool.
+    block_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
+
+    // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
+    block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
+    header_subscriber_(std::make_shared<header_subscriber>(pool, NAME "_header")),
+    transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_tx"))
 {
 }
 
@@ -68,41 +81,36 @@ block_chain::block_chain(threadpool& pool,
 // Readers.
 // ----------------------------------------------------------------------------
 
-size_t block_chain::get_fork_point() const
-{
-    return database_.blocks().fork_point();
-}
-
 bool block_chain::get_top(chain::header& out_header, size_t& out_height,
-    bool block_index) const
+    bool candidate) const
 {
-    return get_top_height(out_height, block_index) &&
-        get_header(out_header, out_height, block_index);
+    return get_top_height(out_height, candidate) &&
+        get_header(out_header, out_height, candidate);
 }
 
 bool block_chain::get_top(config::checkpoint& out_checkpoint,
-    bool block_index) const
+    bool candidate) const
 {
     size_t height;
     hash_digest hash;
 
-    if (!get_top_height(height, block_index) ||
-        !get_block_hash(hash, height, block_index))
+    if (!get_top_height(height, candidate) ||
+        !get_block_hash(hash, height, candidate))
         return false;
 
     out_checkpoint = { hash, height };
     return true;
 }
 
-bool block_chain::get_top_height(size_t& out_height, bool block_index) const
+bool block_chain::get_top_height(size_t& out_height, bool candidate) const
 {
-    return database_.blocks().top(out_height, block_index);
+    return database_.blocks().top(out_height, candidate);
 }
 
 bool block_chain::get_header(chain::header& out_header, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -113,46 +121,31 @@ bool block_chain::get_header(chain::header& out_header, size_t height,
 }
 
 bool block_chain::get_header(chain::header& out_header, size_t& out_height,
-    const hash_digest& block_hash, bool block_index) const
+    const hash_digest& block_hash, bool candidate) const
 {
     auto result = database_.blocks().get(block_hash);
-    const auto fork_height = block_index ? max_size_t :
-        database_.blocks().fork_point();
 
     if (!result)
         return false;
 
-    const auto state = result.state();
     const auto height = result.height();
-    const auto relevant = height <= fork_height;
-    const auto confirmed = is_indexed(state) ||
-        (is_confirmed(state) && relevant);
 
-    if (!confirmed)
-        return false;
+    // The only way to know if a header is indexed is from its presence in the
+    // index. It will not be marked as a candidate until validated as such.
+    if (database_.blocks().get(height, candidate))
+    {
+        out_header = result.header();
+        out_height = height;
+        return true;
+    }
 
-    out_header = result.header();
-    out_height = height;
-    return true;
-}
-
-bool block_chain::get_pending_block_hash(hash_digest& out_hash, bool& out_empty,
-    size_t height) const
-{
-    const auto result = database_.blocks().get(height, false);
-
-    if (!result || !is_pent(result.state()))
-        return false;
-
-    out_hash = result.hash();
-    out_empty = result.transaction_count() == 0;
-    return true;
+    return false;
 }
 
 bool block_chain::get_block_hash(hash_digest& out_hash, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    const auto result = database_.blocks().get(height, block_index);
+    const auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -173,22 +166,10 @@ bool block_chain::get_block_error(code& out_error,
     return true;
 }
 
-bool block_chain::get_transaction_error(code& out_error,
-    const hash_digest& tx_hash) const
-{
-    auto result = database_.transactions().get(tx_hash);
-
-    if (!result)
-        return false;
-
-    out_error = result.error();
-    return true;
-}
-
 bool block_chain::get_bits(uint32_t& out_bits, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -198,9 +179,9 @@ bool block_chain::get_bits(uint32_t& out_bits, size_t height,
 }
 
 bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -210,9 +191,9 @@ bool block_chain::get_timestamp(uint32_t& out_timestamp, size_t height,
 }
 
 bool block_chain::get_version(uint32_t& out_version, size_t height,
-    bool block_index) const
+    bool candidate) const
 {
-    auto result = database_.blocks().get(height, block_index);
+    auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
@@ -221,22 +202,29 @@ bool block_chain::get_version(uint32_t& out_version, size_t height,
     return true;
 }
 
-bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
-    size_t above_height, bool block_index) const
+bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
+    size_t above_height, bool candidate) const
 {
     size_t top;
     out_work = 0;
 
-    if (!database_.blocks().top(top, block_index))
+    if (!database_.blocks().top(top, candidate))
         return false;
 
-    for (auto height = top; height > above_height && out_work < maximum;
-        --height)
+    // Set overcome to zero to bypass early exit.
+    const auto no_maximum = overcome.is_zero();
+
+    for (auto height = top; (height > above_height) && 
+        (no_maximum || out_work <= overcome); --height)
     {
-        const auto result = database_.blocks().get(height, block_index);
+        const auto result = database_.blocks().get(height, candidate);
 
         if (!result)
             return false;
+
+        // Candidate chain is counted only to top validated block.
+        if (candidate && !is_valid(result.state()))
+            break;
 
         out_work += chain::header::proof(result.bits());
     }
@@ -244,94 +232,45 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& maximum,
     return true;
 }
 
-// Header indexing controlled by fork_height.
-// TODO: move into block database (see populate_output/get_output below).
-void block_chain::populate_header(const chain::header& header,
-    size_t fork_height) const
+bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
 {
-    const auto result = database_.blocks().get(header.hash());
+    const auto result = database_.blocks().get(height, true);
 
-    // Default values are correct for indication of not found.
-    if (!result)
-        return;
+    // Do not download if not found, invalid or already populated.
+    if (!result || is_failed(result.state()) ||
+        result.transaction_count() != 0)
+        return false;
 
-    const auto state = result.state();
-    const auto relevant = result.height() <= fork_height;
-
-    // Transactions are populated (count population is atomic).
-    header.metadata.populated = result.transaction_count() != 0;
-
-    // Stored headers are always valid, error refers to the block.
-    header.metadata.pooled = true;
-
-    // Duplicate implies that a new header should be ignored.
-    header.metadata.duplicate = is_indexed(state) ||
-        (is_confirmed(state) && relevant);
-
-    // An error results from block validation failure after tx download.
-    header.metadata.error = result.error();
+    out_hash = result.hash();
+    return true;
 }
 
-// Header indexing or pool controlled by fork_height.
-// TODO: move into tx database (see populate_output/get_output below).
-void block_chain::populate_transaction(const chain::transaction& tx,
+void block_chain::populate_header(const chain::header& header) const
+{
+    return database_.blocks().get_header_metadata(header);
+}
+
+void block_chain::populate_block_transaction(const chain::transaction& tx,
     uint32_t forks, size_t fork_height) const
 {
-    const auto result = database_.transactions().get(tx.hash());
+    return database_.transactions().get_block_metadata(tx, forks, fork_height);
+}
 
-    // Default values are correct for indication of not found.
-    if (!result)
-        return;
-
-    const auto state = result.state();
-    const auto height = result.height();
-    const auto relevant = height <= fork_height;
-    const auto for_pool = fork_height == max_size_t;
-
-    // Indexed transactions retain forks in height.
-    const auto fork_valid = forks == height;
-
-    // Confirmation is relative to header index (not block index).
-    const auto indexed =
-        (state == transaction_state::indexed) ||
-        (state == transaction_state::confirmed && relevant);
-
-    // Pooled implies that the tx should not be revalidated.
-    // Fork-valid is not applicable to indexed txs, as forks are not stored.
-    tx.metadata.pooled = !indexed && fork_valid;
-
-    // Duplicate implies that a new tx should be ignored.
-    tx.metadata.duplicate = indexed || (for_pool && fork_valid);
-
-    // This is currently always success, since there is no tx invalid state.
-    tx.metadata.error = result.error();
-
-    // This allows the existing transaction to be associated to a block.
-    tx.metadata.link = result.link();
-
-    //*************************************************************************
-    // CONSENSUS: The satoshi hard fork that reverts BIP30 after BIP34 makes a
-    // spentness test moot as tx hash collision is presumed impossible. Yet we
-    // prefer correct behavior in the "impossible" case vs. deleting money.
-    // But we can reject the rare scenario for the tx pool as an optimization.
-    //*************************************************************************
-    if (tx.metadata.duplicate && !for_pool && result.is_spent(fork_height))
-    {
-        // Treat a spent duplicate as if it did not exist.
-        // The original tx will not be queryable independent of the block.
-        // The original tx's block linkage is unbroken by accepting duplicate.
-        // If the new block is popped the original tx resurfaces automatically.
-        tx.metadata.pooled = false;
-        tx.metadata.duplicate = false;
-        tx.metadata.error = error::success;
-        tx.metadata.link = transaction::validation::undetermined_link;
-    }
+void block_chain::populate_pool_transaction(const chain::transaction& tx,
+    uint32_t forks) const
+{
+    return database_.transactions().get_pool_metadata(tx, forks);
 }
 
 void block_chain::populate_output(const chain::output_point& outpoint,
-    size_t fork_height) const
+    size_t fork_height, bool candidate) const
 {
-    database_.transactions().get_output(outpoint, fork_height);
+    database_.transactions().get_output(outpoint, fork_height, candidate);
+}
+
+uint8_t block_chain::get_block_state(size_t height, bool candidate) const
+{
+    return database_.blocks().get(height, candidate).state();
 }
 
 uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
@@ -339,74 +278,495 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
-database::transaction_state block_chain::get_transaction_state(
-    const hash_digest& tx_hash) const
+////database::transaction_state block_chain::get_transaction_state(
+////    const hash_digest& tx_hash) const
+////{
+////    return database_.transactions().get(tx_hash).state();
+////}
+
+block_const_ptr block_chain::get_block(size_t height, bool witness,
+    bool candidate) const
 {
-    return database_.transactions().get(tx_hash).state();
+    const auto cached = last_block_.load();
+
+    // Try the cached block first.
+    if (!candidate && cached && cached->header().metadata.state &&
+        cached->header().metadata.state->height() == height)
+        return cached;
+
+    const auto result = database_.blocks().get(height, candidate);
+
+    // A populated block was not found at the given height.
+    if (!result || result.transaction_count() == 0)
+        return {};
+
+    transaction::list txs;
+    BITCOIN_ASSERT(result.height() == height);
+
+    // False implies store corruption.
+    DEBUG_ONLY(const auto value =) get_transactions(txs, result, witness);
+    BITCOIN_ASSERT(value);
+    return std::make_shared<const block>(result.header(), std::move(txs));
+}
+
+header_const_ptr block_chain::get_header(size_t height, bool candidate) const
+{
+    const auto result = database_.blocks().get(height, candidate);
+
+    // A header was not found at the given height.
+    if (!result)
+        return {};
+
+    BITCOIN_ASSERT(result.height() == height);
+    return std::make_shared<const header>(result.header());
 }
 
 // Writers
 // ----------------------------------------------------------------------------
 
-bool block_chain::reindex(const config::checkpoint& fork_point,
-    header_const_ptr_list_const_ptr incoming,
-    header_const_ptr_list_ptr outgoing)
+// private
+void block_chain::index_block(block_const_ptr block)
 {
-    if (incoming->empty())
-        return false;
+    if (!index_addresses_)
+        return;
 
-    const auto ec = database_.reorganize(fork_point, incoming, outgoing);
+    code ec;
+    if ((ec = database_.index(*block)))
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure in block payment indexing, store is now corrupt: "
+            << ec.message();
 
-    if (ec)
-        return false;
-
-    // We never skip header validation and so must always have chain state.
-    const auto top_header = incoming->back();
-    set_header_pool_state(top_header->metadata.state);
-    last_header_.store(top_header);
-    return true;
+        // In the case of a store failure the server stops processing.
+        stop();
+    }
 }
 
-// Utility only.
-bool block_chain::push(transaction_const_ptr tx)
+// private
+void block_chain::index_transaction(transaction_const_ptr tx)
+{
+    if (!index_addresses_ || tx->metadata.existed)
+        return;
+
+    code ec;
+    if ((ec = database_.index(*tx)))
+    {
+        LOG_FATAL(LOG_BLOCKCHAIN)
+            << "Failure in transaction payment indexing, store is now corrupt: "
+            << ec.message();
+
+        // In the case of a store failure the server stops processing.
+        stop();
+    }
+}
+
+code block_chain::store(transaction_const_ptr tx)
 {
     const auto state = tx->metadata.state;
 
     if (!state)
-        return false;
+        return error::operation_failed;
 
+    // Clear chain state for store, index_transaction and notify.
+    tx->metadata.state.reset();
+
+    code ec;
+    if ((ec = database_.store(*tx, state->enabled_forks())))
+        return ec;
+
+    // Payment indexing is asynchronous, after tx is stored. Therefore
+    // it is possible for a tx to be in any existing state and not be indexed.
+    if (index_addresses_ && !tx->metadata.existed)
+        dispatch_.concurrent(&block_chain::index_transaction, this, tx);
+
+    notify(tx);
+
+    // Restore chain state for last_transaction_ cache.
+    tx->metadata.state = state;
     last_transaction_.store(tx);
-
-    // Transaction store is currently sequential so dispatch is not used.
-    return database_.store(*tx, state->enabled_forks()) == error::success;
+    return ec;
 }
 
-// Utility only.
-bool block_chain::push(block_const_ptr block, size_t height,
-    uint32_t median_time_past)
+code block_chain::reorganize(const config::checkpoint& fork,
+    header_const_ptr_list_const_ptr incoming)
 {
-    return database_.push(*block, height, median_time_past) == error::success;
+    if (incoming->empty())
+        return error::operation_failed;
+
+    const auto top = incoming->back();
+    const auto top_state = top->metadata.state;
+
+    if (!top_state)
+        return error::operation_failed;
+
+    // Clear incoming chain state for reorganize and notify.
+    std::for_each(incoming->begin(), incoming->end(),
+        [](header_const_ptr header) { header->metadata.state.reset(); });
+
+    code ec;
+    auto fork_height = fork.height();
+    header_const_ptr_list_ptr outgoing;
+
+    // This unmarks candidate txs and spent outputs (may have been validated).
+    if ((ec = database_.reorganize(fork, incoming, outgoing)))
+        return ec;
+
+    // Don't add outgoing because only populated after reorganize and at that
+    // point the headers are no longer indexed (populator requires indexation).
+    if (!incoming->empty())
+    {
+        header_pool_.remove(incoming);
+        header_pool_.prune(top_state->height());
+    }
+
+    // If confirmed fork point is above candidate fork point then lower it.
+    if (fork_point().height() > fork_height)
+    {
+        // Set new fork point and recompute confirmed work from it.
+        set_fork_point(fork);
+        set_confirmed_work();
+
+        // When fork point is lowered the top valid candidate is at fork point.
+        auto top_valid = chain_state_populator_.populate(fork_height, false);
+        set_top_valid_candidate_state(top_valid);
+        set_candidate_work(0);
+    }
+
+    set_top_candidate_state(top_state);
+    notify(fork_height, incoming, outgoing);
+    return ec;
+}
+
+code block_chain::update(block_const_ptr block, size_t height)
+{
+    code error_code;
+    const auto& metadata = block->header().metadata;
+
+    if (!metadata.error)
+    {
+        // Store or connect each transaction and set tx link metadata.
+        if ((error_code = database_.update(*block, height)))
+            return error_code;
+    }
+
+    if (metadata.validated)
+    {
+        // Set block validation state and error code.
+        error_code = database_.invalidate(block->header(), metadata.error);
+    }
+
+    return error_code;
+}
+
+code block_chain::invalidate(const chain::header& header, const code& error)
+{
+    // Mark candidate header as invalid.
+    return database_.invalidate(header, error);
+}
+
+// Mark candidate block and descendants as invalid and pop them.
+code block_chain::invalidate(block_const_ptr block, size_t block_height)
+{
+    const auto& header = block->header();
+    BITCOIN_ASSERT(header.metadata.error);
+
+    size_t top;
+    if (!get_top_height(top, true))
+        return error::operation_failed;
+
+    hash_digest fork_hash;
+    const auto fork_height = block_height - 1u;
+    if (!get_block_hash(fork_hash, fork_height, true))
+        return error::operation_failed;
+
+    code ec;
+    const config::checkpoint fork{ fork_hash, fork_height };
+    const auto outgoing = std::make_shared<header_const_ptr_list>();
+    const auto incoming = std::make_shared<header_const_ptr_list>();
+
+    // Copy first invalid candidate header to outgoing.
+    outgoing->push_back(std::make_shared<const message::header>(header));
+
+    // Copy all dependant invalid candidates to outgoing.
+    for (auto height = block_height + 1u; height <= top; ++height)
+        outgoing->push_back(get_header(height, true));
+
+    // Mark all outgoing candidate blocks as invalid, in store and metadata.
+    for (const auto header: *outgoing)
+        if ((ec = invalidate(*header, error::store_block_missing_parent)))
+            return ec;
+
+    // This should not have to unmark because none were ever valid.
+    if ((ec = database_.reorganize(fork, incoming, outgoing)))
+        return ec;
+
+    // Lower top candidate state to that of the top valid (previous header).
+    set_top_candidate_state(top_valid_candidate_state());
+
+    notify(fork_height, incoming, outgoing);
+    return ec;
+}
+
+// Mark candidate block as valid and mark candidate-spent outputs.
+code block_chain::candidate(block_const_ptr block)
+{
+    code ec;
+    const auto& header = block->header();
+    BITCOIN_ASSERT(!header.metadata.error);
+
+    // Mark candidate block valid, txs and outputs spent by them as candidate.
+    if ((ec = database_.candidate(*block)))
+        return ec;
+
+    // Advance the top valid candidate state and candidate work.
+    set_top_valid_candidate_state(header.metadata.state);
+    set_candidate_work(candidate_work() + header.proof());
+
+    // Payment indexing is asynchronous, after block is candidate. Therefore
+    // it is possible for a block to be in any valid state and not be indexed.
+    if (index_addresses_)
+        dispatch_.concurrent(&block_chain::index_block, this, block);
+
+    return ec;
+}
+
+// Reorganize this stronger candidate branch into confirmed chain.
+code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
+    size_t branch_height)
+{
+    if (branch_cache->empty())
+        return error::operation_failed;
+
+    const auto top = branch_cache->back();
+    const auto top_state = top->header().metadata.state;
+
+    if (!top_state)
+        return error::operation_failed;
+
+    code ec;
+    const auto fork = fork_point();
+    const auto outgoing = std::make_shared<block_const_ptr_list>();
+    const auto incoming = std::make_shared<block_const_ptr_list>();
+
+    // Get all missing incoming candidates (expensive reads).
+    for (auto height = fork.height() + 1u; height < branch_height; ++height)
+        incoming->push_back(get_block(height, true, true));
+
+    // Append all candidate pointers from the branch cache.
+    for (const auto block: *branch_cache)
+    {
+        // Clear chain state for reorganize and notify.
+        block->header().metadata.state.reset();
+        incoming->push_back(block);
+    }
+
+    // This unmarks candidate txs and spent outputs (because confirmed).
+    if ((ec = database_.reorganize(fork, incoming, outgoing)))
+        return ec;
+
+    // Top valid candidate is now top confirmed and the new fork point.
+    set_fork_point({ top->hash(), top_state->height() });
+    set_candidate_work(0);
+    set_confirmed_work(0);
+    set_next_confirmed_state(top_state);
+    notify(fork.height(), incoming, outgoing);
+
+    // Restore chain state for last_block_ cache.
+    top->header().metadata.state = top_state;
+    last_block_.store(top);
+    return ec;
 }
 
 // Properties.
 // ----------------------------------------------------------------------------
 
-// TODO: move header_pool_state_ into the header_pool.
-chain::chain_state::ptr block_chain::header_pool_state() const
+config::checkpoint block_chain::fork_point() const
 {
-    // The header_pool state is computed and cached upon top header update.
-    // Empty result indicates blockchain start failed (should not be here).
-    return header_pool_state_.load();
+    return fork_point_.load();
 }
 
-// TODO: move transaction_pool_state_ into the transaction_pool.
-// For tx validator, call only from validate critical section.
-chain::chain_state::ptr block_chain::transaction_pool_state() const
+// private.
+uint256_t block_chain::candidate_work() const
 {
-    // The pool state is computed and cached upon top block update.
-    // Empty result indicates blockchain start failed (should not be here).
-    return transaction_pool_state_.load();
+    return candidate_work_.load();
 }
+
+// private.
+uint256_t block_chain::confirmed_work() const
+{
+    return confirmed_work_.load();
+}
+
+chain::chain_state::ptr block_chain::top_candidate_state() const
+{
+    return top_candidate_state_.load();
+}
+
+chain::chain_state::ptr block_chain::top_valid_candidate_state() const
+{
+    return top_valid_candidate_state_.load();
+}
+
+chain::chain_state::ptr block_chain::next_confirmed_state() const
+{
+    return next_confirmed_state_.load();
+}
+
+// private.
+bool block_chain::set_fork_point()
+{
+    size_t candidate_height;
+    size_t confirmed_height;
+
+    if (!get_top_height(candidate_height, true) ||
+        !get_top_height(confirmed_height, false))
+        return false;
+
+    hash_digest candidate_hash;
+    hash_digest confirmed_hash;
+    auto common = std::min(candidate_height, confirmed_height);
+
+    // The loop must at least terminate on the genesis block.
+    BITCOIN_ASSERT(get_block_hash(candidate_hash, 0, true));
+    BITCOIN_ASSERT(get_block_hash(confirmed_hash, 0, false));
+    BITCOIN_ASSERT(candidate_hash == confirmed_hash);
+
+    while (get_block_hash(candidate_hash, common, true) &&
+        get_block_hash(confirmed_hash, common, false) &&
+        candidate_hash != confirmed_hash)
+        --common;
+
+    set_fork_point({ confirmed_hash, common });
+    return true;
+}
+
+// private.
+bool block_chain::set_candidate_work()
+{
+    BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
+
+    uint256_t work_above_fork;
+    if (!get_work(work_above_fork, 0, fork_point().height(), true))
+        return false;
+
+    set_candidate_work(work_above_fork);
+    return true;
+}
+
+// private.
+bool block_chain::set_confirmed_work()
+{
+    BITCOIN_ASSERT_MSG(fork_point().hash() != null_hash, "Set fork point.");
+
+    uint256_t work_above_fork;
+    if (!get_work(work_above_fork, 0, fork_point().height(), false))
+        return false;
+
+    set_confirmed_work(work_above_fork);
+    return true;
+}
+
+// private.
+bool block_chain::set_top_candidate_state()
+{
+    set_top_candidate_state(chain_state_populator_.populate(false));
+    return top_candidate_state() != nullptr;
+}
+
+// private.
+bool block_chain::set_top_valid_candidate_state()
+{
+    size_t height;
+    if (!get_top_height(height, true))
+        return false;
+
+    // The loop must at least terminate on the genesis block.
+    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, true)));
+
+    // Block marked candidate when validated in candidate chain.
+    // Block unmarked candidate when leaves candidate chain.
+    // Block will be valid and unmarked candidate upon reentry.
+    while (!is_valid_candidate(get_block_state(height, true)))
+        --height;
+
+    const auto state = chain_state_populator_.populate(height, false);
+    set_top_valid_candidate_state(state);
+    return top_valid_candidate_state() != nullptr;
+}
+
+// private.
+bool block_chain::set_next_confirmed_state()
+{
+    set_next_confirmed_state(chain_state_populator_.populate(true));
+    return next_confirmed_state() != nullptr;
+}
+
+// private.
+void block_chain::set_fork_point(const config::checkpoint& fork)
+{
+    fork_point_.store(fork);
+}
+
+// private.
+void block_chain::set_candidate_work(const uint256_t& work_above_fork)
+{
+    candidate_work_.store(work_above_fork);
+}
+
+// private.
+void block_chain::set_confirmed_work(const uint256_t& work_above_fork)
+{
+    confirmed_work_.store(work_above_fork);
+}
+
+// private.
+void block_chain::set_top_candidate_state(chain::chain_state::ptr top)
+{
+    top_candidate_state_.store(top);
+}
+
+// private.
+void block_chain::set_top_valid_candidate_state(chain::chain_state::ptr top)
+{
+    top_valid_candidate_state_.store(top);
+}
+
+// private.
+void block_chain::set_next_confirmed_state(chain::chain_state::ptr top)
+{
+    // Promotion always succeeds.
+    // Tx pool state is promoted from the state of the top confirmed block.
+    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top));
+}
+
+bool block_chain::is_candidates_stale() const
+{
+    // The header state is as fresh as the last (top) indexed header.
+    const auto state = top_candidate_state_.load();
+    return state && state->is_stale();
+}
+
+bool block_chain::is_validated_stale() const
+{
+    // The valid candidate state is as fresh as the top valid candidate.
+    const auto state = top_valid_candidate_state_.load();
+    return state && state->is_stale();
+}
+
+bool block_chain::is_blocks_stale() const
+{
+    // The pool state is as fresh as the last (top) indexed block.
+    const auto state = next_confirmed_state_.load();
+    return state && state->is_stale();
+}
+
+bool block_chain::is_reorganizable() const
+{
+    return candidate_work() > confirmed_work();
+}
+
+// Chain State
+// ----------------------------------------------------------------------------
 
 // For header index validator, call only from validate critical section.
 chain::chain_state::ptr block_chain::chain_state(const chain::header& header,
@@ -419,7 +779,7 @@ chain::chain_state::ptr block_chain::chain_state(const chain::header& header,
 chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
     chain::chain_state::ptr parent) const
 {
-    if (!parent)
+    if (!parent || parent->hash() !=header.previous_block_hash())
         return {};
 
     return std::make_shared<chain::chain_state>(*parent, header);
@@ -436,46 +796,6 @@ chain::chain_state::ptr block_chain::promote_state(
     return promote_state(*branch->top(), parent->metadata.state);
 }
 
-// private.
-bool block_chain::set_pool_states()
-{
-    set_header_pool_state(chain_state_populator_.populate(false));
-    set_transaction_pool_state(chain_state_populator_.populate(true));
-
-    // Empty state indicates empty chain or corruption (should not be here).
-    return header_pool_state_.load() != nullptr &&
-        transaction_pool_state_.load() != nullptr;
-}
-
-// private.
-void block_chain::set_header_pool_state(chain::chain_state::ptr top)
-{
-    // Header pool state is that of the top indexed header.
-    header_pool_state_.store(top);
-}
-
-// private.
-void block_chain::set_transaction_pool_state(chain::chain_state::ptr top)
-{
-    // Promotion always succeeds.
-    // Tx pool state is promoted from the state of the top confirmed block.
-    transaction_pool_state_.store(std::make_shared<chain::chain_state>(*top));
-}
-
-bool block_chain::is_blocks_stale() const
-{
-    // The pool state is as fresh as the last (top) indexed block.
-    const auto state = transaction_pool_state_.load();
-    return state && state->is_stale();
-}
-
-bool block_chain::is_headers_stale() const
-{
-    // The header state is as fresh as the last (top) indexed header.
-    const auto state = header_pool_state_.load();
-    return state && state->is_stale();
-}
-
 // ============================================================================
 // SAFE CHAIN
 // ============================================================================
@@ -490,10 +810,19 @@ bool block_chain::start()
     if (!database_.open())
         return false;
 
-    return set_pool_states() &&
-        header_organizer_.start() &&
-        ////block_organizer_.start() &&
-        transaction_organizer_.start();
+    block_subscriber_->start();
+    header_subscriber_->start();
+    transaction_subscriber_->start();
+
+    return set_fork_point()
+        && set_top_candidate_state()
+        && set_top_valid_candidate_state()
+        && set_next_confirmed_state()
+        && set_candidate_work()
+        && set_confirmed_work()
+        && block_organizer_.start()
+        && header_organizer_.start()
+        && transaction_organizer_.start();
 }
 
 bool block_chain::stop()
@@ -505,10 +834,18 @@ bool block_chain::stop()
     validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
-    auto result = 
+    auto result =
+        block_organizer_.stop() &&
         header_organizer_.stop() &&
-        ////block_organizer_.stop() &&
         transaction_organizer_.stop();
+
+    block_subscriber_->stop();
+    header_subscriber_->stop();
+    transaction_subscriber_->stop();
+
+    block_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    header_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    transaction_subscriber_->invoke(error::service_stopped, {});
 
     // The priority pool must not be stopped while organizing.
     priority_pool_.shutdown();
@@ -584,7 +921,6 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    // TODO: not currently populated.
     const auto cached = last_block_.load();
 
     // Try the cached block first.
@@ -595,7 +931,7 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -626,7 +962,6 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    // TODO: not currently populated.
     const auto cached = last_block_.load();
 
     // Try the cached block first.
@@ -667,7 +1002,7 @@ void block_chain::fetch_block_header(size_t height,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -710,7 +1045,7 @@ void block_chain::fetch_merkle_block(size_t height,
         return;
     }
 
-    const auto result = database_.blocks().get(height);
+    const auto result = database_.blocks().get(height, false);
 
     if (!result)
     {
@@ -806,7 +1141,7 @@ void block_chain::fetch_last_height(last_height_fetch_handler handler) const
 
     size_t last_height;
 
-    if (!database_.blocks().top(last_height))
+    if (!database_.blocks().top(last_height, false))
     {
         handler(error::not_found, 0);
         return;
@@ -833,8 +1168,6 @@ void block_chain::fetch_transaction(const hash_digest& hash,
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
-
-            // Simulate the position and height overloading of the database.
             const auto height = cached->metadata.state->height();
             handler(error::success, cached, 0, height);
             return;
@@ -843,8 +1176,8 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.state() !=
-        transaction_state::confirmed))
+    if (!result || (require_confirmed && result.position() !=
+        transaction_result::unconfirmed))
     {
         handler(error::not_found, nullptr, 0, 0);
         return;
@@ -874,8 +1207,6 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
             ////LOG_INFO(LOG_BLOCKCHAIN) << "TX CACHE HIT";
-
-            // Simulate the position and height overloading of the database.
             const auto height = cached->metadata.state->height();
             handler(error::success, 0, height);
             return;
@@ -884,8 +1215,8 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.state() !=
-        transaction_state::confirmed))
+    if (!result || (require_confirmed && result.position() !=
+        transaction_result::unconfirmed))
     {
         handler(error::not_found, 0, 0);
         return;
@@ -961,7 +1292,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     // Build the hash list until we hit end or the blockchain top.
     for (auto height = begin; height < end; ++height)
     {
-        const auto result = database_.blocks().get(height);
+        const auto result = database_.blocks().get(height, false);
 
         // If not found then we are at our top.
         if (!result)
@@ -1044,7 +1375,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     // Build the hash list until we hit end or the blockchain top.
     for (auto height = begin; height < end; ++height)
     {
-        const auto result = database_.blocks().get(height);
+        const auto result = database_.blocks().get(height, false);
 
         // If not found then we are at our top.
         if (!result)
@@ -1111,7 +1442,7 @@ void block_chain::fetch_header_locator(const block::indexes& heights,
     for (const auto height: heights)
     {
         // Header locators is generated for the header chain.
-        const auto result = database_.blocks().get(height, false);
+        const auto result = database_.blocks().get(height, true);
 
         if (!result)
         {
@@ -1209,7 +1540,7 @@ void block_chain::fetch_stealth(const binary&, size_t,
 // limited by total bytes and signature operations.
 void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 {
-    transaction_organizer_.fetch_template(handler);
+    transaction_pool_.fetch_template(handler);
 }
 
 // Fetch a set of currently-valid unconfirmed txs in dependency order.
@@ -1219,16 +1550,11 @@ void block_chain::fetch_template(merkle_block_fetch_handler handler) const
 void block_chain::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
     inventory_fetch_handler handler) const
 {
-    transaction_organizer_.fetch_mempool(count_limit, handler);
+    transaction_pool_.fetch_mempool(count_limit, minimum_fee, handler);
 }
 
 // Filters.
 //-----------------------------------------------------------------------------
-
-inline bool is_needed(uint8_t state)
-{
-    return state == block_state::missing || is_pooled(state);
-}
 
 // This may execute up to 500 queries (protocol limit).
 // This filters against the block pool and then the block chain.
@@ -1243,12 +1569,12 @@ void block_chain::filter_blocks(get_data_ptr message,
 
     // Filter through header pool first (faster than store filter).
     // Excludes blocks that are known to block memory pool (not block pool).
-    header_organizer_.filter(message);
+    header_pool_.filter(message);
 
     auto& inventories = message->inventories();
     for (auto it = inventories.begin(); it != inventories.end();)
     {
-        if (it->is_block_type() && is_needed(get_block_state(it->hash())))
+        if (it->is_block_type() && !database_.blocks().get(it->hash()))
         {
             ++it;
         }
@@ -1259,12 +1585,6 @@ void block_chain::filter_blocks(get_data_ptr message,
     }
 
     handler(error::success);
-}
-
-inline bool is_needed(transaction_state tx_state)
-{
-    return tx_state == transaction_state::missing ||
-        tx_state == transaction_state::pooled;
 }
 
 // This may execute up to 50,000 queries (protocol limit).
@@ -1280,13 +1600,13 @@ void block_chain::filter_transactions(get_data_ptr message,
 
     // Filter through transaction pool first (faster than store filter).
     // Excludes tx that are known to the tx memory pool (not tx pool).
-    transaction_organizer_.filter(message);
+    transaction_pool_.filter(message);
 
     auto& inventories = message->inventories();
     for (auto it = inventories.begin(); it != inventories.end();)
     {
         if (it->is_transaction_type() &&
-            get_transaction_state(it->hash()) == transaction_state::missing)
+            !database_.transactions().get(it->hash()))
         {
             ++it;
         }
@@ -1302,29 +1622,58 @@ void block_chain::filter_transactions(get_data_ptr message,
 // Subscribers.
 //-----------------------------------------------------------------------------
 
-void block_chain::subscribe_headers(reindex_handler&& handler)
+void block_chain::subscribe_blocks(block_handler&& handler)
 {
-    // Pass this through to the organizer, which issues the notifications.
-    header_organizer_.subscribe(std::move(handler));
+    block_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe_blockchain(reorganize_handler&& handler)
+void block_chain::subscribe_headers(header_handler&& handler)
 {
-    // Pass this through to the organizer, which issues the notifications.
-    ////block_organizer_.subscribe(std::move(handler));
+    header_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, 0, {}, {});
 }
 
-void block_chain::subscribe_transaction(transaction_handler&& handler)
+void block_chain::subscribe_transactions(transaction_handler&& handler)
 {
-    // Pass this through to the tx organizer, which issues the notifications.
-    transaction_organizer_.subscribe(std::move(handler));
+    transaction_subscriber_->subscribe(std::move(handler),
+        error::service_stopped, {});
 }
 
 void block_chain::unsubscribe()
 {
-    ////block_organizer_.unsubscribe();
-    header_organizer_.unsubscribe();
-    transaction_organizer_.unsubscribe();
+    // TODO: review use of invoke here (to limit channel drop delay).
+    block_subscriber_->relay(error::success, 0, {}, {});
+    header_subscriber_->relay(error::success, 0, {}, {});
+    transaction_subscriber_->relay(error::success, {});
+}
+
+// protected
+void block_chain::notify(size_t fork_height,
+    block_const_ptr_list_const_ptr incoming,
+    block_const_ptr_list_const_ptr outgoing)
+{
+    // TODO: check for subscription dependencies on non-empty incoming.
+    // This invokes handlers within the criticial section (deadlock risk).
+    block_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
+}
+
+// protected
+void block_chain::notify(size_t fork_height,
+    header_const_ptr_list_const_ptr incoming,
+    header_const_ptr_list_const_ptr outgoing)
+{
+    // TODO: check for subscription dependencies on non-empty incoming.
+    // This invokes handlers within the criticial section (deadlock risk).
+    header_subscriber_->invoke(error::success, fork_height, incoming, outgoing);
+}
+
+// protected
+void block_chain::notify(transaction_const_ptr tx)
+{
+    // TODO: check for subscription dependencies on non-empty incoming.
+    // This invokes handlers within the criticial section (deadlock risk).
+    transaction_subscriber_->invoke(error::success, tx);
 }
 
 // Organizer/Writers.
@@ -1336,24 +1685,16 @@ void block_chain::organize(header_const_ptr header, result_handler handler)
     header_organizer_.organize(header, handler);
 }
 
-void block_chain::organize(block_const_ptr block, result_handler handler)
-{
-    // TODO: implement block organize.
-    // The handler must not call organize (lock safety).
-    ////block_organizer_.organize(block, handler);
-}
-
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
     // The handler must not call organize (lock safety).
     transaction_organizer_.organize(tx, handler);
 }
 
-code block_chain::update(block_const_ptr block, size_t height)
+code block_chain::organize(block_const_ptr block, size_t height)
 {
-    // TODO: set:
-    // block->metadata.end_push = asio::steady_clock::now();
-    return database_.update(block, height);
+    // This triggers block and header reorganization notifications.
+    return block_organizer_.organize(block, height);
 }
 
 // Properties.

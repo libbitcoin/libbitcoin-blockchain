@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/header_branch.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -38,43 +37,53 @@ populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
 {
 }
 
+// Returns store code only.
 void populate_block::populate(block_const_ptr block,
     result_handler&& handler) const
 {
     // The block class has no population method, so set timer externally.
     block->metadata.start_populate = asio::steady_clock::now();
 
-    // Only validate/populate the next block to be confirmed.
-    size_t top;
-    if (!fast_chain_.get_top_height(top, true))
+    // This candidate must be that which follows the top valid candidate.
+    auto& metadata = block->header().metadata;
+    const auto top_valid = fast_chain_.top_valid_candidate_state();
+    metadata.state = fast_chain_.promote_state(block->header(), top_valid);
+
+    if (!metadata.state)
     {
         handler(error::operation_failed);
         return;
     }
 
-    // TODO: utilize last-validated-block cache so this can be promoted.
-    const auto state = fast_chain_.chain_state(block->header(), top + 1u);
-    block->header().metadata.state = state;
+    // Above this confirmed are not confirmed in the candidate chain.
+    const auto fork_height = fast_chain_.fork_point().height();
 
-    if (!state)
+    if (metadata.state->is_under_checkpoint())
     {
-        handler(error::operation_failed);
-        return;
-    }
-
-    // Return if this block is under a checkpoint, block state not requried.
-    if (state->is_under_checkpoint())
-    {
+        populate_non_coinbase(block, fork_height, false, handler);
         handler(error::success);
         return;
     }
 
-    // Handle the coinbase as a special case tx.
-    populate_coinbase(block, top);
+    if (!metadata.exists)
+        fast_chain_.populate_header(block->header());
 
+    if (metadata.validated)
+    {
+        populate_non_coinbase(block, fork_height, false, handler);
+        handler(error::success);
+        return;
+    }
+
+    populate_coinbase(block, fork_height);
+    populate_non_coinbase(block, fork_height, true, handler);
+}
+
+void populate_block::populate_non_coinbase(block_const_ptr block,
+    size_t fork_height, bool use_txs, result_handler handler) const
+{
     const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
-    // Return if there are no non-coinbase inputs to validate.
     if (non_coinbase_inputs == 0)
     {
         handler(error::success);
@@ -87,7 +96,7 @@ void populate_block::populate(block_const_ptr block,
 
     for (size_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&populate_block::populate_transactions,
-            this, block, top, bucket, buckets, join_handler);
+            this, block, fork_height, bucket, buckets, use_txs, join_handler);
 }
 
 // Initialize the coinbase input for subsequent metadata.
@@ -97,56 +106,47 @@ void populate_block::populate_coinbase(block_const_ptr block,
     const auto& txs = block->transactions();
     BITCOIN_ASSERT(!txs.empty());
 
-    const auto& coinbase = txs.front();
-    BITCOIN_ASSERT(coinbase.is_coinbase());
+    const auto& tx = txs.front();
+    BITCOIN_ASSERT(tx.is_coinbase());
 
     // A coinbase tx guarantees exactly one input.
-    auto& prevout = coinbase.inputs().front().previous_output().metadata;
+    auto& prevout = tx.inputs().front().previous_output().metadata;
 
     // A coinbase input cannot be a double spend since it originates coin.
     prevout.spent = false;
 
-    // A coinbase is confirmed as long as its block is valid (context free).
+    // A coinbase prevout is always considered confirmed just for consistency.
+    prevout.candidate = false;
     prevout.confirmed = true;
 
     // A coinbase does not spend a previous output so these are unused/default.
-    prevout.cache = chain::output{};
     prevout.coinbase = false;
     prevout.height = 0;
     prevout.median_time_past = 0;
+    prevout.cache = chain::output{};
 
     const auto forks = block->header().metadata.state->enabled_forks();
-    fast_chain_.populate_transaction(coinbase, forks, fork_height);
+    fast_chain_.populate_block_transaction(tx, forks, fork_height);
 }
 
 void populate_block::populate_transactions(block_const_ptr block,
-    size_t fork_height, size_t bucket, size_t buckets,
+    size_t fork_height, size_t bucket, size_t buckets, bool use_txs,
     result_handler handler) const
 {
     BITCOIN_ASSERT(bucket < buckets);
     const auto& txs = block->transactions();
     const auto state = block->header().metadata.state;
+    const auto forks = state->enabled_forks();
     size_t input_position = 0;
 
-    // Must skip coinbase here as it is already accounted for.
-    const auto first = bucket == 0 ? buckets : bucket;
-
-    // Without bip30 collisions are allowed and with bip34 presumed impossible.
-    // In either case allow them to occur (i.e. don't check for collisions).
-    const auto allow_collisions = !state->is_enabled(rule_fork::bip30_rule) ||
-        state->is_enabled(rule_fork::bip34_rule);
-
-    // If collisions are disallowed then need to test for them.
-    // If not stale then populate for the pool optimizations.
-    if (!allow_collisions || !fast_chain_.is_blocks_stale())
+    if (use_txs)
     {
-        const auto forks = state->enabled_forks();
-
-        for (auto position = first; position < txs.size();
-            position = ceiling_add(position, buckets))
+        // Must skip coinbase here as it is already accounted for.
+        for (auto position = (bucket == 0 ? buckets : bucket);
+            position < txs.size(); position = ceiling_add(position, buckets))
         {
             const auto& tx = txs[position];
-            fast_chain_.populate_transaction(tx, forks, fork_height);
+            fast_chain_.populate_block_transaction(tx, forks, fork_height);
         }
     }
 
@@ -161,9 +161,8 @@ void populate_block::populate_transactions(block_const_ptr block,
             if (input_position % buckets != bucket)
                 continue;
 
-            const auto& input = inputs[input_index];
-            const auto& prevout = input.previous_output();
-            fast_chain_.populate_output(prevout, fork_height);
+            const auto& prevout = inputs[input_index].previous_output();
+            fast_chain_.populate_output(prevout, fork_height, true);
         }
     }
 

@@ -54,7 +54,7 @@ bool header_pool::exists(header_const_ptr candidate_header) const
     return exists(candidate_header->hash());
 }
 
-// TODO: as blocks are popped from the confirmed chain they are pushed here
+// As blocks are popped from the confirmed chain they could be pushed here
 // which can result in existing dependent branches becoming disconnected from
 // those blocks. To prevent this existing branch roots must be reparented
 // following a reorg. For each add query for root of next height and connect.
@@ -98,6 +98,7 @@ void header_pool::add(header_const_ptr_list_const_ptr valid_headers,
         add(header, height++);
     };
 
+    // This is an ordered loop.
     std::for_each(valid_headers->begin(), valid_headers->end(), insert);
 }
 

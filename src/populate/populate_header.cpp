@@ -21,7 +21,6 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
-#include <bitcoin/blockchain/populate/populate_base.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,13 +38,6 @@ populate_header::populate_header(dispatcher& dispatch, const fast_chain& chain)
 void populate_header::populate(header_branch::ptr branch,
     result_handler&& handler) const
 {
-    // The header is already memory pooled (nothing to do).
-    if (branch->empty())
-    {
-        handler(error::duplicate_block);
-        return;
-    }
-
     // The header could not be connected to the header index.
     if (!set_branch_state(branch))
     {
@@ -53,25 +45,11 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    const auto header = branch->top();
-    fast_chain_.populate_header(*header);
+    const auto& header = *branch->top();
+    fast_chain_.populate_header(header);
 
-    // There is a permanent previous validation error on the (full) block.
-    if (header->metadata.error)
-    {
-        // Could return error::duplicate_block here to avoid fingerprint.
-        handler(header->metadata.error);
-        return;
-    }
-
-    // The header is already indexed (nothing to do).
-    if (header->metadata.duplicate)
-    {
-        handler(error::duplicate_block);
-        return;
-    }
-
-    handler(error::success);
+    // If there is an existing full block validation error return it.
+    handler(header.metadata.error);
 }
 
 // private
@@ -82,7 +60,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     auto& metadata = branch_top->metadata;
     metadata.state = fast_chain_.promote_state(branch);
 
-    // If set this implies a grounded ancestor and height already set.
+    // If set this implies a pool ancestor (and height already set).
     if (metadata.state)
     {
         BITCOIN_ASSERT(branch->height() != max_size_t);
@@ -92,11 +70,11 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     config::checkpoint chain_top;
     const auto& parent = branch_top->previous_block_hash();
 
-    // This grounds the branch at the top of header chain using state cache.
-    if (fast_chain_.get_top(chain_top, false) && parent == chain_top.hash())
+    // This grounds the branch at the top of candidate chain using state cache.
+    if (fast_chain_.get_top(chain_top, true) && parent == chain_top.hash())
     {
         branch->set_height(chain_top.height());
-        const auto chain_top_state = fast_chain_.header_pool_state();
+        const auto chain_top_state = fast_chain_.top_candidate_state();
         metadata.state = fast_chain_.promote_state(*branch_top, chain_top_state);
         return true;
     }
@@ -105,9 +83,10 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
     chain::header fork_header;
     const auto fork_hash = branch->hash();
 
+    // The grounding candidate may not be valid, but eventually be handled.
     // This grounds the branch at any point in header chain using new state.
     // This is the only case in which the chain is hit for state after startup.
-    if (fast_chain_.get_header(fork_header, fork_height, fork_hash, false))
+    if (fast_chain_.get_header(fork_header, fork_height, fork_hash, true))
     {
         branch->set_height(fork_height);
         metadata.state = fast_chain_.chain_state(fork_header, fork_height);

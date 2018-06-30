@@ -45,7 +45,7 @@ public:
     void start();
     void stop();
 
-    void check(block_const_ptr block, result_handler handler) const;
+    void check(block_const_ptr block, size_t height) const;
     void accept(block_const_ptr block, result_handler handler) const;
     void connect(block_const_ptr block, result_handler handler) const;
 
@@ -61,10 +61,6 @@ private:
         uint32_t input_index, uint32_t forks, size_t height,
         bool use_libconsensus);
 
-    ////void check_block(block_const_ptr block, size_t bucket, size_t buckets,
-    ////    result_handler handler) const;
-    ////void handle_checked(const code& ec, block_const_ptr block,
-    ////    result_handler handler) const;
     void handle_populated(const code& ec, block_const_ptr block,
         result_handler handler) const;
     void accept_transactions(block_const_ptr block, size_t bucket,
@@ -81,6 +77,7 @@ private:
     std::atomic<bool> stopped_;
     const bool retarget_;
     const bool use_libconsensus_;
+    const config::checkpoint::list& checkpoints_;
     dispatcher& priority_dispatch_;
     mutable atomic_counter hits_;
     mutable atomic_counter queries_;

@@ -71,11 +71,10 @@ void validate_transaction::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-void validate_transaction::check(transaction_const_ptr tx,
-    result_handler handler) const
+code validate_transaction::check(transaction_const_ptr tx) const
 {
     // Run context free checks.
-    handler(tx->check(true, retarget_));
+    return tx->check(true, retarget_);
 }
 
 // Accept sequence.
@@ -102,13 +101,6 @@ void validate_transaction::handle_populated(const code& ec,
     if (ec)
     {
         handler(ec);
-        return;
-    }
-
-    // Skip validation when valid tx is already stored with same forks.
-    if (tx->metadata.pooled)
-    {
-        handler(error::success);
         return;
     }
 

@@ -50,11 +50,12 @@ public:
     /// Remove all message vectors that match transaction hashes.
     void filter(get_data_ptr message) const;
 
-    void fetch_mempool(size_t maximum, inventory_fetch_handler) const;
-    void fetch_template(merkle_block_fetch_handler) const;
+    void fetch_template(merkle_block_fetch_handler handler) const;
+    void fetch_mempool(size_t count_limit, uint64_t minimum_fee,
+        inventory_fetch_handler) const;
 
-    transaction_entry::list get_mempool() const;
     transaction_entry::list get_template() const;
+    transaction_entry::list get_mempool() const;
 
     void add_unconfirmed_transactions(
         const transaction_const_ptr_list& unconfirmed_txs);
