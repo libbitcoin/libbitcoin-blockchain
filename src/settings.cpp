@@ -115,20 +115,20 @@ uint32_t settings::enabled_forks() const
     using namespace machine;
 
     uint32_t forks = rule_fork::no_rules;
-    forks |= (difficult ? rule_fork::difficult : 0);
-    forks |= (retarget ? rule_fork::retarget : 0);
-    forks |= (bip16 ? rule_fork::bip16_rule : 0);
-    forks |= (bip30 ? rule_fork::bip30_rule : 0);
-    forks |= (bip34 ? rule_fork::bip34_rule : 0);
-    forks |= (bip66 ? rule_fork::bip66_rule : 0);
-    forks |= (bip65 ? rule_fork::bip65_rule : 0);
-    forks |= (bip90 ? rule_fork::bip90_rule : 0);
-    forks |= (bip68 ? rule_fork::bip68_rule : 0);
-    forks |= (bip112 ? rule_fork::bip112_rule : 0);
-    forks |= (bip113 ? rule_fork::bip113_rule : 0);
-    forks |= (bip141 ? rule_fork::bip141_rule : 0);
-    forks |= (bip143 ? rule_fork::bip143_rule : 0);
-    forks |= (bip147 ? rule_fork::bip147_rule : 0);
+    forks |= (difficult ? static_cast<uint32_t>(rule_fork::difficult) : 0);
+    forks |= (retarget ? static_cast<uint32_t>(rule_fork::retarget) : 0);
+    forks |= (bip16 ? static_cast<uint32_t>(rule_fork::bip16_rule) : 0);
+    forks |= (bip30 ? static_cast<uint32_t>(rule_fork::bip30_rule) : 0);
+    forks |= (bip34 ? static_cast<uint32_t>(rule_fork::bip34_rule) : 0);
+    forks |= (bip66 ? static_cast<uint32_t>(rule_fork::bip66_rule) : 0);
+    forks |= (bip65 ? static_cast<uint32_t>(rule_fork::bip65_rule) : 0);
+    forks |= (bip90 ? static_cast<uint32_t>(rule_fork::bip90_rule) : 0);
+    forks |= (bip68 ? static_cast<uint32_t>(rule_fork::bip68_rule) : 0);
+    forks |= (bip112 ? static_cast<uint32_t>(rule_fork::bip112_rule) : 0);
+    forks |= (bip113 ? static_cast<uint32_t>(rule_fork::bip113_rule) : 0);
+    forks |= (bip141 ? static_cast<uint32_t>(rule_fork::bip141_rule) : 0);
+    forks |= (bip143 ? static_cast<uint32_t>(rule_fork::bip143_rule) : 0);
+    forks |= (bip147 ? static_cast<uint32_t>(rule_fork::bip147_rule) : 0);
     return forks;
 }
 

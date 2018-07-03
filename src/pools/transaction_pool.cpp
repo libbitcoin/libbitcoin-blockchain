@@ -41,7 +41,7 @@ namespace blockchain {
 
 transaction_pool::priority anchor_priority = 0.0;
 
-transaction_pool::transaction_pool(const settings& settings)
+transaction_pool::transaction_pool(const settings& )
   ////: reject_conflicts_(settings.reject_conflicts),
   ////  minimum_fee_(settings.minimum_fee_satoshis)
 {

@@ -214,7 +214,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     // Set overcome to zero to bypass early exit.
     const auto no_maximum = overcome.is_zero();
 
-    for (auto height = top; (height > above_height) && 
+    for (auto height = top; (height > above_height) &&
         (no_maximum || out_work <= overcome); --height)
     {
         const auto result = database_.blocks().get(height, candidate);
@@ -1097,14 +1097,14 @@ void block_chain::fetch_merkle_block(const hash_digest& hash,
     handler(error::success, merkle, result.height());
 }
 
-void block_chain::fetch_compact_block(size_t height,
+void block_chain::fetch_compact_block(size_t ,
     compact_block_fetch_handler handler) const
 {
     // TODO: implement compact blocks.
     handler(error::not_implemented, {}, 0);
 }
 
-void block_chain::fetch_compact_block(const hash_digest& hash,
+void block_chain::fetch_compact_block(const hash_digest& ,
     compact_block_fetch_handler handler) const
 {
     // TODO: implement compact blocks.
@@ -1237,7 +1237,7 @@ void block_chain::fetch_locator_block_hashes(get_blocks_const_ptr locator,
     }
 
     // BUGBUG: an intervening reorg can produce an invalid chain of hashes.
-    // TODO: instead walk backwards using parent hash lookups. 
+    // TODO: instead walk backwards using parent hash lookups.
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
@@ -1320,7 +1320,7 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     }
 
     // BUGBUG: an intervening reorg can produce an invalid chain of headers.
-    // TODO: instead walk backwards using parent hash lookups. 
+    // TODO: instead walk backwards using parent hash lookups.
 
     // This is based on the idea that looking up by block hash to get heights
     // will be much faster than hashing each retrieved block to test for stop.
@@ -1461,7 +1461,7 @@ void block_chain::fetch_header_locator(const block::indexes& heights,
 // Confirmed heights only.
 
 // TODO: reimplement in store.
-void block_chain::fetch_spend(const chain::output_point& outpoint,
+void block_chain::fetch_spend(const chain::output_point& ,
     spend_fetch_handler handler) const
 {
     if (stopped())

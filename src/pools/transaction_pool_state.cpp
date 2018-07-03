@@ -29,7 +29,7 @@ transaction_pool_state::transaction_pool_state()
 {
 }
 
-transaction_pool_state::transaction_pool_state(const settings& settings)
+transaction_pool_state::transaction_pool_state(const settings& )
   : transaction_pool_state()
 {
 }
