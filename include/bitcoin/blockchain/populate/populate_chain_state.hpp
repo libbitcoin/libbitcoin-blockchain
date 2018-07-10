@@ -34,7 +34,8 @@ namespace blockchain {
 class BCB_API populate_chain_state
 {
 public:
-    populate_chain_state(const fast_chain& chain, const settings& settings);
+    populate_chain_state(const fast_chain& chain, const settings& settings,
+        const bc::settings& bitcoin_settings);
 
     /// Populate chain state for candidate or confirmed top block|header.
     chain::chain_state::ptr populate(bool candidate) const;
@@ -79,6 +80,7 @@ private:
     const uint32_t forks_;
     const uint32_t stale_seconds_;
     const config::checkpoint::list checkpoints_;
+    const bc::settings& bitcoin_settings_;
 
     // This is used in a thread safe manner, as headers are never changed.
     const fast_chain& fast_chain_;

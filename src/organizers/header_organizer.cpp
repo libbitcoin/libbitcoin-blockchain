@@ -39,12 +39,13 @@ using namespace std::placeholders;
 
 header_organizer::header_organizer(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
-    header_pool& pool, const settings& settings)
+    header_pool& pool, const settings& settings,
+    const bc::settings& bitcoin_settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
     pool_(pool),
-    validator_(priority_dispatch, chain, settings)
+    validator_(priority_dispatch, chain, settings, bitcoin_settings)
 {
 }
 

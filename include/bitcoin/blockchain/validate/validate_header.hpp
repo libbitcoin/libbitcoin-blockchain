@@ -36,7 +36,7 @@ public:
     typedef handle0 result_handler;
 
     validate_header(dispatcher& dispatch, const fast_chain& chain,
-        const settings& settings);
+        const settings& settings, const bc::settings& bitcoin_settings);
 
     void start();
     void stop();

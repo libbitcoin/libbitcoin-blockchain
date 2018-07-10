@@ -32,8 +32,9 @@ BOOST_AUTO_TEST_CASE(transaction_pool__construct__foo__bar)
 
 BOOST_AUTO_TEST_CASE(transaction_pool__add_unconfirmed_transactions__empty_list__noop)
 {
-    settings blockchain_settings;
-    transaction_pool pool(blockchain_settings);
+    bc::settings bitcoin_settings;
+    bc::blockchain::settings blockchain_settings;
+    transaction_pool pool(blockchain_settings, bitcoin_settings);
 
     transaction_const_ptr_list txs;
     pool.add_unconfirmed_transactions(txs);

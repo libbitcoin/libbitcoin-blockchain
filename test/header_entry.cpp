@@ -33,7 +33,7 @@ static const auto default_header_hash = hash_literal("14508459b221041eab257d2baa
 
 BOOST_AUTO_TEST_CASE(header_entry__construct1__default_header__expected)
 {
-    const auto header = std::make_shared<const message::header>();
+    const auto header = std::make_shared<const message::header>(bc::settings());
     header_entry instance(header, 0);
     BOOST_REQUIRE(instance.header() == header);
     BOOST_REQUIRE(instance.hash() == default_header_hash);
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(header_entry__construct2__default_header_hash__round_trips)
 
 BOOST_AUTO_TEST_CASE(header_entry__parent__hash42__expected)
 {
-    const auto header = std::make_shared<message::header>();
+    const auto header = std::make_shared<message::header>(bc::settings());
     header->set_previous_block_hash(hash42);
     header_entry instance(header, 0);
     BOOST_REQUIRE(instance.parent() == hash42);
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(header_entry__children__default__empty)
 BOOST_AUTO_TEST_CASE(header_entry__add_child__one__single)
 {
     header_entry instance(null_hash);
-    const auto child = std::make_shared<const message::header>();
+    const auto child = std::make_shared<const message::header>(bc::settings());
     instance.add_child(child);
     BOOST_REQUIRE_EQUAL(instance.children().size(), 1u);
     BOOST_REQUIRE(instance.children()[0] == child->hash());
@@ -80,10 +80,10 @@ BOOST_AUTO_TEST_CASE(header_entry__add_child__two__expected_order)
 {
     header_entry instance(null_hash);
 
-    const auto child1 = std::make_shared<const message::header>();
+    const auto child1 = std::make_shared<const message::header>(bc::settings());
     instance.add_child(child1);
 
-    const auto child2 = std::make_shared<message::header>();
+    const auto child2 = std::make_shared<message::header>(bc::settings());
     child2->set_previous_block_hash(hash42);
     instance.add_child(child2);
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(header_entry__add_child__two__expected_order)
 
 BOOST_AUTO_TEST_CASE(header_entry__equality__same__true)
 {
-    const auto header = std::make_shared<const message::header>();
+    const auto header = std::make_shared<const message::header>(bc::settings());
     header_entry instance1(header, 0);
     header_entry instance2(header->hash());
     BOOST_REQUIRE(instance1 == instance2);
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(header_entry__equality__same__true)
 
 BOOST_AUTO_TEST_CASE(header_entry__equality__different__false)
 {
-    const auto header = std::make_shared<const message::header>();
+    const auto header = std::make_shared<const message::header>(bc::settings());
     header_entry instance1(header, 0);
     header_entry instance2(null_hash);
     BOOST_REQUIRE(!(instance1 == instance2));
@@ -112,14 +112,14 @@ BOOST_AUTO_TEST_CASE(header_entry__equality__different__false)
 
 BOOST_AUTO_TEST_CASE(header_entry__height__default__zero)
 {
-    const auto header = std::make_shared<const message::header>();
+    const auto header = std::make_shared<const message::header>(bc::settings());
     header_entry instance(hash_digest{});
     BOOST_REQUIRE_EQUAL(instance.height(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(header_entry__height__nonzero__expected)
 {
-    const auto header = std::make_shared<const message::header>();
+    const auto header = std::make_shared<const message::header>(bc::settings());
     const auto expected = 42u;
     header_entry instance(header, expected);
     BOOST_REQUIRE_EQUAL(instance.height(), expected);

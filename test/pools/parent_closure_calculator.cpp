@@ -38,7 +38,8 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__nullptr__returns_em
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__anchor_entry__returns_list_with_single_anchor)
 {
     transaction_pool_state pool_state;
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     parent_closure_calculator calculator(pool_state);
     auto entry = utilities::get_entry(state, 1, 0);
     const auto result = calculator.get_closure(entry);
@@ -49,7 +50,8 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__anchor_entry__retur
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_immediate_parents__returns_entry_plus_parent_list)
 {
     transaction_pool_state pool_state;
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     auto parent1_entry = utilities::get_entry(state, 1, 0);
     auto parent2_entry = utilities::get_entry(state, 2, 0);
     auto child_entry = utilities::get_entry(state, 3, 0);
@@ -67,7 +69,8 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_immediat
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_multi_child_parent__returns_entry_plus_parent_list)
 {
     transaction_pool_state pool_state;
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     auto parent1_entry = utilities::get_entry(state, 1, 0);
     auto parent2_entry = utilities::get_entry(state, 2, 0);
     auto child1_entry = utilities::get_entry(state, 3, 0);
@@ -87,7 +90,8 @@ BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_multi_ch
 BOOST_AUTO_TEST_CASE(parent_closure_calculator__get_closure__entry_with_ancestors__returns_entry_plus_ancestor_list)
 {
     transaction_pool_state pool_state;
-    auto state = std::make_shared<chain_state>(chain_state{ utilities::get_chain_data(), {}, 0, 0 });
+    auto state = std::make_shared<chain_state>(
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
     auto alpha = utilities::get_entry(state, 1, 0);
     auto beta = utilities::get_entry(state, 2, 0);
     auto gamma = utilities::get_entry(state, 3, 0);

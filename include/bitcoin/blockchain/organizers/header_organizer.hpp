@@ -43,7 +43,7 @@ public:
     /// Construct an instance.
     header_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
         threadpool& threads, fast_chain& chain, header_pool& pool,
-        const settings& settings);
+        const settings& settings, const bc::settings& bitcoin_settings);
 
     // Start/stop the organizer.
     bool start();
