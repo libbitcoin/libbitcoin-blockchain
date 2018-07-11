@@ -280,12 +280,6 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
-////database::transaction_state block_chain::get_transaction_state(
-////    const hash_digest& tx_hash) const
-////{
-////    return database_.transactions().get(tx_hash).state();
-////}
-
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool candidate) const
 {
