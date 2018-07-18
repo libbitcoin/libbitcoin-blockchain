@@ -61,10 +61,10 @@ int main(int argc, char** argv)
     }
 
     database::settings settings(config::settings::mainnet);
-    const bc::settings bitcoin_settings;
+    const bc::settings bitcoin_settings(config::settings::mainnet);
 
     if (!data_base(settings, bitcoin_settings).create(
-        block::genesis_mainnet(bitcoin_settings)))
+        bitcoin_settings.genesis_block))
     {
         std::cerr << BS_INITCHAIN_FAIL;
         return -1;
