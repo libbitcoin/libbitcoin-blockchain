@@ -189,7 +189,7 @@ bool populate_chain_state::populate_all(chain_state::data& data,
 {
     // Construct the map to inform chain state data population.
     const auto map = chain_state::get_map(data.height, checkpoints_, forks_,
-        bitcoin_settings_.retargeting_interval);
+        bitcoin_settings_.retargeting_interval, bitcoin_settings_.net_sample);
 
     return
         populate_bits(data, map, header, header_height, candidate) &&
