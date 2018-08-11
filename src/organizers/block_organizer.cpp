@@ -123,8 +123,10 @@ bool block_organizer::handle_check(const code& ec, block_const_ptr block,
 
     // If initial height is misaligned try again on next download.
     if (height != fast_chain_.top_valid_candidate_state()->height() + 1u)
+    {
+        mutex_.unlock_high_priority();
         return true;
-
+    }
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
     auto current_height = height;
