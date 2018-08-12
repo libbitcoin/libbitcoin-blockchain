@@ -104,6 +104,8 @@ void validate_transaction::handle_populated(const code& ec,
         return;
     }
 
+    BITCOIN_ASSERT(tx->metadata.state);
+
     // Run contextual tx checks.
     handler(tx->accept());
 }

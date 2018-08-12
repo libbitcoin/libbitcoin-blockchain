@@ -134,6 +134,8 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
+    BITCOIN_ASSERT(metadata.state);
+
     if (metadata.state->is_under_checkpoint())
     {
         metadata.validated = true;

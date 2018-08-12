@@ -111,6 +111,8 @@ void validate_header::handle_populated(const code& ec,
         return;
     }
 
+    BITCOIN_ASSERT(header.metadata.state);
+
     // Run contextual header checks.
     handler(header.accept());
 }
