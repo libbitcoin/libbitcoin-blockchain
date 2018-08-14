@@ -26,11 +26,11 @@ using namespace bc::machine;
 
 BOOST_AUTO_TEST_SUITE(validate_transaction_tests)
 
-#ifdef WITH_CONSENSUS
-    static const auto libconsensus = true;
-#else
-    static const auto libconsensus = false;
-#endif
+////#ifdef WITH_CONSENSUS
+////    static const auto libconsensus = true;
+////#else
+////    static const auto libconsensus = false;
+////#endif
 
 BOOST_AUTO_TEST_CASE(validate_transaction__native__block_438513_tx__valid)
 {

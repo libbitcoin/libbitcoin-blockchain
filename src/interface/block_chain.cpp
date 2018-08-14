@@ -65,7 +65,7 @@ block_chain::block_chain(threadpool& pool,
     dispatch_(pool, NAME "_dispatch"),
 
     // Organizers use priority dispatch and/or non-priority thread pool.
-    block_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings),
+    block_organizer_(validation_mutex_, priority_, pool, *this, settings),
     header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings, bitcoin_settings),
     transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 

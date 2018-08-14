@@ -70,8 +70,8 @@ void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 }
 
 // TODO: implement mempool message payload discovery.
-void transaction_pool::fetch_mempool(size_t count_limit, uint64_t minimum_fee,
-    inventory_fetch_handler handler) const
+void transaction_pool::fetch_mempool(size_t /*count_limit*/,
+    uint64_t /*minimum_fee*/, inventory_fetch_handler handler) const
 {
     const auto empty = std::make_shared<message::inventory>();
     handler(error::success, empty);
