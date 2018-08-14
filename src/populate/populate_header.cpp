@@ -50,6 +50,9 @@ void populate_header::populate(header_branch::ptr branch,
     const auto& header = *branch->top();
     fast_chain_.populate_header(header);
 
+    // HACK: allows header collection to carry median_time_past to store.
+    header.metadata.median_time_past = header.metadata.state->median_time_past();
+
     // If there is an existing full block validation error return it.
     handler(header.metadata.error);
 }
