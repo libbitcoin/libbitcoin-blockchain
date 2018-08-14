@@ -86,7 +86,9 @@ void populate_transaction::populate_inputs(transaction_const_ptr tx,
     {
         const auto& input = inputs[input_index];
         const auto& prevout = input.previous_output();
-        fast_chain_.populate_output(prevout, max_size_t, false);
+
+        // Don't fail here if output is missing, populate all.
+        /*bool*/ fast_chain_.populate_output(prevout, max_size_t, false);
     }
 
     handler(error::success);

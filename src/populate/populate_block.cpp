@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 
@@ -58,20 +59,23 @@ void populate_block::populate(block_const_ptr block,
     // Above this confirmed are not confirmed in the candidate chain.
     const auto fork_height = fast_chain_.fork_point().height();
 
+    // Contextual validation is bypassed under checkpoints.
     if (metadata.state->is_under_checkpoint())
     {
+        // Required for prevout indexing, and is not applicable to coinbase.
         populate_non_coinbase(block, fork_height, false, handler);
-        handler(error::success);
         return;
     }
 
+    // If metadata was not already populated (due to existence), do it here.
     if (!metadata.exists)
         fast_chain_.populate_header(block->header());
 
+    // Contextual validation is bypassed if already validated.
     if (metadata.validated)
     {
+        // Required for prevout indexing, and is not applicable to coinbase.
         populate_non_coinbase(block, fork_height, false, handler);
-        handler(error::success);
         return;
     }
 
@@ -151,7 +155,7 @@ void populate_block::populate_transactions(block_const_ptr block,
     }
 
     // Must skip coinbase here as it is already accounted for.
-    for (auto tx = txs.begin() + 1; tx != txs.end(); ++tx)
+    for (auto tx = std::next(txs.begin()); tx != txs.end(); ++tx)
     {
         const auto& inputs = tx->inputs();
 
@@ -162,7 +166,9 @@ void populate_block::populate_transactions(block_const_ptr block,
                 continue;
 
             const auto& prevout = inputs[input_index].previous_output();
-            fast_chain_.populate_output(prevout, fork_height, true);
+
+            // Don't fail here if output is missing, populate all.
+            /*bool*/ fast_chain_.populate_output(prevout, fork_height, true);
         }
     }
 

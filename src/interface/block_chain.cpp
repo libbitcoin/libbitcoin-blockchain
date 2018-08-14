@@ -249,25 +249,25 @@ bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
 
 void block_chain::populate_header(const chain::header& header) const
 {
-    return database_.blocks().get_header_metadata(header);
+    database_.blocks().get_header_metadata(header);
 }
 
 void block_chain::populate_block_transaction(const chain::transaction& tx,
     uint32_t forks, size_t fork_height) const
 {
-    return database_.transactions().get_block_metadata(tx, forks, fork_height);
+    database_.transactions().get_block_metadata(tx, forks, fork_height);
 }
 
 void block_chain::populate_pool_transaction(const chain::transaction& tx,
     uint32_t forks) const
 {
-    return database_.transactions().get_pool_metadata(tx, forks);
+    database_.transactions().get_pool_metadata(tx, forks);
 }
 
-void block_chain::populate_output(const chain::output_point& outpoint,
+bool block_chain::populate_output(const chain::output_point& outpoint,
     size_t fork_height, bool candidate) const
 {
-    database_.transactions().get_output(outpoint, fork_height, candidate);
+    return database_.transactions().get_output(outpoint, fork_height, candidate);
 }
 
 uint8_t block_chain::get_block_state(size_t height, bool candidate) const
@@ -678,12 +678,10 @@ bool block_chain::set_top_valid_candidate_state()
         return false;
 
     // The loop must at least terminate on the genesis block.
-    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, true)));
+    BITCOIN_ASSERT(is_valid(get_block_state(0, true)));
 
-    // Block marked candidate when validated in candidate chain.
-    // Block unmarked candidate when leaves candidate chain.
-    // Block will be valid and unmarked candidate upon reentry.
-    while (!is_valid_candidate(get_block_state(height, true)))
+    // Loop from top to genesis in the candidate index.
+    while (!is_valid(get_block_state(height, true)))
         --height;
 
     const auto state = chain_state_populator_.populate(height, false);
