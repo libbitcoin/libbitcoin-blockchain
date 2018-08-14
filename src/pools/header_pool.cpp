@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <bitcoin/blockchain/define.hpp>
@@ -234,7 +235,7 @@ void header_pool::filter(get_data_ptr message) const
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 
-        it = (found ? inventories.erase(it) : it + 1);
+        it = (found ? inventories.erase(it) : std::next(it));
     }
 }
 
