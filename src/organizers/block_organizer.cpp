@@ -25,7 +25,6 @@
 #include <utility>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -39,11 +38,10 @@ using namespace std::placeholders;
 
 block_organizer::block_organizer(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
-    header_pool& pool, const settings& settings)
+    const settings& settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
-    pool_(pool),
     validator_(priority_dispatch, chain, settings),
     downloader_subscriber_(std::make_shared<download_subscriber>(threads, NAME))
 {
@@ -251,7 +249,7 @@ void block_organizer::handle_accept(const code& ec, block_const_ptr block,
 }
 
 // private
-void block_organizer::handle_connect(const code& ec, block_const_ptr block,
+void block_organizer::handle_connect(const code& ec, block_const_ptr,
     result_handler handler)
 {
     if (stopped())
