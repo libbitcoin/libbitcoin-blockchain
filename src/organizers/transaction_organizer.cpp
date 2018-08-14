@@ -221,7 +221,9 @@ void transaction_organizer::handle_connect(const code& ec,
     if (error_code)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure writing transaction to store, is now corrupted: ";
+            << "Failure writing transaction to store, is now corrupted: "
+            << error_code.message();
+
         handler(error_code);
         return;
     }
