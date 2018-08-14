@@ -401,7 +401,7 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
     code ec;
     auto fork_height = fork.height();
-    header_const_ptr_list_ptr outgoing;
+    const auto outgoing = std::make_shared<header_const_ptr_list>();
 
     // This unmarks candidate txs and spent outputs (may have been validated).
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
