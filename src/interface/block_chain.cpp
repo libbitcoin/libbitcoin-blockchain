@@ -678,12 +678,10 @@ bool block_chain::set_top_valid_candidate_state()
         return false;
 
     // The loop must at least terminate on the genesis block.
-    BITCOIN_ASSERT(is_valid_candidate(get_block_state(0, true)));
+    BITCOIN_ASSERT(is_valid(get_block_state(0, true)));
 
-    // Block marked candidate when validated in candidate chain.
-    // Block unmarked candidate when leaves candidate chain.
-    // Block will be valid and unmarked candidate upon reentry.
-    while (!is_valid_candidate(get_block_state(height, true)))
+    // Loop from top to genesis in the candidate index.
+    while (!is_valid(get_block_state(height, true)))
         --height;
 
     const auto state = chain_state_populator_.populate(height, false);
