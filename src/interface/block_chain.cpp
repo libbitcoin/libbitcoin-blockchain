@@ -767,14 +767,14 @@ bool block_chain::is_reorganizable() const
 chain::chain_state::ptr block_chain::chain_state(const chain::header& header,
     size_t height) const
 {
-    return chain_state_populator_.populate(header, height, false);
+    return chain_state_populator_.populate(header, height, true);
 }
 
 // Promote chain state from the given parent header.
 chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
     chain::chain_state::ptr parent) const
 {
-    if (!parent || parent->hash() !=header.previous_block_hash())
+    if (!parent || parent->hash() != header.previous_block_hash())
         return {};
 
     return std::make_shared<chain::chain_state>(*parent, header,
