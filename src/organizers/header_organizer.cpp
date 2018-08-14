@@ -179,7 +179,9 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     if (error_code)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure writing header to store, is now corrupted: ";
+            << "Failure writing header to store, is now corrupted: "
+            << error_code.message();
+
         handler(error_code);
         return;
     }
