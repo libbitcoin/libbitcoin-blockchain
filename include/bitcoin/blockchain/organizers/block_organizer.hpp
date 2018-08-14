@@ -44,7 +44,8 @@ public:
 
     /// Construct an instance.
     block_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
-        threadpool& threads, fast_chain& chain, const settings& settings);
+        threadpool& threads, fast_chain& chain, const settings& settings,
+        const bc::settings& bitcoin_settings);
 
     // Start/stop the organizer.
     bool start();

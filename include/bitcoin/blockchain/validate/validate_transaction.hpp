@@ -41,7 +41,7 @@ public:
     void start();
     void stop();
 
-    code check(transaction_const_ptr tx) const;
+    code check(transaction_const_ptr tx, uint64_t max_money) const;
     void accept(transaction_const_ptr tx, result_handler handler) const;
     void connect(transaction_const_ptr tx, result_handler handler) const;
 

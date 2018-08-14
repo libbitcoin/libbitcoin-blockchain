@@ -39,13 +39,14 @@ using namespace std::placeholders;
 #define NAME "validate_block"
 
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
-    const settings& settings)
+    const settings& settings, const bc::settings& bitcoin_settings)
   : stopped_(true),
     retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     checkpoints_(settings.checkpoints),
     priority_dispatch_(dispatch),
-    block_populator_(dispatch, chain)
+    block_populator_(dispatch, chain),
+    bitcoin_settings_(bitcoin_settings)
 {
 }
 
@@ -93,7 +94,7 @@ void validate_block::check(block_const_ptr block, size_t height) const
     else
     {
         // Run context free checks, block is not yet fully validated.
-        metadata.error = block->check(retarget_);
+        metadata.error = block->check(bitcoin_settings_.max_money, retarget_);
         metadata.validated = false;
     }
 }
@@ -145,7 +146,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
     }
 
     // Run contextual block non-tx checks (sets start time).
-    if ((metadata.error = block->accept(false)))
+    if ((metadata.error = block->accept(bitcoin_settings_, false)))
     {
         metadata.validated = true;
         handler(error::success);
