@@ -89,7 +89,7 @@ bool populate_chain_state::get_block_hash(hash_digest& hash, size_t height,
 {
     if (height == header_height)
     {
-        hash = std::move(header.hash());
+        hash = header.hash();
         return true;
     }
 
