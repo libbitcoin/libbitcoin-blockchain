@@ -128,7 +128,7 @@ public:
 
     /// Get the output that is referenced by the outpoint.
     /// Sets metadata based on fork point. 
-    void populate_output(const chain::output_point& outpoint,
+    bool populate_output(const chain::output_point& outpoint,
         size_t fork_height, bool candidate) const;
 
     /// Get state (flags) of candidate or confirmed block by height.
