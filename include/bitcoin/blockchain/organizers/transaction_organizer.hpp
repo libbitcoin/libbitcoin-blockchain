@@ -55,7 +55,8 @@ public:
     bool stop();
 
     /// validate and organize a transaction into tx metadata pool and store.
-    void organize(transaction_const_ptr tx, result_handler handler);
+    void organize(transaction_const_ptr tx, result_handler handler,
+        uint64_t max_money);
 
 protected:
     bool stopped() const;

@@ -65,7 +65,8 @@ block_chain::block_chain(threadpool& pool,
     dispatch_(pool, NAME "_dispatch"),
 
     // Organizers use priority dispatch and/or non-priority thread pool.
-    block_organizer_(validation_mutex_, priority_, pool, *this, settings),
+    block_organizer_(validation_mutex_, priority_, pool, *this, settings,
+        bitcoin_settings),
     header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings, bitcoin_settings),
     transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 
@@ -1684,7 +1685,7 @@ void block_chain::organize(header_const_ptr header, result_handler handler)
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
     // The handler must not call organize (lock safety).
-    transaction_organizer_.organize(tx, handler);
+    transaction_organizer_.organize(tx, handler, bitcoin_settings_.max_money);
 }
 
 code block_chain::organize(block_const_ptr block, size_t height)

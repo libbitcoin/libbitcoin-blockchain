@@ -40,7 +40,7 @@ public:
     typedef handle0 result_handler;
 
     validate_block(dispatcher& dispatch, const fast_chain& chain,
-        const settings& settings);
+        const settings& settings, const bc::settings& bitcoin_settings);
 
     void start();
     void stop();
@@ -82,6 +82,7 @@ private:
     mutable atomic_counter hits_;
     mutable atomic_counter queries_;
     populate_block block_populator_;
+    const bc::settings& bitcoin_settings_;
 };
 
 } // namespace blockchain

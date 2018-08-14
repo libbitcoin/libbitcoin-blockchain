@@ -82,12 +82,12 @@ bool transaction_organizer::stop()
 
 // This is called from block_chain::organize.
 void transaction_organizer::organize(transaction_const_ptr tx,
-    result_handler handler)
+    result_handler handler, uint64_t max_money)
 {
     code error_code;
 
     // Checks that are independent of chain state.
-    if ((error_code = validator_.check(tx)))
+    if ((error_code = validator_.check(tx, max_money)))
     {
         handler(error_code);
         return;

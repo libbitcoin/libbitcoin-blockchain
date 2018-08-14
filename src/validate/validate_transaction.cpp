@@ -71,10 +71,11 @@ void validate_transaction::stop()
 //-----------------------------------------------------------------------------
 // These checks are context free.
 
-code validate_transaction::check(transaction_const_ptr tx) const
+code validate_transaction::check(transaction_const_ptr tx, uint64_t max_money)
+    const
 {
     // Run context free checks.
-    return tx->check(true, retarget_);
+    return tx->check(max_money, true);
 }
 
 // Accept sequence.
