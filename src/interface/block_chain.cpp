@@ -424,7 +424,7 @@ code block_chain::reorganize(const config::checkpoint& fork,
         set_confirmed_work();
 
         // When fork point is lowered the top valid candidate is at fork point.
-        auto top_valid = chain_state_populator_.populate(fork_height, false);
+        auto top_valid = chain_state_populator_.populate(fork_height, true);
         set_top_valid_candidate_state(top_valid);
         set_candidate_work(0);
     }
@@ -599,7 +599,6 @@ chain::chain_state::ptr block_chain::top_candidate_state() const
     return top_candidate_state_.load();
 }
 
-
 chain::chain_state::ptr block_chain::top_valid_candidate_state() const
 {
     return top_valid_candidate_state_.load();
@@ -667,7 +666,7 @@ bool block_chain::set_confirmed_work()
 // private.
 bool block_chain::set_top_candidate_state()
 {
-    set_top_candidate_state(chain_state_populator_.populate(false));
+    set_top_candidate_state(chain_state_populator_.populate(true));
     return top_candidate_state() != nullptr;
 }
 
@@ -685,7 +684,7 @@ bool block_chain::set_top_valid_candidate_state()
     while (!is_valid(get_block_state(height, true)))
         --height;
 
-    const auto state = chain_state_populator_.populate(height, false);
+    const auto state = chain_state_populator_.populate(height, true);
     set_top_valid_candidate_state(state);
     return top_valid_candidate_state() != nullptr;
 }
@@ -693,7 +692,7 @@ bool block_chain::set_top_valid_candidate_state()
 // private.
 bool block_chain::set_next_confirmed_state()
 {
-    set_next_confirmed_state(chain_state_populator_.populate(true));
+    set_next_confirmed_state(chain_state_populator_.populate(false));
     return next_confirmed_state() != nullptr;
 }
 
