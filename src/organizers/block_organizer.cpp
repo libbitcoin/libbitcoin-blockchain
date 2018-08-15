@@ -96,7 +96,7 @@ code block_organizer::organize(block_const_ptr block, size_t height)
     //#########################################################################
 
     // Queue download notification to invoke validation on downloader thread.
-    downloader_subscriber_->relay(error_code, block, height);
+    ////downloader_subscriber_->relay(error_code, block, height);
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
