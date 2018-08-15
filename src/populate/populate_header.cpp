@@ -50,6 +50,13 @@ void populate_header::populate(header_branch::ptr branch,
     const auto& header = *branch->top();
     fast_chain_.populate_header(header);
 
+    // TODO: ensure there is no need to set header state or index here.
+    if (header.metadata.exists)
+    {
+        handler(error::duplicate_block);
+        return;
+    }
+
     // HACK: allows header collection to carry median_time_past to store.
     header.metadata.median_time_past = header.metadata.state->
         median_time_past();
