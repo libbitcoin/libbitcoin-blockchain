@@ -396,9 +396,10 @@ code block_chain::reorganize(const config::checkpoint& fork,
     if (!top_state)
         return error::operation_failed;
 
-    // Clear incoming chain state for reorganize and notify.
-    std::for_each(incoming->begin(), incoming->end(),
-        [](header_const_ptr header) { header->metadata.state.reset(); });
+    // TODO: if leave uncleared do not need header.median_time_past.
+    ////// Clear incoming chain state for reorganize and notify.
+    ////std::for_each(incoming->begin(), incoming->end(),
+    ////    [](header_const_ptr header) { header->metadata.state.reset(); });
 
     code ec;
     auto fork_height = fork.height();
@@ -552,8 +553,8 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Append all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
     {
-        // Clear chain state for reorganize and notify.
-        block->header().metadata.state.reset();
+        //// Clear chain state for reorganize and notify.
+        ////block->header().metadata.state.reset();
         incoming->push_back(block);
     }
 
