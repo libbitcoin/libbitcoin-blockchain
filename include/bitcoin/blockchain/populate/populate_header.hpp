@@ -33,16 +33,13 @@ class BCB_API populate_header
   : public populate_base
 {
 public:
-    populate_header(dispatcher& dispatch, const fast_chain& chain,
-        const bc::settings& bitcoin_settings);
+    populate_header(dispatcher& dispatch, const fast_chain& chain);
 
     /// Populate validation state for the top indexed block.
     void populate(header_branch::ptr branch, result_handler&& handler) const;
 
 private:
     bool set_branch_state(header_branch::ptr branch) const;
-
-    const bc::settings& bitcoin_settings_;
 };
 
 } // namespace blockchain

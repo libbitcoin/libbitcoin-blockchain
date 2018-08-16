@@ -34,7 +34,7 @@ chain::block read_block(const std::string& hex)
 {
     data_chunk data;
     BOOST_REQUIRE(decode_base16(data, hex));
-    chain::block result(bc::settings{});
+    chain::block result;
     BOOST_REQUIRE(result.from_data(data));
     return result;
 }
@@ -51,7 +51,7 @@ bool create_database(database::settings& out_database)
 
     error_code ec;
     remove_all(out_database.directory, ec);
-    database::data_base database(out_database, bc::settings{});
+    database::data_base database(out_database);
     return create_directories(out_database.directory, ec) && database.create(
         bc::settings(bc::config::settings::mainnet).genesis_block);
 }

@@ -44,7 +44,7 @@ block_chain::block_chain(threadpool& pool,
     const blockchain::settings& settings,
     const database::settings& database_settings,
     const bc::settings& bitcoin_settings)
-  : database_(database_settings, bitcoin_settings),
+  : database_(database_settings),
     stopped_(true),
     fork_point_({ null_hash, 0 }),
     settings_(settings),
@@ -57,7 +57,7 @@ block_chain::block_chain(threadpool& pool,
 
     // Metadata pools.
     header_pool_(settings.reorganization_limit),
-    transaction_pool_(settings, bitcoin_settings),
+    transaction_pool_(settings),
 
     // Create dispatchers for priority and non-priority operations.
     priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
@@ -67,7 +67,8 @@ block_chain::block_chain(threadpool& pool,
     // Organizers use priority dispatch and/or non-priority thread pool.
     block_organizer_(validation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
-    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_, settings, bitcoin_settings),
+    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_,
+        settings, bitcoin_settings),
     transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.

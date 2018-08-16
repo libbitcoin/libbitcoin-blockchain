@@ -51,7 +51,7 @@ header_const_ptr make_header(uint32_t id, const hash_digest& parent)
 {
     const auto header = std::make_shared<const message::header>(chain::header
     {
-        id, parent, null_hash, 0, 0, 0, bc::settings()
+        id, parent, null_hash, 0, 0, 0
     });
 
     return header;
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__one__single)
 BOOST_AUTO_TEST_CASE(header_pool__add1__twice__single)
 {
     header_pool instance(0);
-    const auto header = std::make_shared<const message::header>(bc::settings());
+    const auto header = std::make_shared<const message::header>();
 
     instance.add(header, 0);
     instance.add(header, 0);

@@ -28,7 +28,7 @@ using namespace bc::blockchain;
 BOOST_AUTO_TEST_SUITE(header_branch_tests)
 
 #define DECLARE_HEADER(name, number) \
-    const auto name##number = std::make_shared<header>(bc::settings()); \
+    const auto name##number = std::make_shared<header>(); \
     name##number->set_bits(number);
 
 // Access to protected members.
