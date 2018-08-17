@@ -51,13 +51,11 @@
 #define START_BLOCKCHAIN(name, flush) \
     threadpool pool; \
     database::settings database_settings; \
-    bc::settings bitcoin_settings; \
     database_settings.flush_writes = flush; \
     database_settings.directory = TEST_NAME; \
     BOOST_REQUIRE(test::create_database(database_settings)); \
     blockchain::settings blockchain_settings; \
-    block_chain name(pool, blockchain_settings, database_settings, \
-        bitcoin_settings); \
+    block_chain name(pool, blockchain_settings, database_settings); \
     BOOST_REQUIRE(name.start())
 
 #define NEW_BLOCK(height) \

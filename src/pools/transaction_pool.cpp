@@ -41,9 +41,7 @@ namespace blockchain {
 
 transaction_pool::priority anchor_priority = 0.0;
 
-transaction_pool::transaction_pool(const settings&,
-    const bc::settings& bitcoin_settings)
-  : bitcoin_settings_(bitcoin_settings)
+transaction_pool::transaction_pool(const settings& )
   ////: reject_conflicts_(settings.reject_conflicts),
   ////  minimum_fee_(settings.minimum_fee_satoshis)
 {
@@ -64,8 +62,7 @@ void transaction_pool::filter(get_data_ptr /*message*/) const
 void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
 {
     const size_t height = max_size_t;
-    const auto block = std::make_shared<message::merkle_block>(
-        bitcoin_settings_);
+    const auto block = std::make_shared<message::merkle_block>();
     handler(error::success, block, height);
 }
 

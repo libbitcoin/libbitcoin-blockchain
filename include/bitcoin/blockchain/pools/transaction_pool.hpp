@@ -42,8 +42,7 @@ public:
     typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
     typedef double priority;
 
-    transaction_pool(const settings& settings,
-        const bc::settings& bitcoin_settings);
+    transaction_pool(const settings& settings);
 
     /// The tx exists in the pool.
     bool exists(transaction_const_ptr tx) const;
@@ -82,7 +81,6 @@ private:
     void update_template(priority_iterator max_pool_change);
 
 private:
-    const bc::settings& bitcoin_settings_;
     transaction_pool_state state_;
 };
 

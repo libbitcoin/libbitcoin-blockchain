@@ -55,6 +55,7 @@ private:
     std::atomic<bool> stopped_;
     const bool retarget_;
     populate_header header_populator_;
+    const bc::settings& bitcoin_settings_;
 };
 
 } // namespace blockchain
