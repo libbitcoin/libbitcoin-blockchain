@@ -92,7 +92,7 @@ code block_organizer::organize(block_const_ptr block, size_t height)
     // Store txs (if missing) and associate them to candidate block.
     // Existing txs cannot suffer a state change as they may also be confirmed.
     //#########################################################################
-    const code error_code = fast_chain_.update(block, height);
+    const auto error_code = fast_chain_.update(block, height);
     //#########################################################################
 
     // Queue download notification to invoke validation on downloader thread.
