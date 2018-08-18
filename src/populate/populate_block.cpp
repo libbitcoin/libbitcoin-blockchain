@@ -42,13 +42,16 @@ populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
 void populate_block::populate(block_const_ptr block,
     result_handler&& handler) const
 {
+    auto& header_ptr = block->header();
+    auto& metadata = header_ptr.metadata;
+    auto& block_metadata = block->metadata;
+
     // The block class has no population method, so set timer externally.
-    block->metadata.start_populate = asio::steady_clock::now();
+    block_metadata.start_populate = asio::steady_clock::now();
 
     // This candidate must be that which follows the top valid candidate.
-    auto& metadata = block->header().metadata;
     const auto top_valid = fast_chain_.top_valid_candidate_state();
-    metadata.state = fast_chain_.promote_state(block->header(), top_valid);
+    metadata.state = fast_chain_.promote_state(header_ptr, top_valid);
 
     if (!metadata.state)
     {
@@ -69,7 +72,7 @@ void populate_block::populate(block_const_ptr block,
 
     // If metadata was not already populated (due to existence), do it here.
     if (!metadata.exists)
-        fast_chain_.populate_header(block->header());
+        fast_chain_.populate_header(header_ptr);
 
     // Contextual validation is bypassed if already validated.
     if (metadata.validated)
