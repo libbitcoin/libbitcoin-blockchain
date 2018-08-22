@@ -68,7 +68,7 @@ block_chain::block_chain(threadpool& pool,
     block_organizer_(validation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
     header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_,
-        settings, bitcoin_settings),
+        bitcoin_settings),
     transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.

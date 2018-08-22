@@ -24,7 +24,6 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_header.hpp>
-#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -36,7 +35,7 @@ public:
     typedef handle0 result_handler;
 
     validate_header(dispatcher& dispatch, const fast_chain& chain,
-        const settings& settings, const bc::settings& bitcoin_settings);
+        const bc::settings& bitcoin_settings);
 
     void start();
     void stop();
@@ -53,7 +52,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool retarget_;
     populate_header header_populator_;
     const bc::settings& bitcoin_settings_;
 };
