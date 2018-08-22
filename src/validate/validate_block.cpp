@@ -41,7 +41,6 @@ using namespace std::placeholders;
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
     const settings& settings, const bc::settings& bitcoin_settings)
   : stopped_(true),
-    retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     checkpoints_(settings.checkpoints),
     priority_dispatch_(dispatch),
@@ -96,9 +95,7 @@ void validate_block::check(block_const_ptr block, size_t height) const
         // Run context free checks, block is not yet fully validated.
         metadata.error = block->check(bitcoin_settings_.max_money,
             bitcoin_settings_.timestamp_future_seconds,
-            bitcoin_settings_.retarget_proof_of_work_limit,
-            bitcoin_settings_.no_retarget_proof_of_work_limit,
-            retarget_);
+            bitcoin_settings_.proof_of_work_limit);
         metadata.validated = false;
     }
 }

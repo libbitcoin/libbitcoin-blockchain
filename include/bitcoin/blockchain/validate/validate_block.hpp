@@ -75,7 +75,6 @@ private:
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool retarget_;
     const bool use_libconsensus_;
     const config::checkpoint::list& checkpoints_;
     dispatcher& priority_dispatch_;
