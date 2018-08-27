@@ -112,8 +112,14 @@ public:
     bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool candidate) const;
 
-    /// Get the block hash of an empty block, or false if missing or invalid.
+    /// Get block hash of an empty block, false if missing or failed.
     bool get_downloadable(hash_digest& out_hash, size_t height) const;
+
+    /// Get block hash of an unvalidated block, false if empty/failed/valid.
+    bool get_validatable(hash_digest& out_hash, size_t height) const;
+
+    /// Push a validatable block identifier onto the download subscriber. 
+    void prime_validation(const hash_digest& hash, size_t height) const;
 
     /// Populate metadata of the given block header.
     void populate_header(const chain::header& header) const;

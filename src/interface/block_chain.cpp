@@ -249,6 +249,25 @@ bool block_chain::get_downloadable(hash_digest& out_hash, size_t height) const
     return true;
 }
 
+bool block_chain::get_validatable(hash_digest& out_hash, size_t height) const
+{
+    const auto result = database_.blocks().get(height, true);
+
+    // Do not validate if not found, valid, failed or not populated.
+    if (!result || is_valid(result.state()) || is_failed(result.state()) ||
+        result.transaction_count() == 0)
+        return false;
+
+    out_hash = result.hash();
+    return true;
+}
+
+void block_chain::prime_validation(const hash_digest& hash,
+    size_t height) const
+{
+    block_organizer_.prime_validation(hash, height);
+}
+
 void block_chain::populate_header(const chain::header& header) const
 {
     database_.blocks().get_header_metadata(header);
