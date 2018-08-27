@@ -60,7 +60,7 @@ block_chain::block_chain(threadpool& pool,
     transaction_pool_(settings),
 
     // Create dispatchers for priority and non-priority operations.
-    priority_pool_(thread_ceiling(settings.cores), priority(settings.priority)),
+    priority_pool_(thread_ceiling(settings.cores) + 1u, priority(settings.priority)),
     priority_(priority_pool_, NAME "_priority"),
     dispatch_(pool, NAME "_dispatch"),
 

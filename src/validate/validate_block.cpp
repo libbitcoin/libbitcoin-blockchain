@@ -161,6 +161,7 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         std::bind(&validate_block::handle_accepted,
             this, _1, block, sigops, bip141, handler);
 
+    // The threadpool must be initialized with at least 2 threads.
     // One dedicated thread is required by the validation subscriber.
     const auto threads = priority_dispatch_.size() - 1u;
     const auto count = block->transactions().size();
@@ -251,6 +252,7 @@ void validate_block::connect(block_const_ptr block,
         std::bind(&validate_block::handle_connected,
             this, _1, block, handler);
 
+    // The threadpool must be initialized with at least 2 threads.
     // One dedicated thread is required by the validation subscriber.
     const auto threads = priority_dispatch_.size() - 1u;
     const auto buckets = std::min(threads, non_coinbase_inputs);
