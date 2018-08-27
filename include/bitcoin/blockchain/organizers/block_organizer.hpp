@@ -40,7 +40,7 @@ public:
     typedef handle0 result_handler;
     typedef std::shared_ptr<block_organizer> ptr;
     typedef std::function<bool(code, block_const_ptr, size_t)> download_handler;
-    typedef resubscriber<code, block_const_ptr, size_t> download_subscriber;
+    typedef resubscriber<code, hash_digest, size_t> download_subscriber;
 
     /// Construct an instance.
     block_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
@@ -54,13 +54,16 @@ public:
     /// validate and organize a block into the store.
     code organize(block_const_ptr block, size_t height);
 
+    /// Push a validatable block identifier onto the download subscriber. 
+    void prime_validation(const hash_digest& hash, size_t height) const;
+
 protected:
     bool stopped() const;
 
 private:
     // Verify sub-sequence.
     code validate(block_const_ptr block);
-    bool handle_check(const code& ec, block_const_ptr block, size_t height);
+    bool handle_check(const code& ec, const hash_digest& hash, size_t height);
     void handle_accept(const code& ec, block_const_ptr block, result_handler handler);
     void handle_connect(const code& ec, block_const_ptr block, result_handler handler);
     void signal_completion(const code& ec);

@@ -84,8 +84,16 @@ public:
     virtual bool get_work(uint256_t& out_work, const uint256_t& overcome,
         size_t above_height, bool candidate) const = 0;
 
-    /// Get the block hash of an empty block, or false if missing or invalid.
+    /// Get block hash of an empty block, false if missing or failed.
     virtual bool get_downloadable(hash_digest& out_hash,
+        size_t height) const = 0;
+
+    /// Get block hash of an unvalidated block, false if empty/failed/valid.
+    virtual bool get_validatable(hash_digest& out_hash,
+        size_t height) const = 0;
+
+    /// Push a validatable block identifier onto the download subscriber. 
+    virtual void prime_validation(const hash_digest& hash,
         size_t height) const = 0;
 
     /// Populate metadata of the given block header.
