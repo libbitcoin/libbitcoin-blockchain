@@ -205,7 +205,7 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure in block organization, store is now corrupt: "
-            << ec.message();
+            << error_code.message();
     }
 
     // Resubscribe if not stop or store failure.
