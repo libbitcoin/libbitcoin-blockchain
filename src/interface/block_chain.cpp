@@ -469,10 +469,10 @@ code block_chain::update(block_const_ptr block, size_t height)
         if ((error_code = database_.update(*block, height)))
             return error_code;
     }
-
-    if (metadata.validated)
+    else if (metadata.validated)
     {
-        // Set block validation state and error code.
+        // Set block validation error state and error code.
+        // Never set valid on update as validation handling would be skipped.
         error_code = database_.invalidate(block->header(), metadata.error);
     }
 
@@ -565,13 +565,24 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
         return error::operation_failed;
 
     code ec;
+    chain::chain_state::ptr state;
     const auto fork = fork_point();
     const auto outgoing = std::make_shared<block_const_ptr_list>();
     const auto incoming = std::make_shared<block_const_ptr_list>();
 
-    // Get all missing incoming candidates (expensive reads).
+    // Get all missing incoming candidates with chain state (expensive reads).
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
-        incoming->push_back(get_block(height, true, true));
+    {
+        const auto block = get_block(height, true, true);
+
+        // Query chain state for first block, promote for remaining blocks.
+        state = state ?
+            promote_state(block->header(), state) :
+            chain_state(block->header(), height);
+
+        block->header().metadata.state = state;
+        incoming->push_back(block);
+    }
 
     // Append all candidate pointers from the branch cache.
     for (const auto block: *branch_cache)
