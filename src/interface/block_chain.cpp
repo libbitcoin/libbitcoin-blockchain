@@ -323,7 +323,10 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     // False implies store corruption.
     DEBUG_ONLY(const auto value =) get_transactions(txs, result, witness);
     BITCOIN_ASSERT(value);
-    return std::make_shared<const block>(result.header(), std::move(txs));
+
+    // Use non-const header copy to obtain move construction for txs.
+    auto header = result.header();
+    return std::make_shared<const block>(std::move(header), std::move(txs));
 }
 
 header_const_ptr block_chain::get_header(size_t height, bool candidate) const
@@ -965,7 +968,9 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto message = std::make_shared<const block>(result.header(),
+    // Use non-const header copy to obtain move construction for txs.
+    auto header = result.header();
+    const auto message = std::make_shared<const block>(std::move(header),
         std::move(txs));
     handler(error::success, message, height);
 }
@@ -1005,7 +1010,9 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    const auto message = std::make_shared<const block>(result.header(),
+    // Use non-const header copy to obtain move construction for txs.
+    auto header = result.header();
+    const auto message = std::make_shared<const block>(std::move(header),
         std::move(txs));
     handler(error::success, message, result.height());
 }
