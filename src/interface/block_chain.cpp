@@ -1723,7 +1723,7 @@ void block_chain::organize(header_const_ptr header, result_handler handler)
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
     // The handler must not call organize (lock safety).
-    transaction_organizer_.organize(tx, handler, bitcoin_settings_.max_money);
+    transaction_organizer_.organize(tx, handler, bitcoin_settings_.max_money());
 }
 
 code block_chain::organize(block_const_ptr block, size_t height)

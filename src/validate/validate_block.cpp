@@ -93,7 +93,7 @@ void validate_block::check(block_const_ptr block, size_t height) const
     else
     {
         // Run context free checks, block is not yet fully validated.
-        metadata.error = block->check(bitcoin_settings_.max_money,
+        metadata.error = block->check(bitcoin_settings_.max_money(),
             bitcoin_settings_.timestamp_limit_seconds,
             bitcoin_settings_.proof_of_work_limit);
         metadata.validated = false;
