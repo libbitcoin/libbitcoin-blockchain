@@ -47,7 +47,8 @@ settings::settings()
     bip143(true),
     bip147(true),
     time_warp_patch(false),
-    retarget_overflow_patch(false)
+    retarget_overflow_patch(false),
+    scrypt_proof_of_work(false)
 {
 }
 
@@ -133,6 +134,7 @@ uint32_t settings::enabled_forks() const
     forks |= (bip147 ? static_cast<uint32_t>(rule_fork::bip147_rule) : 0);
     forks |= (time_warp_patch ? static_cast<uint32_t>(rule_fork::time_warp_patch) : 0);
     forks |= (retarget_overflow_patch ? static_cast<uint32_t>(rule_fork::retarget_overflow_patch) : 0);
+    forks |= (scrypt_proof_of_work ? static_cast<uint32_t>(rule_fork::scrypt_proof_of_work) : 0);
     return forks;
 }
 

@@ -63,6 +63,7 @@ public:
     bool bip147;
     bool time_warp_patch;
     bool retarget_overflow_patch;
+    bool scrypt_proof_of_work;
 
     // Mining/Template inputs
     bc::config::script coinbase_input;

@@ -45,6 +45,7 @@ validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
     checkpoints_(settings.checkpoints),
     priority_dispatch_(dispatch),
     block_populator_(dispatch, chain),
+    scrypt_(settings.scrypt_proof_of_work),
     bitcoin_settings_(bitcoin_settings)
 {
 }
@@ -95,7 +96,7 @@ void validate_block::check(block_const_ptr block, size_t height) const
         // Run context free checks, block is not yet fully validated.
         metadata.error = block->check(bitcoin_settings_.max_money(),
             bitcoin_settings_.timestamp_limit_seconds,
-            bitcoin_settings_.proof_of_work_limit);
+            bitcoin_settings_.proof_of_work_limit, scrypt_);
         metadata.validated = false;
     }
 }
