@@ -81,6 +81,7 @@ private:
     mutable atomic_counter hits_;
     mutable atomic_counter queries_;
     populate_block block_populator_;
+    const bool scrypt_;
     const bc::settings& bitcoin_settings_;
 };
 

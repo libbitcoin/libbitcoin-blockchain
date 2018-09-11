@@ -35,9 +35,10 @@ using namespace std::placeholders;
 #define NAME "validate_header"
 
 validate_header::validate_header(dispatcher& dispatch, const fast_chain& chain,
-    const bc::settings& bitcoin_settings)
+    const bool scrypt, const bc::settings& bitcoin_settings)
   : stopped_(true),
     header_populator_(dispatch, chain),
+    scrypt_(scrypt),
     bitcoin_settings_(bitcoin_settings)
 {
 }
@@ -71,7 +72,7 @@ code validate_header::check(header_const_ptr header) const
 {
     // Run context free checks, even if under checkpoint or milestone.
     return header->check(bitcoin_settings_.timestamp_limit_seconds,
-        bitcoin_settings_.proof_of_work_limit);
+        bitcoin_settings_.proof_of_work_limit, scrypt_);
 }
 
 // Accept sequence.
