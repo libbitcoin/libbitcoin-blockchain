@@ -75,8 +75,8 @@ bool block_organizer::start()
 bool block_organizer::stop()
 {
     validator_.stop();
+    downloader_subscriber_->relay(error::service_stopped, null_hash, (size_t)0);
     downloader_subscriber_->stop();
-    downloader_subscriber_->invoke(error::service_stopped, {}, 0);
     stopped_ = true;
     return true;
 }
