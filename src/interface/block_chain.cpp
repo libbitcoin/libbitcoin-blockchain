@@ -860,13 +860,15 @@ bool block_chain::stop()
 {
     stopped_ = true;
 
+    // this can't be done in the critical section or block_organizer finishes validation before stop
+    block_organizer_.stop();
+    
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     validation_mutex_.lock_high_priority();
 
     // This cannot call organize or stop (lock safe).
     auto result =
-        block_organizer_.stop() &&
         header_organizer_.stop() &&
         transaction_organizer_.stop();
 
