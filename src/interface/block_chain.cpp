@@ -860,15 +860,16 @@ bool block_chain::stop()
 {
     stopped_ = true;
 
+    const auto result =
+        block_organizer_.stop() &&
+        header_organizer_.stop() &&
+        transaction_organizer_.stop();
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     validation_mutex_.lock_high_priority();
 
-    // This cannot call organize or stop (lock safe).
-    auto result =
-        block_organizer_.stop() &&
-        header_organizer_.stop() &&
-        transaction_organizer_.stop();
+    // Clean up subscriptions and threadpool now that work is coalesced.
 
     block_subscriber_->stop();
     header_subscriber_->stop();
@@ -878,7 +879,7 @@ bool block_chain::stop()
     header_subscriber_->invoke(error::service_stopped, 0, {}, {});
     transaction_subscriber_->invoke(error::service_stopped, {});
 
-    // The priority pool must not be stopped while organizing.
+    // Stop the threadpool keep-alive allowing threads to terminate.
     priority_pool_.shutdown();
 
     validation_mutex_.unlock_high_priority();
