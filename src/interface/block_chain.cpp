@@ -573,6 +573,9 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Get all missing incoming candidates with chain state (expensive reads).
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
     {
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << "Get preceding block #" << height;
+
         const auto block = get_block(height, true, true);
 
         // Query chain state for first block, promote for remaining blocks.
