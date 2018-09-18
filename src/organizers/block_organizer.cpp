@@ -137,16 +137,19 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
 
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
+    auto branch_height = height;
     code error_code;
 
-    for (auto current_height = height; !stopped() && current_height != 0;
-        ++current_height)
+    for (auto branch_height = height; !stopped() && height != 0; ++height)
     {
         // TODO: check last downloaded cache first (for fast top validation).
         // TODO: create parallel block reader (this is expensive and serial).
         // TODO: this can run in the block populator using priority dispatch.
         // TODO: consider metadata population in line with block read.
-        auto block = fast_chain_.get_block(current_height, true, true);
+        auto block = fast_chain_.get_block(height, true, true);
+
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << "Got next block #" << height;
 
         // If hash is misaligned we must be looking at an expired notification.
         if (!block || fast_chain_.top_valid_candidate_state()->hash() !=
@@ -162,7 +165,7 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
             // TODO: handle invalidity caching of merkle mutations.
             // Pop and mark as invalid candidates at and above block.
             //#################################################################
-            error_code = fast_chain_.invalidate(block, current_height);
+            error_code = fast_chain_.invalidate(block, height);
             //#################################################################
 
             // Candidate chain is invalid at this point so break here.
@@ -180,16 +183,27 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
                 break;
         }
 
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << "Validated block #" << height << " ["
+            << encode_hash(block->hash()) << "]";
+
         if (fast_chain_.is_reorganizable())
         {
             // Reorganize this stronger candidate branch into confirmed chain.
             //#################################################################
-            error_code = fast_chain_.reorganize(branch_cache, height);
+            error_code = fast_chain_.reorganize(branch_cache, branch_height);
             //#################################################################
-            branch_cache->clear();
 
             if (error_code)
                 break;
+
+            LOG_INFO(LOG_BLOCKCHAIN)
+                << "Organized blocks [" << branch_height << "-"
+                << branch_height + branch_cache->size() - 1u << "]";
+
+            // Reset the branch for next reorganization.
+            branch_height += branch_cache->size();
+            branch_cache->clear();
         }
 
         // Top valid chain state should have been updated to match the block.
