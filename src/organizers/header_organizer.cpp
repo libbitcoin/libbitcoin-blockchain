@@ -82,6 +82,13 @@ void header_organizer::organize(header_const_ptr header,
 {
     code error_code;
 
+    // Quickly skip existing header.
+    if (fast_chain_.get_block_state(header->hash()) != block_state::missing)
+    {
+        handler(error::duplicate_block);
+        return;
+    }
+
     // Checks that are independent of chain state.
     if ((error_code = validator_.check(header)))
     {
