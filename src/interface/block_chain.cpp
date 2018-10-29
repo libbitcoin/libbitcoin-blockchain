@@ -64,12 +64,13 @@ block_chain::block_chain(threadpool& pool,
     priority_(priority_pool_, NAME "_priority"),
     dispatch_(pool, NAME "_dispatch"),
 
-    // Organizers use priority dispatch and/or non-priority thread pool.
+    // Organizers use priority dispatch.
     block_organizer_(validation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
     header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_,
         settings.scrypt_proof_of_work, bitcoin_settings),
-    transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
+    transaction_organizer_(validation_mutex_, priority_, pool, *this,
+        transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
@@ -453,6 +454,9 @@ code block_chain::reorganize(const config::checkpoint& fork,
         set_candidate_work(0);
     }
 
+    LOG_INFO(LOG_BLOCKCHAIN)
+        << "Reorganized.";
+
     set_top_candidate_state(top_state);
     notify(fork_height, incoming, outgoing);
     return ec;
@@ -520,6 +524,9 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     // This should not have to unmark because none were ever valid.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
+
+    LOG_INFO(LOG_BLOCKCHAIN)
+        << "Invalidated.";
 
     // Lower top candidate state to that of the top valid (previous header).
     set_top_candidate_state(top_valid_candidate_state());
@@ -755,6 +762,9 @@ void block_chain::set_confirmed_work(const uint256_t& work_above_fork)
 // private.
 void block_chain::set_top_candidate_state(chain::chain_state::ptr top)
 {
+    LOG_INFO(LOG_BLOCKCHAIN)
+        << "set_top_candidate_state: [" << encode_hash(top->hash()) << "]";
+
     top_candidate_state_.store(top);
 }
 
@@ -812,6 +822,11 @@ chain::chain_state::ptr block_chain::chain_state(const chain::header& header,
 chain::chain_state::ptr block_chain::promote_state(const chain::header& header,
     chain::chain_state::ptr parent) const
 {
+    LOG_INFO(LOG_BLOCKCHAIN)
+        << "Block: [" << encode_hash(header.hash()) << "] Parent: ["
+        << encode_hash(parent->hash()) << "]";
+
+    // BUGBUG: REORG FAILURE.
     if (!parent || parent->hash() != header.previous_block_hash())
         return {};
 
