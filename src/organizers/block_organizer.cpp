@@ -161,7 +161,8 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
 
         if (block->header().metadata.error)
         {
-            // TODO: handle invalidity caching of merkle mutations.
+            // CONSENSUS: TODO: handle invalidity caching of merkle mutations.
+
             // Pop and mark as invalid candidates at and above block.
             //#################################################################
             error_code = fast_chain_.invalidate(block, height);
