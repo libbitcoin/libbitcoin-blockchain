@@ -49,13 +49,13 @@ public:
 
 // hash
 
-BOOST_AUTO_TEST_CASE(header_branch__hash__default__null_hash)
+BOOST_AUTO_TEST_CASE(header_branch__fork_hash__default__null_hash)
 {
     header_branch instance;
-    BOOST_REQUIRE(instance.hash() == null_hash);
+    BOOST_REQUIRE(instance.fork_hash() == null_hash);
 }
 
-BOOST_AUTO_TEST_CASE(header_branch__hash__one_header__only_previous_block_hash)
+BOOST_AUTO_TEST_CASE(header_branch__fork_hash__one_header__only_previous_block_hash)
 {
     DECLARE_HEADER(header, 0);
     DECLARE_HEADER(header, 1);
@@ -65,10 +65,10 @@ BOOST_AUTO_TEST_CASE(header_branch__hash__one_header__only_previous_block_hash)
 
     header_branch instance;
     BOOST_REQUIRE(instance.push(header1));
-    BOOST_REQUIRE(instance.hash() == expected);
+    BOOST_REQUIRE(instance.fork_hash() == expected);
 }
 
-BOOST_AUTO_TEST_CASE(header_branch__hash__two_headers__first_previous_block_hash)
+BOOST_AUTO_TEST_CASE(header_branch__fork_hash__two_headers__first_previous_block_hash)
 {
     header_branch instance;
     DECLARE_HEADER(top, 42);
@@ -82,23 +82,23 @@ BOOST_AUTO_TEST_CASE(header_branch__hash__two_headers__first_previous_block_hash
 
     BOOST_REQUIRE(instance.push(header1));
     BOOST_REQUIRE(instance.push(header0));
-    BOOST_REQUIRE(instance.hash() == expected);
+    BOOST_REQUIRE(instance.fork_hash() == expected);
 }
 
 // height/set_height
 
-BOOST_AUTO_TEST_CASE(header_branch__height__default__max_size_t)
+BOOST_AUTO_TEST_CASE(header_branch__fork_height__default__max_size_t)
 {
     header_branch instance;
-    BOOST_REQUIRE_EQUAL(instance.height(), max_size_t);
+    BOOST_REQUIRE_EQUAL(instance.fork_height(), max_size_t);
 }
 
-BOOST_AUTO_TEST_CASE(header_branch__set_height__round_trip__unchanged)
+BOOST_AUTO_TEST_CASE(header_branch__set_fork_height__round_trip__unchanged)
 {
     static const size_t expected = 42;
     header_branch instance;
-    instance.set_height(expected);
-    BOOST_REQUIRE_EQUAL(instance.height(), expected);
+    instance.set_fork_height(expected);
+    BOOST_REQUIRE_EQUAL(instance.fork_height(), expected);
 }
 
 // index_of
@@ -106,21 +106,21 @@ BOOST_AUTO_TEST_CASE(header_branch__set_height__round_trip__unchanged)
 BOOST_AUTO_TEST_CASE(header_branch__index_of__one__zero)
 {
     header_branch_fixture instance;
-    instance.set_height(0);
+    instance.set_fork_height(0);
     BOOST_REQUIRE_EQUAL(instance.index_of(1), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(header_branch__index_of__two__one)
 {
     header_branch_fixture instance;
-    instance.set_height(0);
+    instance.set_fork_height(0);
     BOOST_REQUIRE_EQUAL(instance.index_of(2), 1u);
 }
 
 BOOST_AUTO_TEST_CASE(header_branch__index_of__value__expected)
 {
     header_branch_fixture instance;
-    instance.set_height(42);
+    instance.set_fork_height(42);
     BOOST_REQUIRE_EQUAL(instance.index_of(53), 10u);
 }
 
@@ -129,21 +129,21 @@ BOOST_AUTO_TEST_CASE(header_branch__index_of__value__expected)
 BOOST_AUTO_TEST_CASE(header_branch__height_at__zero__one)
 {
     header_branch_fixture instance;
-    instance.set_height(0);
+    instance.set_fork_height(0);
     BOOST_REQUIRE_EQUAL(instance.height_at(0), 1u);
 }
 
 BOOST_AUTO_TEST_CASE(header_branch__height_at__one__two)
 {
     header_branch_fixture instance;
-    instance.set_height(0);
+    instance.set_fork_height(0);
     BOOST_REQUIRE_EQUAL(instance.height_at(1), 2u);
 }
 
 BOOST_AUTO_TEST_CASE(header_branch__height_at__value__expected)
 {
     header_branch_fixture instance;
-    instance.set_height(42);
+    instance.set_fork_height(42);
     BOOST_REQUIRE_EQUAL(instance.height_at(10), 53u);
 }
 
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(header_branch__top_height__two_headers__expected)
     DECLARE_HEADER(header, 1);
 
     static const size_t expected = 42;
-    instance.set_height(expected - 2);
+    instance.set_fork_height(expected - 2);
 
     // Link the headers.
     header1->set_previous_block_hash(header0->hash());

@@ -40,7 +40,7 @@ public:
     header_branch(size_t height=max_size_t);
 
     /// Set the height of the parent of this branch (fork point).
-    void set_height(size_t height);
+    void set_fork_height(size_t height);
 
     /// Push the header onto the branch, true if chains to top.
     bool push(header_const_ptr header);
@@ -66,13 +66,13 @@ public:
     /// Summarize the work of the branch.
     uint256_t work() const;
 
-    /// The hash of the branch parent (branch point).
-    hash_digest hash() const;
+    /// The hash of the branch parent (fork point).
+    hash_digest fork_hash() const;
 
-    /// The height of the parent parent (branch point).
-    size_t height() const;
+    /// The height of the parent parent (fork point).
+    size_t fork_height() const;
 
-    /// The branch parent (branch point), identical to { hash(), height() }.
+    /// The branch parent (fork point), identical to { hash(), height() }.
     config::checkpoint fork_point() const;
 
     /// The bits of the header at the given height in the branch.
