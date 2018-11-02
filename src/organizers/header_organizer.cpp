@@ -82,13 +82,6 @@ void header_organizer::organize(header_const_ptr header,
 {
     code error_code;
 
-    // Quickly skip existing header.
-    if (fast_chain_.get_block_state(header->hash()) != block_state::missing)
-    {
-        handler(error::duplicate_block);
-        return;
-    }
-
     // Checks that are independent of chain state.
     if ((error_code = validator_.check(header)))
     {
@@ -162,7 +155,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
     uint256_t required_work;
 
     // This stops before the height or at the work level, which ever is first.
-    if (!fast_chain_.get_work(required_work, work, branch->height(), true))
+    if (!fast_chain_.get_work(required_work, work, branch->fork_height(), true))
     {
         handler(error::operation_failed);
         return;
