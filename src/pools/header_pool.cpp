@@ -277,7 +277,7 @@ header_branch::ptr header_pool::get_branch(header_const_ptr header) const
     // A preexisting root header must have a non-zero height.
     // This precludes the need to search for the fork point for previous item.
     if (trace->size() > 1u)
-        trace->set_height(height(root->hash()) - 1u);
+        trace->set_fork_height(height(root->hash()) - 1u);
 
     return trace;
 }

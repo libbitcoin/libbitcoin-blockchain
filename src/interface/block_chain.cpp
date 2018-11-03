@@ -64,12 +64,13 @@ block_chain::block_chain(threadpool& pool,
     priority_(priority_pool_, NAME "_priority"),
     dispatch_(pool, NAME "_dispatch"),
 
-    // Organizers use priority dispatch and/or non-priority thread pool.
+    // Organizers use priority dispatch.
     block_organizer_(validation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
     header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_,
         settings.scrypt_proof_of_work, bitcoin_settings),
-    transaction_organizer_(validation_mutex_, priority_, pool, *this, transaction_pool_, settings),
+    transaction_organizer_(validation_mutex_, priority_, pool, *this,
+        transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
@@ -206,6 +207,7 @@ bool block_chain::get_version(uint32_t& out_version, size_t height,
     return true;
 }
 
+// Set overcome to zero to bypass early exit.
 bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     size_t above_height, bool candidate) const
 {
@@ -215,7 +217,6 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     if (!database_.blocks().top(top, candidate))
         return false;
 
-    // Set overcome to zero to bypass early exit.
     const auto no_maximum = overcome.is_zero();
 
     for (auto height = top; (height > above_height) &&
@@ -225,10 +226,6 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
 
         if (!result)
             return false;
-
-        // Candidate chain is counted only to top validated block.
-        if (candidate && !is_valid(result.state()))
-            break;
 
         out_work += chain::header::proof(result.bits());
     }
@@ -434,11 +431,8 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
     // Don't add outgoing because only populated after reorganize and at that
     // point the headers are no longer indexed (populator requires indexation).
-    if (!incoming->empty())
-    {
-        header_pool_.remove(incoming);
-        header_pool_.prune(top_state->height());
-    }
+    header_pool_.remove(incoming);
+    header_pool_.prune(top_state->height());
 
     // If confirmed fork point is above candidate fork point then lower it.
     if (fork_point().height() > fork_height)
@@ -520,6 +514,9 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     // This should not have to unmark because none were ever valid.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
+
+    LOG_INFO(LOG_BLOCKCHAIN)
+        << "Invalidated.";
 
     // Lower top candidate state to that of the top valid (previous header).
     set_top_candidate_state(top_valid_candidate_state());

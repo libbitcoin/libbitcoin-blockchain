@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__empty__self_default_height)
     const auto header1 = make_header(1);
     const auto path = instance.get_branch(header1);
     BOOST_REQUIRE_EQUAL(path->size(), 1u);
-    BOOST_REQUIRE_EQUAL(path->height(), max_size_t);
+    BOOST_REQUIRE_EQUAL(path->fork_height(), max_size_t);
     BOOST_REQUIRE(path->headers()->front() == header1);
 }
 
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__disconnected__self_default_height)
 
     const auto path = instance.get_branch(header3);
     BOOST_REQUIRE_EQUAL(path->size(), 1u);
-    BOOST_REQUIRE_EQUAL(path->height(), max_size_t);
+    BOOST_REQUIRE_EQUAL(path->fork_height(), max_size_t);
     BOOST_REQUIRE(path->headers()->front() == header3);
 }
 
@@ -523,7 +523,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_one_path__expected_path_
 
     const auto path = instance.get_branch(header5);
     BOOST_REQUIRE_EQUAL(path->size(), 5u);
-    BOOST_REQUIRE_EQUAL(path->height(), fork_point);
+    BOOST_REQUIRE_EQUAL(path->fork_height(), fork_point);
     BOOST_REQUIRE((*path->headers())[0] == header1);
     BOOST_REQUIRE((*path->headers())[1] == header2);
     BOOST_REQUIRE((*path->headers())[2] == header3);
@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_paths__expected
 
     const auto path1 = instance.get_branch(header5);
     BOOST_REQUIRE_EQUAL(path1->size(), 5u);
-    BOOST_REQUIRE_EQUAL(path1->height(), fork_point1);
+    BOOST_REQUIRE_EQUAL(path1->fork_height(), fork_point1);
     BOOST_REQUIRE((*path1->headers())[0] == header1);
     BOOST_REQUIRE((*path1->headers())[1] == header2);
     BOOST_REQUIRE((*path1->headers())[2] == header3);
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_paths__expected
 
     const auto path2 = instance.get_branch(header15);
     BOOST_REQUIRE_EQUAL(path2->size(), 5u);
-    BOOST_REQUIRE_EQUAL(path2->height(), fork_point2);
+    BOOST_REQUIRE_EQUAL(path2->fork_height(), fork_point2);
     BOOST_REQUIRE((*path2->headers())[0] == header11);
     BOOST_REQUIRE((*path2->headers())[1] == header12);
     BOOST_REQUIRE((*path2->headers())[2] == header13);
@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_sub_header_bran
 
     const auto path1 = instance.get_branch(header5);
     BOOST_REQUIRE_EQUAL(path1->size(), 5u);
-    BOOST_REQUIRE_EQUAL(path1->height(), fork_point);
+    BOOST_REQUIRE_EQUAL(path1->fork_height(), fork_point);
     BOOST_REQUIRE((*path1->headers())[0] == header1);
     BOOST_REQUIRE((*path1->headers())[1] == header2);
     BOOST_REQUIRE((*path1->headers())[2] == header3);
@@ -621,14 +621,14 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_sub_header_bran
 
     const auto path2 = instance.get_branch(header12);
     BOOST_REQUIRE_EQUAL(path2->size(), 3u);
-    BOOST_REQUIRE_EQUAL(path2->height(), fork_point);
+    BOOST_REQUIRE_EQUAL(path2->fork_height(), fork_point);
     BOOST_REQUIRE((*path2->headers())[0] == header1);
     BOOST_REQUIRE((*path2->headers())[1] == header11);
     BOOST_REQUIRE((*path2->headers())[2] == header12);
 
     const auto path3 = instance.get_branch(header23);
     BOOST_REQUIRE_EQUAL(path3->size(), 7u);
-    BOOST_REQUIRE_EQUAL(path3->height(), fork_point);
+    BOOST_REQUIRE_EQUAL(path3->fork_height(), fork_point);
     BOOST_REQUIRE((*path3->headers())[0] == header1);
     BOOST_REQUIRE((*path3->headers())[1] == header2);
     BOOST_REQUIRE((*path3->headers())[2] == header3);

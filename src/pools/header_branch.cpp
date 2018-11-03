@@ -37,7 +37,7 @@ header_branch::header_branch(size_t height)
 {
 }
 
-void header_branch::set_height(size_t height)
+void header_branch::set_fork_height(size_t height)
 {
     height_ = height;
 }
@@ -73,7 +73,7 @@ header_const_ptr header_branch::top() const
 
 size_t header_branch::top_height() const
 {
-    return height() + size();
+    return fork_height() + size();
 }
 
 header_const_ptr_list_const_ptr header_branch::headers() const
@@ -91,12 +91,12 @@ size_t header_branch::size() const
     return headers_->size();
 }
 
-size_t header_branch::height() const
+size_t header_branch::fork_height() const
 {
     return height_;
 }
 
-hash_digest header_branch::hash() const
+hash_digest header_branch::fork_hash() const
 {
     return empty() ? null_hash :
         headers_->front()->previous_block_hash();
@@ -104,7 +104,7 @@ hash_digest header_branch::hash() const
 
 config::checkpoint header_branch::fork_point() const
 {
-    return { hash(), height() };
+    return { fork_hash(), fork_height() };
 }
 
 // private
@@ -117,7 +117,7 @@ size_t header_branch::index_of(size_t height) const
 // private
 size_t header_branch::height_at(size_t index) const
 {
-    // The height of the blockchain branch point plus zero-based index.
+    // The height of the first branch block plus zero-based index.
     return safe_add(safe_add(index, height_), size_t(1));
 }
 
