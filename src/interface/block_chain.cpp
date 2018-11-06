@@ -515,9 +515,6 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
-    LOG_INFO(LOG_BLOCKCHAIN)
-        << "Invalidated.";
-
     // Lower top candidate state to that of the top valid (previous header).
     set_top_candidate_state(top_valid_candidate_state());
 
@@ -570,9 +567,6 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Get all missing incoming candidates with chain state (expensive reads).
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
     {
-        LOG_DEBUG(LOG_BLOCKCHAIN)
-            << "Get preceding block #" << height;
-
         const auto block = get_block(height, true, true);
 
         // Query chain state for first block, promote for remaining blocks.

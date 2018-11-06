@@ -163,16 +163,18 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
         {
             // CONSENSUS: TODO: handle invalidity caching of merkle mutations.
 
+            // This triggers BLOCK reorganization notifications.
             // Pop and mark as invalid candidates at and above block.
             //#################################################################
             error_code = fast_chain_.invalidate(block, height);
             //#################################################################
 
-            // Candidate chain is invalid at this point so break here.
+            // Candidate chain is invalid at and above this point so break out.
             break;
         }
         else
         {
+            // This triggers NO notifications.
             // Mark candidate block as valid and mark candidate-spent outputs.
             //#################################################################
             error_code = fast_chain_.candidate(block);
@@ -187,6 +189,7 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
         {
             const auto branch_height = height - (branch_cache->size() - 1u);
 
+            // This triggers BLOCK reorganization notifications.
             // Reorganize this stronger candidate branch into confirmed chain.
             //#################################################################
             error_code = fast_chain_.reorganize(branch_cache, branch_height);
@@ -203,14 +206,6 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
 
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
-
-    const auto count = end_height - start_height;
-    if (count != 0 && (count % 10) == 0)
-    {
-        LOG_INFO(LOG_BLOCKCHAIN)
-            << "Organized " << count << " blocks ["
-            << (start_height + 1u) << "-" << end_height << "]";
-    }
 
     // A non-stop error result implies store corruption.
     if (error_code && error_code != error::service_stopped)
