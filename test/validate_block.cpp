@@ -20,9 +20,10 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::machine;
 
 BOOST_AUTO_TEST_SUITE(validate_block_tests)
 

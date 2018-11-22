@@ -21,9 +21,10 @@
 #include "utilities.hpp"
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 static void insert_pool(transaction_pool_state& state,
     transaction_entry::ptr entry, transaction_pool_state::priority value)
@@ -103,7 +104,7 @@ BOOST_AUTO_TEST_CASE(anchor_converter__demote__anchor_only_graph_enqueued_anchor
     transaction_pool_state pool_state;
     anchor_converter converter(pool_state);
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto entry = utilities::get_entry(state, 1, 0);
     insert_pool(pool_state, entry, 1.0);
     BOOST_REQUIRE(in_pool(pool_state, entry));
@@ -118,7 +119,7 @@ BOOST_AUTO_TEST_CASE(anchor_converter__demote__enqueued_childless_non_anchor_wit
     transaction_pool_state pool_state;
     anchor_converter converter(pool_state);
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto non_anchor = utilities::get_entry(state, 1, 0);
     auto parent_1 = utilities::get_entry(state, 2, 0);
     auto parent_2 = utilities::get_entry(state, 3, 0);
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(anchor_converter__demote__enqueued_childless_non_anchor_wit
     transaction_pool_state pool_state;
     anchor_converter converter(pool_state);
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto non_anchor = utilities::get_entry(state, 1, 0);
     auto parent_1 = utilities::get_entry(state, 2, 0);
     auto parent_2 = utilities::get_entry(state, 3, 0);
@@ -184,7 +185,7 @@ BOOST_AUTO_TEST_CASE(anchor_converter__demote__enqueued_childless_non_anchor_wit
     transaction_pool_state pool_state;
     anchor_converter converter(pool_state);
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto non_anchor_1 = utilities::get_entry(state, 1, 0);
     auto non_anchor_parent_1 = utilities::get_entry(state, 2, 0);
     auto non_anchor_parent_2 = utilities::get_entry(state, 3, 0);
@@ -241,7 +242,7 @@ BOOST_AUTO_TEST_CASE(anchor_converter__demote__enqueued_bounded_child_non_anchor
     transaction_pool_state pool_state;
     anchor_converter converter(pool_state);
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto non_anchor_1 = utilities::get_entry(state, 1u, 0u);
     auto parent_1 = utilities::get_entry(state, 2u, 0u);
     auto parent_2 = utilities::get_entry(state, 3u, 0u);

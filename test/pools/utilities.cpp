@@ -25,8 +25,9 @@ namespace test {
 namespace pools {
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 chain_state::data utilities::get_chain_data()
 {

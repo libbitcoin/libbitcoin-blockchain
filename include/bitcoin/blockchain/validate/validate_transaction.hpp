@@ -21,7 +21,7 @@
 
 #include <atomic>
 #include <cstddef>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/populate/populate_transaction.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -33,32 +33,35 @@ namespace blockchain {
 class BCB_API validate_transaction
 {
 public:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
 
-    validate_transaction(dispatcher& dispatch, const fast_chain& chain,
+    validate_transaction(system::dispatcher& dispatch, const fast_chain& chain,
         const settings& settings);
 
     void start();
     void stop();
 
-    code check(transaction_const_ptr tx, uint64_t max_money) const;
-    void accept(transaction_const_ptr tx, result_handler handler) const;
-    void connect(transaction_const_ptr tx, result_handler handler) const;
+    system::code check(system::transaction_const_ptr tx,
+        uint64_t max_money) const;
+    void accept(system::transaction_const_ptr tx,
+        result_handler handler) const;
+    void connect(system::transaction_const_ptr tx,
+        result_handler handler) const;
 
 protected:
     bool stopped() const;
 
 private:
-    void handle_populated(const code& ec, transaction_const_ptr tx,
-        result_handler handler) const;
-    void connect_inputs(transaction_const_ptr tx, size_t bucket,
+    void handle_populated(const system::code& ec,
+        system::transaction_const_ptr tx, result_handler handler) const;
+    void connect_inputs(system::transaction_const_ptr tx, size_t bucket,
         size_t buckets, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool retarget_;
     const bool use_libconsensus_;
-    dispatcher& dispatch_;
+    system::dispatcher& dispatch_;
     populate_transaction transaction_populator_;
 };
 

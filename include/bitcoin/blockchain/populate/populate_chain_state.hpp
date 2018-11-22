@@ -21,7 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
@@ -35,23 +35,24 @@ class BCB_API populate_chain_state
 {
 public:
     populate_chain_state(const fast_chain& chain, const settings& settings,
-        const bc::settings& bitcoin_settings);
+        const system::settings& bitcoin_settings);
 
     /// Populate chain state for candidate or confirmed top block|header.
-    chain::chain_state::ptr populate(bool candidate) const;
+    system::chain::chain_state::ptr populate(bool candidate) const;
 
     /// Populate chain state for candidate or confirmed block|header by height.
-    chain::chain_state::ptr populate(size_t header_height,
+    system::chain::chain_state::ptr populate(size_t header_height,
         bool candidate) const;
 
     /// Populate chain state for the given block|header.
-    chain::chain_state::ptr populate(const chain::header& header,
-        size_t header_height, bool candidate) const;
+    system::chain::chain_state::ptr populate(
+        const system::chain::header& header, size_t header_height,
+        bool candidate) const;
 
 private:
-    typedef chain::header header;
-    typedef chain::chain_state::map map;
-    typedef chain::chain_state::data data;
+    typedef system::chain::header header;
+    typedef system::chain::chain_state::map map;
+    typedef system::chain::chain_state::data data;
 
     bool get_bits(uint32_t& bits, size_t height, const header& header,
         size_t header_height, bool candidate) const;
@@ -59,8 +60,8 @@ private:
         size_t header_height, bool candidate) const;
     bool get_timestamp(uint32_t& time, size_t height, const header& header,
         size_t header_height, bool candidate) const;
-    bool get_block_hash(hash_digest& hash, size_t height, const header& header,
-        size_t header_height, bool candidate) const;
+    bool get_block_hash(system::hash_digest& hash, size_t height,
+        const header& header, size_t header_height, bool candidate) const;
 
     bool populate_all(data& data, const header& header, size_t header_height,
         bool candidate) const;
@@ -79,8 +80,8 @@ private:
     // These are thread safe.
     const uint32_t forks_;
     const uint32_t stale_seconds_;
-    const config::checkpoint::list checkpoints_;
-    const bc::settings& bitcoin_settings_;
+    const system::config::checkpoint::list checkpoints_;
+    const system::settings& bitcoin_settings_;
 
     // This is used in a thread safe manner, as headers are never changed.
     const fast_chain& fast_chain_;

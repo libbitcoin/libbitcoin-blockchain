@@ -21,9 +21,10 @@
 #include "utilities.hpp"
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 BOOST_AUTO_TEST_SUITE(priority_calculator_tests)
 
@@ -40,7 +41,7 @@ BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__no_enqueue__returns_zeros)
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__anchor_entry_enqueue__returns_zeros)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto entry = utilities::get_fee_entry(state, 1, 0, 123);
     priority_calculator calculator;
     calculator.enqueue(entry);
@@ -54,7 +55,7 @@ BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__anchor_entry_enqueue__retu
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__entry_with_immediate_parents__returns_non_anchor_values)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto child = utilities::get_fee_entry(state, 1, 0, 123);
     auto parent_1 = utilities::get_fee_entry(state, 2, 0, 321);
     auto parent_2 = utilities::get_fee_entry(state, 3, 0, 222);
@@ -73,7 +74,7 @@ BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__entry_with_immediate_paren
 BOOST_AUTO_TEST_CASE(priority_calculator__prioritize__entry_with_ancestor_depth__returns_non_anchor_cumulative_values)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto child = utilities::get_fee_entry(state, 1, 0, 123);
     auto parent_1 = utilities::get_fee_entry(state, 2, 0, 321);
     auto parent_2 = utilities::get_fee_entry(state, 3, 0, 222);

@@ -20,7 +20,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_VALIDATE_HEADER_HPP
 
 #include <atomic>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/populate/populate_header.hpp>
@@ -32,29 +32,29 @@ namespace blockchain {
 class BCB_API validate_header
 {
 public:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
 
-    validate_header(dispatcher& dispatch, const fast_chain& chain,
-        const bool scrypt, const bc::settings& bitcoin_settings);
+    validate_header(system::dispatcher& dispatch, const fast_chain& chain,
+        const bool scrypt, const system::settings& bitcoin_settings);
 
     void start();
     void stop();
 
-    code check(header_const_ptr block) const;
+    system::code check(system::header_const_ptr block) const;
     void accept(header_branch::ptr branch, result_handler handler) const;
 
 protected:
     bool stopped() const;
 
 private:
-    void handle_populated(const code& ec, header_branch::ptr branch,
+    void handle_populated(const system::code& ec, header_branch::ptr branch,
         result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
     populate_header header_populator_;
     const bool scrypt_;
-    const bc::settings& bitcoin_settings_;
+    const system::settings& bitcoin_settings_;
 };
 
 } // namespace blockchain

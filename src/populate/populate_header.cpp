@@ -18,15 +18,16 @@
  */
 #include <bitcoin/blockchain/populate/populate_header.hpp>
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::machine;
 
 #define NAME "populate_header"
 

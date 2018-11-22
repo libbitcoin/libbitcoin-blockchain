@@ -30,16 +30,18 @@ namespace pools {
 class utilities
 {
 public:
-    static chain::chain_state::data get_chain_data();
+    static system::chain::chain_state::data get_chain_data();
 
-    static transaction_const_ptr get_const_tx(uint32_t version,
+    static system::transaction_const_ptr get_const_tx(uint32_t version,
         uint32_t locktime);
 
-    static transaction_entry::ptr get_entry(chain::chain_state::ptr state,
-        uint32_t version, uint32_t locktime);
+    static transaction_entry::ptr get_entry(
+        system::chain::chain_state::ptr state, uint32_t version,
+        uint32_t locktime);
 
-    static transaction_entry::ptr get_fee_entry(chain::chain_state::ptr state,
-        uint32_t version, uint32_t locktime, uint64_t fee);
+    static transaction_entry::ptr get_fee_entry(
+        system::chain::chain_state::ptr state, uint32_t version,
+        uint32_t locktime, uint64_t fee);
 
     static void connect(transaction_entry::ptr parent,
         transaction_entry::ptr child, uint32_t index);

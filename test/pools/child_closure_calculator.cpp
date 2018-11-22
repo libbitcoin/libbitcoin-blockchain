@@ -21,9 +21,10 @@
 #include "utilities.hpp"
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 BOOST_AUTO_TEST_SUITE(child_closure_calculator_tests)
 
@@ -39,7 +40,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__childless_entry__ret
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     child_closure_calculator calculator(pool_state);
     auto entry = utilities::get_entry(state, 1, 0);
     auto result = calculator.get_closure(entry);
@@ -50,7 +51,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__entry_with_immediate
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_entry = utilities::get_entry(state, 1, 0);
     auto child1_entry = utilities::get_entry(state, 2, 0);
     auto child2_entry = utilities::get_entry(state, 3, 0);
@@ -69,7 +70,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__entry_with_multi_par
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent1_entry = utilities::get_entry(state, 1, 0);
     auto parent2_entry = utilities::get_entry(state, 2, 0);
     auto child1_entry = utilities::get_entry(state, 3, 0);
@@ -90,7 +91,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__entry_with_immediate
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_entry = utilities::get_entry(state, 1, 0);
     auto child1_entry = utilities::get_entry(state, 2, 0);
     auto child2_entry = utilities::get_entry(state, 3, 0);
@@ -111,7 +112,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__entry_with_descendan
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_entry = utilities::get_entry(state, 1, 0);
     auto child1_entry = utilities::get_entry(state, 2, 0);
     auto child2_entry = utilities::get_entry(state, 3, 0);
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE(child_closure_calculator__get_closure__entry_with_descendan
 {
     transaction_pool_state pool_state;
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_entry = utilities::get_entry(state, 1, 0);
     auto child1_entry = utilities::get_entry(state, 2, 0);
     auto child2_entry = utilities::get_entry(state, 3, 0);

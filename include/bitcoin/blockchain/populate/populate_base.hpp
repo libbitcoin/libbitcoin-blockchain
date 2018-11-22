@@ -21,7 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -33,12 +33,12 @@ namespace blockchain {
 class BCB_API populate_base
 {
 protected:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
 
-    populate_base(dispatcher& dispatch, const fast_chain& chain);
+    populate_base(system::dispatcher& dispatch, const fast_chain& chain);
 
     // These are thread safe.
-    dispatcher& dispatch_;
+    system::dispatcher& dispatch_;
     const fast_chain& fast_chain_;
 };
 

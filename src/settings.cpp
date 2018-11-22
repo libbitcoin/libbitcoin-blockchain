@@ -23,6 +23,8 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::system;
+
 settings::settings()
   : cores(0),
     priority(true),

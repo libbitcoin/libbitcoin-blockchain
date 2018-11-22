@@ -21,9 +21,10 @@
 #include "utilities.hpp"
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
 using namespace bc::blockchain::test::pools;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 BOOST_AUTO_TEST_SUITE(transaction_order_calculator_tests)
 
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__no_enqueu
 BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__anchor_entry__returns_single_entry_list)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto entry = utilities::get_entry(state, 1, 0);
     transaction_order_calculator calculator;
     calculator.enqueue(entry);
@@ -49,7 +50,7 @@ BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__anchor_en
 BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__entry_with_immediate_parents__returns_child_entry)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_1 = utilities::get_entry(state, 1, 0);
     auto parent_2 = utilities::get_entry(state, 2, 0);
     auto parent_3 = utilities::get_entry(state, 3, 0);
@@ -69,7 +70,7 @@ BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__entry_wit
 BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__entry_with_ancestor_depth__returns_non_anchor_cumulative_values)
 {
     auto state = std::make_shared<chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_1 = utilities::get_entry(state, 1, 0);
     auto parent_2 = utilities::get_entry(state, 2, 0);
     auto parent_3 = utilities::get_entry(state, 3, 0);
@@ -93,7 +94,7 @@ BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__entry_wit
 BOOST_AUTO_TEST_CASE(transaction_order_calculator__order_transactions__entry_with_ancestor_depth_enqueued_backwards__returns_non_anchor_cumulative_values)
 {
     auto state = std::make_shared<chain::chain_state>(
-        chain_state{ utilities::get_chain_data(), {}, 0, 0, bc::settings() });
+        chain_state{ utilities::get_chain_data(), {}, 0, 0, system::settings() });
     auto parent_1 = utilities::get_entry(state, 1, 0);
     auto parent_2 = utilities::get_entry(state, 2, 0);
     auto parent_3 = utilities::get_entry(state, 3, 0);

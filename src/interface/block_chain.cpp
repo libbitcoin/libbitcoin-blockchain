@@ -25,7 +25,7 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/database.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
@@ -34,8 +34,9 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::message;
 using namespace bc::database;
+using namespace bc::system;
+using namespace bc::system::message;
 using namespace std::placeholders;
 
 #define NAME "block_chain"
@@ -43,7 +44,7 @@ using namespace std::placeholders;
 block_chain::block_chain(threadpool& pool,
     const blockchain::settings& settings,
     const database::settings& database_settings,
-    const bc::settings& bitcoin_settings)
+    const system::settings& bitcoin_settings)
   : database_(database_settings),
     stopped_(true),
     fork_point_({ null_hash, 0 }),

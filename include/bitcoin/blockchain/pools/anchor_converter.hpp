@@ -35,15 +35,15 @@ public:
 
     priority demote();
 
-    void add_bounds(transaction_const_ptr tx);
+    void add_bounds(system::transaction_const_ptr tx);
 
-    bool within_bounds(hash_digest digest);
+    bool within_bounds(system::hash_digest digest);
 
 protected:
     virtual bool visit(element_type element);
 
 private:
-    std::map<hash_digest, bool> bounds_;
+    std::map<system::hash_digest, bool> bounds_;
     priority max_removed_;
     transaction_pool_state& state_;
 

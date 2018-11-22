@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -30,7 +30,8 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
+using namespace bc::system;
+using namespace bc::system::chain;
 
 // This value should never be read, but may be useful in debugging.
 static constexpr uint32_t unspecified_timestamp = max_uint32;
@@ -39,7 +40,7 @@ static constexpr uint32_t hour_seconds = 3600u;
 // Database access is limited to { top, hash, bits, version, timestamp }.
 
 populate_chain_state::populate_chain_state(const fast_chain& chain,
-    const settings& settings, const bc::settings& bitcoin_settings)
+    const settings& settings, const system::settings& bitcoin_settings)
   : forks_(settings.enabled_forks()),
     stale_seconds_(settings.notify_limit_hours * hour_seconds),
     checkpoints_(config::checkpoint::sort(settings.checkpoints)),

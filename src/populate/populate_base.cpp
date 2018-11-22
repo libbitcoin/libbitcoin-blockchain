@@ -18,11 +18,13 @@
  */
 #include <bitcoin/blockchain/populate/populate_base.hpp>
 
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+using namespace bc::system;
 
 #define NAME "populate_base"
 

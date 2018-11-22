@@ -24,7 +24,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -36,43 +36,48 @@ namespace blockchain {
 class BCB_API safe_chain
 {
 public:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
 
     /// Object fetch handlers.
-    typedef handle1<size_t> last_height_fetch_handler;
-    typedef handle1<size_t> block_height_fetch_handler;
-    typedef handle1<chain::output> output_fetch_handler;
-    typedef handle1<chain::input_point> spend_fetch_handler;
-    typedef handle1<chain::payment_record::list> history_fetch_handler;
-    typedef handle1<chain::stealth_record::list> stealth_fetch_handler;
-    typedef handle2<size_t, size_t> transaction_index_fetch_handler;
+    typedef system::handle1<size_t> last_height_fetch_handler;
+    typedef system::handle1<size_t> block_height_fetch_handler;
+    typedef system::handle1<system::chain::output> output_fetch_handler;
+    typedef system::handle1<system::chain::input_point> spend_fetch_handler;
+    typedef system::handle1<system::chain::payment_record::list>
+        history_fetch_handler;
+    typedef system::handle1<system::chain::stealth_record::list>
+        stealth_fetch_handler;
+    typedef system::handle2<size_t, size_t> transaction_index_fetch_handler;
 
     // Smart pointer parameters must not be passed by reference.
-    typedef std::function<void(const code&, block_const_ptr, size_t)>
-        block_fetch_handler;
-    typedef std::function<void(const code&, merkle_block_ptr, size_t)>
-        merkle_block_fetch_handler;
-    typedef std::function<void(const code&, compact_block_ptr, size_t)>
-        compact_block_fetch_handler;
-    typedef std::function<void(const code&, header_ptr, size_t)>
-        block_header_fetch_handler;
-    typedef std::function<void(const code&, transaction_const_ptr, size_t,
-        size_t)> transaction_fetch_handler;
-    typedef std::function<void(const code&, headers_ptr)>
+    typedef std::function<void(const system::code&, system::block_const_ptr,
+        size_t)> block_fetch_handler;
+    typedef std::function<void(const system::code&, system::merkle_block_ptr,
+        size_t)> merkle_block_fetch_handler;
+    typedef std::function<void(const system::code&, system::compact_block_ptr,
+        size_t)> compact_block_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::header_ptr, size_t)> block_header_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::transaction_const_ptr, size_t, size_t)>
+            transaction_fetch_handler;
+    typedef std::function<void(const system::code&, system::headers_ptr)>
         locator_block_headers_fetch_handler;
-    typedef std::function<void(const code&, get_blocks_ptr)>
+    typedef std::function<void(const system::code&, system::get_blocks_ptr)>
         block_locator_fetch_handler;
-    typedef std::function<void(const code&, get_headers_ptr)>
+    typedef std::function<void(const system::code&, system::get_headers_ptr)>
         header_locator_fetch_handler;
-    typedef std::function<void(const code&, inventory_ptr)>
+    typedef std::function<void(const system::code&, system::inventory_ptr)>
         inventory_fetch_handler;
 
     /// Subscription handlers.
-    typedef std::function<bool(code, size_t, header_const_ptr_list_const_ptr,
-        header_const_ptr_list_const_ptr)> header_handler;
-    typedef std::function<bool(code, size_t, block_const_ptr_list_const_ptr,
-        block_const_ptr_list_const_ptr)> block_handler;
-    typedef std::function<bool(code, transaction_const_ptr)>
+    typedef std::function<bool(system::code, size_t,
+        system::header_const_ptr_list_const_ptr,
+        system::header_const_ptr_list_const_ptr)> header_handler;
+    typedef std::function<bool(system::code, size_t,
+        system::block_const_ptr_list_const_ptr,
+        system::block_const_ptr_list_const_ptr)> block_handler;
+    typedef std::function<bool(system::code, system::transaction_const_ptr)>
         transaction_handler;
 
     // Startup and shutdown.
@@ -88,47 +93,49 @@ public:
     virtual void fetch_block(size_t height, bool witness,
         block_fetch_handler handler) const = 0;
 
-    virtual void fetch_block(const hash_digest& hash, bool witness,
+    virtual void fetch_block(const system::hash_digest& hash, bool witness,
         block_fetch_handler handler) const = 0;
 
     virtual void fetch_block_header(size_t height,
         block_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_header(const hash_digest& hash,
+    virtual void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
     virtual void fetch_merkle_block(size_t height,
         merkle_block_fetch_handler handler) const = 0;
 
-    virtual void fetch_merkle_block(const hash_digest& hash,
+    virtual void fetch_merkle_block(const system::hash_digest& hash,
         merkle_block_fetch_handler handler) const = 0;
 
     virtual void fetch_compact_block(size_t height,
         compact_block_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_block(const hash_digest& hash,
+    virtual void fetch_compact_block(const system::hash_digest& hash,
         compact_block_fetch_handler handler) const = 0;
 
-    virtual void fetch_block_height(const hash_digest& hash,
+    virtual void fetch_block_height(const system::hash_digest& hash,
         block_height_fetch_handler handler) const = 0;
 
     virtual void fetch_last_height(
         last_height_fetch_handler handler) const = 0;
 
-    virtual void fetch_transaction(const hash_digest& hash,
+    virtual void fetch_transaction(const system::hash_digest& hash,
         bool require_confirmed, bool witness,
         transaction_fetch_handler handler) const = 0;
 
-    virtual void fetch_transaction_position(const hash_digest& hash,
+    virtual void fetch_transaction_position(const system::hash_digest& hash,
         bool require_confirmed,
         transaction_index_fetch_handler handler) const = 0;
 
-    virtual void fetch_locator_block_hashes(get_blocks_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
+    virtual void fetch_locator_block_hashes(
+        system::get_blocks_const_ptr locator,
+        const system::hash_digest& threshold, size_t limit,
         inventory_fetch_handler handler) const = 0;
 
-    virtual void fetch_locator_block_headers(get_headers_const_ptr locator,
-        const hash_digest& threshold, size_t limit,
+    virtual void fetch_locator_block_headers(
+        system::get_headers_const_ptr locator,
+        const system::hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
 
     ////// TODO: must be branch-relative.
@@ -136,21 +143,23 @@ public:
     ////    block_locator_fetch_handler handler) const = 0;
 
     // TODO: must be branch-relative.
-    virtual void fetch_header_locator(const chain::block::indexes& heights,
+    virtual void fetch_header_locator(
+        const system::chain::block::indexes& heights,
         header_locator_fetch_handler handler) const = 0;
 
     // Server Queries.
     //-------------------------------------------------------------------------
     // Confirmed heights only.
 
-    virtual void fetch_spend(const chain::output_point& outpoint,
+    virtual void fetch_spend(const system::chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
 
-    virtual void fetch_history(const short_hash& address_hash, size_t limit,
-        size_t from_height, history_fetch_handler handler) const = 0;
+    virtual void fetch_history(const system::short_hash& address_hash,
+        size_t limit, size_t from_height,
+        history_fetch_handler handler) const = 0;
 
-    virtual void fetch_stealth(const binary& filter, size_t from_height,
-        stealth_fetch_handler handler) const = 0;
+    virtual void fetch_stealth(const system::binary& filter,
+        size_t from_height, stealth_fetch_handler handler) const = 0;
 
     // Transaction Pool.
     //-------------------------------------------------------------------------
@@ -162,10 +171,10 @@ public:
     // Filters.
     //-------------------------------------------------------------------------
 
-    virtual void filter_blocks(get_data_ptr message,
+    virtual void filter_blocks(system::get_data_ptr message,
         result_handler handler) const = 0;
 
-    virtual void filter_transactions(get_data_ptr message,
+    virtual void filter_transactions(system::get_data_ptr message,
         result_handler handler) const = 0;
 
     // Subscribers.
@@ -179,9 +188,12 @@ public:
     // Organizers.
     //-------------------------------------------------------------------------
 
-    virtual void organize(header_const_ptr header, result_handler handler) = 0;
-    virtual void organize(transaction_const_ptr tx, result_handler handler) = 0;
-    virtual code organize(block_const_ptr block, size_t height) = 0;
+    virtual void organize(system::header_const_ptr header,
+        result_handler handler) = 0;
+    virtual void organize(system::transaction_const_ptr tx,
+        result_handler handler) = 0;
+    virtual system::code organize(system::block_const_ptr block,
+        size_t height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------
