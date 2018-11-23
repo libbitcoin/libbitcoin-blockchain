@@ -22,6 +22,8 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::system;
+
 anchor_converter::anchor_converter(transaction_pool_state& state)
     : bounds_(), max_removed_(0.0), state_(state)
 {
@@ -91,12 +93,12 @@ anchor_converter::priority anchor_converter::demote()
     return max_removed_;
 }
 
-void anchor_converter::add_bounds(system::transaction_const_ptr tx)
+void anchor_converter::add_bounds(transaction_const_ptr tx)
 {
     bounds_.insert({ tx->hash(), true });
 }
 
-bool anchor_converter::within_bounds(system::hash_digest digest)
+bool anchor_converter::within_bounds(hash_digest digest)
 {
     return (bounds_.find(digest) != bounds_.end());
 }
