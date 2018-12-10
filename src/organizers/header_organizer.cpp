@@ -169,6 +169,7 @@ void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
         return;
     }
 
+    // This triggers HEADER notifications.
     //#########################################################################
     const auto error_code = fast_chain_.reorganize(branch->fork_point(),
         branch->headers());
