@@ -25,6 +25,7 @@
 using namespace bc;
 using namespace bc::blockchain;
 using namespace bc::database;
+using namespace bc::system;
 using namespace boost::system;
 using namespace boost::filesystem;
 
@@ -53,7 +54,7 @@ bool create_database(database::settings& out_database)
     remove_all(out_database.directory, ec);
     database::data_base database(out_database);
     return create_directories(out_database.directory, ec) && database.create(
-        bc::settings(bc::config::settings::mainnet).genesis_block);
+        system::settings(system::config::settings::mainnet).genesis_block);
 }
 
 } // namespace test

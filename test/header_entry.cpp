@@ -23,6 +23,7 @@
 
 using namespace bc;
 using namespace bc::blockchain;
+using namespace bc::system;
 
 BOOST_AUTO_TEST_SUITE(header_entry_tests)
 

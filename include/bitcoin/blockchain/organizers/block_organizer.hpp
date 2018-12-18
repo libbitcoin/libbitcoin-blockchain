@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <future>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
@@ -37,42 +37,49 @@ namespace blockchain {
 class BCB_API block_organizer
 {
 public:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
     typedef std::shared_ptr<block_organizer> ptr;
-    typedef std::function<bool(code, block_const_ptr, size_t)> download_handler;
-    typedef resubscriber<code, hash_digest, size_t> download_subscriber;
+    typedef std::function<bool(system::code, system::block_const_ptr, size_t)>
+        download_handler;
+    typedef system::resubscriber<system::code, system::hash_digest, size_t>
+        download_subscriber;
 
     /// Construct an instance.
-    block_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
-        threadpool& threads, fast_chain& chain, const settings& settings,
-        const bc::settings& bitcoin_settings);
+    block_organizer(system::prioritized_mutex& mutex,
+        system::dispatcher& priority_dispatch, system::threadpool& threads,
+        fast_chain& chain, const settings& settings,
+        const system::settings& bitcoin_settings);
 
     // Start/stop the organizer.
     bool start();
     bool stop();
 
     /// validate and organize a block into the store.
-    code organize(block_const_ptr block, size_t height);
+    system::code organize(system::block_const_ptr block, size_t height);
 
-    /// Push a validatable block identifier onto the download subscriber. 
-    void prime_validation(const hash_digest& hash, size_t height) const;
+    /// Push a validatable block identifier onto the download subscriber.
+    void prime_validation(const system::hash_digest& hash,
+        size_t height) const;
 
 protected:
     bool stopped() const;
 
 private:
     // Verify sub-sequence.
-    code validate(block_const_ptr block);
-    bool handle_check(const code& ec, const hash_digest& hash, size_t height);
-    void handle_accept(const code& ec, block_const_ptr block, result_handler handler);
-    void handle_connect(const code& ec, block_const_ptr block, result_handler handler);
-    void signal_completion(const code& ec);
+    system::code validate(system::block_const_ptr block);
+    bool handle_check(const system::code& ec, const system::hash_digest& hash,
+        size_t height);
+    void handle_accept(const system::code& ec, system::block_const_ptr block,
+        result_handler handler);
+    void handle_connect(const system::code& ec, system::block_const_ptr block,
+        result_handler handler);
+    void signal_completion(const system::code& ec);
 
     // These are thread safe.
     fast_chain& fast_chain_;
-    prioritized_mutex& mutex_;
+    system::prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
-    std::promise<code> resume_;
+    std::promise<system::code> resume_;
     validate_block validator_;
     download_subscriber::ptr downloader_subscriber_;
 };

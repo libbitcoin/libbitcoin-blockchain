@@ -24,7 +24,7 @@
 #include <future>
 #include <memory>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
@@ -34,6 +34,7 @@ namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::database;
+using namespace bc::system;
 using namespace std::placeholders;
 
 #define NAME "transaction_organizer"

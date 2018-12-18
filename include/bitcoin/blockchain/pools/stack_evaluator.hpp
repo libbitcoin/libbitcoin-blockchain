@@ -30,7 +30,8 @@ class stack_evaluator
 public:
     typedef transaction_entry::ptr element_type;
 
-    typedef std::map<hash_digest, element_type> element_type_natural_key_map;
+    typedef std::map<system::hash_digest, element_type>
+        element_type_natural_key_map;
 
     void enqueue(element_type element);
 

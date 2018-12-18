@@ -22,8 +22,9 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::message;
 using namespace bc::blockchain;
+using namespace bc::system;
+using namespace bc::system::message;
 
 BOOST_AUTO_TEST_SUITE(header_branch_tests)
 

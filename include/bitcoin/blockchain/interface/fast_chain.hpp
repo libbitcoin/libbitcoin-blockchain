@@ -35,38 +35,39 @@ class BCB_API fast_chain
 {
 public:
     // This avoids conflict with the result_handler in safe_chain.
-    typedef handle0 complete_handler;
+    typedef system::handle0 complete_handler;
 
     // Readers.
     // ------------------------------------------------------------------------
     // Thread safe.
 
     /// Get top confirmed or candidate header.
-    virtual bool get_top(chain::header& out_header, size_t& out_height,
+    virtual bool get_top(system::chain::header& out_header, size_t& out_height,
         bool candidate) const = 0;
 
     /// Get highest confirmed or candidate checkpoint.
-    virtual bool get_top(config::checkpoint& out_checkpoint,
+    virtual bool get_top(system::config::checkpoint& out_checkpoint,
         bool candidate) const = 0;
 
     /// Get height of highest confirmed or candidate header.
     virtual bool get_top_height(size_t& out_height, bool candidate) const = 0;
 
     /// Get confirmed or candidate header by height.
-    virtual bool get_header(chain::header& out_header, size_t height,
+    virtual bool get_header(system::chain::header& out_header, size_t height,
         bool candidate) const = 0;
 
     /// Get confirmed or candidate header by hash.
-    virtual bool get_header(chain::header& out_header, size_t& out_height,
-        const hash_digest& block_hash, bool candidate) const = 0;
+    virtual bool get_header(system::chain::header& out_header,
+        size_t& out_height, const system::hash_digest& block_hash,
+        bool candidate) const = 0;
 
     /// Get hash of the confirmed or candidate block by index height.
-    virtual bool get_block_hash(hash_digest& out_hash, size_t height,
+    virtual bool get_block_hash(system::hash_digest& out_hash, size_t height,
         bool candidate) const = 0;
 
     /// Get the cached error result code of a cached invalid block.
-    virtual bool get_block_error(code& out_error,
-        const hash_digest& block_hash) const = 0;
+    virtual bool get_block_error(system::code& out_error,
+        const system::hash_digest& block_hash) const = 0;
 
     /// Get bits of the confirmed or candidate block by index height.
     virtual bool get_bits(uint32_t& out_bits, size_t height,
@@ -81,93 +82,98 @@ public:
         bool candidate) const = 0;
 
     /// Get work of the confirmed or candidate block by index height.
-    virtual bool get_work(uint256_t& out_work, const uint256_t& overcome,
-        size_t above_height, bool candidate) const = 0;
+    virtual bool get_work(system::uint256_t& out_work,
+        const system::uint256_t& overcome, size_t above_height,
+        bool candidate) const = 0;
 
     /// Get block hash of an empty block, false if missing or failed.
-    virtual bool get_downloadable(hash_digest& out_hash,
+    virtual bool get_downloadable(system::hash_digest& out_hash,
         size_t height) const = 0;
 
     /// Get block hash of an unvalidated block, false if empty/failed/valid.
-    virtual bool get_validatable(hash_digest& out_hash,
+    virtual bool get_validatable(system::hash_digest& out_hash,
         size_t height) const = 0;
 
-    /// Push a validatable block identifier onto the download subscriber. 
-    virtual void prime_validation(const hash_digest& hash,
+    /// Push a validatable block identifier onto the download subscriber.
+    virtual void prime_validation(const system::hash_digest& hash,
         size_t height) const = 0;
 
     /// Populate metadata of the given block header.
-    virtual void populate_header(const chain::header& header) const = 0;
+    virtual void populate_header(const system::chain::header& header) const = 0;
 
-    /// Sets metadata based on fork point. 
+    /// Sets metadata based on fork point.
     /// Populate metadata of the given transaction for block inclusion.
-    virtual void populate_block_transaction(const chain::transaction& tx,
-        uint32_t forks, size_t fork_height) const = 0;
+    virtual void populate_block_transaction(
+        const system::chain::transaction& tx, uint32_t forks,
+        size_t fork_height) const = 0;
 
     /// Populate metadata of the given transaction for pool inclusion.
-    virtual void populate_pool_transaction(const chain::transaction& tx,
-        uint32_t forks) const = 0;
+    virtual void populate_pool_transaction(
+        const system::chain::transaction& tx, uint32_t forks) const = 0;
 
-    /// Sets metadata based on fork point. 
+    /// Sets metadata based on fork point.
     /// Get the output that is referenced by the outpoint.
-    virtual bool populate_output(const chain::output_point& outpoint,
+    virtual bool populate_output(const system::chain::output_point& outpoint,
         size_t fork_height, bool candidate) const = 0;
 
     /// Get state (flags) of candidate or confirmed block by height.
     virtual uint8_t get_block_state(size_t height, bool candidate) const = 0;
 
     /// Get state (flags) of the given block by hash.
-    virtual uint8_t get_block_state(const hash_digest& block_hash) const = 0;
+    virtual uint8_t get_block_state(
+        const system::hash_digest& block_hash) const = 0;
 
     /// Get populated confirmed or candidate header by height (or null).
-    virtual header_const_ptr get_header(size_t height,
+    virtual system::header_const_ptr get_header(size_t height,
         bool candidate) const = 0;
 
     /// Get populated confirmed or candidate block by height (or null).
-    virtual block_const_ptr get_block(size_t height, bool witness,
+    virtual system::block_const_ptr get_block(size_t height, bool witness,
         bool candidate) const = 0;
 
     // Writers.
     // ------------------------------------------------------------------------
 
     /// Store unconfirmed tx that was verified with the given forks.
-    virtual code store(transaction_const_ptr tx) = 0;
+    virtual system::code store(system::transaction_const_ptr tx) = 0;
 
     /// Reorganize the header index to the specified fork point.
-    virtual code reorganize(const config::checkpoint& fork,
-        header_const_ptr_list_const_ptr incoming) = 0;
+    virtual system::code reorganize(const system::config::checkpoint& fork,
+        system::header_const_ptr_list_const_ptr incoming) = 0;
 
     /// Update the stored block with txs.
-    virtual code update(block_const_ptr block, size_t height) = 0;
+    virtual system::code update(system::block_const_ptr block,
+        size_t height) = 0;
 
     /// Set the block validation state.
-    virtual code invalidate(const chain::header& header,
-        const code& error) = 0;
+    virtual system::code invalidate(const system::chain::header& header,
+        const system::code& error) = 0;
 
     /// Set the block validation state and all candidate chain ancestors.
-    virtual code invalidate(block_const_ptr block, size_t height) = 0;
+    virtual system::code invalidate(system::block_const_ptr block,
+        size_t height) = 0;
 
     /// Set the block validation state and mark spent outputs.
-    virtual code candidate(block_const_ptr block) = 0;
+    virtual system::code candidate(system::block_const_ptr block) = 0;
 
     /// Reorganize the block index to the fork point.
-    virtual code reorganize(block_const_ptr_list_const_ptr branch_cache,
+    virtual system::code reorganize(system::block_const_ptr_list_const_ptr branch_cache,
         size_t branch_height) = 0;
 
     // Properties
     // ------------------------------------------------------------------------
 
     /// Highest common block between candidate and confirmed chains.
-    virtual config::checkpoint fork_point() const = 0;
+    virtual system::config::checkpoint fork_point() const = 0;
 
     /// Get chain state for top candidate block (may not be valid).
-    virtual chain::chain_state::ptr top_candidate_state() const = 0;
+    virtual system::chain::chain_state::ptr top_candidate_state() const = 0;
 
     /// Get chain state for top valid candidate (may be higher confirmeds).
-    virtual chain::chain_state::ptr top_valid_candidate_state() const = 0;
+    virtual system::chain::chain_state::ptr top_valid_candidate_state() const = 0;
 
     /// Get chain state for transaction pool (top confirmed plus one).
-    virtual chain::chain_state::ptr next_confirmed_state() const = 0;
+    virtual system::chain::chain_state::ptr next_confirmed_state() const = 0;
 
     /// True if the top candidate age exceeds the configured limit.
     virtual bool is_candidates_stale() const = 0;
@@ -185,15 +191,16 @@ public:
     // ------------------------------------------------------------------------
 
     /// Get chain state for the given indexed header.
-    virtual chain::chain_state::ptr chain_state(const chain::header& header,
-        size_t height) const = 0;
+    virtual system::chain::chain_state::ptr chain_state(
+        const system::chain::header& header, size_t height) const = 0;
 
     /// Promote chain state from the given parent header.
-    virtual chain::chain_state::ptr promote_state(const chain::header& header,
-        chain::chain_state::ptr parent) const = 0;
+    virtual system::chain::chain_state::ptr promote_state(
+        const system::chain::header& header,
+        system::chain::chain_state::ptr parent) const = 0;
 
     /// Promote chain state for the last header in the multi-header branch.
-    virtual chain::chain_state::ptr promote_state(
+    virtual system::chain::chain_state::ptr promote_state(
         header_branch::const_ptr branch) const = 0;
 };
 

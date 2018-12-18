@@ -24,7 +24,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_input.hpp>
@@ -32,14 +32,15 @@
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::machine;
 using namespace std::placeholders;
 
 #define NAME "validate_block"
 
 validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
-    const settings& settings, const bc::settings& bitcoin_settings)
+    const settings& settings, const system::settings& bitcoin_settings)
   : stopped_(true),
     use_libconsensus_(settings.use_libconsensus),
     checkpoints_(settings.checkpoints),

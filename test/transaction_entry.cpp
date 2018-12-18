@@ -23,9 +23,10 @@
 #include <bitcoin/blockchain.hpp>
 
 using namespace bc;
-using namespace bc::chain;
 using namespace bc::blockchain;
-using namespace bc::machine;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::machine;
 
 BOOST_AUTO_TEST_SUITE(transaction_entry_tests)
 
@@ -46,7 +47,7 @@ static transaction_const_ptr make_tx(uint32_t version, uint32_t locktime)
     const auto tx = std::make_shared<const message::transaction>(version,
         locktime, chain::input::list{}, chain::output::list{});
     tx->metadata.state = std::make_shared<chain_state>(
-        chain_state{ data(), {}, 0, 0, bc::settings() });
+        chain_state{ data(), {}, 0, 0, system::settings() });
     return tx;
 }
 
@@ -54,7 +55,7 @@ static transaction_const_ptr make_tx()
 {
     const auto tx = std::make_shared<const message::transaction>();
     tx->metadata.state = std::make_shared<chain_state>(
-        chain_state{ data(), {}, 0, 0, bc::settings() });
+        chain_state{ data(), {}, 0, 0, system::settings() });
     return tx;
 }
 

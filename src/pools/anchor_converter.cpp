@@ -22,8 +22,10 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::system;
+
 anchor_converter::anchor_converter(transaction_pool_state& state)
-	: bounds_(), max_removed_(0.0), state_(state)
+    : bounds_(), max_removed_(0.0), state_(state)
 {
 }
 
@@ -81,24 +83,24 @@ bool anchor_converter::visit(element_type element)
             state_.pool.left.erase(pool_member);
     }
 
-	return true;
+    return true;
 }
 
 anchor_converter::priority anchor_converter::demote()
 {
     max_removed_ = 0.0;
     evaluate();
-	return max_removed_;
+    return max_removed_;
 }
 
 void anchor_converter::add_bounds(transaction_const_ptr tx)
 {
-	bounds_.insert({ tx->hash(), true });
+    bounds_.insert({ tx->hash(), true });
 }
 
 bool anchor_converter::within_bounds(hash_digest digest)
 {
-	return (bounds_.find(digest) != bounds_.end());
+    return (bounds_.find(digest) != bounds_.end());
 }
 
 } // namespace blockchain

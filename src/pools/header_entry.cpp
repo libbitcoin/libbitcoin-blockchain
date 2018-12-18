@@ -20,11 +20,13 @@
 
 #include <algorithm>
 #include <iostream>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+using namespace bc::system;
 
 header_entry::header_entry(header_const_ptr header, size_t height)
   : height_(height), hash_(header->hash()), header_(header)

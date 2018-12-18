@@ -23,22 +23,23 @@
 #include <future>
 #include <memory>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
-using namespace bc::config;
+using namespace bc::system;
+using namespace bc::system::chain;
+using namespace bc::system::config;
 using namespace std::placeholders;
 
 #define NAME "block_organizer"
 
 block_organizer::block_organizer(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
-    const settings& settings, const bc::settings& bitcoin_settings)
+    const settings& settings, const system::settings& bitcoin_settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),

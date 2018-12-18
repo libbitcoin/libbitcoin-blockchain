@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -32,7 +32,7 @@ class BCB_API settings
 {
 public:
     settings();
-    settings(config::settings context);
+    settings(system::config::settings context);
 
     /// Fork flags combiner.
     uint32_t enabled_forks() const;
@@ -46,7 +46,7 @@ public:
     uint64_t minimum_output_satoshis;
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
-    config::checkpoint::list checkpoints;
+    system::config::checkpoint::list checkpoints;
     bool difficult;
     bool retarget;
     bool bip16;
@@ -66,8 +66,8 @@ public:
     bool scrypt_proof_of_work;
 
     // Mining/Template inputs
-    bc::config::script coinbase_input;
-    bc::config::script coinbase_output;
+    system::config::script coinbase_input;
+    system::config::script coinbase_output;
     size_t block_sigop_limit;
     size_t block_bytes_limit;
 };

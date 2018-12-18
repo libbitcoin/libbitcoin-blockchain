@@ -22,11 +22,13 @@
 #include <cstdint>
 #include <algorithm>
 #include <iostream>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
+
+using namespace bc::system;
 
 // Space optimization since valid sigops and size are never close to 32 bits.
 inline uint32_t cap(size_t value)

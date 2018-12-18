@@ -20,7 +20,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_POPULATE_TRANSACTION_HPP
 
 #include <cstddef>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/populate/populate_base.hpp>
@@ -33,13 +33,15 @@ class BCB_API populate_transaction
   : public populate_base
 {
 public:
-    populate_transaction(dispatcher& dispatch, const fast_chain& chain);
+    populate_transaction(system::dispatcher& dispatch,
+        const fast_chain& chain);
 
     /// Populate validation state for the pool transaction.
-    void populate(transaction_const_ptr tx, result_handler&& handler) const;
+    void populate(system::transaction_const_ptr tx,
+        result_handler&& handler) const;
 
 protected:
-    void populate_inputs(transaction_const_ptr tx, size_t bucket,
+    void populate_inputs(system::transaction_const_ptr tx, size_t bucket,
         size_t buckets, result_handler handler) const;
 };
 

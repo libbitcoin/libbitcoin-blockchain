@@ -23,13 +23,14 @@
 #include <memory>
 #include <numeric>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::config;
+using namespace bc::system;
+using namespace bc::system::config;
 
 header_branch::header_branch(size_t height)
   : height_(height),

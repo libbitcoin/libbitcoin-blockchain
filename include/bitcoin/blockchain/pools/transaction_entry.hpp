@@ -27,7 +27,7 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/functional/hash_fwd.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -59,10 +59,10 @@ public:
     /// Construct an entry for the pool.
     /// Never store an invalid transaction in the pool except for the cases of:
     /// double spend and input invalid due to forks change (sentinel forks).
-    transaction_entry(transaction_const_ptr tx);
+    transaction_entry(system::transaction_const_ptr tx);
 
     /// Use this construction only as a search key.
-    transaction_entry(const hash_digest& hash);
+    transaction_entry(const system::hash_digest& hash);
 
     ~transaction_entry();
 
@@ -82,7 +82,7 @@ public:
     uint32_t min_spendable_height() const;
 
     /// The hash table entry identity.
-    const hash_digest& hash() const;
+    const system::hash_digest& hash() const;
 
     /// An anchor tx binds a subgraph to the chain and is not itself mempool.
     bool is_anchor() const;
@@ -126,7 +126,7 @@ public:
     bool operator==(const transaction_entry& other) const;
 
 private:
-    void remove_parent(const hash_digest& parent, bool all_instances);
+    void remove_parent(const system::hash_digest& parent, bool all_instances);
 
 private:
     // These are non-const to allow for default copy construction.
@@ -136,7 +136,7 @@ private:
     uint32_t min_spendable_height_;
     uint32_t sigops_;
     uint32_t size_;
-    hash_digest hash_;
+    system::hash_digest hash_;
 
     // These do not affect the entry hash, so must be mutable.
     list parents_;

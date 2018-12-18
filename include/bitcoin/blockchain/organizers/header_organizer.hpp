@@ -21,7 +21,7 @@
 
 #include <atomic>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
@@ -36,32 +36,34 @@ namespace blockchain {
 class BCB_API header_organizer
 {
 public:
-    typedef handle0 result_handler;
+    typedef system::handle0 result_handler;
     typedef std::shared_ptr<header_organizer> ptr;
 
     /// Construct an instance.
-    header_organizer(prioritized_mutex& mutex, dispatcher& priority_dispatch,
-        threadpool& threads, fast_chain& chain, header_pool& pool,
-        const bool scrypt, const bc::settings& bitcoin_settings);
+    header_organizer(system::prioritized_mutex& mutex,
+        system::dispatcher& priority_dispatch, system::threadpool& threads,
+        fast_chain& chain, header_pool& pool, const bool scrypt,
+        const system::settings& bitcoin_settings);
 
     // Start/stop the organizer.
     bool start();
     bool stop();
 
     /// validate and organize a header into header pool and store.
-    void organize(header_const_ptr header, result_handler handler);
+    void organize(system::header_const_ptr header, result_handler handler);
 
 protected:
     bool stopped() const;
 
 private:
     // Verify sub-sequence.
-    void handle_accept(const code& ec, header_branch::ptr branch, result_handler handler);
-    void handle_complete(const code& ec, result_handler handler);
+    void handle_accept(const system::code& ec, header_branch::ptr branch,
+        result_handler handler);
+    void handle_complete(const system::code& ec, result_handler handler);
 
     // These are thread safe.
     fast_chain& fast_chain_;
-    prioritized_mutex& mutex_;
+    system::prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     header_pool& pool_;
     validate_header validator_;

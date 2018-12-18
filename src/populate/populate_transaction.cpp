@@ -22,14 +22,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::chain;
+using namespace bc::system;
+using namespace bc::system::chain;
 using namespace std::placeholders;
 
 #define NAME "populate_transaction"

@@ -29,6 +29,7 @@
 namespace libbitcoin {
 namespace blockchain {
 
+using namespace bc::system;
 using namespace boost;
 
 header_pool::header_pool(size_t maximum_depth)

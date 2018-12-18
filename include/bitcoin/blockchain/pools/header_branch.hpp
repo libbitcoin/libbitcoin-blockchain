@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
@@ -43,19 +43,19 @@ public:
     void set_fork_height(size_t height);
 
     /// Push the header onto the branch, true if chains to top.
-    bool push(header_const_ptr header);
+    bool push(system::header_const_ptr header);
 
     /// The parent header of the top header of the branch, if both exist.
-    header_const_ptr top_parent() const;
+    system::header_const_ptr top_parent() const;
 
     /// The top header of the branch, if it exists.
-    header_const_ptr top() const;
+    system::header_const_ptr top() const;
 
     /// The top header of the branch, if it exists.
     size_t top_height() const;
 
     /// The member header pointer list.
-    header_const_ptr_list_const_ptr headers() const;
+    system::header_const_ptr_list_const_ptr headers() const;
 
     /// True if there are any headers in the branch.
     bool empty() const;
@@ -64,16 +64,16 @@ public:
     size_t size() const;
 
     /// Summarize the work of the branch.
-    uint256_t work() const;
+    system::uint256_t work() const;
 
     /// The hash of the branch parent (fork point).
-    hash_digest fork_hash() const;
+    system::hash_digest fork_hash() const;
 
     /// The height of the parent parent (fork point).
     size_t fork_height() const;
 
     /// The branch parent (fork point), identical to { hash(), height() }.
-    config::checkpoint fork_point() const;
+    system::config::checkpoint fork_point() const;
 
     /// The bits of the header at the given height in the branch.
     bool get_bits(uint32_t& out_bits, size_t height) const;
@@ -85,7 +85,7 @@ public:
     bool get_timestamp(uint32_t& out_timestamp, size_t height) const;
 
     /// The hash of the header at the given height if it exists in the branch.
-    bool get_block_hash(hash_digest& out_hash, size_t height) const;
+    bool get_block_hash(system::hash_digest& out_hash, size_t height) const;
 
 protected:
     size_t index_of(size_t height) const;
@@ -95,7 +95,7 @@ private:
     size_t height_;
 
     /// The chain of headers in the branch.
-    header_const_ptr_list_ptr headers_;
+    system::header_const_ptr_list_ptr headers_;
 };
 
 } // namespace blockchain

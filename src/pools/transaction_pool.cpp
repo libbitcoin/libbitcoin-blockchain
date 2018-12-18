@@ -21,7 +21,7 @@
 #include <cstddef>
 #include <deque>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/anchor_converter.hpp>
 #include <bitcoin/blockchain/pools/child_closure_calculator.hpp>
@@ -32,6 +32,8 @@
 
 namespace libbitcoin {
 namespace blockchain {
+
+using namespace bc::system;
 
 // Duplicate tx hashes are disallowed in a block and therefore same in pool.
 // A transaction hash that exists unspent in the chain is still not acceptable
