@@ -26,9 +26,9 @@
 #include <bitcoin/blockchain/interface/block_chain.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/organizers/block_organizer.hpp>
-#include <bitcoin/blockchain/organizers/header_organizer.hpp>
-#include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
+#include <bitcoin/blockchain/organizers/organize_block.hpp>
+#include <bitcoin/blockchain/organizers/organize_header.hpp>
+#include <bitcoin/blockchain/organizers/organize_transaction.hpp>
 #include <bitcoin/blockchain/pools/anchor_converter.hpp>
 #include <bitcoin/blockchain/pools/child_closure_calculator.hpp>
 #include <bitcoin/blockchain/pools/conflicting_spend_remover.hpp>

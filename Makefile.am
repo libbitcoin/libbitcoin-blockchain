@@ -37,9 +37,9 @@ src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consens
 src_libbitcoin_blockchain_la_SOURCES = \
     src/settings.cpp \
     src/interface/block_chain.cpp \
-    src/organizers/block_organizer.cpp \
-    src/organizers/header_organizer.cpp \
-    src/organizers/transaction_organizer.cpp \
+    src/organizers/organize_block.cpp \
+    src/organizers/organize_header.cpp \
+    src/organizers/organize_transaction.cpp \
     src/pools/anchor_converter.cpp \
     src/pools/child_closure_calculator.cpp \
     src/pools/conflicting_spend_remover.cpp \
@@ -128,9 +128,9 @@ include_bitcoin_blockchain_interface_HEADERS = \
 
 include_bitcoin_blockchain_organizersdir = ${includedir}/bitcoin/blockchain/organizers
 include_bitcoin_blockchain_organizers_HEADERS = \
-    include/bitcoin/blockchain/organizers/block_organizer.hpp \
-    include/bitcoin/blockchain/organizers/header_organizer.hpp \
-    include/bitcoin/blockchain/organizers/transaction_organizer.hpp
+    include/bitcoin/blockchain/organizers/organize_block.hpp \
+    include/bitcoin/blockchain/organizers/organize_header.hpp \
+    include/bitcoin/blockchain/organizers/organize_transaction.hpp
 
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \

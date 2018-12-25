@@ -30,9 +30,9 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/organizers/block_organizer.hpp>
-#include <bitcoin/blockchain/organizers/header_organizer.hpp>
-#include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
+#include <bitcoin/blockchain/organizers/organize_block.hpp>
+#include <bitcoin/blockchain/organizers/organize_header.hpp>
+#include <bitcoin/blockchain/organizers/organize_transaction.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
@@ -453,9 +453,9 @@ private:
     header_pool header_pool_;
     transaction_pool transaction_pool_;
 
-    block_organizer block_organizer_;
-    header_organizer header_organizer_;
-    transaction_organizer transaction_organizer_;
+    organize_block organize_block_;
+    organize_header organize_header_;
+    organize_transaction organize_transaction_;
 
     block_subscriber::ptr block_subscriber_;
     header_subscriber::ptr header_subscriber_;

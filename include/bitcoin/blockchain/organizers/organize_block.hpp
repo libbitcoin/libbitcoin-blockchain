@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_BLOCK_ORGANIZER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_BLOCK_ORGANIZER_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZE_BLOCK_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ORGANIZE_BLOCK_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -34,18 +34,18 @@ namespace blockchain {
 
 /// This class is thread safe.
 /// Organises blocks to the store.
-class BCB_API block_organizer
+class BCB_API organize_block
 {
 public:
     typedef system::handle0 result_handler;
-    typedef std::shared_ptr<block_organizer> ptr;
+    typedef std::shared_ptr<organize_block> ptr;
     typedef std::function<bool(system::code, system::block_const_ptr, size_t)>
         download_handler;
     typedef system::resubscriber<system::code, system::hash_digest, size_t>
         download_subscriber;
 
     /// Construct an instance.
-    block_organizer(system::prioritized_mutex& mutex,
+    organize_block(system::prioritized_mutex& mutex,
         system::dispatcher& priority_dispatch, system::threadpool& threads,
         fast_chain& chain, const settings& settings,
         const system::settings& bitcoin_settings);

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/organizers/block_organizer.hpp>
+#include <bitcoin/blockchain/organizers/organize_block.hpp>
 
 #include <cstddef>
 #include <functional>
@@ -35,9 +35,9 @@ using namespace bc::system::chain;
 using namespace bc::system::config;
 using namespace std::placeholders;
 
-#define NAME "block_organizer"
+#define NAME "organize_block"
 
-block_organizer::block_organizer(prioritized_mutex& mutex,
+organize_block::organize_block(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
     const settings& settings, const system::settings& bitcoin_settings)
   : fast_chain_(chain),
@@ -51,7 +51,7 @@ block_organizer::block_organizer(prioritized_mutex& mutex,
 // Properties.
 //-----------------------------------------------------------------------------
 
-bool block_organizer::stopped() const
+bool organize_block::stopped() const
 {
     return stopped_;
 }
@@ -59,7 +59,7 @@ bool block_organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-bool block_organizer::start()
+bool organize_block::start()
 {
     stopped_ = false;
     downloader_subscriber_->start();
@@ -67,13 +67,13 @@ bool block_organizer::start()
 
     // Each download queues up a validation sequence.
     downloader_subscriber_->subscribe(
-        std::bind(&block_organizer::handle_check,
+        std::bind(&organize_block::handle_check,
             this, _1, _2, _3), error::service_stopped, {}, 0);
 
     return true;
 }
 
-bool block_organizer::stop()
+bool organize_block::stop()
 {
     validator_.stop();
     downloader_subscriber_->stop();
@@ -85,7 +85,7 @@ bool block_organizer::stop()
 // Organize.
 //-----------------------------------------------------------------------------
 
-code block_organizer::organize(block_const_ptr block, size_t height)
+code organize_block::organize(block_const_ptr block, size_t height)
 {
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
@@ -106,7 +106,7 @@ code block_organizer::organize(block_const_ptr block, size_t height)
 }
 
 // TODO: refactor to eliminate this abstraction leak.
-void block_organizer::prime_validation(const hash_digest& hash,
+void organize_block::prime_validation(const hash_digest& hash,
     size_t height) const
 {
     downloader_subscriber_->relay(error::success, hash, height);
@@ -118,7 +118,7 @@ void block_organizer::prime_validation(const hash_digest& hash,
 // Therefore fan-outs may use all threads in the priority threadpool.
 
 // This is the start of the validation sequence.
-bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
+bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     size_t height)
 {
     if (ec)
@@ -223,16 +223,16 @@ bool block_organizer::handle_check(const code& ec, const hash_digest& hash,
 
 // private
 // Convert validate.accept/connect to a sequential call.
-code block_organizer::validate(block_const_ptr block)
+code organize_block::validate(block_const_ptr block)
 {
     resume_ = std::promise<code>();
 
     const result_handler complete =
-        std::bind(&block_organizer::signal_completion,
+        std::bind(&organize_block::signal_completion,
             this, _1);
 
     const auto accept_handler =
-        std::bind(&block_organizer::handle_accept,
+        std::bind(&organize_block::handle_accept,
             this, _1, block, complete);
 
     // Checks that are dependent upon chain state.
@@ -243,7 +243,7 @@ code block_organizer::validate(block_const_ptr block)
 }
 
 // private
-void block_organizer::signal_completion(const code& ec)
+void organize_block::signal_completion(const code& ec)
 {
     resume_.set_value(ec);
 }
@@ -252,7 +252,7 @@ void block_organizer::signal_completion(const code& ec)
 //-----------------------------------------------------------------------------
 
 // private
-void block_organizer::handle_accept(const code& ec, block_const_ptr block,
+void organize_block::handle_accept(const code& ec, block_const_ptr block,
     result_handler handler)
 {
     if (stopped())
@@ -268,7 +268,7 @@ void block_organizer::handle_accept(const code& ec, block_const_ptr block,
     }
 
     const auto connect_handler =
-        std::bind(&block_organizer::handle_connect,
+        std::bind(&organize_block::handle_connect,
             this, _1, block, handler);
 
     // Checks that include script metadata.
@@ -276,7 +276,7 @@ void block_organizer::handle_accept(const code& ec, block_const_ptr block,
 }
 
 // private
-void block_organizer::handle_connect(const code& ec, block_const_ptr,
+void organize_block::handle_connect(const code& ec, block_const_ptr,
     result_handler handler)
 {
     if (stopped())
