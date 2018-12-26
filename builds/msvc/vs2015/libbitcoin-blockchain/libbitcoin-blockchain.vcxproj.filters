@@ -57,13 +57,13 @@
     <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp">
       <Filter>src\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\organizers\block_organizer.cpp">
+    <ClCompile Include="..\..\..\..\src\organizers\organize_block.cpp">
       <Filter>src\organizers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\organizers\header_organizer.cpp">
+    <ClCompile Include="..\..\..\..\src\organizers\organize_header.cpp">
       <Filter>src\organizers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\organizers\transaction_organizer.cpp">
+    <ClCompile Include="..\..\..\..\src\organizers\organize_transaction.cpp">
       <Filter>src\organizers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\anchor_converter.cpp">
@@ -152,13 +152,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp">
       <Filter>include\bitcoin\blockchain\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\block_organizer.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_block.hpp">
       <Filter>include\bitcoin\blockchain\organizers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\header_organizer.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_header.hpp">
       <Filter>include\bitcoin\blockchain\organizers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\transaction_organizer.hpp">
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_transaction.hpp">
       <Filter>include\bitcoin\blockchain\organizers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp">

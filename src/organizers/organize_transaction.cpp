@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/organizers/transaction_organizer.hpp>
+#include <bitcoin/blockchain/organizers/organize_transaction.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -37,9 +37,9 @@ using namespace bc::database;
 using namespace bc::system;
 using namespace std::placeholders;
 
-#define NAME "transaction_organizer"
+#define NAME "organize_transaction"
 
-transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
+organize_transaction::organize_transaction(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
     transaction_pool& pool, const settings& settings)
   : fast_chain_(chain),
@@ -54,7 +54,7 @@ transaction_organizer::transaction_organizer(prioritized_mutex& mutex,
 // Properties.
 //-----------------------------------------------------------------------------
 
-bool transaction_organizer::stopped() const
+bool organize_transaction::stopped() const
 {
     return stopped_;
 }
@@ -62,14 +62,14 @@ bool transaction_organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-bool transaction_organizer::start()
+bool organize_transaction::start()
 {
     stopped_ = false;
     validator_.start();
     return true;
 }
 
-bool transaction_organizer::stop()
+bool organize_transaction::stop()
 {
     validator_.stop();
     stopped_ = true;
@@ -82,7 +82,7 @@ bool transaction_organizer::stop()
 // Therefore fan-outs may use all threads in the priority threadpool.
 
 // This is called from block_chain::organize.
-void transaction_organizer::organize(transaction_const_ptr tx,
+void organize_transaction::organize(transaction_const_ptr tx,
     result_handler handler, uint64_t max_money)
 {
     code error_code;
@@ -124,11 +124,11 @@ void transaction_organizer::organize(transaction_const_ptr tx,
     resume_ = std::promise<code>();
 
     const result_handler complete =
-        std::bind(&transaction_organizer::signal_completion,
+        std::bind(&organize_transaction::signal_completion,
             this, _1);
 
     const auto accept_handler =
-        std::bind(&transaction_organizer::handle_accept,
+        std::bind(&organize_transaction::handle_accept,
             this, _1, tx, complete);
 
     // Checks that are dependent on chain state and prevouts.
@@ -147,7 +147,7 @@ void transaction_organizer::organize(transaction_const_ptr tx,
 }
 
 // private
-void transaction_organizer::signal_completion(const code& ec)
+void organize_transaction::signal_completion(const code& ec)
 {
     // This must be protected so that it is properly cleared.
     // Signal completion, which results in original handler invoke with code.
@@ -158,7 +158,7 @@ void transaction_organizer::signal_completion(const code& ec)
 //-----------------------------------------------------------------------------
 
 // private
-void transaction_organizer::handle_accept(const code& ec,
+void organize_transaction::handle_accept(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
     // The tx may exist in the store in any state except confirmed or verified.
@@ -191,7 +191,7 @@ void transaction_organizer::handle_accept(const code& ec,
     }
 
     const auto connect_handler =
-        std::bind(&transaction_organizer::handle_connect,
+        std::bind(&organize_transaction::handle_connect,
             this, _1, tx, handler);
 
     // Checks that include script metadata.
@@ -199,7 +199,7 @@ void transaction_organizer::handle_accept(const code& ec,
 }
 
 // private
-void transaction_organizer::handle_connect(const code& ec,
+void organize_transaction::handle_connect(const code& ec,
     transaction_const_ptr tx, result_handler handler)
 {
     if (stopped())
@@ -235,7 +235,7 @@ void transaction_organizer::handle_connect(const code& ec,
 // Utility.
 //-----------------------------------------------------------------------------
 
-uint64_t transaction_organizer::price(transaction_const_ptr tx) const
+uint64_t organize_transaction::price(transaction_const_ptr tx) const
 {
     const auto byte_fee = settings_.byte_fee_satoshis;
     const auto sigop_fee = settings_.sigop_fee_satoshis;

@@ -16,68 +16,57 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_TRANSACTION_ORGANIZER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_TRANSACTION_ORGANIZER_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_ORGANIZE_HEADER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ORGANIZE_HEADER_HPP
 
 #include <atomic>
-#include <cstddef>
-#include <cstdint>
-#include <future>
 #include <memory>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/interface/safe_chain.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool.hpp>
-#include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/validate/validate_transaction.hpp>
+#include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
+#include <bitcoin/blockchain/validate/validate_header.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 /// This class is thread safe.
-/// Organises transactions via the tx metadata pool to the store.
-class BCB_API transaction_organizer
+/// Organises headers to the store via the header pool.
+class BCB_API organize_header
 {
 public:
     typedef system::handle0 result_handler;
-    typedef std::shared_ptr<transaction_organizer> ptr;
-    typedef safe_chain::inventory_fetch_handler inventory_fetch_handler;
-    typedef safe_chain::merkle_block_fetch_handler merkle_block_fetch_handler;
+    typedef std::shared_ptr<organize_header> ptr;
 
     /// Construct an instance.
-    transaction_organizer(system::prioritized_mutex& mutex,
+    organize_header(system::prioritized_mutex& mutex,
         system::dispatcher& priority_dispatch, system::threadpool& threads,
-        fast_chain& chain, transaction_pool& pool, const settings& settings);
+        fast_chain& chain, header_pool& pool, const bool scrypt,
+        const system::settings& bitcoin_settings);
 
     // Start/stop the organizer.
     bool start();
     bool stop();
 
-    /// validate and organize a transaction into tx metadata pool and store.
-    void organize(system::transaction_const_ptr tx, result_handler handler,
-        uint64_t max_money);
+    /// validate and organize a header into header pool and store.
+    void organize(system::header_const_ptr header, result_handler handler);
 
 protected:
     bool stopped() const;
-    uint64_t price(system::transaction_const_ptr tx) const;
 
 private:
     // Verify sub-sequence.
-    void handle_accept(const system::code& ec,
-        system::transaction_const_ptr tx, result_handler handler);
-    void handle_connect(const system::code& ec,
-        system::transaction_const_ptr tx, result_handler handler);
-    void signal_completion(const system::code& ec);
+    void handle_accept(const system::code& ec, header_branch::ptr branch,
+        result_handler handler);
+    void handle_complete(const system::code& ec, result_handler handler);
 
     // These are thread safe.
     fast_chain& fast_chain_;
     system::prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
-    std::promise<system::code> resume_;
-    const settings& settings_;
-    transaction_pool& pool_;
-    validate_transaction validator_;
+    header_pool& pool_;
+    validate_header validator_;
 };
 
 } // namespace blockchain

@@ -66,11 +66,11 @@ block_chain::block_chain(threadpool& pool,
     dispatch_(pool, NAME "_dispatch"),
 
     // Organizers use priority dispatch.
-    block_organizer_(validation_mutex_, priority_, pool, *this, settings,
+    organize_block_(validation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
-    header_organizer_(validation_mutex_, priority_, pool, *this, header_pool_,
+    organize_header_(validation_mutex_, priority_, pool, *this, header_pool_,
         settings.scrypt_proof_of_work, bitcoin_settings),
-    transaction_organizer_(validation_mutex_, priority_, pool, *this,
+    organize_transaction_(validation_mutex_, priority_, pool, *this,
         transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
@@ -263,7 +263,7 @@ bool block_chain::get_validatable(hash_digest& out_hash, size_t height) const
 void block_chain::prime_validation(const hash_digest& hash,
     size_t height) const
 {
-    block_organizer_.prime_validation(hash, height);
+    organize_block_.prime_validation(hash, height);
 }
 
 void block_chain::populate_header(const chain::header& header) const
@@ -846,9 +846,9 @@ bool block_chain::start()
         && set_next_confirmed_state()
         && set_candidate_work()
         && set_confirmed_work()
-        && block_organizer_.start()
-        && header_organizer_.start()
-        && transaction_organizer_.start();
+        && organize_block_.start()
+        && organize_header_.start()
+        && organize_transaction_.start();
 }
 
 bool block_chain::stop()
@@ -856,9 +856,9 @@ bool block_chain::stop()
     stopped_ = true;
 
     const auto result =
-        block_organizer_.stop() &&
-        header_organizer_.stop() &&
-        transaction_organizer_.stop();
+        organize_block_.stop() &&
+        organize_header_.stop() &&
+        organize_transaction_.stop();
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
@@ -1713,19 +1713,19 @@ void block_chain::notify(transaction_const_ptr tx)
 void block_chain::organize(header_const_ptr header, result_handler handler)
 {
     // The handler must not call organize (lock safety).
-    header_organizer_.organize(header, handler);
+    organize_header_.organize(header, handler);
 }
 
 void block_chain::organize(transaction_const_ptr tx, result_handler handler)
 {
     // The handler must not call organize (lock safety).
-    transaction_organizer_.organize(tx, handler, bitcoin_settings_.max_money());
+    organize_transaction_.organize(tx, handler, bitcoin_settings_.max_money());
 }
 
 code block_chain::organize(block_const_ptr block, size_t height)
 {
     // This triggers block and header reorganization notifications.
-    return block_organizer_.organize(block, height);
+    return organize_block_.organize(block, height);
 }
 
 // Properties.

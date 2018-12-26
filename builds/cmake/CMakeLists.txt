@@ -170,9 +170,9 @@ endif()
 add_library( ${CANONICAL_LIB_NAME}
     "../../src/settings.cpp"
     "../../src/interface/block_chain.cpp"
-    "../../src/organizers/block_organizer.cpp"
-    "../../src/organizers/header_organizer.cpp"
-    "../../src/organizers/transaction_organizer.cpp"
+    "../../src/organizers/organize_block.cpp"
+    "../../src/organizers/organize_header.cpp"
+    "../../src/organizers/organize_transaction.cpp"
     "../../src/pools/anchor_converter.cpp"
     "../../src/pools/child_closure_calculator.cpp"
     "../../src/pools/conflicting_spend_remover.cpp"

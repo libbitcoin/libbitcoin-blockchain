@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/organizers/header_organizer.hpp>
+#include <bitcoin/blockchain/organizers/organize_header.hpp>
 
 #include <cstddef>
 #include <functional>
@@ -35,9 +35,9 @@ using namespace bc::system::chain;
 using namespace bc::system::config;
 using namespace std::placeholders;
 
-#define NAME "header_organizer"
+#define NAME "organize_header"
 
-header_organizer::header_organizer(prioritized_mutex& mutex,
+organize_header::organize_header(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
     header_pool& pool, bool scrypt, const system::settings& bitcoin_settings)
   : fast_chain_(chain),
@@ -51,7 +51,7 @@ header_organizer::header_organizer(prioritized_mutex& mutex,
 // Properties.
 //-----------------------------------------------------------------------------
 
-bool header_organizer::stopped() const
+bool organize_header::stopped() const
 {
     return stopped_;
 }
@@ -59,14 +59,14 @@ bool header_organizer::stopped() const
 // Start/stop sequences.
 //-----------------------------------------------------------------------------
 
-bool header_organizer::start()
+bool organize_header::start()
 {
     stopped_ = false;
     validator_.start();
     return true;
 }
 
-bool header_organizer::stop()
+bool organize_header::stop()
 {
     validator_.stop();
     stopped_ = true;
@@ -78,7 +78,7 @@ bool header_organizer::stop()
 // This runs in single thread normal priority.
 
 // This is called from block_chain::organize.
-void header_organizer::organize(header_const_ptr header,
+void organize_header::organize(header_const_ptr header,
     result_handler handler)
 {
     code error_code;
@@ -91,7 +91,7 @@ void header_organizer::organize(header_const_ptr header,
     }
 
     const result_handler complete =
-        std::bind(&header_organizer::handle_complete,
+        std::bind(&organize_header::handle_complete,
             this, _1, handler);
 
     // Critical Section
@@ -111,7 +111,7 @@ void header_organizer::organize(header_const_ptr header,
     }
 
     const auto accept_handler =
-        std::bind(&header_organizer::handle_accept,
+        std::bind(&organize_header::handle_accept,
             this, _1, branch, complete);
 
     // Checks that are dependent on chain state.
@@ -119,7 +119,7 @@ void header_organizer::organize(header_const_ptr header,
 }
 
 // private
-void header_organizer::handle_complete(const code& ec, result_handler handler)
+void organize_header::handle_complete(const code& ec, result_handler handler)
 {
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ void header_organizer::handle_complete(const code& ec, result_handler handler)
 //-----------------------------------------------------------------------------
 
 // private
-void header_organizer::handle_accept(const code& ec, header_branch::ptr branch,
+void organize_header::handle_accept(const code& ec, header_branch::ptr branch,
     result_handler handler)
 {
     // The header may exist in the store in any not-invalid state.
