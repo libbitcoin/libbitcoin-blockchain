@@ -88,7 +88,8 @@ bool organize_block::stop()
 
 code organize_block::organize(block_const_ptr block, size_t height)
 {
-    block->metadata.start_push = std::chrono::high_resolution_clock::now();
+    // TODO: use high resolution clock?
+    block->metadata.start_push = asio::steady_clock::now();
 
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
@@ -103,7 +104,8 @@ code organize_block::organize(block_const_ptr block, size_t height)
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block->hash(), height);
 
-    block->metadata.end_push = std::chrono::high_resolution_clock::now();
+    // TODO: use high resolution clock?
+    block->metadata.end_push = asio::steady_clock::now();
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
