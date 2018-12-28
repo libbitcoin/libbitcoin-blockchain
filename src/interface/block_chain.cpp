@@ -343,13 +343,13 @@ header_const_ptr block_chain::get_header(size_t height, bool candidate) const
 // ----------------------------------------------------------------------------
 
 // private
-void block_chain::index_block(block_const_ptr block)
+void block_chain::catalog_block(block_const_ptr block)
 {
     if (!index_addresses_)
         return;
 
     code ec;
-    if ((ec = database_.index(*block)))
+    if ((ec = database_.catalog(*block)))
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure in block payment indexing, store is now corrupt: "
@@ -361,13 +361,13 @@ void block_chain::index_block(block_const_ptr block)
 }
 
 // private
-void block_chain::index_transaction(transaction_const_ptr tx)
+void block_chain::catalog_transaction(transaction_const_ptr tx)
 {
     if (!index_addresses_ || tx->metadata.existed)
         return;
 
     code ec;
-    if ((ec = database_.index(*tx)))
+    if ((ec = database_.catalog(*tx)))
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure in transaction payment indexing, store is now corrupt: "
@@ -392,10 +392,8 @@ code block_chain::store(transaction_const_ptr tx)
     if ((ec = database_.store(*tx, state->enabled_forks())))
         return ec;
 
-    // Payment indexing is asynchronous, after tx is stored. Therefore
-    // it is possible for a tx to be in any existing state and not be indexed.
     if (index_addresses_ && !tx->metadata.existed)
-        dispatch_.concurrent(&block_chain::index_transaction, this, tx);
+        catalog_transaction(tx);
 
     notify(tx);
 
@@ -538,10 +536,8 @@ code block_chain::candidate(block_const_ptr block)
     set_top_valid_candidate_state(header.metadata.state);
     set_candidate_work(candidate_work() + header.proof());
 
-    // Payment indexing is asynchronous, after block is candidate. Therefore
-    // it is possible for a block to be in any valid state and not be indexed.
     if (index_addresses_)
-        dispatch_.concurrent(&block_chain::index_block, this, block);
+        catalog_block(block);
 
     return ec;
 }
