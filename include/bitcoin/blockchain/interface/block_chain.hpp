@@ -418,8 +418,8 @@ private:
     void set_next_confirmed_state(system::chain::chain_state::ptr top);
 
     // Utilities.
-    void index_block(system::block_const_ptr block);
-    void index_transaction(system::transaction_const_ptr tx);
+    void catalog_block(system::block_const_ptr block);
+    void catalog_transaction(system::transaction_const_ptr tx);
     bool get_transactions(system::chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(system::hash_list& out_hashes,
