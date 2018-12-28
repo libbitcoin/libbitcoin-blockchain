@@ -18,6 +18,7 @@
  */
 #include <bitcoin/blockchain/organizers/organize_block.hpp>
 
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <future>
@@ -87,6 +88,9 @@ bool organize_block::stop()
 
 code organize_block::organize(block_const_ptr block, size_t height)
 {
+    // TODO: use high resolution clock?
+    block->metadata.start_push = asio::steady_clock::now();
+
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
 
@@ -96,9 +100,12 @@ code organize_block::organize(block_const_ptr block, size_t height)
     const auto error_code = fast_chain_.update(block, height);
     //#########################################################################
 
-    // TODO: cache block as last downloaded (for fast top validation).
+    // TODO: circular buffer recent downloads (for fast top validation).
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block->hash(), height);
+
+    // TODO: use high resolution clock?
+    block->metadata.end_push = asio::steady_clock::now();
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
