@@ -135,10 +135,8 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    const auto start_height = height - 1u;
-
     // If initial height is misaligned try again on next download.
-    if (fast_chain_.top_valid_candidate_state()->height() != start_height)
+    if (fast_chain_.top_valid_candidate_state()->height() != height - 1u)
     {
         //---------------------------------------------------------------------
         mutex_.unlock_high_priority();
@@ -147,15 +145,11 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
 
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
-    auto end_height = start_height;
     code error_code;
 
     for (;!stopped() && height != 0; ++height)
     {
         // TODO: check last downloaded cache first (for fast top validation).
-        // TODO: create parallel block reader (this is expensive and serial).
-        // TODO: this can run in the block populator using priority dispatch.
-        // TODO: consider metadata population in line with block read.
         auto block = fast_chain_.get_block(height, true, true);
 
         // If hash is misaligned we must be looking at an expired notification.
@@ -207,7 +201,6 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
                 break;
 
             // Reset the branch for next reorganization.
-            end_height = branch_height;
             branch_cache->clear();
         }
     }

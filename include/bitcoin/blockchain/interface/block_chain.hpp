@@ -434,8 +434,8 @@ private:
     system::atomic<system::config::checkpoint> fork_point_;
     system::atomic<system::uint256_t> candidate_work_;
     system::atomic<system::uint256_t> confirmed_work_;
-    system::atomic<system::block_const_ptr> last_block_;
-    system::atomic<system::transaction_const_ptr> last_transaction_;
+    system::atomic<system::block_const_ptr> last_confirmed_block_;
+    system::atomic<system::transaction_const_ptr> last_pool_transaction_;
     system::atomic<system::chain::chain_state::ptr> top_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> top_valid_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> next_confirmed_state_;

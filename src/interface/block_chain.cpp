@@ -299,10 +299,13 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
+// TODO: consider metadata population in line with block read.
+// TODO: create parallel block reader (this is expensive and serial).
+// TODO: this can run in the block populator using priority dispatch.
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool candidate) const
 {
-    const auto cached = last_block_.load();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (!candidate && cached && cached->header().metadata.state &&
@@ -397,9 +400,9 @@ code block_chain::store(transaction_const_ptr tx)
 
     notify(tx);
 
-    // Restore chain state for last_transaction_ cache.
+    // Restore chain state for last_pool_transaction_ cache.
     tx->metadata.state = state;
-    last_transaction_.store(tx);
+    last_pool_transaction_.store(tx);
     return ec;
 }
 
@@ -594,9 +597,9 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     set_next_confirmed_state(top_state);
     notify(fork.height(), incoming, outgoing);
 
-    // Restore chain state for last_block_ cache.
+    // Restore chain state for last_confirmed_block_ cache.
     top->header().metadata.state = top_state;
-    last_block_.store(top);
+    last_confirmed_block_.store(top);
     return ec;
 }
 
@@ -944,7 +947,7 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto cached = last_block_.load();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (cached && cached->header().metadata.state &&
@@ -987,7 +990,7 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    const auto cached = last_block_.load();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (cached && cached->header().metadata.state && cached->hash() == hash)
@@ -1190,7 +1193,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     // Try the cached block first if confirmation is not required.
     if (!require_confirmed)
     {
-        const auto cached = last_transaction_.load();
+        const auto cached = last_pool_transaction_.load();
 
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
@@ -1229,7 +1232,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     // Try the cached block first if confirmation is not required.
     if (!require_confirmed)
     {
-        const auto cached = last_transaction_.load();
+        const auto cached = last_pool_transaction_.load();
 
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
