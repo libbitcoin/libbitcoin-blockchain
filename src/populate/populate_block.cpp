@@ -43,9 +43,6 @@ populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
 void populate_block::populate(block_const_ptr block,
     result_handler&& handler) const
 {
-    // The block class has no population method, so set timer externally.
-    block->metadata.start_populate = asio::steady_clock::now();
-
     // This candidate must be that which follows the top valid candidate.
     auto& metadata = block->header().metadata;
     const auto top_valid = fast_chain_.top_valid_candidate_state();
@@ -63,6 +60,7 @@ void populate_block::populate(block_const_ptr block,
     // Contextual validation is bypassed under checkpoints.
     if (metadata.state->is_under_checkpoint())
     {
+        // TODO: skip if not payment indexing.
         // Required for prevout indexing, and is not applicable to coinbase.
         populate_non_coinbase(block, fork_height, false, handler);
         return;

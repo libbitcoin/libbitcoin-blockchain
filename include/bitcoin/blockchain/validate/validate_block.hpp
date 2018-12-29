@@ -62,16 +62,19 @@ private:
         uint32_t forks, size_t height, bool use_libconsensus);
 
     void handle_populated(const system::code& ec,
-        system::block_const_ptr block, result_handler handler) const;
+        system::block_const_ptr block, system::asio::time_point start_time,
+        result_handler handler) const;
     void accept_transactions(system::block_const_ptr block, size_t bucket,
         size_t buckets, atomic_counter_ptr sigops, bool bip16, bool bip141,
         result_handler handler) const;
     void handle_accepted(const system::code& ec, system::block_const_ptr block,
-        atomic_counter_ptr sigops, bool bip141, result_handler handler) const;
+        atomic_counter_ptr sigops, bool bip141,
+        system::asio::time_point start_time, result_handler handler) const;
     void connect_inputs(system::block_const_ptr block, size_t bucket,
         size_t buckets, result_handler handler) const;
     void handle_connected(const system::code& ec,
-        system::block_const_ptr block, result_handler handler) const;
+        system::block_const_ptr block, system::asio::time_point start_time,
+        result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
