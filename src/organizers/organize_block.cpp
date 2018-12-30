@@ -88,12 +88,11 @@ bool organize_block::stop()
 
 code organize_block::organize(block_const_ptr block, size_t height)
 {
-    // TODO: use high resolution clock?
-    block->metadata.start_push = asio::steady_clock::now();
-
+    // Check duration set here.
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
 
+    // Associate duration set here.
     // Store txs (if missing) and associate them to candidate block.
     // Existing txs cannot suffer a state change as they may also be confirmed.
     //#########################################################################
@@ -103,9 +102,6 @@ code organize_block::organize(block_const_ptr block, size_t height)
     // TODO: circular buffer recent downloads (for fast top validation).
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block->hash(), height);
-
-    // TODO: use high resolution clock?
-    block->metadata.end_push = asio::steady_clock::now();
 
     // Validation result is returned by metadata.error.
     // Failure code implies store corruption, caller should log.
@@ -135,10 +131,8 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    const auto start_height = height - 1u;
-
     // If initial height is misaligned try again on next download.
-    if (fast_chain_.top_valid_candidate_state()->height() != start_height)
+    if (fast_chain_.top_valid_candidate_state()->height() != height - 1u)
     {
         //---------------------------------------------------------------------
         mutex_.unlock_high_priority();
@@ -147,23 +141,20 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
 
     // Stack up the validated blocks for possible reorganization.
     auto branch_cache = std::make_shared<block_const_ptr_list>();
-    auto end_height = start_height;
     code error_code;
 
     for (;!stopped() && height != 0; ++height)
     {
-        // TODO: check last downloaded cache first (for fast top validation).
-        // TODO: create parallel block reader (this is expensive and serial).
-        // TODO: this can run in the block populator using priority dispatch.
-        // TODO: consider metadata population in line with block read.
+        // Deserialization duration and median_time_past set here.
         auto block = fast_chain_.get_block(height, true, true);
 
-        // If hash is misaligned we must be looking at an expired notification.
+        // If not next block must be an expired notification.
         if (!block || fast_chain_.top_valid_candidate_state()->hash() !=
             block->header().previous_block_hash())
             break;
 
         // Checks that are dependent upon chain state.
+        // Populate, accept, and connect durations set here.
         if ((error_code = validate(block)))
             break;
 
@@ -182,6 +173,10 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
         }
         else
         {
+            // TODO: don't candidate block if branch would be reorganizable,
+            // TODO: just move straight to reorganization. This will always
+            // TODO: skip candidizing the last block before reorg.
+
             // This triggers NO notifications.
             // Mark candidate block as valid and mark candidate-spent outputs.
             //#################################################################
@@ -207,7 +202,6 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
                 break;
 
             // Reset the branch for next reorganization.
-            end_height = branch_height;
             branch_cache->clear();
         }
     }

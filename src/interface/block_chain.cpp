@@ -299,10 +299,15 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
+// TODO: check download cache first.
+// TODO: consider tx metadata population in line with block read.
+// TODO: create parallel block reader (this is expensive and serial).
+// TODO: this can run in the block populator using priority dispatch.
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool candidate) const
 {
-    const auto cached = last_block_.load();
+    const auto start_deserialize = asio::steady_clock::now();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (!candidate && cached && cached->header().metadata.state &&
@@ -318,13 +323,19 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     transaction::list txs;
     BITCOIN_ASSERT(result.height() == height);
 
-    // False implies store corruption.
+    // False implies store corruption, since tx count is non-zero.
     DEBUG_ONLY(const auto value =) get_transactions(txs, result, witness);
     BITCOIN_ASSERT(value);
 
-    // Use non-const header copy to obtain move construction for txs.
-    auto header = result.header();
-    return std::make_shared<const block>(std::move(header), std::move(txs));
+    const auto instance = std::make_shared<const block>(
+        std::move(result.header()), std::move(txs));
+    
+    instance->metadata.get_block = asio::steady_clock::now() -
+        start_deserialize;
+
+    // Always populate median_time_past.
+    instance->header().metadata.median_time_past = result.median_time_past();
+    return instance;
 }
 
 header_const_ptr block_chain::get_header(size_t height, bool candidate) const
@@ -397,9 +408,9 @@ code block_chain::store(transaction_const_ptr tx)
 
     notify(tx);
 
-    // Restore chain state for last_transaction_ cache.
+    // Restore chain state for last_pool_transaction_ cache.
     tx->metadata.state = state;
-    last_transaction_.store(tx);
+    last_pool_transaction_.store(tx);
     return ec;
 }
 
@@ -455,6 +466,7 @@ code block_chain::update(block_const_ptr block, size_t height)
 {
     code error_code;
     const auto& metadata = block->header().metadata;
+    const auto start_associate = asio::steady_clock::now();
 
     if (!metadata.error)
     {
@@ -469,6 +481,7 @@ code block_chain::update(block_const_ptr block, size_t height)
         error_code = database_.invalidate(block->header(), metadata.error);
     }
 
+    block->metadata.associate = asio::steady_clock::now() - start_associate;
     return error_code;
 }
 
@@ -561,29 +574,21 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     const auto outgoing = std::make_shared<block_const_ptr_list>();
     const auto incoming = std::make_shared<block_const_ptr_list>();
 
-    // Get all missing incoming candidates with chain state (expensive reads).
+    // Deserialization duration set here.
+    // Get all candidates from fork point to branch start.
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
-    {
-        const auto block = get_block(height, true, true);
-
-        // Query chain state for first block, promote for remaining blocks.
-        state = state ?
-            promote_state(block->header(), state) :
-            chain_state(block->header(), height);
-
-        block->header().metadata.state = state;
-        incoming->push_back(block);
-    }
+        incoming->push_back(get_block(height, true, true));
 
     // Append all candidate pointers from the branch cache.
+    // Clear chain state to preserve memory and hide from subscribers.
     for (const auto block: *branch_cache)
     {
-        //// Clear chain state for reorganize and notify.
-        ////block->header().metadata.state.reset();
+        block->header().metadata.state.reset();
         incoming->push_back(block);
     }
 
     // This unmarks candidate txs and spent outputs (because confirmed).
+    // Header metadata median_time_past must be set on all incoming blocks.
     if ((ec = database_.reorganize(fork, incoming, outgoing)))
         return ec;
 
@@ -592,11 +597,13 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     set_candidate_work(0);
     set_confirmed_work(0);
     set_next_confirmed_state(top_state);
+
+    // This does not require chain state.
     notify(fork.height(), incoming, outgoing);
 
-    // Restore chain state for last_block_ cache.
+    // Restore chain state for last_confirmed_block_ cache.
     top->header().metadata.state = top_state;
-    last_block_.store(top);
+    last_confirmed_block_.store(top);
     return ec;
 }
 
@@ -944,7 +951,7 @@ void block_chain::fetch_block(size_t height, bool witness,
         return;
     }
 
-    const auto cached = last_block_.load();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (cached && cached->header().metadata.state &&
@@ -987,7 +994,7 @@ void block_chain::fetch_block(const hash_digest& hash, bool witness,
         return;
     }
 
-    const auto cached = last_block_.load();
+    const auto cached = last_confirmed_block_.load();
 
     // Try the cached block first.
     if (cached && cached->header().metadata.state && cached->hash() == hash)
@@ -1190,7 +1197,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
     // Try the cached block first if confirmation is not required.
     if (!require_confirmed)
     {
-        const auto cached = last_transaction_.load();
+        const auto cached = last_pool_transaction_.load();
 
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
@@ -1229,7 +1236,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
     // Try the cached block first if confirmation is not required.
     if (!require_confirmed)
     {
-        const auto cached = last_transaction_.load();
+        const auto cached = last_pool_transaction_.load();
 
         if (cached && cached->metadata.state && cached->hash() == hash)
         {
