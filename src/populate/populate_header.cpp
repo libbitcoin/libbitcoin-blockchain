@@ -68,12 +68,6 @@ void populate_header::populate(header_branch::ptr branch,
         return;
     }
 
-    // HACK: allows header collection to carry median_time_past to store.
-    // HACK: this is not done in store as it does not understand chain state.
-    // HACK: so population is simulated here by forwarding from chain state.
-    const auto median_time_past = header.metadata.state->median_time_past();
-    header.metadata.median_time_past = median_time_past;
-
     // This header is not found in the store.
     handler(error::success);
 }

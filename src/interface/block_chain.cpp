@@ -329,8 +329,8 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
 
     const auto instance = std::make_shared<const block>(
         std::move(result.header()), std::move(txs));
-    
-    instance->metadata.get_block = asio::steady_clock::now() -
+
+    instance->metadata.deserialize = asio::steady_clock::now() -
         start_deserialize;
 
     // Always populate median_time_past.
@@ -426,8 +426,8 @@ code block_chain::reorganize(const config::checkpoint& fork,
     if (!top_state)
         return error::operation_failed;
 
-    // TODO: if leave uncleared do not need header.median_time_past.
-    ////// Clear incoming chain state for reorganize and notify.
+    // HACK: chain state only for logging in node, otherwise could clear.
+    ////// Clear chain state to preserve memory and hide from subscribers.
     ////std::for_each(incoming->begin(), incoming->end(),
     ////    [](header_const_ptr header) { header->metadata.state.reset(); });
 
@@ -466,7 +466,6 @@ code block_chain::update(block_const_ptr block, size_t height)
 {
     code error_code;
     const auto& metadata = block->header().metadata;
-    const auto start_associate = asio::steady_clock::now();
 
     if (!metadata.error)
     {
@@ -481,7 +480,6 @@ code block_chain::update(block_const_ptr block, size_t height)
         error_code = database_.invalidate(block->header(), metadata.error);
     }
 
-    block->metadata.associate = asio::steady_clock::now() - start_associate;
     return error_code;
 }
 
@@ -578,6 +576,14 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Get all candidates from fork point to branch start.
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
         incoming->push_back(get_block(height, true, true));
+
+    // These blocks are previously candidated but not confirmed (no stats).
+    if (!incoming->empty())
+    {
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << incoming->size()
+            << " blocks queried without validation stats.";
+    }
 
     // Append all candidate pointers from the branch cache.
     // Clear chain state to preserve memory and hide from subscribers.
