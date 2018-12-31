@@ -426,9 +426,10 @@ code block_chain::reorganize(const config::checkpoint& fork,
     if (!top_state)
         return error::operation_failed;
 
-    // Clear chain state to preserve memory and hide from subscribers.
-    std::for_each(incoming->begin(), incoming->end(),
-        [](header_const_ptr header) { header->metadata.state.reset(); });
+    // HACK: chain state only for logging in node, otherwise could clear.
+    ////// Clear chain state to preserve memory and hide from subscribers.
+    ////std::for_each(incoming->begin(), incoming->end(),
+    ////    [](header_const_ptr header) { header->metadata.state.reset(); });
 
     code ec;
     auto fork_height = fork.height();
