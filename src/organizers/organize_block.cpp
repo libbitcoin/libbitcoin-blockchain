@@ -217,6 +217,14 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
             << error_code.message();
     }
 
+    // If not reorganized now these blocks will be queried and confirmed later.
+    if (!branch_cache->empty())
+    {
+        LOG_DEBUG(LOG_BLOCKCHAIN)
+            << branch_cache->size() <<
+            " blocks validated but not yet organized.";
+    }
+
     // Resubscribe if not stop or store failure.
     // In the case of a store failure the server will stop processing blocks.
     return !error_code;
