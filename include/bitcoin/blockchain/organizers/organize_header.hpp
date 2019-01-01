@@ -40,7 +40,7 @@ public:
     typedef std::shared_ptr<organize_header> ptr;
 
     /// Construct an instance.
-    organize_header(system::prioritized_mutex& mutex,
+    organize_header(system::shared_mutex& mutex,
         system::dispatcher& priority_dispatch, system::threadpool& threads,
         fast_chain& chain, header_pool& pool, const bool scrypt,
         const system::settings& bitcoin_settings);
@@ -63,7 +63,7 @@ private:
 
     // These are thread safe.
     fast_chain& fast_chain_;
-    system::prioritized_mutex& mutex_;
+    system::shared_mutex& mutex_;
     std::atomic<bool> stopped_;
     header_pool& pool_;
     validate_header validator_;

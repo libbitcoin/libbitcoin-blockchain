@@ -53,8 +53,8 @@ block_chain::block_chain(threadpool& pool,
     chain_state_populator_(*this, settings, bitcoin_settings),
     index_addresses_(database_settings.index_addresses),
 
-    // Enable block/header priority when write flush enabled (performance).
-    validation_mutex_(database_settings.flush_writes),
+    // Enable block priority over txs when write flush enabled (performance).
+    confirmation_mutex_(database_settings.flush_writes),
 
     // Metadata pools.
     header_pool_(settings.reorganization_limit),
@@ -66,11 +66,11 @@ block_chain::block_chain(threadpool& pool,
     dispatch_(pool, NAME "_dispatch"),
 
     // Organizers use priority dispatch.
-    organize_block_(validation_mutex_, priority_, pool, *this, settings,
+    organize_block_(confirmation_mutex_, priority_, pool, *this, settings,
         bitcoin_settings),
-    organize_header_(validation_mutex_, priority_, pool, *this, header_pool_,
+    organize_header_(candidate_mutex_, priority_, pool, *this, header_pool_,
         settings.scrypt_proof_of_work, bitcoin_settings),
-    organize_transaction_(validation_mutex_, priority_, pool, *this,
+    organize_transaction_(confirmation_mutex_, priority_, pool, *this,
         transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
@@ -869,24 +869,24 @@ bool block_chain::stop()
         organize_header_.stop() &&
         organize_transaction_.stop();
 
-    // Critical Section
+    // Dual Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    validation_mutex_.lock_high_priority();
+    confirmation_mutex_.lock_high_priority();
+    candidate_mutex_.lock();
 
     // Clean up subscriptions and threadpool now that work is coalesced.
-
-    block_subscriber_->stop();
     header_subscriber_->stop();
-    transaction_subscriber_->stop();
-
-    block_subscriber_->invoke(error::service_stopped, 0, {}, {});
     header_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    block_subscriber_->stop();
+    block_subscriber_->invoke(error::service_stopped, 0, {}, {});
+    transaction_subscriber_->stop();
     transaction_subscriber_->invoke(error::service_stopped, {});
 
     // Stop the threadpool keep-alive allowing threads to terminate.
     priority_pool_.shutdown();
 
-    validation_mutex_.unlock_high_priority();
+    candidate_mutex_.unlock();
+    confirmation_mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
     return result;
 }
