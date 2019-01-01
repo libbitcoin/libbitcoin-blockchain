@@ -73,7 +73,7 @@ code validate_header::check(header_const_ptr header) const
 {
     // Run context free checks, even if under checkpoint or milestone.
     return header->check(bitcoin_settings_.timestamp_limit_seconds,
-        bitcoin_settings_.proof_of_work_limit, scrypt_);
+        bitcoin_settings_.proof_of_work_limit, scrypt_, true);
 }
 
 // Accept sequence.
