@@ -445,7 +445,8 @@ private:
     const populate_chain_state chain_state_populator_;
     const bool index_addresses_;
 
-    mutable system::prioritized_mutex validation_mutex_;
+    mutable system::upgrade_mutex candidate_mutex_;
+    mutable system::prioritized_mutex confirmation_mutex_;
     mutable system::threadpool priority_pool_;
     mutable system::dispatcher priority_;
     mutable system::dispatcher dispatch_;

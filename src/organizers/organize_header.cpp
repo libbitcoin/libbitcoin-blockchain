@@ -37,7 +37,7 @@ using namespace std::placeholders;
 
 #define NAME "organize_header"
 
-organize_header::organize_header(prioritized_mutex& mutex,
+organize_header::organize_header(shared_mutex& mutex,
     dispatcher& priority_dispatch, threadpool&, fast_chain& chain,
     header_pool& pool, bool scrypt, const system::settings& bitcoin_settings)
   : fast_chain_(chain),
@@ -96,10 +96,10 @@ void organize_header::organize(header_const_ptr header,
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock_high_priority();
+    mutex_.lock();
 
     // The pool is safe for filtering only, so protect by critical section.
-    // This sets height and presumes the fork point is an indexed header.
+    // This sets height and presumes the fork point is an candidate header.
     const auto branch = pool_.get_branch(header);
 
     // See symmetry with tx metadata memory pool.
@@ -121,7 +121,7 @@ void organize_header::organize(header_const_ptr header,
 // private
 void organize_header::handle_complete(const code& ec, result_handler handler)
 {
-    mutex_.unlock_high_priority();
+    mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
     // Invoke caller handler outside of critical section.
