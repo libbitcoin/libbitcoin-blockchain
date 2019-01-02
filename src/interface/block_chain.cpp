@@ -322,14 +322,13 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     if (!get_transactions(txs, result, witness))
         return {};
 
-    const auto instance = std::make_shared<const block>(result.header(),
+    // Prepopulate header metadata.
+    const auto instance = std::make_shared<const block>(result.header(true),
         std::move(txs));
 
     instance->metadata.deserialize = asio::steady_clock::now() -
         start_deserialize;
 
-    // Always populate median_time_past.
-    instance->header().metadata.median_time_past = result.median_time_past();
     return instance;
 }
 

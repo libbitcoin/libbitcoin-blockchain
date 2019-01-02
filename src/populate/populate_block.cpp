@@ -66,11 +66,8 @@ void populate_block::populate(block_const_ptr block,
         return;
     }
 
-    // If metadata was not already populated (due to existence), do it here.
-    if (!metadata.exists)
-        fast_chain_.populate_header(block->header());
-
     // Contextual validation is bypassed if already validated.
+    // Header metadata must be prepopulated and block must exist.
     if (metadata.validated)
     {
         // Required for prevout indexing, and is not applicable to coinbase.
