@@ -46,7 +46,7 @@ protected:
     void populate_non_coinbase(system::block_const_ptr block,
         size_t fork_height, bool use_txs, result_handler handler) const;
     void populate_transactions(system::block_const_ptr block,
-        size_t fork_height, size_t bucket, size_t buckets, bool use_txs,
+        size_t fork_height, size_t bucket, size_t buckets, bool populate_txs,
         result_handler handler) const;
 };
 
