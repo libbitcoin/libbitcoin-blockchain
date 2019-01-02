@@ -146,7 +146,7 @@ void populate_block::populate_transactions(block_const_ptr block,
     if (populate_txs)
     {
         // Must skip coinbase here as it is already accounted for.
-        for (auto position = (bucket == 0 ? buckets: bucket);
+        for (auto position = (bucket == 0 ? buckets : bucket);
             position < txs.size(); position = ceiling_add(position, buckets))
         {
             const auto& tx = txs[position];
