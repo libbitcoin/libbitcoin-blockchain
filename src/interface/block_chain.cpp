@@ -121,8 +121,7 @@ bool block_chain::get_header(chain::header& out_header, size_t height,
     if (!result)
         return false;
 
-    // Since header() is const this may not actually move without a cast.
-    out_header = std::move(result.header());
+    out_header = result.header();
     return true;
 }
 
@@ -323,8 +322,8 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     if (!get_transactions(txs, result, witness))
         return {};
 
-    const auto instance = std::make_shared<const block>(
-        std::move(result.header()), std::move(txs));
+    const auto instance = std::make_shared<const block>(result.header(),
+        std::move(txs));
 
     instance->metadata.deserialize = asio::steady_clock::now() -
         start_deserialize;

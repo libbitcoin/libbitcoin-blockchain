@@ -47,29 +47,18 @@ void populate_header::populate(header_branch::ptr branch,
     }
 
     const auto& header = *branch->top();
-
-    // This is only needed for duplicate or stored error.
     fast_chain_.populate_header(header);
 
-    // TODO: if it's errored, that's simple - the header fails validation.
-    // TODO: if it's orphaned, then need to continue and mark as candidate.
-    // TODO: if it's a candidate it's a duplicate.
-    // TODO: but what if it's confirmed???
-    if (header.metadata.exists)
+    // This header is not found in the store, so continue.
+    if (!header.metadata.exists)
     {
-        // If there is an existing full block validation error return it.
-        if (header.metadata.error)
-        {
-            handler(header.metadata.error);
-            return;
-        }
-
-        handler(error::duplicate_block);
+        handler(error::success);
         return;
     }
 
-    // This header is not found in the store.
-    handler(error::success);
+    // An existing block is either invalid or a duplicate.
+    handler(header.metadata.error ? header.metadata.error :
+        error::duplicate_block);
 }
 
 // private
@@ -128,7 +117,7 @@ bool populate_header::set_branch_state(header_branch::ptr branch) const
         return true;
     }
 
-    // Parent hash not found in header index.
+    // Parent hash not found in candidate index.
     return false;
 }
 
