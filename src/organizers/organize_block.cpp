@@ -146,7 +146,7 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     for (;!stopped() && height != 0; ++height)
     {
         // Deserialization duration and median_time_past set here.
-        auto block = fast_chain_.get_block(height, true, true);
+        const auto block = fast_chain_.get_block(height, true, true);
 
         // If not next block must be an expired notification.
         if (!block || fast_chain_.top_valid_candidate_state()->hash() !=
