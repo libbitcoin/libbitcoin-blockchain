@@ -299,10 +299,6 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
-// TODO: check download cache first.
-// TODO: consider tx metadata population in line with block read.
-// TODO: create parallel block reader (this is expensive and serial).
-// TODO: this can run in the block populator using priority dispatch.
 block_const_ptr block_chain::get_block(size_t height, bool witness,
     bool candidate) const
 {
@@ -324,8 +320,8 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     BITCOIN_ASSERT(result.height() == height);
 
     // False implies store corruption, since tx count is non-zero.
-    DEBUG_ONLY(const auto value =) get_transactions(txs, result, witness);
-    BITCOIN_ASSERT(value);
+    if (!get_transactions(txs, result, witness))
+        return {};
 
     const auto instance = std::make_shared<const block>(
         std::move(result.header()), std::move(txs));
@@ -575,7 +571,14 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Deserialization duration set here.
     // Get all candidates from fork point to branch start.
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
-        incoming->push_back(get_block(height, true, true));
+    {
+        const auto block = get_block(height, true, true);
+
+        if (!block)
+            return error::operation_failed;
+
+        incoming->push_back(block);
+    }
 
     // These blocks are previously candidated but not confirmed (no stats).
     if (!incoming->empty())
