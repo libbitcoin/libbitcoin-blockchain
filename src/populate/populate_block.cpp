@@ -34,8 +34,10 @@ using namespace bc::system::machine;
 
 #define NAME "populate_block"
 
-populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain)
-  : populate_base(dispatch, chain)
+populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain,
+    bool catalog)
+  : populate_base(dispatch, chain),
+    catalog_(catalog)
 {
 }
 
@@ -57,21 +59,15 @@ void populate_block::populate(block_const_ptr block,
     // Above this confirmed are not confirmed in the candidate chain.
     const auto fork_height = fast_chain_.fork_point().height();
 
-    // Contextual validation is bypassed under checkpoints.
-    if (metadata.state->is_under_checkpoint())
+    // Contextual validation bypassed if already validated or under checkpoint.
+    if (metadata.validated || metadata.state->is_under_checkpoint())
     {
-        // TODO: skip if not payment indexing.
-        // Required for prevout indexing, and is not applicable to coinbase.
-        populate_non_coinbase(block, fork_height, false, handler);
-        return;
-    }
+        // Skip prevout population if not cataloging payments.
+        if (catalog_)
+            populate_non_coinbase(block, fork_height, false, handler);
+        else
+            handler(error::success);
 
-    // Contextual validation is bypassed if already validated.
-    // Header metadata must be prepopulated and block must exist.
-    if (metadata.validated)
-    {
-        // Required for prevout indexing, and is not applicable to coinbase.
-        populate_non_coinbase(block, fork_height, false, handler);
         return;
     }
 

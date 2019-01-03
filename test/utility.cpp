@@ -42,8 +42,7 @@ chain::block read_block(const std::string& hex)
 
 bool create_database(database::settings& out_database)
 {
-    // Blockchain doesn't care about other indexes.
-    out_database.index_addresses = false;
+    static const auto mainnet = config::settings::mainnet;
 
     // Table optimization parameters, reduced for speed and more collision.
     out_database.file_growth_rate = 42;
@@ -52,9 +51,9 @@ bool create_database(database::settings& out_database)
 
     error_code ec;
     remove_all(out_database.directory, ec);
-    database::data_base database(out_database);
-    return create_directories(out_database.directory, ec) && database.create(
-        system::settings(system::config::settings::mainnet).genesis_block);
+    database::data_base database(out_database, false);
+    return create_directories(out_database.directory, ec) &&
+        database.create(system::settings(mainnet).genesis_block);
 }
 
 } // namespace test

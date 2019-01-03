@@ -28,6 +28,7 @@ using namespace bc::system;
 settings::settings()
   : cores(0),
     priority(true),
+    index_payments(true),
     use_libconsensus(false),
     byte_fee_satoshis(1),
     sigop_fee_satoshis(100),

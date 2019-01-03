@@ -45,13 +45,12 @@ block_chain::block_chain(threadpool& pool,
     const blockchain::settings& settings,
     const database::settings& database_settings,
     const system::settings& bitcoin_settings)
-  : database_(database_settings),
+  : database_(database_settings, settings.index_payments),
     stopped_(true),
     fork_point_({ null_hash, 0 }),
     settings_(settings),
     bitcoin_settings_(bitcoin_settings),
     chain_state_populator_(*this, settings, bitcoin_settings),
-    index_addresses_(database_settings.index_addresses),
 
     // Enable block priority over txs when write flush enabled (performance).
     confirmation_mutex_(database_settings.flush_writes),
@@ -350,7 +349,7 @@ header_const_ptr block_chain::get_header(size_t height, bool candidate) const
 // private
 void block_chain::catalog_block(block_const_ptr block)
 {
-    if (!index_addresses_)
+    if (!settings_.index_payments)
         return;
 
     code ec;
@@ -368,7 +367,7 @@ void block_chain::catalog_block(block_const_ptr block)
 // private
 void block_chain::catalog_transaction(transaction_const_ptr tx)
 {
-    if (!index_addresses_ || tx->metadata.existed)
+    if (!settings_.index_payments || tx->metadata.existed)
         return;
 
     code ec;
@@ -397,7 +396,7 @@ code block_chain::store(transaction_const_ptr tx)
     if ((ec = database_.store(*tx, state->enabled_forks())))
         return ec;
 
-    if (index_addresses_ && !tx->metadata.existed)
+    if (settings_.index_payments && !tx->metadata.existed)
         catalog_transaction(tx);
 
     notify(tx);
@@ -539,7 +538,7 @@ code block_chain::candidate(block_const_ptr block)
     set_top_valid_candidate_state(header.metadata.state);
     set_candidate_work(candidate_work() + header.proof());
 
-    if (index_addresses_)
+    if (settings_.index_payments)
         catalog_block(block);
 
     return ec;

@@ -40,6 +40,7 @@ public:
     /// Properties.
     uint32_t cores;
     bool priority;
+    bool index_payments;
     bool use_libconsensus;
     float byte_fee_satoshis;
     float sigop_fee_satoshis;

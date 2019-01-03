@@ -443,7 +443,6 @@ private:
     const settings& settings_;
     const system::settings& bitcoin_settings_;
     const populate_chain_state chain_state_populator_;
-    const bool index_addresses_;
 
     mutable system::upgrade_mutex candidate_mutex_;
     mutable system::prioritized_mutex confirmation_mutex_;
