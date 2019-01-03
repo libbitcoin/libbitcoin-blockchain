@@ -34,7 +34,8 @@ class BCB_API populate_block
   : public populate_base
 {
 public:
-    populate_block(system::dispatcher& dispatch, const fast_chain& chain);
+    populate_block(system::dispatcher& dispatch, const fast_chain& chain,
+        bool catalog);
 
     /// Populate validation state for the the next block.
     void populate(system::block_const_ptr block,
@@ -48,6 +49,9 @@ protected:
     void populate_transactions(system::block_const_ptr block,
         size_t fork_height, size_t bucket, size_t buckets, bool populate_txs,
         result_handler handler) const;
+
+private:
+    const bool catalog_;
 };
 
 } // namespace blockchain

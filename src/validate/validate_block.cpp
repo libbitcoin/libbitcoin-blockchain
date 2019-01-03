@@ -45,7 +45,7 @@ validate_block::validate_block(dispatcher& dispatch, const fast_chain& chain,
     use_libconsensus_(settings.use_libconsensus),
     checkpoints_(settings.checkpoints),
     priority_dispatch_(dispatch),
-    block_populator_(dispatch, chain),
+    block_populator_(dispatch, chain, settings.index_payments),
     scrypt_(settings.scrypt_proof_of_work),
     bitcoin_settings_(bitcoin_settings)
 {
