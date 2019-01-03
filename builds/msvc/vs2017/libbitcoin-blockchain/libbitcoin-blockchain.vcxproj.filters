@@ -69,6 +69,9 @@
     <ClCompile Include="..\..\..\..\src\pools\anchor_converter.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\child_closure_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
@@ -162,6 +165,9 @@
       <Filter>include\bitcoin\blockchain\organizers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp">
+      <Filter>include\bitcoin\blockchain\pools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\child_closure_calculator.hpp">

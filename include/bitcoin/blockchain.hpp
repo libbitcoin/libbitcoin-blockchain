@@ -30,6 +30,7 @@
 #include <bitcoin/blockchain/organizers/organize_header.hpp>
 #include <bitcoin/blockchain/organizers/organize_transaction.hpp>
 #include <bitcoin/blockchain/pools/anchor_converter.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/child_closure_calculator.hpp>
 #include <bitcoin/blockchain/pools/conflicting_spend_remover.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>

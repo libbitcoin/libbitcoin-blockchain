@@ -41,6 +41,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizers/organize_header.cpp \
     src/organizers/organize_transaction.cpp \
     src/pools/anchor_converter.cpp \
+    src/pools/block_pool.cpp \
     src/pools/child_closure_calculator.cpp \
     src/pools/conflicting_spend_remover.cpp \
     src/pools/header_branch.cpp \
@@ -73,26 +74,27 @@ check_PROGRAMS = test/libbitcoin-blockchain-test
 test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_BUILD_CPPFLAGS} ${bitcoin_consensus_BUILD_CPPFLAGS}
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
-    test/fast_chain.cpp \
-    test/header_branch.cpp \
-    test/header_entry.cpp \
-    test/header_pool.cpp \
     test/main.cpp \
-    test/safe_chain.cpp \
-    test/transaction_entry.cpp \
-    test/transaction_pool.cpp \
     test/utility.cpp \
     test/utility.hpp \
-    test/validate_block.cpp \
-    test/validate_transaction.cpp \
+    test/interface/fast_chain.cpp \
+    test/interface/safe_chain.cpp \
     test/pools/anchor_converter.cpp \
+    test/pools/block_pool.cpp \
     test/pools/child_closure_calculator.cpp \
     test/pools/conflicting_spend_remover.cpp \
+    test/pools/header_branch.cpp \
+    test/pools/header_entry.cpp \
+    test/pools/header_pool.cpp \
     test/pools/parent_closure_calculator.cpp \
     test/pools/priority_calculator.cpp \
+    test/pools/transaction_entry.cpp \
     test/pools/transaction_order_calculator.cpp \
+    test/pools/transaction_pool.cpp \
     test/pools/utilities.cpp \
-    test/pools/utilities.hpp
+    test/pools/utilities.hpp \
+    test/validators/validate_block.cpp \
+    test/validators/validate_transaction.cpp
 
 endif WITH_TESTS
 
@@ -135,6 +137,7 @@ include_bitcoin_blockchain_organizers_HEADERS = \
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/anchor_converter.hpp \
+    include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/child_closure_calculator.hpp \
     include/bitcoin/blockchain/pools/conflicting_spend_remover.hpp \
     include/bitcoin/blockchain/pools/header_branch.hpp \
