@@ -322,14 +322,13 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     if (!get_transactions(txs, result, witness))
         return {};
 
-    const auto instance = std::make_shared<const block>(result.header(),
+    // Prepopulate header metadata.
+    const auto instance = std::make_shared<const block>(result.header(true),
         std::move(txs));
 
     instance->metadata.deserialize = asio::steady_clock::now() -
         start_deserialize;
 
-    // Always populate median_time_past.
-    instance->header().metadata.median_time_past = result.median_time_past();
     return instance;
 }
 
@@ -427,7 +426,7 @@ code block_chain::reorganize(const config::checkpoint& fork,
     ////    [](header_const_ptr header) { header->metadata.state.reset(); });
 
     code ec;
-    auto fork_height = fork.height();
+    const auto fork_height = fork.height();
     const auto outgoing = std::make_shared<header_const_ptr_list>();
 
     // This unmarks candidate txs and spent outputs (may have been validated).
@@ -459,23 +458,21 @@ code block_chain::reorganize(const config::checkpoint& fork,
 
 code block_chain::update(block_const_ptr block, size_t height)
 {
-    code error_code;
     const auto& metadata = block->header().metadata;
 
     if (!metadata.error)
     {
         // Store or connect each transaction and set tx link metadata.
-        if ((error_code = database_.update(*block, height)))
-            return error_code;
+        return database_.update(*block, height);
     }
     else if (metadata.validated)
     {
         // Set block validation error state and error code.
         // Never set valid on update as validation handling would be skipped.
-        error_code = database_.invalidate(block->header(), metadata.error);
+        return database_.invalidate(block->header(), metadata.error);
     }
 
-    return error_code;
+    return error::success;
 }
 
 code block_chain::invalidate(const chain::header& header, const code& error)
