@@ -25,6 +25,18 @@ namespace blockchain {
 
 block_pool::block_pool()
 {
+    // Make thread safe for add/remove (distinct add/remove mutexes).
+    // Store pointer by height (sorted/unique) and hash (unique).
+    //
+    // Add blocks under blockchain populated critical section.
+    // Remove under blockchain candidated critical section.
+    //
+    // Limit to configured entry count (size) when adding.
+    // Clear heights at/below new add height to mitigate turds.
+    //
+    // Trigger read-ahead population when reading and below configured count
+    // while the max height is below the current populated top candidate and
+    // not currently reading ahead. Fan out read-ahead modulo network cores.
 }
 
 } // namespace blockchain
