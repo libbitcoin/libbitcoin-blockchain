@@ -10,27 +10,30 @@
     <Filter Include="src">
       <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000000}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\pools">
+    <Filter Include="src\interface">
       <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\pools">
+      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\validators">
+      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000003}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\fast_chain.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\test\interface\fast_chain.cpp">
+      <Filter>src\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\header_branch.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\header_entry.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\header_pool.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\test\interface\safe_chain.cpp">
+      <Filter>src\interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\block_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp">
@@ -39,35 +42,41 @@
     <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\header_branch.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\header_entry.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\header_pool.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\parent_closure_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\transaction_entry.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\transaction_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\utilities.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\safe_chain.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\transaction_entry.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\transaction_pool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\utility.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\validate_block.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\test\validators\validate_block.cpp">
+      <Filter>src\validators</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\validate_transaction.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\..\..\test\validators\validate_transaction.cpp">
+      <Filter>src\validators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

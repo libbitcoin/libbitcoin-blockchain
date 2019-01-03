@@ -174,6 +174,7 @@ add_library( ${CANONICAL_LIB_NAME}
     "../../src/organizers/organize_header.cpp"
     "../../src/organizers/organize_transaction.cpp"
     "../../src/pools/anchor_converter.cpp"
+    "../../src/pools/block_pool.cpp"
     "../../src/pools/child_closure_calculator.cpp"
     "../../src/pools/conflicting_spend_remover.cpp"
     "../../src/pools/header_branch.cpp"
@@ -229,26 +230,27 @@ endif()
 #------------------------------------------------------------------------------
 if (with-tests)
     add_executable( libbitcoin-blockchain-test
-        "../../test/fast_chain.cpp"
-        "../../test/header_branch.cpp"
-        "../../test/header_entry.cpp"
-        "../../test/header_pool.cpp"
         "../../test/main.cpp"
-        "../../test/safe_chain.cpp"
-        "../../test/transaction_entry.cpp"
-        "../../test/transaction_pool.cpp"
         "../../test/utility.cpp"
         "../../test/utility.hpp"
-        "../../test/validate_block.cpp"
-        "../../test/validate_transaction.cpp"
+        "../../test/interface/fast_chain.cpp"
+        "../../test/interface/safe_chain.cpp"
         "../../test/pools/anchor_converter.cpp"
+        "../../test/pools/block_pool.cpp"
         "../../test/pools/child_closure_calculator.cpp"
         "../../test/pools/conflicting_spend_remover.cpp"
+        "../../test/pools/header_branch.cpp"
+        "../../test/pools/header_entry.cpp"
+        "../../test/pools/header_pool.cpp"
         "../../test/pools/parent_closure_calculator.cpp"
         "../../test/pools/priority_calculator.cpp"
+        "../../test/pools/transaction_entry.cpp"
         "../../test/pools/transaction_order_calculator.cpp"
+        "../../test/pools/transaction_pool.cpp"
         "../../test/pools/utilities.cpp"
-        "../../test/pools/utilities.hpp" )
+        "../../test/pools/utilities.hpp"
+        "../../test/validators/validate_block.cpp"
+        "../../test/validators/validate_transaction.cpp" )
 
     add_test( NAME libbitcoin-blockchain-test COMMAND libbitcoin-blockchain-test
             --run_test=*
