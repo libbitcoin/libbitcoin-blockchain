@@ -55,20 +55,19 @@ block_chain::block_chain(threadpool& pool,
     // Enable block priority over txs when write flush enabled (performance).
     confirmation_mutex_(database_settings.flush_writes),
 
-    // Metadata pools.
-    header_pool_(settings.reorganization_limit),
+    header_pool_(settings),
+    /* block_pool_(settings), */
     transaction_pool_(settings),
 
-    // Create dispatchers for priority and non-priority operations.
+    // Create dispatcher for priority operations.
     priority_pool_(thread_ceiling(settings.cores) + 1u, priority(settings.priority)),
-    priority_dispatch_(priority_pool_, NAME "_priority"),
-    dispatch_(pool, NAME "_dispatch"),
+    priority_dispatch_(priority_pool_, NAME "_dispatch"),
 
-    organize_header_(candidate_mutex_, dispatch_, pool, *this,
+    organize_header_(candidate_mutex_, priority_dispatch_, pool, *this,
         header_pool_, settings, bitcoin_settings),
     organize_block_(confirmation_mutex_, priority_dispatch_, pool, *this,
         /* block_pool_, */ settings, bitcoin_settings),
-    organize_transaction_(confirmation_mutex_, dispatch_, pool, *this,
+    organize_transaction_(confirmation_mutex_, priority_dispatch_, pool, *this,
         transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.

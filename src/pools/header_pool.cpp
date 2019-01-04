@@ -25,6 +25,7 @@
 #include <utility>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -32,8 +33,9 @@ namespace blockchain {
 using namespace bc::system;
 using namespace boost;
 
-header_pool::header_pool(size_t maximum_depth)
-  : maximum_depth_(maximum_depth == 0 ? max_size_t : maximum_depth)
+header_pool::header_pool(const settings& settings)
+  : maximum_depth_(settings.reorganization_limit == 0 ? max_size_t :
+      settings.reorganization_limit)
 {
 }
 
