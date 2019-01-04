@@ -65,7 +65,7 @@ block_chain::block_chain(threadpool& pool,
     dispatch_(pool, NAME "_dispatch"),
 
     organize_header_(candidate_mutex_, dispatch_, pool, *this,
-        header_pool_, settings.scrypt_proof_of_work, bitcoin_settings),
+        header_pool_, settings, bitcoin_settings),
     organize_block_(confirmation_mutex_, priority_dispatch_, pool, *this,
         /* block_pool_, */ settings, bitcoin_settings),
     organize_transaction_(confirmation_mutex_, dispatch_, pool, *this,

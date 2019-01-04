@@ -35,7 +35,7 @@ public:
     typedef system::handle0 result_handler;
 
     validate_header(system::dispatcher& dispatch, const fast_chain& chain,
-        bool scrypt, const system::settings& bitcoin_settings);
+        const settings& settings, const system::settings& bitcoin_settings);
 
     void start();
     void stop();
