@@ -58,7 +58,8 @@ bool transaction_pool::exists(transaction_const_ptr /*tx*/) const
 // TODO: implement (performance optimization for tx filtering via store).
 void transaction_pool::filter(get_data_ptr /*message*/) const
 {
-    BITCOIN_ASSERT_MSG(false, "not implemented");
+    // Don't crash  builds.
+    ////BITCOIN_ASSERT_MSG(false, "not implemented");
 }
 
 void transaction_pool::fetch_template(merkle_block_fetch_handler handler) const
