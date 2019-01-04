@@ -42,7 +42,7 @@ public:
     /// Construct an instance.
     organize_header(system::shared_mutex& mutex,
         system::dispatcher& priority_dispatch, system::threadpool& threads,
-        fast_chain& chain, header_pool& pool, const bool scrypt,
+        fast_chain& chain, header_pool& pool, bool scrypt,
         const system::settings& bitcoin_settings);
 
     // Start/stop the organizer.

@@ -36,7 +36,7 @@ using namespace std::placeholders;
 #define NAME "validate_header"
 
 validate_header::validate_header(dispatcher& dispatch, const fast_chain& chain,
-    const bool scrypt, const system::settings& bitcoin_settings)
+    bool scrypt, const system::settings& bitcoin_settings)
   : stopped_(true),
     header_populator_(dispatch, chain),
     scrypt_(scrypt),
