@@ -27,6 +27,7 @@
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_entry.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -36,7 +37,7 @@ namespace blockchain {
 class BCB_API header_pool
 {
 public:
-    header_pool(size_t maximum_depth);
+    header_pool(const settings& settings);
 
     /// The number of headers in the pool.
     size_t size() const;

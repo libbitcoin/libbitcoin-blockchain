@@ -32,8 +32,8 @@ class header_pool_fixture
   : public header_pool
 {
 public:
-    header_pool_fixture(size_t maximum_depth)
-      : header_pool(maximum_depth)
+    header_pool_fixture(const blockchain::settings& settings)
+      : header_pool(settings)
     {
     }
 
@@ -58,7 +58,7 @@ header_const_ptr make_header(uint32_t id, const hash_digest& parent)
     return header;
 }
 
-header_const_ptr make_header(uint32_t id,header_const_ptr parent)
+header_const_ptr make_header(uint32_t id, header_const_ptr parent)
 {
     return make_header(id, parent->hash());
 }
@@ -72,14 +72,18 @@ header_const_ptr make_header(uint32_t id)
 
 BOOST_AUTO_TEST_CASE(header_pool__construct__zero_depth__sets__maximum_value)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     BOOST_REQUIRE_EQUAL(instance.maximum_depth(), max_size_t);
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__construct__nonzero_depth__round_trips)
 {
     static const size_t expected = 42;
-    header_pool_fixture instance(expected);
+    blockchain::settings settings;
+    settings.reorganization_limit = expected;
+    header_pool_fixture instance(settings);
     BOOST_REQUIRE_EQUAL(instance.maximum_depth(), expected);
 }
 
@@ -87,7 +91,9 @@ BOOST_AUTO_TEST_CASE(header_pool__construct__nonzero_depth__round_trips)
 
 BOOST_AUTO_TEST_CASE(header_pool__add1__one__single)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     static const size_t height = 42;
     const auto header1 = make_header(1);
 
@@ -103,7 +109,9 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__one__single)
 
 BOOST_AUTO_TEST_CASE(header_pool__add1__twice__single)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header = std::make_shared<const message::header>();
 
     instance.add(header, 0);
@@ -113,7 +121,9 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__twice__single)
 
 BOOST_AUTO_TEST_CASE(header_pool__add1__two_different_headers_with_same_hash__first_retained)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     static const size_t height1a = 42;
     const auto header1a = make_header(1);
     const auto header1b = make_header(1);
@@ -132,7 +142,9 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__two_different_headers_with_same_hash__fi
 
 BOOST_AUTO_TEST_CASE(header_pool__add1__two_distinct_hash__two)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     static const size_t height1 = 42;
     static const size_t height2 = height1 + 1;
     const auto header1 = make_header(1);
@@ -158,14 +170,18 @@ BOOST_AUTO_TEST_CASE(header_pool__add1__two_distinct_hash__two)
 
 BOOST_AUTO_TEST_CASE(header_pool__add2__empty__empty)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     instance.add(std::make_shared<const header_const_ptr_list>(), 0);
     BOOST_REQUIRE_EQUAL(instance.size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__add2__distinct__expected)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     header_const_ptr_list headers{ header1, header2 };
@@ -189,7 +205,9 @@ BOOST_AUTO_TEST_CASE(header_pool__add2__distinct__expected)
 
 BOOST_AUTO_TEST_CASE(header_pool__remove__empty__unchanged)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     instance.add(header1, 42);
     BOOST_REQUIRE_EQUAL(instance.size(), 1u);
@@ -200,7 +218,9 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__empty__unchanged)
 
 BOOST_AUTO_TEST_CASE(header_pool__remove__all_distinct__empty)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     const auto header3 = make_header(2);
@@ -215,7 +235,9 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__all_distinct__empty)
 
 BOOST_AUTO_TEST_CASE(header_pool__remove__all_connected__empty)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2, header1);
     const auto header3 = make_header(3, header2);
@@ -230,7 +252,9 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__all_connected__empty)
 
 BOOST_AUTO_TEST_CASE(header_pool__remove__subtree__reorganized)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2, header1);
     const auto header3 = make_header(3, header2);
@@ -267,14 +291,18 @@ BOOST_AUTO_TEST_CASE(header_pool__remove__subtree__reorganized)
 
 BOOST_AUTO_TEST_CASE(header_pool__prune__empty_zero_zero__empty)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     instance.prune(0);
     BOOST_REQUIRE_EQUAL(instance.size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__prune__all_current__unchanged)
 {
-    header_pool_fixture instance(10);
+    blockchain::settings settings;
+    settings.reorganization_limit = 10;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     const auto header3 = make_header(3);
@@ -295,7 +323,9 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__all_current__unchanged)
 
 BOOST_AUTO_TEST_CASE(header_pool__prune__one_expired__one_deleted)
 {
-    header_pool_fixture instance(10);
+    blockchain::settings settings;
+    settings.reorganization_limit = 10;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     const auto header3 = make_header(3);
@@ -316,7 +346,9 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__one_expired__one_deleted)
 
 BOOST_AUTO_TEST_CASE(header_pool__prune__whole_header_branch_expired__whole_header_branch_deleted)
 {
-    header_pool_fixture instance(10);
+    blockchain::settings settings;
+    settings.reorganization_limit = 10;
+    header_pool_fixture instance(settings);
 
     // header_branch1
     const auto header1 = make_header(1);
@@ -341,7 +373,9 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__whole_header_branch_expired__whole_head
 
 BOOST_AUTO_TEST_CASE(header_pool__prune__partial_header_branch_expired__partial_header_branch_deleted)
 {
-    header_pool_fixture instance(10);
+    blockchain::settings settings;
+    settings.reorganization_limit = 10;
+    header_pool_fixture instance(settings);
 
     // header_branch1
     const auto header1 = make_header(1);
@@ -396,7 +430,9 @@ BOOST_AUTO_TEST_CASE(header_pool__prune__partial_header_branch_expired__partial_
 
 BOOST_AUTO_TEST_CASE(header_pool__filter__empty__empty)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto message = std::make_shared<message::get_data>();
     instance.filter(message);
     BOOST_REQUIRE(message->inventories().empty());
@@ -404,7 +440,9 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__empty__empty)
 
 BOOST_AUTO_TEST_CASE(header_pool__filter__empty_filter__unchanged)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     instance.add(header1, 42);
@@ -416,7 +454,9 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__empty_filter__unchanged)
 
 BOOST_AUTO_TEST_CASE(header_pool__filter__matched_headers__non_headers_and_mismatches_remain)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     const auto header3 = make_header(3);
@@ -446,14 +486,18 @@ BOOST_AUTO_TEST_CASE(header_pool__filter__matched_headers__non_headers_and_misma
 
 BOOST_AUTO_TEST_CASE(header_pool__exists__empty__false)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     BOOST_REQUIRE(!instance.exists(header1));
 }
 
 BOOST_AUTO_TEST_CASE(header_pool__exists__not_empty_mismatch__false)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2, header1);
     instance.add(header1, 42);
@@ -462,7 +506,9 @@ BOOST_AUTO_TEST_CASE(header_pool__exists__not_empty_mismatch__false)
 
 BOOST_AUTO_TEST_CASE(header_pool__exists__match__true)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     instance.add(header1, 42);
     BOOST_REQUIRE(instance.exists(header1));
@@ -472,7 +518,9 @@ BOOST_AUTO_TEST_CASE(header_pool__exists__match__true)
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__empty__self_default_height)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto path = instance.get_branch(header1);
     BOOST_REQUIRE_EQUAL(path->size(), 1u);
@@ -482,7 +530,9 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__empty__self_default_height)
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__exists__empty)
 {
-    header_pool instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     instance.add(header1, 42);
     const auto path = instance.get_branch(header1);
@@ -491,7 +541,9 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__exists__empty)
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__disconnected__self_default_height)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2);
     const auto header3 = make_header(3);
@@ -508,7 +560,9 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__disconnected__self_default_height)
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_one_path__expected_path_and_height)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
     const auto header1 = make_header(1);
     const auto header2 = make_header(2, header1);
     const auto header3 = make_header(3, header2);
@@ -534,7 +588,9 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_one_path__expected_path_
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_paths__expected_paths)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
 
     const auto header1 = make_header(1);
     const auto header2 = make_header(2, header1);
@@ -583,7 +639,9 @@ BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_paths__expected
 
 BOOST_AUTO_TEST_CASE(header_pool__get_branch__connected_multiple_sub_header_branches__expected_paths_and_heights)
 {
-    header_pool_fixture instance(0);
+    blockchain::settings settings;
+    settings.reorganization_limit = 0;
+    header_pool_fixture instance(settings);
 
     // root header_branch
     const auto header1 = make_header(1);
