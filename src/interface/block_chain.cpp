@@ -61,15 +61,14 @@ block_chain::block_chain(threadpool& pool,
 
     // Create dispatchers for priority and non-priority operations.
     priority_pool_(thread_ceiling(settings.cores) + 1u, priority(settings.priority)),
-    priority_(priority_pool_, NAME "_priority"),
+    priority_dispatch_(priority_pool_, NAME "_priority"),
     dispatch_(pool, NAME "_dispatch"),
 
-    // Organizers use priority dispatch.
-    organize_block_(confirmation_mutex_, priority_, pool, *this, settings,
-        bitcoin_settings),
-    organize_header_(candidate_mutex_, priority_, pool, *this, header_pool_,
-        settings.scrypt_proof_of_work, bitcoin_settings),
-    organize_transaction_(confirmation_mutex_, priority_, pool, *this,
+    organize_header_(candidate_mutex_, dispatch_, pool, *this,
+        header_pool_, settings.scrypt_proof_of_work, bitcoin_settings),
+    organize_block_(confirmation_mutex_, priority_dispatch_, pool, *this,
+        /* block_pool_, */ settings, bitcoin_settings),
+    organize_transaction_(confirmation_mutex_, dispatch_, pool, *this,
         transaction_pool_, settings),
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.

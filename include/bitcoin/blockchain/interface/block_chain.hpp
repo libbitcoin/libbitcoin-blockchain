@@ -447,14 +447,14 @@ private:
     mutable system::upgrade_mutex candidate_mutex_;
     mutable system::prioritized_mutex confirmation_mutex_;
     mutable system::threadpool priority_pool_;
-    mutable system::dispatcher priority_;
+    mutable system::dispatcher priority_dispatch_;
     mutable system::dispatcher dispatch_;
 
     header_pool header_pool_;
     transaction_pool transaction_pool_;
 
-    organize_block organize_block_;
     organize_header organize_header_;
+    organize_block organize_block_;
     organize_transaction organize_transaction_;
 
     block_subscriber::ptr block_subscriber_;
