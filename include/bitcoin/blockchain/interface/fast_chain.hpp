@@ -127,9 +127,8 @@ public:
     virtual system::header_const_ptr get_header(size_t height,
         bool candidate) const = 0;
 
-    /// Get populated confirmed or candidate block by height (or null).
-    virtual system::block_const_ptr get_block(size_t height, bool witness,
-        bool candidate) const = 0;
+    /// Get populated candidate block by height with witness (or null).
+    virtual system::block_const_ptr get_candidate(size_t height) const = 0;
 
     // Writers.
     // ------------------------------------------------------------------------

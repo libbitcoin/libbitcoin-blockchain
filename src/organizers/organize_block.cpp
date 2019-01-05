@@ -26,6 +26,7 @@
 #include <utility>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
@@ -40,10 +41,12 @@ using namespace std::placeholders;
 
 organize_block::organize_block(prioritized_mutex& mutex,
     dispatcher& priority_dispatch, threadpool& threads, fast_chain& chain,
-    const settings& settings, const system::settings& bitcoin_settings)
+    block_pool& pool, const settings& settings,
+    const system::settings& bitcoin_settings)
   : fast_chain_(chain),
     mutex_(mutex),
     stopped_(true),
+    pool_(pool),
     validator_(priority_dispatch, chain, settings, bitcoin_settings),
     downloader_subscriber_(std::make_shared<download_subscriber>(threads, NAME))
 {
@@ -79,6 +82,7 @@ bool organize_block::stop()
     validator_.stop();
     downloader_subscriber_->stop();
     downloader_subscriber_->invoke(error::service_stopped, {}, 0);
+    pool_.clear();
     stopped_ = true;
     return true;
 }
@@ -99,13 +103,18 @@ code organize_block::organize(block_const_ptr block, size_t height)
     const auto error_code = fast_chain_.update(block, height);
     //#########################################################################
 
-    // TODO: circular buffer recent downloads (for fast top validation).
+    // Failure code implies store corruption, caller should log.
+    if (error_code)
+        return error_code;
+
+    // Add to the block download cache.
+    ////pool_.add(block, height);
+
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block->hash(), height);
 
     // Validation result is returned by metadata.error.
-    // Failure code implies store corruption, caller should log.
-    return error_code;
+    return error::success;
 }
 
 // TODO: refactor to eliminate this abstraction leak.
@@ -146,9 +155,12 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     for (;!stopped() && height != 0; ++height)
     {
         // Deserialization duration and median_time_past set here.
-        const auto block = fast_chain_.get_block(height, true, true);
+        const auto block = fast_chain_.get_candidate(height);
 
-        // If not next block must be an expired notification.
+        // TODO: move pruning.
+        pool_.prune(height);
+
+        // If not next block must be a post-reorg expired notification.
         if (!block || fast_chain_.top_valid_candidate_state()->hash() !=
             block->header().previous_block_hash())
             break;

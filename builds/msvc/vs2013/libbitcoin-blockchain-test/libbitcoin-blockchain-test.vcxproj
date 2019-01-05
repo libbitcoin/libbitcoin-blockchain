@@ -74,6 +74,7 @@
     <ClCompile Include="..\..\..\..\test\interface\safe_chain.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\block_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\block_pool.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp" />

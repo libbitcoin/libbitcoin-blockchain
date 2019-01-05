@@ -35,6 +35,7 @@ settings::settings()
     minimum_output_satoshis(500),
     notify_limit_hours(24),
     reorganization_limit(0),
+    block_buffer_limit(0),
     difficult(true),
     retarget(true),
     bip16(true),

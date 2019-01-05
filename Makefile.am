@@ -41,6 +41,7 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizers/organize_header.cpp \
     src/organizers/organize_transaction.cpp \
     src/pools/anchor_converter.cpp \
+    src/pools/block_entry.cpp \
     src/pools/block_pool.cpp \
     src/pools/child_closure_calculator.cpp \
     src/pools/conflicting_spend_remover.cpp \
@@ -80,6 +81,7 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/interface/fast_chain.cpp \
     test/interface/safe_chain.cpp \
     test/pools/anchor_converter.cpp \
+    test/pools/block_entry.cpp \
     test/pools/block_pool.cpp \
     test/pools/child_closure_calculator.cpp \
     test/pools/conflicting_spend_remover.cpp \
@@ -137,6 +139,7 @@ include_bitcoin_blockchain_organizers_HEADERS = \
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
     include/bitcoin/blockchain/pools/anchor_converter.hpp \
+    include/bitcoin/blockchain/pools/block_entry.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
     include/bitcoin/blockchain/pools/child_closure_calculator.hpp \
     include/bitcoin/blockchain/pools/conflicting_spend_remover.hpp \
