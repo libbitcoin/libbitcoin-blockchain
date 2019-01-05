@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -18,26 +18,79 @@
  */
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 
+#include <cstddef>
+#include <utility>
 #include <bitcoin/blockchain.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-block_pool::block_pool()
+using namespace bc::system;
+
+// Make thread safe for add/remove (distinct add/remove mutexes).
+//
+// Add blocks under blockchain populated critical section.
+// Remove under blockchain candidated critical section.
+//
+// Limit to configured entry count (size) when adding.
+// Clear heights at/below new add height to mitigate turds.
+//
+// Trigger read-ahead population when reading and below configured count
+// while the max height is below the current populated top candidate and
+// not currently reading ahead. Fan out read-ahead modulo network cores.
+
+block_pool::block_pool(const settings& settings)
+  : maximum_size_(settings.block_buffer_limit)
 {
-    // Make thread safe for add/remove (distinct add/remove mutexes).
-    // Store pointer by height (sorted/unique) and hash (unique).
-    //
-    // Add blocks under blockchain populated critical section.
-    // Remove under blockchain candidated critical section.
-    //
-    // Limit to configured entry count (size) when adding.
-    // Clear heights at/below new add height to mitigate turds.
-    //
-    // Trigger read-ahead population when reading and below configured count
-    // while the max height is below the current populated top candidate and
-    // not currently reading ahead. Fan out read-ahead modulo network cores.
 }
+
+size_t block_pool::size() const
+{
+    return blocks_.size();
+}
+
+block_const_ptr block_pool::get(size_t height) const
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    shared_lock lock(mutex_);
+    ////const auto it = blocks_.find(height);
+    ////return it == blocks_.end() ? nullptr : it->second;
+    ///////////////////////////////////////////////////////////////////////////
+    return {};
+}
+
+void block_pool::add(block_const_ptr block, size_t height)
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+    ////blocks_.insert({ std::move(entry), height });
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+// TODO: prune all after.
+void block_pool::prune(size_t height)
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+    ////blocks_.erase(height);
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+void block_pool::clear()
+{
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    unique_lock lock(mutex_);
+    blocks_.clear();
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+////void block_pool::filter(get_data_ptr message) const
+////{
+////}
 
 } // namespace blockchain
 } // namespace libbitcoin

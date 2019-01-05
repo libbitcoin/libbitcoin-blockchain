@@ -56,7 +56,7 @@ block_chain::block_chain(threadpool& pool,
     confirmation_mutex_(database_settings.flush_writes),
 
     header_pool_(settings),
-    /* block_pool_(settings), */
+    block_pool_(settings),
     transaction_pool_(settings),
 
     // Create dispatcher for priority operations.
@@ -66,7 +66,7 @@ block_chain::block_chain(threadpool& pool,
     organize_header_(candidate_mutex_, priority_dispatch_, pool, *this,
         header_pool_, settings, bitcoin_settings),
     organize_block_(confirmation_mutex_, priority_dispatch_, pool, *this,
-        /* block_pool_, */ settings, bitcoin_settings),
+        block_pool_, settings, bitcoin_settings),
     organize_transaction_(confirmation_mutex_, priority_dispatch_, pool, *this,
         transaction_pool_, settings),
 
@@ -295,18 +295,20 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
-block_const_ptr block_chain::get_block(size_t height, bool witness,
-    bool candidate) const
+block_const_ptr block_chain::get_candidate(size_t height) const
 {
+    // Block pool stores candidates only.
+    auto block = block_pool_.get(height);
+
+    if (block)
+    {
+        // Zeroize deserialization time.
+        block->metadata.deserialize = {};
+        return block;
+    }
+
     const auto start_deserialize = asio::steady_clock::now();
-    const auto cached = last_confirmed_block_.load();
-
-    // Try the cached block first.
-    if (!candidate && cached && cached->header().metadata.state &&
-        cached->header().metadata.state->height() == height)
-        return cached;
-
-    const auto result = database_.blocks().get(height, candidate);
+    const auto result = database_.blocks().get(height, true);
 
     // A populated block was not found at the given height.
     if (!result || result.transaction_count() == 0)
@@ -316,17 +318,15 @@ block_const_ptr block_chain::get_block(size_t height, bool witness,
     BITCOIN_ASSERT(result.height() == height);
 
     // False implies store corruption, since tx count is non-zero.
-    if (!get_transactions(txs, result, witness))
+    if (!get_transactions(txs, result, true))
         return {};
 
-    // Prepopulate header metadata.
-    const auto instance = std::make_shared<const block>(result.header(true),
+    // Prepopulate the block with header metadata.
+    block = std::make_shared<const message::block>(result.header(true),
         std::move(txs));
 
-    instance->metadata.deserialize = asio::steady_clock::now() -
-        start_deserialize;
-
-    return instance;
+    block->metadata.deserialize = asio::steady_clock::now() - start_deserialize;
+    return block;
 }
 
 header_const_ptr block_chain::get_header(size_t height, bool candidate) const
@@ -565,7 +565,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     // Get all candidates from fork point to branch start.
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
     {
-        const auto block = get_block(height, true, true);
+        const auto block = get_candidate(height);
 
         if (!block)
             return error::operation_failed;

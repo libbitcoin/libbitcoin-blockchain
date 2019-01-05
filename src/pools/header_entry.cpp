@@ -18,8 +18,8 @@
  */
 #include <bitcoin/blockchain/pools/header_entry.hpp>
 
-#include <algorithm>
-#include <iostream>
+#include <cstddef>
+////#include <iostream>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
@@ -74,19 +74,19 @@ void header_entry::add_child(header_const_ptr child) const
     children_.push_back(child->hash());
 }
 
-std::ostream& operator<<(std::ostream& out, const header_entry& of)
-{
-    out << encode_hash(of.hash_)
-        << " " << encode_hash(of.parent())
-        << " " << of.children_.size();
-    return out;
-}
-
-// For the purpose of bimap identity only the tx hash matters.
+// For the purpose of bimap identity only the header hash matters.
 bool header_entry::operator==(const header_entry& other) const
 {
     return hash_ == other.hash_;
 }
+
+////std::ostream& operator<<(std::ostream& out, const header_entry& of)
+////{
+////    out << encode_hash(of.hash_)
+////        << " " << encode_hash(of.parent())
+////        << " " << of.children_.size();
+////    return out;
+////}
 
 } // namespace blockchain
 } // namespace libbitcoin

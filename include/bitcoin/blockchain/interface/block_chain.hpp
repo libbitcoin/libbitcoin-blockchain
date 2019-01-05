@@ -33,6 +33,7 @@
 #include <bitcoin/blockchain/organizers/organize_block.hpp>
 #include <bitcoin/blockchain/organizers/organize_header.hpp>
 #include <bitcoin/blockchain/organizers/organize_transaction.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_pool.hpp>
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
@@ -153,9 +154,8 @@ public:
     /// Get populated confirmed or candidate header by height (or null).
     system::header_const_ptr get_header(size_t height, bool candidate) const;
 
-    /// Get populated confirmed or candidate block by height (or null).
-    system::block_const_ptr get_block(size_t height, bool witness,
-        bool candidate) const;
+    /// Get populated candidate block by height with witness (or null).
+    system::block_const_ptr get_candidate(size_t height) const;
 
     // Writers.
     // ------------------------------------------------------------------------
@@ -450,6 +450,7 @@ private:
     mutable system::dispatcher priority_dispatch_;
 
     header_pool header_pool_;
+    block_pool block_pool_;
     transaction_pool transaction_pool_;
 
     organize_header organize_header_;

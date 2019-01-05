@@ -25,6 +25,7 @@
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
+#include <bitcoin/blockchain/pools/header_pool.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

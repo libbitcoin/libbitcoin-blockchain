@@ -26,6 +26,7 @@
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
+#include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/validate/validate_block.hpp>
 
@@ -47,7 +48,7 @@ public:
     /// Construct an instance.
     organize_block(system::prioritized_mutex& mutex,
         system::dispatcher& priority_dispatch, system::threadpool& threads,
-        fast_chain& chain, const settings& settings,
+        fast_chain& chain, block_pool& pool, const settings& settings,
         const system::settings& bitcoin_settings);
 
     // Start/stop the organizer.
@@ -80,6 +81,7 @@ private:
     system::prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<system::code> resume_;
+    block_pool& pool_;
     validate_block validator_;
     download_subscriber::ptr downloader_subscriber_;
 };

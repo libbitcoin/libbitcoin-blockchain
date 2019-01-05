@@ -47,6 +47,7 @@ public:
     uint64_t minimum_output_satoshis;
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
+    uint32_t block_buffer_limit;
     system::config::checkpoint::list checkpoints;
     bool difficult;
     bool retarget;

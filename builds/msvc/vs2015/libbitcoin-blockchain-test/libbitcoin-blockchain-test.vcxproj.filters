@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\block_entry.cpp">
+      <Filter>src\pools</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\block_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>

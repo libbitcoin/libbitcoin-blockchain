@@ -20,9 +20,13 @@
 
 #include <bitcoin/blockchain.hpp>
 
-BOOST_AUTO_TEST_SUITE(block_pool_tests)
+using namespace bc;
+using namespace bc::blockchain;
+using namespace bc::system;
 
-BOOST_AUTO_TEST_CASE(block_pool__construct__todo__success)
+BOOST_AUTO_TEST_SUITE(block_entry_tests)
+
+BOOST_AUTO_TEST_CASE(block_entry__construct__default__expected)
 {
 }
 
