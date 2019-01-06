@@ -29,7 +29,7 @@
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/transaction_entry.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool_state.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

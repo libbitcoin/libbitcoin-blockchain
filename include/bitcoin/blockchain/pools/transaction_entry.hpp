@@ -42,14 +42,14 @@ public:
 
     struct ptr_less
     {
-        bool operator()(const transaction_entry::ptr& lhs,
-            const transaction_entry::ptr& rhs) const;
+        bool operator()(const transaction_entry::ptr& left,
+            const transaction_entry::ptr& right) const;
     };
 
     struct ptr_equal
     {
-        bool operator()(const transaction_entry::ptr& lhs,
-            const transaction_entry::ptr& rhs) const;
+        bool operator()(const transaction_entry::ptr& left,
+            const transaction_entry::ptr& right) const;
     };
 
     typedef boost::bimaps::bimap<
@@ -73,13 +73,13 @@ public:
     /// If the forks for the next block differ this must be recomputed.
     uint32_t forks() const;
 
-    /// The locktime for the purpose of determining feasibility of spending
-    /// the transaction.
-    uint32_t locktime() const;
+    /////// The locktime for the purpose of determining feasibility of spending
+    /////// the transaction.
+    ////uint32_t locktime() const;
 
-    /// The minimum spendable height for the purpose of determining feasibility
-    /// of spending the transaction.
-    uint32_t min_spendable_height() const;
+    /////// The minimum spendable height for the purpose of determining feasibility
+    /////// of spending the transaction.
+    ////uint32_t min_spendable_height() const;
 
     /// The hash table entry identity.
     const system::hash_digest& hash() const;
@@ -138,6 +138,7 @@ private:
     uint32_t size_;
     system::hash_digest hash_;
 
+    // mutable??
     // These do not affect the entry hash, so must be mutable.
     list parents_;
     indexed_list children_;

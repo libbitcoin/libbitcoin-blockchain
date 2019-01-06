@@ -23,12 +23,12 @@
 #include <memory>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/settings.hpp>
-#include <bitcoin/blockchain/pools/anchor_converter.hpp>
-#include <bitcoin/blockchain/pools/child_closure_calculator.hpp>
-#include <bitcoin/blockchain/pools/conflicting_spend_remover.hpp>
-#include <bitcoin/blockchain/pools/parent_closure_calculator.hpp>
-#include <bitcoin/blockchain/pools/priority_calculator.hpp>
-#include <bitcoin/blockchain/pools/transaction_order_calculator.hpp>
+#include <bitcoin/blockchain/pools/utilities/anchor_converter.hpp>
+#include <bitcoin/blockchain/pools/utilities/child_closure_calculator.hpp>
+#include <bitcoin/blockchain/pools/utilities/conflicting_spend_remover.hpp>
+#include <bitcoin/blockchain/pools/utilities/parent_closure_calculator.hpp>
+#include <bitcoin/blockchain/pools/utilities/priority_calculator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_order_calculator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

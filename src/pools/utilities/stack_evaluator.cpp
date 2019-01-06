@@ -16,10 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
 
 #include <map>
-
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

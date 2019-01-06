@@ -16,30 +16,35 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_CHILD_CLOSURE_CALCULATOR_HPP
-#define LIBBITCOIN_CHILD_CLOSURE_CALCULATOR_HPP
+#ifndef LIBBITCOIN_PRIORITY_CALCULATOR_HPP
+#define LIBBITCOIN_PRIORITY_CALCULATOR_HPP
 
 #include <deque>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool_state.hpp>
+#include <bitcoin/blockchain/pools/transaction_entry.hpp>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class child_closure_calculator : public stack_evaluator
+class priority_calculator : public stack_evaluator
 {
 public:
 
-    child_closure_calculator(transaction_pool_state& state);
+    priority_calculator();
 
-    transaction_entry::list get_closure(transaction_entry::ptr tx);
+    // Returns a pair containing the cumulative fees and cumulative size.
+    std::pair<uint64_t, size_t> prioritize();
+
+    uint64_t get_cumulative_fees() const;
+
+    size_t get_cumulative_size() const;
 
 protected:
     virtual bool visit(transaction_entry::ptr element);
 
 private:
-    transaction_pool_state& state_;
-    transaction_entry::list closure_;
+    uint64_t cumulative_fees_;
+    size_t cumulative_size_;
 };
 
 } // namespace blockchain

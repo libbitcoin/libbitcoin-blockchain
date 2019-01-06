@@ -16,37 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <bitcoin/blockchain/pools/anchor_converter.hpp>
+#include <bitcoin/blockchain/pools/utilities/conflicting_spend_remover.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-using namespace bc::system;
-
-anchor_converter::anchor_converter(transaction_pool_state& state)
-    : bounds_(), max_removed_(0.0), state_(state)
+conflicting_spend_remover::conflicting_spend_remover(
+    transaction_pool_state& state)
+	: max_removed_(0.0), state_(state)
 {
 }
 
-bool anchor_converter::visit(element_type element)
+bool conflicting_spend_remover::visit(element_type element)
 {
     auto& children = element->children().left;
-    std::list<uint32_t> indicies;
-    bool remove = true;
 
     // add children to list
     for (auto entry = children.begin(); entry != children.end(); ++entry)
-    {
-        if ((bounds_.find(entry->second->hash()) != bounds_.end()))
-        {
-            indicies.push_back(entry->first);
-            enqueue(entry->second);
-        }
-        else
-            remove = false;
-    }
+        enqueue(entry->second);
 
+    element->remove_children();
     auto parents = element->parents();
 
     // sever parent connections, enqueue child-less anchor parents
@@ -57,11 +46,11 @@ bool anchor_converter::visit(element_type element)
             enqueue(entry);
     }
 
-    // remove children examined from entry
-    for (auto i : indicies)
-        element->remove_child(i);
+    // remove entry from pool and template
+    auto pool_member = state_.pool.left.find(element);
+    if (pool_member != state_.pool.left.end())
+        state_.pool.left.erase(pool_member);
 
-    // remove entry from template if present
     auto template_member = state_.block_template.left.find(element);
     if (template_member != state_.block_template.left.end())
     {
@@ -75,32 +64,14 @@ bool anchor_converter::visit(element_type element)
             template_member->first, template_member->second));
     }
 
-    // remove entry from pool if no child will remain
-    if (remove)
-    {
-        auto pool_member = state_.pool.left.find(element);
-        if (pool_member != state_.pool.left.end())
-            state_.pool.left.erase(pool_member);
-    }
-
     return true;
 }
 
-anchor_converter::priority anchor_converter::demote()
+conflicting_spend_remover::priority conflicting_spend_remover::deconflict()
 {
     max_removed_ = 0.0;
     evaluate();
-    return max_removed_;
-}
-
-void anchor_converter::add_bounds(transaction_const_ptr tx)
-{
-    bounds_.insert({ tx->hash(), true });
-}
-
-bool anchor_converter::within_bounds(hash_digest digest)
-{
-    return (bounds_.find(digest) != bounds_.end());
+	return max_removed_;
 }
 
 } // namespace blockchain

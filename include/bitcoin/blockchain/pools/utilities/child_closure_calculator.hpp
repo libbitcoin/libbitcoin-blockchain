@@ -16,29 +16,30 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_TRANSACTION_ORDER_CALCULATOR_HPP
-#define LIBBITCOIN_TRANSACTION_ORDER_CALCULATOR_HPP
+#ifndef LIBBITCOIN_CHILD_CLOSURE_CALCULATOR_HPP
+#define LIBBITCOIN_CHILD_CLOSURE_CALCULATOR_HPP
 
 #include <deque>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
-#include <bitcoin/blockchain/pools/transaction_entry.hpp>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class transaction_order_calculator : public stack_evaluator
+class child_closure_calculator : public stack_evaluator
 {
 public:
 
-    transaction_order_calculator();
+    child_closure_calculator(transaction_pool_state& state);
 
-    transaction_entry::list order_transactions();
+    transaction_entry::list get_closure(transaction_entry::ptr tx);
 
 protected:
-    virtual bool visit(element_type element);
+    virtual bool visit(transaction_entry::ptr element);
 
 private:
-    transaction_entry::list ordered_;
+    transaction_pool_state& state_;
+    transaction_entry::list closure_;
 };
 
 } // namespace blockchain

@@ -16,50 +16,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <utility>
-#include <bitcoin/blockchain/pools/priority_calculator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-priority_calculator::priority_calculator()
-    : cumulative_fees_(0), cumulative_size_(0)
+transaction_pool_state::transaction_pool_state()
+  : block_template_bytes(0), block_template_sigops(0), block_template(),
+    pool(), template_byte_limit(0), template_sigop_limit(0),
+    coinbase_byte_reserve(0), coinbase_sigop_reserve(0),
+    cached_child_closures(), ordered_block_template()
 {
 }
 
-bool priority_calculator::visit(transaction_entry::ptr element)
+transaction_pool_state::transaction_pool_state(const settings& )
+  : transaction_pool_state()
 {
-    // add all parents
-    for (auto parent : element->parents())
-        enqueue(parent);
+}
 
-    // increment cumulative sums
-    if (!element->is_anchor())
+transaction_pool_state::~transaction_pool_state()
+{
+    disconnect_entries();
+}
+
+void transaction_pool_state::disconnect_entries()
+{
+    for (auto it : pool.left)
     {
-        cumulative_fees_ += element->fees();
-        cumulative_size_ += element->size();
+        it.first->remove_children();
+        it.first->remove_parents();
     }
-
-    return true;
-}
-
-uint64_t priority_calculator::get_cumulative_fees() const
-{
-    return cumulative_fees_;
-}
-
-size_t priority_calculator::get_cumulative_size() const
-{
-    return cumulative_size_;
-}
-
-std::pair<uint64_t, size_t> priority_calculator::prioritize()
-{
-    cumulative_fees_ = 0;
-    cumulative_size_ = 0;
-    evaluate();
-    return std::make_pair(cumulative_fees_, cumulative_size_);
 }
 
 } // namespace blockchain

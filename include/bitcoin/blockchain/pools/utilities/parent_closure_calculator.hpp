@@ -20,9 +20,9 @@
 #define LIBBITCOIN_PARENT_CLOSURE_CALCULATOR_HPP
 
 #include <deque>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
 #include <bitcoin/blockchain/pools/transaction_entry.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool_state.hpp>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

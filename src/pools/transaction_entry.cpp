@@ -138,11 +138,11 @@ void transaction_entry::remove_parent(const hash_digest& parent,
 
 void transaction_entry::remove_parents()
 {
-    auto me = std::make_shared<transaction_entry>(*this);
-
+    auto self = std::make_shared<transaction_entry>(*this);
     auto parents = parents_;
-    for (auto parent : parents)
-        parent->remove_child(me);
+
+    for (auto parent: parents)
+        parent->remove_child(self);
 
     parents_.clear();
 }
@@ -210,27 +210,29 @@ bool transaction_entry::operator==(const transaction_entry& other) const
     return hash_ == other.hash_;
 }
 
-bool transaction_entry::ptr_less::operator()(const transaction_entry::ptr& lhs,
-    const transaction_entry::ptr& rhs) const
+bool transaction_entry::ptr_less::operator()(
+    const transaction_entry::ptr& left,
+    const transaction_entry::ptr& right) const
 {
-    if (lhs && rhs)
-        return (*lhs).hash() < (*rhs).hash();
-    else if (!lhs && rhs)
+    if (left && right)
+        return left->hash() < right->hash();
+    else if (!left && right)
         return true;
-    else if (lhs && !rhs)
+    else if (left && !right)
         return false;
     else
         return false;
 }
 
-bool transaction_entry::ptr_equal::operator()(const transaction_entry::ptr& lhs,
-    const transaction_entry::ptr& rhs) const
+bool transaction_entry::ptr_equal::operator()(
+    const transaction_entry::ptr& left,
+    const transaction_entry::ptr& right) const
 {
-    if (lhs && rhs)
-        return (*lhs) == (*rhs);
-    else if (!lhs && rhs)
+    if (left && right)
+        return (*left) == (*right);
+    else if (!left && right)
         return false;
-    else if (lhs && !rhs)
+    else if (left && !right)
         return false;
     else
         return true;

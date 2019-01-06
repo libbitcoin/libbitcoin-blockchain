@@ -40,21 +40,21 @@ src_libbitcoin_blockchain_la_SOURCES = \
     src/organizers/organize_block.cpp \
     src/organizers/organize_header.cpp \
     src/organizers/organize_transaction.cpp \
-    src/pools/anchor_converter.cpp \
     src/pools/block_entry.cpp \
     src/pools/block_pool.cpp \
-    src/pools/child_closure_calculator.cpp \
-    src/pools/conflicting_spend_remover.cpp \
     src/pools/header_branch.cpp \
     src/pools/header_entry.cpp \
     src/pools/header_pool.cpp \
-    src/pools/parent_closure_calculator.cpp \
-    src/pools/priority_calculator.cpp \
-    src/pools/stack_evaluator.cpp \
     src/pools/transaction_entry.cpp \
-    src/pools/transaction_order_calculator.cpp \
     src/pools/transaction_pool.cpp \
-    src/pools/transaction_pool_state.cpp \
+    src/pools/utilities/anchor_converter.cpp \
+    src/pools/utilities/child_closure_calculator.cpp \
+    src/pools/utilities/conflicting_spend_remover.cpp \
+    src/pools/utilities/parent_closure_calculator.cpp \
+    src/pools/utilities/priority_calculator.cpp \
+    src/pools/utilities/stack_evaluator.cpp \
+    src/pools/utilities/transaction_order_calculator.cpp \
+    src/pools/utilities/transaction_pool_state.cpp \
     src/populate/populate_base.cpp \
     src/populate/populate_block.cpp \
     src/populate/populate_chain_state.cpp \
@@ -80,21 +80,21 @@ test_libbitcoin_blockchain_test_SOURCES = \
     test/utility.hpp \
     test/interface/fast_chain.cpp \
     test/interface/safe_chain.cpp \
-    test/pools/anchor_converter.cpp \
     test/pools/block_entry.cpp \
     test/pools/block_pool.cpp \
-    test/pools/child_closure_calculator.cpp \
-    test/pools/conflicting_spend_remover.cpp \
     test/pools/header_branch.cpp \
     test/pools/header_entry.cpp \
     test/pools/header_pool.cpp \
-    test/pools/parent_closure_calculator.cpp \
-    test/pools/priority_calculator.cpp \
     test/pools/transaction_entry.cpp \
-    test/pools/transaction_order_calculator.cpp \
     test/pools/transaction_pool.cpp \
-    test/pools/utilities.cpp \
-    test/pools/utilities.hpp \
+    test/pools/utilities/anchor_converter.cpp \
+    test/pools/utilities/child_closure_calculator.cpp \
+    test/pools/utilities/conflicting_spend_remover.cpp \
+    test/pools/utilities/parent_closure_calculator.cpp \
+    test/pools/utilities/priority_calculator.cpp \
+    test/pools/utilities/transaction_order_calculator.cpp \
+    test/pools/utilities/utilities.cpp \
+    test/pools/utilities/utilities.hpp \
     test/validators/validate_block.cpp \
     test/validators/validate_transaction.cpp
 
@@ -138,21 +138,24 @@ include_bitcoin_blockchain_organizers_HEADERS = \
 
 include_bitcoin_blockchain_poolsdir = ${includedir}/bitcoin/blockchain/pools
 include_bitcoin_blockchain_pools_HEADERS = \
-    include/bitcoin/blockchain/pools/anchor_converter.hpp \
     include/bitcoin/blockchain/pools/block_entry.hpp \
     include/bitcoin/blockchain/pools/block_pool.hpp \
-    include/bitcoin/blockchain/pools/child_closure_calculator.hpp \
-    include/bitcoin/blockchain/pools/conflicting_spend_remover.hpp \
     include/bitcoin/blockchain/pools/header_branch.hpp \
     include/bitcoin/blockchain/pools/header_entry.hpp \
     include/bitcoin/blockchain/pools/header_pool.hpp \
-    include/bitcoin/blockchain/pools/parent_closure_calculator.hpp \
-    include/bitcoin/blockchain/pools/priority_calculator.hpp \
-    include/bitcoin/blockchain/pools/stack_evaluator.hpp \
     include/bitcoin/blockchain/pools/transaction_entry.hpp \
-    include/bitcoin/blockchain/pools/transaction_order_calculator.hpp \
-    include/bitcoin/blockchain/pools/transaction_pool.hpp \
-    include/bitcoin/blockchain/pools/transaction_pool_state.hpp
+    include/bitcoin/blockchain/pools/transaction_pool.hpp
+
+include_bitcoin_blockchain_pools_utilitiesdir = ${includedir}/bitcoin/blockchain/pools/utilities
+include_bitcoin_blockchain_pools_utilities_HEADERS = \
+    include/bitcoin/blockchain/pools/utilities/anchor_converter.hpp \
+    include/bitcoin/blockchain/pools/utilities/child_closure_calculator.hpp \
+    include/bitcoin/blockchain/pools/utilities/conflicting_spend_remover.hpp \
+    include/bitcoin/blockchain/pools/utilities/parent_closure_calculator.hpp \
+    include/bitcoin/blockchain/pools/utilities/priority_calculator.hpp \
+    include/bitcoin/blockchain/pools/utilities/stack_evaluator.hpp \
+    include/bitcoin/blockchain/pools/utilities/transaction_order_calculator.hpp \
+    include/bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp
 
 include_bitcoin_blockchain_populatedir = ${includedir}/bitcoin/blockchain/populate
 include_bitcoin_blockchain_populate_HEADERS = \

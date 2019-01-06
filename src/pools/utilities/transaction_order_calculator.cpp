@@ -16,38 +16,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_PRIORITY_CALCULATOR_HPP
-#define LIBBITCOIN_PRIORITY_CALCULATOR_HPP
-
-#include <deque>
-#include <bitcoin/blockchain/pools/transaction_entry.hpp>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_order_calculator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class priority_calculator : public stack_evaluator
+transaction_order_calculator::transaction_order_calculator()
+    : ordered_()
 {
-public:
+}
 
-    priority_calculator();
+bool transaction_order_calculator::visit(element_type element)
+{
+    bool reenter = false;
+    transaction_entry::list required;
+    for (auto& parent : element->parents())
+        if (!parent->is_anchor() && !has_encountered(parent))
+            required.push_back(parent);
 
-    // Returns a pair containing the cumulative fees and cumulative size.
-    std::pair<uint64_t, size_t> prioritize();
+    if (required.size() > 0)
+    {
+        reenter = true;
+        enqueue(element);
+        for (auto entry : required)
+            enqueue(entry);
+    }
+    else
+        ordered_.push_back(element);
 
-    uint64_t get_cumulative_fees() const;
+    return !reenter;
+}
 
-    size_t get_cumulative_size() const;
-
-protected:
-    virtual bool visit(transaction_entry::ptr element);
-
-private:
-    uint64_t cumulative_fees_;
-    size_t cumulative_size_;
-};
+transaction_entry::list transaction_order_calculator::order_transactions()
+{
+    ordered_.clear();
+    evaluate();
+    return ordered_;
+}
 
 } // namespace blockchain
 } // namespace libbitcoin
-
-#endif

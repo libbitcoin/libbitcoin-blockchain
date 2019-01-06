@@ -16,40 +16,39 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_DEMOTER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_DEMOTER_HPP
-
-#include <deque>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool_state.hpp>
+#include <bitcoin/blockchain/pools/utilities/parent_closure_calculator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class anchor_converter : public stack_evaluator
+parent_closure_calculator::parent_closure_calculator(
+    transaction_pool_state& )
 {
-public:
-    typedef double priority;
+}
 
-    anchor_converter(transaction_pool_state& state);
+bool parent_closure_calculator::visit(transaction_entry::ptr element)
+{
+    // add all parents
+    for (auto parent : element->parents())
+        if (!has_encountered(parent))
+            enqueue(parent);
 
-    priority demote();
+    return true;
+}
 
-    void add_bounds(system::transaction_const_ptr tx);
+transaction_entry::list parent_closure_calculator::get_closure(
+    transaction_entry::ptr tx)
+{
+    if (tx != nullptr)
+        enqueue(tx);
 
-    bool within_bounds(system::hash_digest digest);
+    evaluate();
+    transaction_entry::list result;
+    for (auto it = begin_encountered(); it != end_encountered(); ++it)
+        result.push_back(it->second);
 
-protected:
-    virtual bool visit(element_type element);
-
-private:
-    std::map<system::hash_digest, bool> bounds_;
-    priority max_removed_;
-    transaction_pool_state& state_;
-
-};
+    return result;
+}
 
 } // namespace blockchain
 } // namespace libbitcoin
-
-#endif

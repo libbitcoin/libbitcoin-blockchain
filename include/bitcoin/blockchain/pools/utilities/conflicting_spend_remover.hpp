@@ -16,40 +16,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef LIBBITCOIN_BLOCKCHAIN_CONFLICTING_SPEND_REMOVER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_CONFLICTING_SPEND_REMOVER_HPP
 
-#include <bitcoin/blockchain/pools/parent_closure_calculator.hpp>
+#include <deque>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-parent_closure_calculator::parent_closure_calculator(
-    transaction_pool_state& )
+class conflicting_spend_remover : public stack_evaluator
 {
-}
+public:
+    typedef double priority;
 
-bool parent_closure_calculator::visit(transaction_entry::ptr element)
-{
-    // add all parents
-    for (auto parent : element->parents())
-        if (!has_encountered(parent))
-            enqueue(parent);
+    conflicting_spend_remover(transaction_pool_state& state);
 
-    return true;
-}
+    priority deconflict();
 
-transaction_entry::list parent_closure_calculator::get_closure(
-    transaction_entry::ptr tx)
-{
-    if (tx != nullptr)
-        enqueue(tx);
+protected:
+    virtual bool visit(element_type element);
 
-    evaluate();
-    transaction_entry::list result;
-    for (auto it = begin_encountered(); it != end_encountered(); ++it)
-        result.push_back(it->second);
-
-    return result;
-}
+private:
+    priority max_removed_;
+    transaction_pool_state& state_;
+};
 
 } // namespace blockchain
 } // namespace libbitcoin
+
+#endif
