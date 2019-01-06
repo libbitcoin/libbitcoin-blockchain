@@ -16,44 +16,32 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef LIBBITCOIN_TRANSACTION_ORDER_CALCULATOR_HPP
+#define LIBBITCOIN_TRANSACTION_ORDER_CALCULATOR_HPP
 
-#include <bitcoin/blockchain/pools/transaction_order_calculator.hpp>
+#include <deque>
+#include <bitcoin/blockchain/pools/transaction_entry.hpp>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-transaction_order_calculator::transaction_order_calculator()
-    : ordered_()
+class transaction_order_calculator : public stack_evaluator
 {
-}
+public:
 
-bool transaction_order_calculator::visit(element_type element)
-{
-    bool reenter = false;
-    transaction_entry::list required;
-    for (auto& parent : element->parents())
-        if (!parent->is_anchor() && !has_encountered(parent))
-            required.push_back(parent);
+    transaction_order_calculator();
 
-    if (required.size() > 0)
-    {
-        reenter = true;
-        enqueue(element);
-        for (auto entry : required)
-            enqueue(entry);
-    }
-    else
-        ordered_.push_back(element);
+    transaction_entry::list order_transactions();
 
-    return !reenter;
-}
+protected:
+    virtual bool visit(element_type element);
 
-transaction_entry::list transaction_order_calculator::order_transactions()
-{
-    ordered_.clear();
-    evaluate();
-    return ordered_;
-}
+private:
+    transaction_entry::list ordered_;
+};
 
 } // namespace blockchain
 } // namespace libbitcoin
+
+#endif

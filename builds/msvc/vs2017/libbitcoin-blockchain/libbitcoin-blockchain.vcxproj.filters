@@ -8,31 +8,34 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000006}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\bitcoin">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain">
+    <Filter Include="include\bitcoin">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\interface">
+    <Filter Include="include\bitcoin\blockchain">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\organizers">
+    <Filter Include="include\bitcoin\blockchain\interface">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\pools">
+    <Filter Include="include\bitcoin\blockchain\organizers">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\populate">
+    <Filter Include="include\bitcoin\blockchain\pools">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\bitcoin\blockchain\validate">
+    <Filter Include="include\bitcoin\blockchain\pools\utilities">
+      <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bitcoin\blockchain\populate">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resource">
+    <Filter Include="include\bitcoin\blockchain\validate">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000000}</UniqueIdentifier>
@@ -45,6 +48,9 @@
     </Filter>
     <Filter Include="src\pools">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\pools\utilities">
+      <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\populate">
       <UniqueIdentifier>{868DAB9E-FD33-497F-0000-000000000004}</UniqueIdentifier>
@@ -66,19 +72,10 @@
     <ClCompile Include="..\..\..\..\src\organizers\organize_transaction.cpp">
       <Filter>src\organizers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\anchor_converter.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\child_closure_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\conflicting_spend_remover.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\header_branch.cpp">
@@ -90,26 +87,35 @@
     <ClCompile Include="..\..\..\..\src\pools\header_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\parent_closure_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\priority_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\stack_evaluator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\transaction_entry.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\transaction_order_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\pools\transaction_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\pools\transaction_pool_state.cpp">
-      <Filter>src\pools</Filter>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\anchor_converter.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\child_closure_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\conflicting_spend_remover.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\parent_closure_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\priority_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\stack_evaluator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\transaction_order_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\pools\utilities\transaction_pool_state.cpp">
+      <Filter>src\pools\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\populate\populate_base.cpp">
       <Filter>src\populate</Filter>
@@ -167,19 +173,10 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_transaction.hpp">
       <Filter>include\bitcoin\blockchain\organizers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\anchor_converter.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\child_closure_calculator.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\conflicting_spend_remover.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_branch.hpp">
@@ -191,26 +188,35 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\parent_closure_calculator.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\priority_calculator.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\stack_evaluator.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_entry.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_order_calculator.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp">
       <Filter>include\bitcoin\blockchain\pools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool_state.hpp">
-      <Filter>include\bitcoin\blockchain\pools</Filter>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\anchor_converter.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\child_closure_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\conflicting_spend_remover.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\parent_closure_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\priority_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\stack_evaluator.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\transaction_order_calculator.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\transaction_pool_state.hpp">
+      <Filter>include\bitcoin\blockchain\pools\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_base.hpp">
       <Filter>include\bitcoin\blockchain\populate</Filter>

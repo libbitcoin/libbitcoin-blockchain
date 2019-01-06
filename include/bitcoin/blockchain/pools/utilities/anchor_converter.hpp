@@ -16,31 +16,37 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_CONFLICTING_SPEND_REMOVER_HPP
-#define LIBBITCOIN_BLOCKCHAIN_CONFLICTING_SPEND_REMOVER_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_DEMOTER_HPP
+#define LIBBITCOIN_BLOCKCHAIN_DEMOTER_HPP
 
 #include <deque>
-#include <bitcoin/blockchain/pools/stack_evaluator.hpp>
-#include <bitcoin/blockchain/pools/transaction_pool_state.hpp>
+#include <bitcoin/blockchain/pools/utilities/stack_evaluator.hpp>
+#include <bitcoin/blockchain/pools/utilities/transaction_pool_state.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-class conflicting_spend_remover : public stack_evaluator
+class anchor_converter : public stack_evaluator
 {
 public:
     typedef double priority;
 
-    conflicting_spend_remover(transaction_pool_state& state);
+    anchor_converter(transaction_pool_state& state);
 
-    priority deconflict();
+    priority demote();
+
+    void add_bounds(system::transaction_const_ptr tx);
+
+    bool within_bounds(system::hash_digest digest);
 
 protected:
     virtual bool visit(element_type element);
 
 private:
+    std::map<system::hash_digest, bool> bounds_;
     priority max_removed_;
     transaction_pool_state& state_;
+
 };
 
 } // namespace blockchain

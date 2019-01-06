@@ -73,26 +73,26 @@
     <ClCompile Include="..\..\..\..\test\interface\fast_chain.cpp" />
     <ClCompile Include="..\..\..\..\test\interface\safe_chain.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\block_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\block_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\header_branch.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\header_entry.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\header_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\parent_closure_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\transaction_entry.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp" />
     <ClCompile Include="..\..\..\..\test\pools\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\test\pools\utilities.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\anchor_converter.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\child_closure_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\conflicting_spend_remover.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\parent_closure_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\priority_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\transaction_order_calculator.cpp" />
+    <ClCompile Include="..\..\..\..\test\pools\utilities\utilities.cpp" />
     <ClCompile Include="..\..\..\..\test\utility.cpp" />
     <ClCompile Include="..\..\..\..\test\validators\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\test\validators\validate_transaction.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\pools\utilities.hpp" />
+    <ClInclude Include="..\..\..\..\test\pools\utilities\utilities.hpp" />
     <ClInclude Include="..\..\..\..\test\utility.hpp" />
   </ItemGroup>
   <ItemGroup>

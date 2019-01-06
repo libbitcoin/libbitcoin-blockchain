@@ -16,6 +16,9 @@
     <Filter Include="src\pools">
       <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000002}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\pools\utilities">
+      <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000004}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\validators">
       <UniqueIdentifier>{CEC6DE45-B67A-487F-0000-000000000003}</UniqueIdentifier>
     </Filter>
@@ -30,19 +33,10 @@
     <ClCompile Include="..\..\..\..\test\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\anchor_converter.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\block_entry.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\block_pool.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\child_closure_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\conflicting_spend_remover.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\header_branch.cpp">
@@ -54,23 +48,32 @@
     <ClCompile Include="..\..\..\..\test\pools\header_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\parent_closure_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\priority_calculator.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\transaction_entry.cpp">
-      <Filter>src\pools</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\transaction_order_calculator.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\pools\transaction_pool.cpp">
       <Filter>src\pools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\pools\utilities.cpp">
-      <Filter>src\pools</Filter>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\anchor_converter.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\child_closure_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\conflicting_spend_remover.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\parent_closure_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\priority_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\transaction_order_calculator.cpp">
+      <Filter>src\pools\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\pools\utilities\utilities.cpp">
+      <Filter>src\pools\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\utility.cpp">
       <Filter>src</Filter>
@@ -83,8 +86,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\pools\utilities.hpp">
-      <Filter>src\pools</Filter>
+    <ClInclude Include="..\..\..\..\test\pools\utilities\utilities.hpp">
+      <Filter>src\pools\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\test\utility.hpp">
       <Filter>src</Filter>
