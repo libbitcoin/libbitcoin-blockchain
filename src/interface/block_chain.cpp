@@ -768,7 +768,8 @@ void block_chain::set_next_confirmed_state(chain::chain_state::ptr top)
 {
     // Promotion always succeeds.
     // Tx pool state is promoted from the state of the top confirmed block.
-    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top));
+    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top,
+        bitcoin_settings_));
 }
 
 bool block_chain::is_candidates_stale() const
