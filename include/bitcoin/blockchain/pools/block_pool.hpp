@@ -41,27 +41,31 @@ public:
     /// The number of blocks in the pool.
     size_t size() const;
 
-    /// Get the block from the pool if it exists.
-    system::block_const_ptr get(size_t height) const;
+    /// Extract the block from the pool if it exists.
+    system::block_const_ptr extract(size_t height);
 
     /// Add downloaded block.
-    void add(system::block_const_ptr block, size_t height);
-
-    /// Purge previosuly-confirmed blocks at and below the specified height.
-    void prune(size_t height);
+    void add(system::block_const_ptr block, size_t height, size_t top);
 
     /// Clear the pool.
     void clear();
 
-    /////// Remove all message vectors that match block hashes.
-    ////void filter(system::get_data_ptr message) const;
+    /// Remove all message vectors that match block hashes.
+    void filter(system::get_data_ptr message) const;
+
+protected:
+    /// Get the block from the pool if it exists.
+    bool exists(const system::hash_digest& hash) const;
+
+    /// Purge previosuly-confirmed blocks at and below the specified height.
+    void prune(size_t height);
 
 private:
     // A bidirectional map is used for efficient header and position retrieval.
     // This produces the effect of a circular buffer hash table header forest.
     typedef boost::bimaps::bimap<
         boost::bimaps::unordered_set_of<block_entry>,
-        boost::bimaps::multiset_of<size_t>> block_entries;
+        boost::bimaps::set_of<size_t>> block_entries;
 
     // This is thread safe.
     const size_t maximum_size_;

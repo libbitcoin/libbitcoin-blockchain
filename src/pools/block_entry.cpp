@@ -26,25 +26,20 @@ namespace blockchain {
 
 using namespace bc::system;
 
-block_entry::block_entry(block_const_ptr block, size_t height)
-  : height_(height), hash_(block->hash()), block_(block)
+block_entry::block_entry(block_const_ptr block)
+  : hash_(block->hash()), block_(block)
 {
 }
 
 // Create a search key.
 block_entry::block_entry(const hash_digest& hash)
-  : height_(0), hash_(hash)
+  : hash_(hash), block_(nullptr)
 {
 }
 
 block_const_ptr block_entry::block() const
 {
     return block_;
-}
-
-size_t block_entry::height() const
-{
-    return height_;
 }
 
 const hash_digest& block_entry::hash() const

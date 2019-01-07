@@ -21,20 +21,14 @@
 #include <cstddef>
 #include <utility>
 #include <bitcoin/blockchain.hpp>
+#include <bitcoin/blockchain/pools/block_entry.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::system;
 
-// Make thread safe for add/remove (distinct add/remove mutexes).
-//
-// Add blocks under blockchain populated critical section.
-// Remove under blockchain candidated critical section.
-//
-// Limit to configured entry count (size) when adding.
-// Clear heights at/below new add height to mitigate turds.
-//
+// TODO: read-ahead population.
 // Trigger read-ahead population when reading and below configured count
 // while the max height is below the current populated top candidate and
 // not currently reading ahead. Fan out read-ahead modulo network cores.
@@ -46,37 +40,80 @@ block_pool::block_pool(const settings& settings)
 
 size_t block_pool::size() const
 {
-    return blocks_.size();
-}
-
-block_const_ptr block_pool::get(size_t height) const
-{
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     shared_lock lock(mutex_);
-    ////const auto it = blocks_.find(height);
-    ////return it == blocks_.end() ? nullptr : it->second;
+    return blocks_.size();
     ///////////////////////////////////////////////////////////////////////////
-    return {};
 }
 
-void block_pool::add(block_const_ptr block, size_t height)
+// protected
+bool block_pool::exists(const hash_digest& hash) const
 {
+    const auto& left = blocks_.left;
+    return left.find(block_entry{ hash }) != left.end();
+}
+
+block_const_ptr block_pool::extract(size_t height)
+{
+    if (maximum_size_ == 0)
+        return nullptr;
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
-    ////blocks_.insert({ std::move(entry), height });
+    mutex_.lock_upgrade();
+    auto& right = blocks_.right;
+    const auto it = right.find(height);
+
+    if (it == right.end())
+    {
+        mutex_.unlock_upgrade();
+        //---------------------------------------------------------------------
+        return nullptr;
+    }
+
+    mutex_.unlock_upgrade_and_lock();
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    const auto block = it->second.block();
+    right.erase(it);
+    mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
+
+    ////LOG_DEBUG(LOG_BLOCKCHAIN)
+    ////    << "Hit: " << height << " (" << blocks_.size() << ")";
+
+    return block;
 }
 
-// TODO: prune all after.
+// Insert rejects entry if there is an entry of the same hash or height.
+void block_pool::add(block_const_ptr block, size_t height, size_t top)
+{
+    if (maximum_size_ == 0)
+        return;
+
+    // Do not cache below or above scope blocks.
+    if (height < top || (height - top) > maximum_size_)
+        return;
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock();
+    blocks_.insert({ { block }, height });
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    ////LOG_DEBUG(LOG_BLOCKCHAIN)
+    ////    << "Add: " << height << " (" << blocks_.size() << ")";
+}
+
+// TODO: invoke prune vs. erase in extract?
 void block_pool::prune(size_t height)
 {
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
-    ////blocks_.erase(height);
-    ///////////////////////////////////////////////////////////////////////////
+    if (maximum_size_ == 0)
+        return;
+
+    // TODO: erase all blocks before the specified height.
+    // TODO: use height sort to amortize the prune search cost.
 }
 
 void block_pool::clear()
@@ -88,9 +125,32 @@ void block_pool::clear()
     ///////////////////////////////////////////////////////////////////////////
 }
 
-////void block_pool::filter(get_data_ptr message) const
-////{
-////}
+void block_pool::filter(get_data_ptr message) const
+{
+    if (maximum_size_ == 0)
+        return;
+
+    auto& inventories = message->inventories();
+
+    // TODO: optimize (prevent repeating vector erase moves).
+    for (auto it = inventories.begin(); it != inventories.end();)
+    {
+        if (!it->is_block_type())
+        {
+            ++it;
+            continue;
+        }
+
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        mutex_.lock_shared();
+        const auto found = exists(it->hash());
+        mutex_.unlock_shared();
+        ///////////////////////////////////////////////////////////////////////
+
+        it = (found ? inventories.erase(it) : std::next(it));
+    }
+}
 
 } // namespace blockchain
 } // namespace libbitcoin

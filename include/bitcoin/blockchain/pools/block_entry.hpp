@@ -32,7 +32,7 @@ class BCB_API block_entry
 {
 public:
     /// Construct an entry for the pool.
-    block_entry(system::block_const_ptr block, size_t height);
+    block_entry(system::block_const_ptr block);
 
     /// Use this construction only as a search key.
     block_entry(const system::hash_digest& hash);
@@ -51,7 +51,6 @@ public:
 
 private:
     // These are non-const to allow for default copy construction.
-    size_t height_;
     system::hash_digest hash_;
     system::block_const_ptr block_;
 };

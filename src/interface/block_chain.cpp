@@ -298,7 +298,9 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
 block_const_ptr block_chain::get_candidate(size_t height) const
 {
     // Block pool stores candidates only.
-    auto block = block_pool_.get(height);
+    // Extract removes any found cache entry.
+    // The block pool is strictly a cache, so mutable.
+    auto block = block_pool_.extract(height);
 
     if (block)
     {

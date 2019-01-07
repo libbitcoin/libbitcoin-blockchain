@@ -449,8 +449,9 @@ private:
     mutable system::threadpool priority_pool_;
     mutable system::dispatcher priority_dispatch_;
 
+    // The block pool is strictly a cache, so mutable.
     header_pool header_pool_;
-    block_pool block_pool_;
+    mutable block_pool block_pool_;
     transaction_pool transaction_pool_;
 
     organize_header organize_header_;
