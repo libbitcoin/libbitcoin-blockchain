@@ -162,7 +162,7 @@ void populate_block::populate_transactions(block_const_ptr block,
             const auto& prevout = inputs[input_index].previous_output();
 
             // Don't fail here if output is missing, populate all.
-            /*bool*/ fast_chain_.populate_output(prevout, fork_height);
+            /*bool*/ fast_chain_.populate_block_output(prevout, fork_height);
         }
     }
 
