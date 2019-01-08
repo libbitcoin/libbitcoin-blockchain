@@ -114,7 +114,7 @@ public:
     /// Sets metadata based on fork point.
     /// Get the output that is referenced by the outpoint.
     virtual bool populate_output(const system::chain::output_point& outpoint,
-        size_t fork_height, bool candidate) const = 0;
+        size_t fork_height) const = 0;
 
     /// Get state (flags) of candidate or confirmed block by height.
     virtual uint8_t get_block_state(size_t height, bool candidate) const = 0;

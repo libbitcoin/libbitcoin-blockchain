@@ -109,16 +109,17 @@ void populate_block::populate_coinbase(block_const_ptr block,
     // A coinbase tx guarantees exactly one input.
     auto& prevout = tx.inputs().front().previous_output().metadata;
 
-    // A coinbase input cannot be a double spend since it originates coin.
-    prevout.spent = false;
-
     // A coinbase prevout is always considered confirmed just for consistency.
     prevout.candidate = false;
     prevout.confirmed = true;
 
+    // A coinbase input has no output to have been spent.
+    prevout.candidate_spent = false;
+    prevout.confirmed_spent = false;
+
     // A coinbase does not spend a previous output so these are unused/default.
-    prevout.coinbase = false;
     prevout.height = 0;
+    prevout.coinbase = false;
     prevout.median_time_past = 0;
     prevout.cache = chain::output{};
 
@@ -161,7 +162,7 @@ void populate_block::populate_transactions(block_const_ptr block,
             const auto& prevout = inputs[input_index].previous_output();
 
             // Don't fail here if output is missing, populate all.
-            /*bool*/ fast_chain_.populate_output(prevout, fork_height, true);
+            /*bool*/ fast_chain_.populate_output(prevout, fork_height);
         }
     }
 

@@ -280,9 +280,9 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
 }
 
 bool block_chain::populate_output(const chain::output_point& outpoint,
-    size_t fork_height, bool candidate) const
+    size_t fork_height) const
 {
-    return database_.transactions().get_output(outpoint, fork_height, candidate);
+    return database_.transactions().get_output(outpoint, fork_height);
 }
 
 uint8_t block_chain::get_block_state(size_t height, bool candidate) const
