@@ -298,7 +298,9 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
 block_const_ptr block_chain::get_candidate(size_t height) const
 {
     // Block pool stores candidates only.
-    auto block = block_pool_.get(height);
+    // Extract removes any found cache entry.
+    // The block pool is strictly a cache, so mutable.
+    auto block = block_pool_.extract(height);
 
     if (block)
     {
@@ -766,7 +768,8 @@ void block_chain::set_next_confirmed_state(chain::chain_state::ptr top)
 {
     // Promotion always succeeds.
     // Tx pool state is promoted from the state of the top confirmed block.
-    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top));
+    next_confirmed_state_.store(std::make_shared<chain::chain_state>(*top,
+        bitcoin_settings_));
 }
 
 bool block_chain::is_candidates_stale() const

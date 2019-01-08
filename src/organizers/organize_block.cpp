@@ -107,8 +107,10 @@ code organize_block::organize(block_const_ptr block, size_t height)
     if (error_code)
         return error_code;
 
-    // Add to the block download cache.
-    ////pool_.add(block, height);
+    // TODO: if full then remove 
+    const auto top = fast_chain_.top_valid_candidate_state()->height();
+    // Add to the block download cache as applicable.
+    pool_.add(block, height, top);
 
     // Queue download notification to invoke validation on downloader thread.
     downloader_subscriber_->relay(error_code, block->hash(), height);
@@ -156,13 +158,13 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     {
         // Deserialization duration and median_time_past set here.
         const auto block = fast_chain_.get_candidate(height);
+        if (!block)
+            break;
 
-        // TODO: move pruning.
-        pool_.prune(height);
-
-        // If not next block must be a post-reorg expired notification.
-        if (!block || fast_chain_.top_valid_candidate_state()->hash() !=
-            block->header().previous_block_hash())
+        // BUGBUG: permanent gap created by alternate height.
+        // If not next top block must be a post-reorg expired notification.
+        const auto top = fast_chain_.top_valid_candidate_state();
+        if (block->header().previous_block_hash() != top->hash())
             break;
 
         // Checks that are dependent upon chain state.
