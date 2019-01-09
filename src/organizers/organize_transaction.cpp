@@ -237,6 +237,7 @@ void organize_transaction::handle_connect(const code& ec,
 
 uint64_t organize_transaction::price(transaction_const_ptr tx) const
 {
+    static const auto version = message::version::level::canonical;
     const auto byte_fee = settings_.byte_fee_satoshis;
     const auto sigop_fee = settings_.sigop_fee_satoshis;
 
@@ -244,9 +245,11 @@ uint64_t organize_transaction::price(transaction_const_ptr tx) const
     if (byte_fee == 0.0f && sigop_fee == 0.0f)
         return 0;
 
+    // TODO: incorporate tx weight discount.
+    // TODO: incorporate bip16 and bip141 in sigops parmaterization.
     // TODO: this is a second pass on size and sigops, implement cache.
     // This at least prevents uncached calls when zero fee is configured.
-    auto byte = byte_fee > 0 ? byte_fee * tx->serialized_size(true) : 0;
+    auto byte = byte_fee > 0 ? byte_fee * tx->serialized_size(version) : 0;
     auto sigop = sigop_fee > 0 ? sigop_fee * tx->signature_operations() : 0;
 
     // Require at least one satoshi per tx if there are any fees configured.
