@@ -89,7 +89,7 @@ void populate_transaction::populate_inputs(transaction_const_ptr tx,
         const auto& prevout = input.previous_output();
 
         // Don't fail here if output is missing, populate all.
-        /*bool*/ fast_chain_.populate_output(prevout, max_size_t, false);
+        /*bool*/ fast_chain_.populate_pool_output(prevout);
     }
 
     handler(error::success);

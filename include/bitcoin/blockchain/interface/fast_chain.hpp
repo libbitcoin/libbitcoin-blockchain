@@ -111,10 +111,16 @@ public:
     virtual void populate_pool_transaction(
         const system::chain::transaction& tx, uint32_t forks) const = 0;
 
-    /// Sets metadata based on fork point.
+    /// Sets metadata based on fork point (no sentinel).
     /// Get the output that is referenced by the outpoint.
-    virtual bool populate_output(const system::chain::output_point& outpoint,
-        size_t fork_height, bool candidate) const = 0;
+    virtual bool populate_block_output(
+        const system::chain::output_point& outpoint,
+        size_t fork_height) const = 0;
+
+    /// Sets metadata for pool based on strong chain.
+    /// Get the output that is referenced by the outpoint.
+    virtual bool populate_pool_output(
+        const system::chain::output_point& outpoint) const = 0;
 
     /// Get state (flags) of candidate or confirmed block by height.
     virtual uint8_t get_block_state(size_t height, bool candidate) const = 0;

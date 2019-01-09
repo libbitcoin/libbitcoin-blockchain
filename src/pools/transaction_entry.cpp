@@ -36,6 +36,7 @@ inline uint32_t cap(size_t value)
     return domain_constrain<uint32_t>(value);
 }
 
+// TODO: incorporate tx weight.
 // TODO: implement size, sigops, and fees caching on chain::transaction.
 // This requires the full population of transaction.metadata metadata.
 transaction_entry::transaction_entry(transaction_const_ptr tx)
