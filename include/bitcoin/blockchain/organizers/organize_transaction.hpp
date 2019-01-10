@@ -60,7 +60,7 @@ public:
 
 protected:
     bool stopped() const;
-    uint64_t price(system::transaction_const_ptr tx) const;
+    bool sufficient_fee(system::transaction_const_ptr tx) const;
 
 private:
     // Verify sub-sequence.

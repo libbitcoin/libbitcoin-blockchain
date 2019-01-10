@@ -177,7 +177,7 @@ void organize_transaction::handle_accept(const code& ec,
     }
 
     // Policy.
-    if (tx->fees() < price(tx))
+    if (!sufficient_fee(tx))
     {
         handler(error::insufficient_fee);
         return;
@@ -235,7 +235,7 @@ void organize_transaction::handle_connect(const code& ec,
 // Utility.
 //-----------------------------------------------------------------------------
 
-uint64_t organize_transaction::price(transaction_const_ptr tx) const
+bool organize_transaction::sufficient_fee(transaction_const_ptr tx) const
 {
     static const auto version = message::version::level::canonical;
     const auto byte_fee = settings_.byte_fee_satoshis;
@@ -243,7 +243,7 @@ uint64_t organize_transaction::price(transaction_const_ptr tx) const
 
     // Guard against summing signed values by testing independently.
     if (byte_fee == 0.0f && sigop_fee == 0.0f)
-        return 0;
+        return true;
 
     // TODO: incorporate tx weight discount.
     // TODO: incorporate bip16 and bip141 in sigops parmaterization.
@@ -253,7 +253,22 @@ uint64_t organize_transaction::price(transaction_const_ptr tx) const
     auto sigop = sigop_fee > 0 ? sigop_fee * tx->signature_operations() : 0;
 
     // Require at least one satoshi per tx if there are any fees configured.
-    return std::max(uint64_t(1), static_cast<uint64_t>(byte + sigop));
+    auto price = std::max(uint64_t(1), static_cast<uint64_t>(byte + sigop));
+    const auto paid = tx->fees();
+
+    // Skip logging if fee is sufficent.
+    if (paid >= price)
+        return true;
+
+    // TODO: optimize out second serialized_size signature_operations calls.
+    LOG_DEBUG(LOG_BLOCKCHAIN)
+        << "Transaction [" << encode_hash(tx->hash()) << "] "
+        << "bytes: " << tx->serialized_size(version) << " "
+        << "sigops: " << tx->signature_operations() << " "
+        << "price: " << price << " "
+        << "paid: " << tx->fees();
+
+    return false;
 }
 
 } // namespace blockchain
