@@ -92,6 +92,7 @@ void organize_header::organize(header_const_ptr header,
         return;
     }
 
+    // TODO: use a scope lock to release the critical section.
     const result_handler complete =
         std::bind(&organize_header::handle_complete,
             this, _1, handler);

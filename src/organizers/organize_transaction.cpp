@@ -121,7 +121,7 @@ void organize_transaction::organize(transaction_const_ptr tx,
     }
 
     // Reset the reusable promise.
-    resume_ = std::promise<code>();
+    resume_ = {};
 
     const result_handler complete =
         std::bind(&organize_transaction::signal_completion,

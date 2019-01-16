@@ -51,12 +51,13 @@ block_chain::block_chain(threadpool& pool,
     settings_(settings),
     bitcoin_settings_(bitcoin_settings),
     chain_state_populator_(*this, settings, bitcoin_settings),
+    // block_pool_populator_(*this, settings)
 
     // Enable block priority over txs when write flush enabled (performance).
     confirmation_mutex_(database_settings.flush_writes),
 
     header_pool_(settings),
-    block_pool_(settings),
+    block_pool_(*this, settings),
     transaction_pool_(settings),
 
     // Create dispatcher for priority operations.
@@ -256,10 +257,9 @@ bool block_chain::get_validatable(hash_digest& out_hash, size_t height) const
     return true;
 }
 
-void block_chain::prime_validation(const hash_digest& hash,
-    size_t height) const
+void block_chain::prime_validation(size_t height) const
 {
-    organize_block_.prime_validation(hash, height);
+    organize_block_.prime_validation(height);
 }
 
 void block_chain::populate_header(const chain::header& header) const
@@ -300,20 +300,9 @@ uint8_t block_chain::get_block_state(const hash_digest& block_hash) const
     return database_.blocks().get(block_hash).state();
 }
 
+// This always reads block directly from store.
 block_const_ptr block_chain::get_candidate(size_t height) const
 {
-    // Block pool stores candidates only.
-    // Extract removes any found cache entry.
-    // The block pool is strictly a cache, so mutable.
-    auto block = block_pool_.extract(height);
-
-    if (block)
-    {
-        // Zeroize deserialization time.
-        block->metadata.deserialize = {};
-        return block;
-    }
-
     const auto start_deserialize = asio::steady_clock::now();
     const auto result = database_.blocks().get(height, true);
 
@@ -328,9 +317,9 @@ block_const_ptr block_chain::get_candidate(size_t height) const
     if (!get_transactions(txs, result, true))
         return {};
 
-    // Prepopulate the block with header metadata.
-    block = std::make_shared<const message::block>(result.header(true),
-        std::move(txs));
+    // Do not bother to populate header metadata.
+    const auto block = std::make_shared<const message::block>(
+        result.header(false), std::move(txs));
 
     block->metadata.deserialize = asio::steady_clock::now() - start_deserialize;
     return block;
@@ -549,7 +538,7 @@ code block_chain::candidate(block_const_ptr block)
     return ec;
 }
 
-// Reorganize this stronger candidate branch into confirmed chain.
+// Reorganize this stronger validated candidate branch into confirmed chain.
 code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     size_t branch_height)
 {
@@ -569,10 +558,10 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     const auto incoming = std::make_shared<block_const_ptr_list>();
 
     // Deserialization duration set here.
-    // Get all candidates from fork point to branch start.
+    // Get all (validated) candidates from fork point to branch start.
     for (auto height = fork.height() + 1u; height < branch_height; ++height)
     {
-        const auto block = get_candidate(height);
+        const auto block = block_pool_.get(height);
 
         if (!block)
             return error::operation_failed;
@@ -580,7 +569,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
         incoming->push_back(block);
     }
 
-    // These blocks are previously candidated but not confirmed (no stats).
+    // These blocks are previously validated (no stats).
     if (!incoming->empty())
     {
         LOG_DEBUG(LOG_BLOCKCHAIN)
@@ -588,7 +577,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
             << " blocks queried without validation stats.";
     }
 
-    // Append all candidate pointers from the branch cache.
+    // Append all (validated) candidate pointers from the branch cache.
     // Clear chain state to preserve memory and hide from subscribers.
     for (const auto block: *branch_cache)
     {

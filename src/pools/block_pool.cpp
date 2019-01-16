@@ -19,24 +19,59 @@
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 
 #include <cstddef>
+#include <functional>
 #include <utility>
 #include <bitcoin/blockchain.hpp>
+#include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/block_entry.hpp>
+#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
 using namespace bc::system;
+using namespace std::placeholders;
 
-// TODO: read-ahead population.
-// Trigger read-ahead population when reading and below configured count
-// while the max height is below the current populated top candidate and
-// not currently reading ahead. Fan out read-ahead modulo network cores.
+#define NAME "block_pool"
 
-block_pool::block_pool(const settings& settings)
-  : maximum_size_(settings.block_buffer_limit)
+block_pool::block_pool(fast_chain& chain, const settings& settings)
+  : chain_(chain),
+    stopped_(true),
+    maximum_size_(settings.block_buffer_limit),
+
+    // Create dispatcher for parallel read and subscriber for asynchrony.
+    pool_(thread_ceiling(settings.cores), priority(settings.priority)),
+    dispatch_(pool_, NAME "_dispatch"),
+    subscriber_(std::make_shared<read_subscriber>(pool_, NAME))
 {
 }
+
+// protected
+bool block_pool::stopped() const
+{
+    return stopped_;
+}
+
+// Start/stop sequences.
+//-----------------------------------------------------------------------------
+
+bool block_pool::start()
+{
+    stopped_ = false;
+    subscriber_->start();
+    return true;
+}
+
+bool block_pool::stop()
+{
+    subscriber_->stop();
+    subscriber_->invoke(error::service_stopped, {}, 0);
+    stopped_ = true;
+    return true;
+}
+
+// Cached blocks.
+//-----------------------------------------------------------------------------
 
 size_t block_pool::size() const
 {
@@ -47,82 +82,196 @@ size_t block_pool::size() const
     ///////////////////////////////////////////////////////////////////////////
 }
 
-// protected
-bool block_pool::exists(const hash_digest& hash) const
-{
-    const auto& left = blocks_.left;
-    return left.find(block_entry{ hash }) != left.end();
-}
-
-block_const_ptr block_pool::extract(size_t height)
+void block_pool::add(block_const_ptr_list_ptr blocks, size_t first_height)
 {
     if (maximum_size_ == 0)
-        return nullptr;
-
-    // Critical Section
-    ///////////////////////////////////////////////////////////////////////////
-    mutex_.lock_upgrade();
-    auto& right = blocks_.right;
-    const auto it = right.find(height);
-
-    if (it == right.end())
-    {
-        mutex_.unlock_upgrade();
-        //---------------------------------------------------------------------
-        return nullptr;
-    }
-
-    mutex_.unlock_upgrade_and_lock();
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    const auto block = it->second.block();
-    right.erase(it);
-    mutex_.unlock();
-    ///////////////////////////////////////////////////////////////////////////
-
-    ////LOG_DEBUG(LOG_BLOCKCHAIN)
-    ////    << "Hit: " << height << " (" << blocks_.size() << ")";
-
-    return block;
-}
-
-// Insert rejects entry if there is an entry of the same hash or height.
-void block_pool::add(block_const_ptr block, size_t height, size_t top)
-{
-    if (maximum_size_ == 0)
-        return;
-
-    // Do not cache below or above scope blocks.
-    if (height < top || (height - top) > maximum_size_)
         return;
 
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock();
-    blocks_.insert({ { block }, height });
+
+    auto height = first_height;
+    for (const auto block: *blocks)
+        blocks_.insert({ { block }, height++ });
+
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
-    ////LOG_DEBUG(LOG_BLOCKCHAIN)
-    ////    << "Add: " << height << " (" << blocks_.size() << ")";
+    height = first_height;
+    for (const auto block: *blocks)
+        subscriber_->relay(error::success, block, height++);
 }
 
-// TODO: invoke prune vs. erase in extract?
-void block_pool::prune(size_t height)
+// Insert rejects entry if there is an entry of the same hash or height.
+void block_pool::add(block_const_ptr block, size_t height)
 {
     if (maximum_size_ == 0)
         return;
 
-    // TODO: erase all blocks before the specified height.
-    // TODO: use height sort to amortize the prune search cost.
+    auto& cached = blocks_.right;
+    const auto top_confirmed = chain_.fork_point().height();
+
+    // Do not cache below or above scope blocks.
+    // A pending download can't be purged but this preempts it.
+    if (height > top_confirmed && (height - top_confirmed) <= maximum_size_)
+    {
+        // Critical Section
+        ///////////////////////////////////////////////////////////////////////
+        mutex_.lock();
+        blocks_.insert({ { block }, height });
+        mutex_.unlock();
+        ///////////////////////////////////////////////////////////////////////
+
+        subscriber_->relay(error::success, block, height);
+    }
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////
+    mutex_.lock();
+
+    // Purge all cached blocks at and below the top_confirmed block.
+    for (auto it = cached.begin();
+        it != cached.end() && it->first <= top_confirmed;
+        it = cached.erase(it)) {}
+
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////
 }
 
-void block_pool::clear()
+block_const_ptr block_pool::get(size_t height)
 {
+    if (maximum_size_ == 0)
+        return chain_.get_candidate(height);
+
     // Critical Section
     ///////////////////////////////////////////////////////////////////////////
-    unique_lock lock(mutex_);
-    blocks_.clear();
+    mutex_.lock_upgrade();
+
+    auto& cached = blocks_.right;
+    const auto it = cached.find(height);
+
+    if (it != cached.end())
+    {
+        const auto block = it->second.block();
+
+        mutex_.unlock_upgrade_and_lock();
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        cached.erase(it);
+        //---------------------------------------------------------------------
+        mutex_.unlock_and_lock_upgrade();
+
+        return block;
+    }
+
+    mutex_.unlock_upgrade();
     ///////////////////////////////////////////////////////////////////////////
+
+    return chain_.get_candidate(height);
+}
+
+void block_pool::fetch(size_t height, read_handler&& handler)
+{
+    // The cache is disabled, just read and return the block.
+    if (maximum_size_ == 0)
+    {
+        handler(error::success, chain_.get_candidate(height));
+        return;
+    }
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock_upgrade();
+
+    auto& cached = blocks_.right;
+    const auto it = cached.find(height);
+
+    // If found remove block from the map and return it.
+    if (it != cached.end())
+    {
+        const auto block = it->second.block();
+
+        mutex_.unlock_upgrade_and_lock();
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        cached.erase(it);
+        //---------------------------------------------------------------------
+        mutex_.unlock();
+
+        handler(error::success, block);
+        return;
+    }
+
+    mutex_.unlock_upgrade();
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Since not found subscribe to block add  (for all blocks).
+    subscriber_->subscribe(
+        std::bind(&block_pool::handle_add,
+            this, _1, _2, _3, height, handler), error::service_stopped, {}, 0);
+
+    hash_digest unused;
+    const auto top_confirmed = chain_.fork_point().height();
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock_upgrade();
+
+    // Reads will queue in dispatcher until a read thread is free.
+    for (auto next = height; next > top_confirmed &&
+        (next - top_confirmed) <= maximum_size_; ++next)
+    {
+        // TODO: create optimal get_validatable replacement for this usage.
+        // TODO: find a way for get_validatable outside of critical section.
+        if (pending_.find(next) == pending_.end() &&
+            cached.find(next) == cached.end() &&
+            chain_.get_validatable(unused, next))
+        {
+            mutex_.unlock_upgrade_and_lock();
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            pending_.insert(next);
+            //---------------------------------------------------------------------
+            mutex_.unlock_and_lock_upgrade();
+
+            dispatch_.concurrent(&block_pool::read_block, this, next);
+        }
+    }
+
+    mutex_.unlock_upgrade();
+    ///////////////////////////////////////////////////////////////////////////
+}
+
+// protected
+void block_pool::read_block(size_t height)
+{
+    const auto is_stopped = stopped();
+    const auto ec = is_stopped ? error::service_stopped : error::success;
+
+    // Block will be null if not populated, caller must test value.
+    const auto block = is_stopped ? nullptr : chain_.get_candidate(height);
+
+    // Critical Section
+    ///////////////////////////////////////////////////////////////////////////
+    mutex_.lock();
+    pending_.erase(height);
+    blocks_.insert({ { block }, height });
+    mutex_.unlock();
+    ///////////////////////////////////////////////////////////////////////////
+
+    subscriber_->relay(ec, block, height);
+}
+
+// protected
+bool block_pool::handle_add(const code& ec, block_const_ptr block,
+    size_t height, size_t target_height, read_handler handler) const
+{
+    if (ec)
+        return false;
+
+    if (height != target_height)
+        return true;
+
+    handler(ec, block);
+    return false;
 }
 
 void block_pool::filter(get_data_ptr message) const
@@ -130,6 +279,7 @@ void block_pool::filter(get_data_ptr message) const
     if (maximum_size_ == 0)
         return;
 
+    const auto& left = blocks_.left;
     auto& inventories = message->inventories();
 
     // TODO: optimize (prevent repeating vector erase moves).
@@ -144,7 +294,7 @@ void block_pool::filter(get_data_ptr message) const
         // Critical Section
         ///////////////////////////////////////////////////////////////////////
         mutex_.lock_shared();
-        const auto found = exists(it->hash());
+        const auto found = left.find(block_entry{ it->hash() }) != left.end();
         mutex_.unlock_shared();
         ///////////////////////////////////////////////////////////////////////
 

@@ -21,9 +21,9 @@
 
 #include <cstddef>
 ////#include <iostream>
-#include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <boost/functional/hash_fwd.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

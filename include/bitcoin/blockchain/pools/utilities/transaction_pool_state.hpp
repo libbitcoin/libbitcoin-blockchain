@@ -21,13 +21,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <boost/bimap.hpp>
-#include <boost/bimap/multiset_of.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/pools/transaction_entry.hpp>
+#include <boost/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
