@@ -24,11 +24,11 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <bitcoin/system.hpp>
+#include <bitcoin/blockchain/define.hpp>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/functional/hash_fwd.hpp>
-#include <bitcoin/system.hpp>
-#include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

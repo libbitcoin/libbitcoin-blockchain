@@ -40,10 +40,8 @@ class BCB_API organize_block
 public:
     typedef system::handle0 result_handler;
     typedef std::shared_ptr<organize_block> ptr;
-    typedef std::function<bool(system::code, system::block_const_ptr, size_t)>
-        download_handler;
-    typedef system::resubscriber<system::code, system::hash_digest, size_t>
-        download_subscriber;
+    typedef std::function<void(system::block_const_ptr)> block_result_handler;
+    typedef system::resubscriber<system::code, size_t> download_subscriber;
 
     /// Construct an instance.
     organize_block(system::prioritized_mutex& mutex,
@@ -51,25 +49,36 @@ public:
         fast_chain& chain, block_pool& pool, const settings& settings,
         const system::settings& bitcoin_settings);
 
-    // Start/stop the organizer.
+    /// Start/stop the organizer.
     bool start();
     bool stop();
 
     /// validate and organize a block into the store.
     system::code organize(system::block_const_ptr block, size_t height);
 
-    /// Push a validatable block identifier onto the download subscriber.
-    void prime_validation(const system::hash_digest& hash,
-        size_t height) const;
+    /// Push a validatable block height onto the download subscriber.
+    void prime_validation(size_t height) const;
 
 protected:
     bool stopped() const;
 
 private:
-    // Verify sub-sequence.
+    // TODO: create common definitions.
+    typedef system::handle1<system::block_const_ptr> read_handler;
+    typedef std::shared_ptr<system::block_const_ptr_list>
+        block_const_ptr_list_ptr;
+
+    // Validate sequence.
+    void handle_complete(const system::code& ec);
+    void block_fetcher(size_t height, const system::hash_digest& parent_hash,
+        block_const_ptr_list_ptr sub_branch, result_handler complete);
+    void handle_fetch(const system::code& ec, system::block_const_ptr block,
+        size_t height, const system::hash_digest& parent_hash,
+        block_const_ptr_list_ptr sub_branch, result_handler complete);
+
+    // Validate sub-sequence.
     system::code validate(system::block_const_ptr block);
-    bool handle_check(const system::code& ec, const system::hash_digest& hash,
-        size_t height);
+    bool handle_check(const system::code& ec, size_t height);
     void handle_accept(const system::code& ec, system::block_const_ptr block,
         result_handler handler);
     void handle_connect(const system::code& ec, system::block_const_ptr block,
@@ -81,7 +90,9 @@ private:
     system::prioritized_mutex& mutex_;
     std::atomic<bool> stopped_;
     std::promise<system::code> resume_;
+    std::promise<system::block_const_ptr> resume_block_;
     block_pool& pool_;
+    system::dispatcher& dispatch_;
     validate_block validator_;
     download_subscriber::ptr downloader_subscriber_;
 };

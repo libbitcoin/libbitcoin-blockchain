@@ -20,9 +20,9 @@
 #define LIBBITCOIN_BLOCKCHAIN_BLOCK_ENTRY_HPP
 
 #include <cstddef>
-#include <boost/functional/hash_fwd.hpp>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <boost/functional/hash_fwd.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
@@ -39,9 +39,6 @@ public:
 
     /// The block that the entry contains.
     system::block_const_ptr block() const;
-
-    /// The height of the block the entry contains.
-    size_t height() const;
 
     /// The hash table entry identity.
     const system::hash_digest& hash() const;

@@ -125,9 +125,8 @@ public:
     /// Get block hash of an unvalidated block, false if empty/failed/valid.
     bool get_validatable(system::hash_digest& out_hash, size_t height) const;
 
-    /// Push a validatable block identifier onto the download subscriber.
-    void prime_validation(const system::hash_digest& hash,
-        size_t height) const;
+    /// Push a validatable block height onto the download subscriber.
+    void prime_validation(size_t height) const;
 
     /// Populate metadata of the given block header.
     void populate_header(const system::chain::header& header) const;

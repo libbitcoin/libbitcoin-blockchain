@@ -94,9 +94,8 @@ public:
     virtual bool get_validatable(system::hash_digest& out_hash,
         size_t height) const = 0;
 
-    /// Push a validatable block identifier onto the download subscriber.
-    virtual void prime_validation(const system::hash_digest& hash,
-        size_t height) const = 0;
+    /// Push a validatable block height onto the download subscriber.
+    virtual void prime_validation(size_t height) const = 0;
 
     /// Populate metadata of the given block header.
     virtual void populate_header(const system::chain::header& header) const = 0;

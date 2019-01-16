@@ -20,14 +20,14 @@
 #define LIBBITCOIN_BLOCKCHAIN_HEADER_POOL_HPP
 
 #include <cstddef>
-#include <boost/bimap.hpp>
-#include <boost/bimap/multiset_of.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/pools/header_branch.hpp>
 #include <bitcoin/blockchain/pools/header_entry.hpp>
 #include <bitcoin/blockchain/settings.hpp>
+#include <boost/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 
 namespace libbitcoin {
 namespace blockchain {

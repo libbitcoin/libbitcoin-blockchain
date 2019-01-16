@@ -47,6 +47,7 @@ organize_block::organize_block(prioritized_mutex& mutex,
     mutex_(mutex),
     stopped_(true),
     pool_(pool),
+    dispatch_(priority_dispatch),
     validator_(priority_dispatch, chain, settings, bitcoin_settings),
     downloader_subscriber_(std::make_shared<download_subscriber>(threads, NAME))
 {
@@ -66,13 +67,14 @@ bool organize_block::stopped() const
 bool organize_block::start()
 {
     stopped_ = false;
+    pool_.start();
     downloader_subscriber_->start();
     validator_.start();
 
     // Each download queues up a validation sequence.
     downloader_subscriber_->subscribe(
         std::bind(&organize_block::handle_check,
-            this, _1, _2, _3), error::service_stopped, {}, 0);
+            this, _1, _2), error::service_stopped, 0);
 
     return true;
 }
@@ -81,8 +83,8 @@ bool organize_block::stop()
 {
     validator_.stop();
     downloader_subscriber_->stop();
-    downloader_subscriber_->invoke(error::service_stopped, {}, 0);
-    pool_.clear();
+    downloader_subscriber_->invoke(error::service_stopped, 0);
+    pool_.stop();
     stopped_ = true;
     return true;
 }
@@ -107,23 +109,20 @@ code organize_block::organize(block_const_ptr block, size_t height)
     if (error_code)
         return error_code;
 
-    // TODO: if full then remove 
-    const auto top = fast_chain_.top_valid_candidate_state()->height();
     // Add to the block download cache as applicable.
-    pool_.add(block, height, top);
+    pool_.add(block, height);
 
     // Queue download notification to invoke validation on downloader thread.
-    downloader_subscriber_->relay(error_code, block->hash(), height);
+    downloader_subscriber_->relay(error_code, height);
 
     // Validation result is returned by metadata.error.
     return error::success;
 }
 
-// TODO: refactor to eliminate this abstraction leak.
-void organize_block::prime_validation(const hash_digest& hash,
-    size_t height) const
+// TODO: refactor to eliminate this interface abstraction leak.
+void organize_block::prime_validation(size_t height) const
 {
-    downloader_subscriber_->relay(error::success, hash, height);
+    downloader_subscriber_->relay(error::success, height);
 }
 
 // Validate sequence.
@@ -132,9 +131,11 @@ void organize_block::prime_validation(const hash_digest& hash,
 // Therefore fan-outs may use all threads in the priority threadpool.
 
 // This is the start of the validation sequence.
-bool organize_block::handle_check(const code& ec, const hash_digest& hash,
-    size_t height)
+// TODO: can confirm in parallel if not validating or indexing, and no gaps.
+bool organize_block::handle_check(const code& ec, size_t height)
 {
+    BITCOIN_ASSERT(!ec || ec == error::service_stopped);
+
     if (ec)
         return false;
 
@@ -142,113 +143,165 @@ bool organize_block::handle_check(const code& ec, const hash_digest& hash,
     ///////////////////////////////////////////////////////////////////////////
     mutex_.lock_high_priority();
 
-    // If initial height is misaligned try again on next download.
-    if (fast_chain_.top_valid_candidate_state()->height() != height - 1u)
+    const auto parent_state = fast_chain_.top_valid_candidate_state();
+
+    // If aligned there is a new next populated candidate to validate.
+    if (height - 1u != parent_state->height())
     {
         //---------------------------------------------------------------------
         mutex_.unlock_high_priority();
         return true;
     }
 
-    // Stack up the validated blocks for possible reorganization.
-    auto branch_cache = std::make_shared<block_const_ptr_list>();
-    code error_code;
+    // Start a (potentially total) sub-branch of the current reorg attempt.
+    const auto sub_branch = std::make_shared<block_const_ptr_list>();
 
-    for (;!stopped() && height != 0; ++height)
-    {
-        // Deserialization duration and median_time_past set here.
-        const auto block = fast_chain_.get_candidate(height);
-        if (!block)
-            break;
+    // TODO: use a scope lock to release the critical section.
+    // TODO: templatize scope_lock to allow for priority mutex.
+    const result_handler complete =
+        std::bind(&organize_block::handle_complete,
+            this, _1);
 
-        // BUGBUG: permanent gap created by alternate height.
-        // If not next top block must be a post-reorg expired notification.
-        const auto top = fast_chain_.top_valid_candidate_state();
-        if (block->header().previous_block_hash() != top->hash())
-            break;
+    // Get the candidate from the pool (or read it from the store when able).
+    pool_.fetch(height,
+        std::bind(&organize_block::handle_fetch,
+            this, _1, _2, height, parent_state->hash(), sub_branch, complete));
 
-        // Checks that are dependent upon chain state.
-        // Populate, accept, and connect durations set here.
-        if ((error_code = validate(block)))
-            break;
+    return true;
+}
 
-        if (block->header().metadata.error)
-        {
-            // CONSENSUS: TODO: handle invalidity caching of merkle mutations.
-
-            // This triggers BLOCK reorganization notifications.
-            // Pop and mark as invalid candidates at and above block.
-            //#################################################################
-            error_code = fast_chain_.invalidate(block, height);
-            //#################################################################
-
-            // Candidate chain is invalid at and above this point so break out.
-            break;
-        }
-        else
-        {
-            // TODO: don't candidate block if branch would be reorganizable,
-            // TODO: just move straight to reorganization. This will always
-            // TODO: skip candidizing the last block before reorg.
-
-            // This triggers NO notifications.
-            // Mark candidate block as valid and mark candidate-spent outputs.
-            //#################################################################
-            error_code = fast_chain_.candidate(block);
-            //#################################################################
-            branch_cache->push_back(block);
-
-            if (error_code)
-                break;
-        }
-
-        if (fast_chain_.is_reorganizable())
-        {
-            const auto branch_height = height - (branch_cache->size() - 1u);
-
-            // This triggers BLOCK reorganization notifications.
-            // Reorganize this stronger candidate branch into confirmed chain.
-            //#################################################################
-            error_code = fast_chain_.reorganize(branch_cache, branch_height);
-            //#################################################################
-
-            if (error_code)
-                break;
-
-            // Reset the branch for next reorganization.
-            branch_cache->clear();
-        }
-    }
-
+// private
+void organize_block::handle_complete(const code& ec)
+{
     mutex_.unlock_high_priority();
     ///////////////////////////////////////////////////////////////////////////
 
-    // A non-stop error result implies store corruption.
-    if (error_code && error_code != error::service_stopped)
+    if (ec && ec != error::service_stopped)
     {
         LOG_FATAL(LOG_BLOCKCHAIN)
             << "Failure in block organization, store is now corrupt: "
-            << error_code.message();
+            << ec.message();
     }
-
-    // If not reorganized now these blocks will be queried and confirmed later.
-    if (!branch_cache->empty())
-    {
-        LOG_DEBUG(LOG_BLOCKCHAIN)
-            << branch_cache->size() <<
-            " blocks validated but not yet organized.";
-    }
-
-    // Resubscribe if not stop or store failure.
-    // In the case of a store failure the server will stop processing blocks.
-    return !error_code;
 }
+
+void organize_block::handle_fetch(const code& ec, block_const_ptr block,
+    size_t height, const hash_digest& parent_hash,
+    block_const_ptr_list_ptr sub_branch, result_handler complete)
+{
+    code error_code;
+
+    if (ec)
+    {
+        complete(ec);
+        return;
+    }
+
+    // It is possible that the block will no longer be a candidate in which
+    // case block will be empty. This is okay as it implies there is a
+    // candidate branch forked at or below this height pending processing.
+    // If the block doesn't match there was a reorg and the new block of the
+    // same height must eventually be downloaded and validation triggered.
+    if (!block || block->header().previous_block_hash() != parent_hash)
+    {
+        // These blocks will be queried and confirmed later in reorganize.
+        // This happens when there are gaps in the populated candidate chain.
+        if (!sub_branch->empty())
+        {
+            // Add all blocks from sub_branch to cache.
+            pool_.add(sub_branch, height - sub_branch->size());
+
+            LOG_VERBOSE(LOG_BLOCKCHAIN)
+                << sub_branch->size() << " blocks validated.";
+        }
+
+        complete(ec);
+        return;
+    }
+
+    // Checks that are dependent upon chain state.
+    // Populate, accept, and connect durations set here.
+    // Deserialization duration and median_time_past set by read.
+    if ((error_code = validate(block)))
+    {
+        complete(error_code);
+        return;
+    }
+
+    // CONSENSUS: TODO: handle invalidity caching of merkle mutations.
+    if (block->header().metadata.error)
+    {
+        // This triggers BLOCK reorganization notifications.
+        // Pop and mark as invalid candidates at and above block.
+        //#################################################################
+        error_code = fast_chain_.invalidate(block, height);
+        //#################################################################
+
+        complete(error_code);
+        return;
+    }
+
+    // TODO: don't candidate block if branch would be reorganizable,
+    // TODO: just move straight to reorganization. This will always
+    // TODO: skip candidizing the last block before reorg.
+
+    // This triggers NO notifications.
+    // Mark candidate block as valid and mark candidate-spent outputs.
+    //#################################################################
+    error_code = fast_chain_.candidate(block);
+    //#################################################################
+
+    if (error_code)
+    {
+        complete(error_code);
+        return;
+    }
+
+    // Add the valid candidate to the candidate sub-branch.
+    sub_branch->push_back(block);
+
+    if (fast_chain_.is_reorganizable())
+    {
+        const auto branch_height = height - (sub_branch->size() - 1u);
+
+        // This triggers BLOCK reorganization notifications.
+        // Reorganize this stronger candidate branch into confirmed chain.
+        //#################################################################
+        error_code = fast_chain_.reorganize(sub_branch, branch_height);
+        //#################################################################
+
+        // Reset the branch for next reorganization.
+        sub_branch->clear();
+    }
+
+    if (error_code)
+    {
+        complete(error_code);
+        return;
+    }
+
+    // Break recursion using concurrent dispatch.
+    dispatch_.concurrent(&organize_block::block_fetcher, this,
+        ++height, block->hash(), sub_branch, complete);
+}
+
+// private
+void organize_block::block_fetcher(size_t height,
+    const hash_digest& parent_hash, block_const_ptr_list_ptr sub_branch,
+    result_handler complete)
+{
+    pool_.fetch(height,
+        std::bind(&organize_block::handle_fetch,
+            this, _1, _2, height, parent_hash, sub_branch, complete));
+}
+
+// Validate sub-sequence.
+//-----------------------------------------------------------------------------
 
 // private
 // Convert validate.accept/connect to a sequential call.
 code organize_block::validate(block_const_ptr block)
 {
-    resume_ = std::promise<code>();
+    resume_ = {};
 
     const result_handler complete =
         std::bind(&organize_block::signal_completion,
@@ -270,9 +323,6 @@ void organize_block::signal_completion(const code& ec)
 {
     resume_.set_value(ec);
 }
-
-// Verify sub-sequence.
-//-----------------------------------------------------------------------------
 
 // private
 void organize_block::handle_accept(const code& ec, block_const_ptr block,
