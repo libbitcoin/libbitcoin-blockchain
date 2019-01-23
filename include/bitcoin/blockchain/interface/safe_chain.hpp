@@ -154,7 +154,7 @@ public:
     virtual void fetch_spend(const system::chain::output_point& outpoint,
         spend_fetch_handler handler) const = 0;
 
-    virtual void fetch_history(const system::short_hash& address_hash,
+    virtual void fetch_history(const system::hash_digest& script_hash,
         size_t limit, size_t from_height,
         history_fetch_handler handler) const = 0;
 
