@@ -1519,7 +1519,7 @@ void block_chain::fetch_spend(const chain::output_point& ,
 // TODO: could return an iterator with an internal tx store reference, which
 // would eliminate problem of excessive memory allocation, however the
 // allocation lock cost may be problematic.
-void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
+void block_chain::fetch_history(const hash_digest& script_hash, size_t limit,
     size_t from_height, history_fetch_handler handler) const
 {
     if (stopped())
@@ -1533,7 +1533,7 @@ void block_chain::fetch_history(const short_hash& address_hash, size_t limit,
     size_t count = 0;
 
     // Result set is ordered most recent tx first (reverse point order in tx).
-    for (auto payment: database_.addresses().get(address_hash))
+    for (auto payment: database_.addresses().get(script_hash))
     {
         if (count++ == limit)
             break;
