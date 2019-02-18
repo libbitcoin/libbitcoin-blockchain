@@ -1532,22 +1532,25 @@ void block_chain::fetch_history(const hash_digest& script_hash, size_t limit,
     chain::payment_record::list payments;
     size_t count = 0;
 
-    // Result set is ordered most recent tx first (reverse point order in tx).
+    // Records are no longer ordered by height (but are reverse order in tx).
     for (auto payment: database_.addresses().get(script_hash))
     {
+        // The limit is not so useful due to lack of ordering.
         if (count++ == limit)
             break;
 
         const auto tx = database_.transactions().get(payment.link());
-        const auto height = tx.height();
+        const auto confirmed = tx.position() != transaction_result::unconfirmed;
+        const auto height = confirmed ? tx.height() :
+            chain::payment_record::unconfirmed;
 
-        if (height < from_height)
-            break;
-
-        // Copy of each payment record above so can be modified here.
-        payment.set_height(height);
-        payment.set_hash(tx.hash());
-        payments.push_back(payment);
+        // Always returns unconfirmed payments.
+        if (!confirmed || height >= from_height)
+        {
+            payment.set_height(height);
+            payment.set_hash(tx.hash());
+            payments.push_back(payment);
+        }
     }
 
     handler(error::success, std::move(payments));
