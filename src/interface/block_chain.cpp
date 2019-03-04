@@ -361,7 +361,7 @@ void block_chain::catalog_block(block_const_ptr block)
 // private
 void block_chain::catalog_transaction(transaction_const_ptr tx)
 {
-    if (!settings_.index_payments || tx->metadata.existed)
+    if (!settings_.index_payments || tx->metadata.cataloged)
         return;
 
     code ec;
@@ -390,7 +390,7 @@ code block_chain::store(transaction_const_ptr tx)
     if ((ec = database_.store(*tx, state->enabled_forks())))
         return ec;
 
-    if (settings_.index_payments && !tx->metadata.existed)
+    if (settings_.index_payments && !tx->metadata.cataloged)
         catalog_transaction(tx);
 
     notify(tx);
