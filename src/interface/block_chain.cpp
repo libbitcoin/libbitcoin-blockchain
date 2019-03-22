@@ -41,8 +41,7 @@ using namespace std::placeholders;
 
 #define NAME "block_chain"
 
-block_chain::block_chain(threadpool& pool,
-    const blockchain::settings& settings,
+block_chain::block_chain(threadpool& pool, const blockchain::settings& settings,
     const database::settings& database_settings,
     const system::settings& bitcoin_settings)
   : database_(database_settings, settings.index_payments, settings.bip158),
@@ -61,7 +60,8 @@ block_chain::block_chain(threadpool& pool,
     transaction_pool_(settings),
 
     // Create dispatcher for priority operations.
-    priority_pool_(thread_ceiling(settings.cores) + 1u, priority(settings.priority)),
+    priority_pool_(
+        thread_ceiling(settings.cores) + 1u, priority(settings.priority)),
     priority_dispatch_(priority_pool_, NAME "_dispatch"),
 
     organize_header_(candidate_mutex_, priority_dispatch_, pool, *this,
@@ -73,8 +73,10 @@ block_chain::block_chain(threadpool& pool,
 
     // Subscriber thread pools are only used for unsubscribe, otherwise invoke.
     block_subscriber_(std::make_shared<block_subscriber>(pool, NAME "_block")),
-    header_subscriber_(std::make_shared<header_subscriber>(pool, NAME "_header")),
-    transaction_subscriber_(std::make_shared<transaction_subscriber>(pool, NAME "_tx"))
+    header_subscriber_(
+        std::make_shared<header_subscriber>(pool, NAME "_header")),
+    transaction_subscriber_(
+        std::make_shared<transaction_subscriber>(pool, NAME "_tx"))
 {
 }
 
@@ -395,7 +397,7 @@ bool block_chain::get_work(uint256_t& out_work, const uint256_t& overcome,
     const auto no_maximum = overcome.is_zero();
 
     for (auto height = top; (height > above_height) &&
-        (no_maximum || out_work <= overcome); --height)
+        (no_maximum || out_work < overcome); --height)
     {
         const auto result = database_.blocks().get(height, candidate);
 
