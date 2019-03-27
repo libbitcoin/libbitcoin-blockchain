@@ -1536,7 +1536,7 @@ void block_chain::fetch_history(const hash_digest& script_hash, size_t limit,
     for (auto payment: database_.addresses().get(script_hash))
     {
         // The limit is not so useful due to lack of ordering.
-        if (count++ == limit)
+        if ((limit != 0) && (count++ == limit))
             break;
 
         const auto tx = database_.transactions().get(payment.link());
