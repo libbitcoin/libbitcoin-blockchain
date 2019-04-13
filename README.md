@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/libbitcoin/libbitcoin-blockchain.svg?branch=master)](https://travis-ci.org/libbitcoin/libbitcoin-blockchain)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcrypto0sy80%2Flibbitcoin-blockchain.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcrypto0sy80%2Flibbitcoin-blockchain?ref=badge_shield)
 
 [![Coverage Status](https://coveralls.io/repos/libbitcoin/libbitcoin-blockchain/badge.svg)](https://coveralls.io/r/libbitcoin/libbitcoin-blockchain)
 
@@ -34,3 +35,7 @@ Instead of building, libbitcoin can be installed from a formula:
 ```sh
 $ brew install libbitcoin-blockchain
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcrypto0sy80%2Flibbitcoin-blockchain.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcrypto0sy80%2Flibbitcoin-blockchain?ref=badge_large)
