@@ -326,8 +326,8 @@ public:
     void fetch_spend(const system::chain::output_point& outpoint,
         spend_fetch_handler handler) const;
 
-    /// fetch outputs, values and spends for a script_hash.
-    void fetch_history(const system::hash_digest& script_hash, size_t limit,
+    /// fetch outputs, values and spends for a payment key.
+    void fetch_history(const system::hash_digest& key, size_t limit,
         size_t from_height, history_fetch_handler handler) const;
 
     /// fetch stealth results.
