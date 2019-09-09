@@ -1533,7 +1533,7 @@ void block_chain::fetch_history(const hash_digest& key, size_t limit,
     size_t count = 0;
 
     // Records are no longer ordered by height (but are reverse order in tx).
-    for (auto payment: database_.addresses().get(key))
+    for (auto payment: database_.payments().get(key))
     {
         // The limit is not so useful due to lack of ordering.
         if ((limit != 0) && (count++ == limit))
