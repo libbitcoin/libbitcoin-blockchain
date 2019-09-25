@@ -279,6 +279,20 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
     database_.transactions().get_pool_metadata(tx, forks);
 }
 
+void block_chain::populate_neutrino_filter(
+    const system::chain::block block) const
+{
+    const auto& header = block.header();
+    auto result = database_.neutrino_filters().get(header.previous_block_hash());
+
+    auto filter = system::neutrino::compute_filter(block);
+    auto filter_header = system::neutrino::compute_filter_header(
+        result.header(), filter);
+
+    header.metadata.filter_data = std::make_shared<system::chain::block_filter>(
+        neutrino_filter_type, filter_header, filter);
+}
+
 bool block_chain::populate_block_output(const chain::output_point& outpoint,
     size_t fork_height) const
 {

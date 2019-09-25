@@ -135,6 +135,9 @@ public:
     void populate_block_transaction(const system::chain::transaction& tx,
         uint32_t forks, size_t fork_height) const;
 
+    /// Populate metadata containing neutrino filter and filter header.
+    void populate_neutrino_filter(const system::chain::block block) const;
+
     /// Populate metadata of the given transaction for pool inclusion.
     void populate_pool_transaction(const system::chain::transaction& tx,
         uint32_t forks) const;

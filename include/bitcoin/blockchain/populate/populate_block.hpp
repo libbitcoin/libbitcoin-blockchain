@@ -35,7 +35,7 @@ class BCB_API populate_block
 {
 public:
     populate_block(system::dispatcher& dispatch, const fast_chain& chain,
-        bool catalog);
+        bool catalog, bool neutrino_filter);
 
     /// Populate validation state for the the next block.
     void populate(system::block_const_ptr block,
@@ -49,9 +49,11 @@ protected:
     void populate_transactions(system::block_const_ptr block,
         size_t fork_height, size_t bucket, size_t buckets, bool populate_txs,
         result_handler handler) const;
+    void populate_neutrino_filter(system::block_const_ptr block) const;
 
 private:
     const bool catalog_;
+    const bool neutrino_filter_;
 };
 
 } // namespace blockchain
