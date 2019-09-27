@@ -94,12 +94,23 @@ public:
     bool get_header(system::chain::header& out_header, size_t& out_height,
         const system::hash_digest& block_hash, bool candidate) const;
 
-    /// Get block filter header and filter by height.
-    bool get_block_filter(system::chain::block_filter& out_filter,
-        size_t height, uint8_t filter_type, bool candidate) const;
+    /// Get block filter by height.
+    bool get_filter(system::data_chunk& out_filter,
+        system::hash_digest& out_hash, size_t height, uint8_t filter_type,
+        bool candidate) const;
 
-    /// Get block filter header and filter by hash.
-    bool get_block_filter(system::chain::block_filter& out_filter,
+    /// Get block filter by hash.
+    bool get_filter(system::data_chunk& out_filter, size_t& out_height,
+        const system::hash_digest& block_hash, uint8_t filter_type,
+        bool candidate) const;
+
+    /// Get block filter header by height.
+    bool get_filter_header(system::hash_digest& out_filter_header,
+        system::hash_digest& out_hash, size_t height, uint8_t filter_type,
+        bool candidate) const;
+
+    /// Get block filter header by hash.
+    bool get_filter_header(system::hash_digest& out_filter_header,
         size_t& out_height, const system::hash_digest& block_hash,
         uint8_t filter_type, bool candidate) const;
 
@@ -281,13 +292,21 @@ public:
     void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const;
 
-    /// fetch block filter by height.
-    void fetch_block_filter(size_t height, uint8_t filter_type,
-        block_filter_fetch_handler handler) const;
+    /// fetch filter by height.
+    void fetch_filter(size_t height, uint8_t filter_type,
+        filter_fetch_handler handler) const;
 
-    /// fetch block filter by hash.
-    void fetch_block_filter(const system::hash_digest& hash,
-        uint8_t filter_type, block_filter_fetch_handler handler) const;
+    /// fetch filter by hash.
+    void fetch_filter(const system::hash_digest& hash,
+        uint8_t filter_type, filter_fetch_handler handler) const;
+
+    /// fetch filter header by height.
+    void fetch_filter_header(size_t height, uint8_t filter_type,
+        filter_header_fetch_handler handler) const;
+
+    /// fetch filter header by hash.
+    void fetch_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, filter_header_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
     void fetch_merkle_block(size_t height,
@@ -421,6 +440,14 @@ protected:
     void notify(size_t fork_height,
         system::block_const_ptr_list_const_ptr incoming,
         system::block_const_ptr_list_const_ptr outgoing);
+
+    bool get_filter_result(database::filter_result& out_filter,
+        system::hash_digest& out_hash, size_t height, uint8_t filter_type,
+        bool candidate) const;
+
+    bool get_filter_result(database::filter_result& out_filter,
+        size_t& out_height, const system::hash_digest& block_hash,
+        uint8_t filter_type, bool candidate) const;
 
 private:
     // Properties.
