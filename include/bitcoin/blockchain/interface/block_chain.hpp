@@ -94,6 +94,15 @@ public:
     bool get_header(system::chain::header& out_header, size_t& out_height,
         const system::hash_digest& block_hash, bool candidate) const;
 
+    /// Get block filter header and filter by height.
+    bool get_block_filter(system::chain::block_filter& out_filter,
+        size_t height, uint8_t filter_type, bool candidate) const;
+
+    /// Get block filter header and filter by hash.
+    bool get_block_filter(system::chain::block_filter& out_filter,
+        size_t& out_height, const system::hash_digest& block_hash,
+        uint8_t filter_type, bool candidate) const;
+
     /// Get hash of the confirmed or candidate block by index height.
     bool get_block_hash(system::hash_digest& out_hash, size_t height,
         bool candidate) const;
@@ -271,6 +280,14 @@ public:
     /// fetch block header by hash.
     void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const;
+
+    /// fetch block filter by height.
+    void fetch_block_filter(size_t height, uint8_t filter_type,
+        block_filter_fetch_handler handler) const;
+
+    /// fetch block filter by hash.
+    void fetch_block_filter(const system::hash_digest& hash,
+        uint8_t filter_type, block_filter_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
     void fetch_merkle_block(size_t height,

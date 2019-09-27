@@ -61,6 +61,15 @@ public:
         size_t& out_height, const system::hash_digest& block_hash,
         bool candidate) const = 0;
 
+    /// Get block filter header and filter by height.
+    virtual bool get_block_filter(system::chain::block_filter& out_filter,
+        size_t height, uint8_t filter_type, bool candidate) const = 0;
+
+    /// Get block filter header and filter by hash.
+    virtual bool get_block_filter(system::chain::block_filter& out_filter,
+        size_t& out_height, const system::hash_digest& block_hash,
+        uint8_t filter_type, bool candidate) const = 0;
+
     /// Get hash of the confirmed or candidate block by index height.
     virtual bool get_block_hash(system::hash_digest& out_hash, size_t height,
         bool candidate) const = 0;
