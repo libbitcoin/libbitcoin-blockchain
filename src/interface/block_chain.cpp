@@ -45,7 +45,7 @@ block_chain::block_chain(threadpool& pool,
     const blockchain::settings& settings,
     const database::settings& database_settings,
     const system::settings& bitcoin_settings)
-  : database_(database_settings, settings.index_payments),
+  : database_(database_settings, settings.index_payments, settings.bip158),
     stopped_(true),
     fork_point_({ null_hash, 0 }),
     settings_(settings),
@@ -152,12 +152,12 @@ bool block_chain::get_filter(system::data_chunk& out_filter,
     if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
         return false;
 
-    auto result = database_.blocks().get(height, candidate);
+    const auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
 
-    auto result_filter = database_.neutrino_filters().get(
+    const auto result_filter = database_.neutrino_filters().get(
         result.neutrino_filter());
 
     if (!result_filter)
@@ -175,7 +175,7 @@ bool block_chain::get_filter(system::data_chunk& out_filter, size_t& out_height,
     if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
         return false;
 
-    auto result = database_.blocks().get(block_hash);
+    const auto result = database_.blocks().get(block_hash);
 
     if (!result)
         return false;
@@ -186,7 +186,7 @@ bool block_chain::get_filter(system::data_chunk& out_filter, size_t& out_height,
     // index. It will not be marked as a candidate until validated as such.
     if (database_.blocks().get(height, candidate))
     {
-        auto result_filter = database_.neutrino_filters().get(
+        const auto result_filter = database_.neutrino_filters().get(
             result.neutrino_filter());
 
         if (!result_filter)
@@ -207,12 +207,12 @@ bool block_chain::get_filter_header(system::hash_digest& out_filter_header,
     if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
         return false;
 
-    auto result = database_.blocks().get(height, candidate);
+    const auto result = database_.blocks().get(height, candidate);
 
     if (!result)
         return false;
 
-    auto result_filter = database_.neutrino_filters().get(
+    const auto result_filter = database_.neutrino_filters().get(
         result.neutrino_filter());
 
     if (!result_filter)
@@ -230,7 +230,7 @@ bool block_chain::get_filter_header(system::hash_digest& out_filter_header,
     if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
         return false;
 
-    auto result = database_.blocks().get(block_hash);
+    const auto result = database_.blocks().get(block_hash);
 
     if (!result)
         return false;
@@ -241,7 +241,7 @@ bool block_chain::get_filter_header(system::hash_digest& out_filter_header,
     // index. It will not be marked as a candidate until validated as such.
     if (database_.blocks().get(height, candidate))
     {
-        auto result_filter = database_.neutrino_filters().get(
+        const auto result_filter = database_.neutrino_filters().get(
             result.neutrino_filter());
 
         if (!result_filter)
@@ -396,12 +396,12 @@ void block_chain::populate_neutrino_filter(
         return;
 
     const auto& header = block.header();
-    auto previous_block = database_.blocks().get(header.previous_block_hash());
-    auto previous_filter = database_.neutrino_filters().get(
+    const auto previous_block = database_.blocks().get(header.previous_block_hash());
+    const auto previous_filter = database_.neutrino_filters().get(
         previous_block.neutrino_filter());
 
-    auto filter = system::neutrino::compute_filter(block);
-    auto filter_header = system::neutrino::compute_filter_header(
+    const auto filter = system::neutrino::compute_filter(block);
+    const auto filter_header = system::neutrino::compute_filter_header(
         previous_filter.header(), filter);
 
     header.metadata.filter_data = std::make_shared<system::chain::block_filter>(
