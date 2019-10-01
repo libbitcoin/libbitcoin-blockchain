@@ -51,7 +51,7 @@ bool create_database(database::settings& out_database)
 
     error_code ec;
     remove_all(out_database.directory, ec);
-    database::data_base database(out_database, false);
+    database::data_base database(out_database, false, false);
     return create_directories(out_database.directory, ec) &&
         database.create(system::settings(mainnet).genesis_block);
 }

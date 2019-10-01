@@ -35,9 +35,10 @@ using namespace bc::system::machine;
 #define NAME "populate_block"
 
 populate_block::populate_block(dispatcher& dispatch, const fast_chain& chain,
-    bool catalog)
+    bool catalog, bool neutrino_filter)
   : populate_base(dispatch, chain),
-    catalog_(catalog)
+    catalog_(catalog),
+    neutrino_filter_(neutrino_filter)
 {
 }
 
@@ -73,6 +74,9 @@ void populate_block::populate(block_const_ptr block,
 
     populate_coinbase(block, fork_height);
     populate_non_coinbase(block, fork_height, true, handler);
+
+    if (neutrino_filter_)
+        populate_neutrino_filter(block);
 }
 
 void populate_block::populate_non_coinbase(block_const_ptr block,
@@ -167,6 +171,12 @@ void populate_block::populate_transactions(block_const_ptr block,
     }
 
     handler(error::success);
+}
+
+void populate_block::populate_neutrino_filter(
+    system::block_const_ptr block) const
+{
+    fast_chain_.populate_neutrino_filter(*block);
 }
 
 } // namespace blockchain

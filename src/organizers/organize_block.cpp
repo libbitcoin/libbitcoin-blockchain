@@ -98,6 +98,9 @@ code organize_block::organize(block_const_ptr block, size_t height)
     // Checks that are independent of chain state (header, block, txs).
     validator_.check(block, height);
 
+    // Compute filter and filter header.
+    // Requires retrieval of previous block's filter header.
+
     // Associate duration set here.
     // Store txs (if missing) and associate them to candidate block.
     // Existing txs cannot suffer a state change as they may also be confirmed.

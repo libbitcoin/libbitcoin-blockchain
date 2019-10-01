@@ -59,6 +59,11 @@ public:
     typedef std::function<void(const system::code&,
         system::header_ptr, size_t)> block_header_fetch_handler;
     typedef std::function<void(const system::code&,
+        system::hash_digest, system::data_chunk, size_t)> filter_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::hash_digest, system::hash_digest, size_t)>
+            filter_header_fetch_handler;
+    typedef std::function<void(const system::code&,
         system::transaction_const_ptr, size_t, size_t)>
             transaction_fetch_handler;
     typedef std::function<void(const system::code&, system::headers_ptr)>
@@ -101,6 +106,18 @@ public:
 
     virtual void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
+
+    virtual void fetch_filter(size_t height, uint8_t filter_type,
+        filter_fetch_handler handler) const = 0;
+
+    virtual void fetch_filter(const system::hash_digest& hash,
+        uint8_t filter_type, filter_fetch_handler handler) const = 0;
+
+    virtual void fetch_filter_header(size_t height, uint8_t filter_type,
+        filter_header_fetch_handler handler) const = 0;
+
+    virtual void fetch_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, filter_header_fetch_handler handler) const = 0;
 
     virtual void fetch_merkle_block(size_t height,
         merkle_block_fetch_handler handler) const = 0;
