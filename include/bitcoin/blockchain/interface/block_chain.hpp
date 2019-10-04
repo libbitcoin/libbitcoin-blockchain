@@ -350,6 +350,15 @@ public:
         const system::hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const;
 
+    /// fetch the filter checkpoint indicated by the type.
+    void fetch_locator_filter_checkpoint(uint8_t filter_type,
+        const system::hash_digest& stop_hash,
+        compact_filter_checkpoint_fetch_handler handler) const;
+
+    void fetch_locator_filter_headers(uint8_t filter_type,
+        const system::chain::block::indexes& heights,
+        compact_filter_headers_fetch_handler handler) const;
+
     /////// fetch an inventory locator relative to the current top and threshold.
     ////void fetch_block_locator(const system::chain::block::indexes& heights,
     ////    block_locator_fetch_handler handler) const;

@@ -1722,6 +1722,140 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     handler(error::success, std::move(message));
 }
 
+void block_chain::fetch_locator_filter_checkpoint(uint8_t filter_type,
+    const system::hash_digest& stop_hash,
+    compact_filter_checkpoint_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
+        return;
+    }
+
+    if (filter_type != neutrino_filter_type)
+    {
+        handler(error::not_implemented, nullptr);
+        return;
+    }
+
+    // TODO: replace with a maintained collection of checkpoint headers
+    // which are updated based upon reorg/longest chain extension reducing
+    // database calls to a lookup of the stop_hash to determine height and
+    // final filter header.
+    // Alternately, should this work be done by a caller?
+    size_t stop_height = 0;
+    hash_digest stop_filter_header = null_hash;
+
+    if (stop_hash != null_hash)
+    {
+        const auto result = database_.blocks().get(stop_hash);
+
+        if (!result)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        stop_height = result.height();
+
+        const auto result_filter = database_.neutrino_filters().get(
+            result.neutrino_filter());
+
+        if (!result_filter)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        stop_filter_header = result_filter.header();
+    }
+
+    const auto interval = settings_.compact_filter_checkpoint_interval;
+    const size_t remainder = stop_height % interval;
+    const size_t count = (remainder > 0) ? (stop_height / interval) + 1 :
+        (stop_height / interval);
+
+    auto message = std::make_shared<compact_filter_checkpoint>();
+    message->set_filter_type(filter_type);
+    message->set_stop_hash(stop_hash);
+    message->filter_headers().reserve(count);
+
+    if (count > 0)
+        message->filter_headers().push_back(stop_filter_header);
+
+    for (size_t i = 1; i < count; ++i)
+    {
+        const auto height = (count - i) * interval;
+        const auto result = database_.blocks().get(height, false);
+
+        if (!result)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        const auto result_filter = database_.neutrino_filters().get(
+            result.neutrino_filter());
+
+        if (!result_filter)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        message->filter_headers().push_back(result_filter.header());
+    }
+
+    std::reverse(std::begin(message->filter_headers()),
+        std::end(message->filter_headers()));
+
+     handler(error::success, std::move(message));
+}
+
+void block_chain::fetch_locator_filter_headers(uint8_t filter_type,
+    const system::chain::block::indexes& heights,
+    compact_filter_headers_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
+        return;
+    }
+
+    if (filter_type != neutrino_filter_type)
+    {
+        handler(error::not_implemented, nullptr);
+        return;
+    }
+
+    auto headers = std::make_shared<hash_list>();
+    headers->reserve(heights.size());
+
+    for (const auto height : heights)
+    {
+        const auto result = database_.blocks().get(height, false);
+
+        if (!result)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        const auto result_filter = database_.neutrino_filters().get(
+            result.neutrino_filter());
+
+        if (!result_filter)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        headers->push_back(result_filter.header());
+    }
+
+     handler(error::success, std::move(headers));
+}
+
 ////// This may generally execute 29+ queries.
 ////// There may be a reorg during this query (odd but ok behavior).
 ////// TODO: generate against any header branch using a header pool branch.

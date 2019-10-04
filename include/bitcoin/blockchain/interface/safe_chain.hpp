@@ -74,6 +74,12 @@ public:
         header_locator_fetch_handler;
     typedef std::function<void(const system::code&, system::inventory_ptr)>
         inventory_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::compact_filter_checkpoint_ptr)>
+            compact_filter_checkpoint_fetch_handler;
+    typedef std::function<void(const system::code&,
+        std::shared_ptr<system::hash_list>)>
+            compact_filter_headers_fetch_handler;
 
     /// Subscription handlers.
     typedef std::function<bool(system::code, size_t,
@@ -154,6 +160,14 @@ public:
         system::get_headers_const_ptr locator,
         const system::hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_filter_checkpoint(uint8_t filter_type,
+        const system::hash_digest& stop_hash,
+        compact_filter_checkpoint_fetch_handler handler) const = 0;
+
+    virtual void fetch_locator_filter_headers(uint8_t filter_type,
+        const system::chain::block::indexes& heights,
+        compact_filter_headers_fetch_handler handler) const = 0;
 
     ////// TODO: must be branch-relative.
     ////virtual void fetch_block_locator(const chain::block::indexes& heights,
