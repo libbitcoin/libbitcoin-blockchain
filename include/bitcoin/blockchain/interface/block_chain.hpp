@@ -296,25 +296,25 @@ public:
         block_header_fetch_handler handler) const;
 
     /// fetch filter by height.
-    void fetch_compact_filter(size_t height, uint8_t filter_type,
-        compact_filter_fetch_handler handler) const;
+    void fetch_filter(size_t height, uint8_t filter_type,
+        filter_fetch_handler handler) const;
 
     /// fetch filter by hash.
-    void fetch_compact_filter(const system::hash_digest& hash,
-        uint8_t filter_type, compact_filter_fetch_handler handler) const;
+    void fetch_filter(const system::hash_digest& hash,
+        uint8_t filter_type, filter_fetch_handler handler) const;
 
     /// fetch filter header by height.
-    void fetch_compact_filter_header(size_t height, uint8_t filter_type,
-        compact_filter_header_fetch_handler handler) const;
+    void fetch_filter_header(size_t height, uint8_t filter_type,
+        filter_header_fetch_handler handler) const;
 
     /// fetch filter header by hash.
-    void fetch_compact_filter_header(const system::hash_digest& hash,
-        uint8_t filter_type, compact_filter_header_fetch_handler handler) const;
+    void fetch_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, filter_header_fetch_handler handler) const;
 
     /// fetch the filter checkpoint indicated by the type.
-    void fetch_compact_filter_checkpoint(uint8_t filter_type,
+    void fetch_filter_checkpoint(uint8_t filter_type,
         const system::hash_digest& stop_hash,
-        compact_filter_checkpoint_fetch_handler handler) const;
+        filter_checkpoint_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
     void fetch_merkle_block(size_t height,

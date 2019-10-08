@@ -60,13 +60,13 @@ public:
         system::header_ptr, size_t)> block_header_fetch_handler;
     typedef std::function<void(const system::code&,
         system::hash_digest, system::data_chunk, size_t)>
-            compact_filter_fetch_handler;
+            filter_fetch_handler;
     typedef std::function<void(const system::code&,
         system::hash_digest, system::hash_digest, size_t)>
-            compact_filter_header_fetch_handler;
+            filter_header_fetch_handler;
     typedef std::function<void(const system::code&,
         system::compact_filter_checkpoint_ptr)>
-            compact_filter_checkpoint_fetch_handler;
+            filter_checkpoint_fetch_handler;
     typedef std::function<void(const system::code&,
         system::transaction_const_ptr, size_t, size_t)>
             transaction_fetch_handler;
@@ -111,21 +111,21 @@ public:
     virtual void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter(size_t height, uint8_t filter_type,
-        compact_filter_fetch_handler handler) const = 0;
+    virtual void fetch_filter(size_t height, uint8_t filter_type,
+        filter_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter(const system::hash_digest& hash,
-        uint8_t filter_type, compact_filter_fetch_handler handler) const = 0;
+    virtual void fetch_filter(const system::hash_digest& hash,
+        uint8_t filter_type, filter_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter_header(size_t height, uint8_t filter_type,
-        compact_filter_header_fetch_handler handler) const = 0;
+    virtual void fetch_filter_header(size_t height, uint8_t filter_type,
+        filter_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter_header(const system::hash_digest& hash,
-        uint8_t filter_type, compact_filter_header_fetch_handler handler) const = 0;
+    virtual void fetch_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, filter_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter_checkpoint(uint8_t filter_type,
+    virtual void fetch_filter_checkpoint(uint8_t filter_type,
         const system::hash_digest& stop_hash,
-        compact_filter_checkpoint_fetch_handler handler) const = 0;
+        filter_checkpoint_fetch_handler handler) const = 0;
 
     virtual void fetch_merkle_block(size_t height,
         merkle_block_fetch_handler handler) const = 0;

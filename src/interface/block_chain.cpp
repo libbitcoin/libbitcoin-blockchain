@@ -1304,8 +1304,8 @@ void block_chain::fetch_block_header(const hash_digest& hash,
     handler(error::success, message, result.height());
 }
 
-void block_chain::fetch_compact_filter(size_t height, uint8_t filter_type,
-    compact_filter_fetch_handler handler) const
+void block_chain::fetch_filter(size_t height, uint8_t filter_type,
+    filter_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1347,8 +1347,8 @@ void block_chain::fetch_compact_filter(size_t height, uint8_t filter_type,
         result.height());
 }
 
-void block_chain::fetch_compact_filter(const hash_digest& hash,
-    uint8_t filter_type, compact_filter_fetch_handler handler) const
+void block_chain::fetch_filter(const hash_digest& hash,
+    uint8_t filter_type, filter_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1389,8 +1389,8 @@ void block_chain::fetch_compact_filter(const hash_digest& hash,
         result.height());
 }
 
-void block_chain::fetch_compact_filter_header(size_t height,
-    uint8_t filter_type, compact_filter_header_fetch_handler handler) const
+void block_chain::fetch_filter_header(size_t height,
+    uint8_t filter_type, filter_header_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1432,8 +1432,8 @@ void block_chain::fetch_compact_filter_header(size_t height,
         result.height());
 }
 
-void block_chain::fetch_compact_filter_header(const hash_digest& hash,
-    uint8_t filter_type, compact_filter_header_fetch_handler handler) const
+void block_chain::fetch_filter_header(const hash_digest& hash,
+    uint8_t filter_type, filter_header_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1474,9 +1474,9 @@ void block_chain::fetch_compact_filter_header(const hash_digest& hash,
         result.height());
 }
 
-void block_chain::fetch_compact_filter_checkpoint(uint8_t filter_type,
+void block_chain::fetch_filter_checkpoint(uint8_t filter_type,
     const system::hash_digest& stop_hash,
-    compact_filter_checkpoint_fetch_handler handler) const
+    filter_checkpoint_fetch_handler handler) const
 {
     if (stopped())
     {
