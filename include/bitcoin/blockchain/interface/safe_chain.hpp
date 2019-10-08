@@ -59,10 +59,14 @@ public:
     typedef std::function<void(const system::code&,
         system::header_ptr, size_t)> block_header_fetch_handler;
     typedef std::function<void(const system::code&,
-        system::hash_digest, system::data_chunk, size_t)> filter_fetch_handler;
+        system::hash_digest, system::data_chunk, size_t)>
+            compact_filter_fetch_handler;
     typedef std::function<void(const system::code&,
         system::hash_digest, system::hash_digest, size_t)>
-            filter_header_fetch_handler;
+            compact_filter_header_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::compact_filter_checkpoint_ptr)>
+            compact_filter_checkpoint_fetch_handler;
     typedef std::function<void(const system::code&,
         system::transaction_const_ptr, size_t, size_t)>
             transaction_fetch_handler;
@@ -74,12 +78,6 @@ public:
         header_locator_fetch_handler;
     typedef std::function<void(const system::code&, system::inventory_ptr)>
         inventory_fetch_handler;
-    typedef std::function<void(const system::code&,
-        system::compact_filter_checkpoint_ptr)>
-            compact_filter_checkpoint_fetch_handler;
-    typedef std::function<void(const system::code&,
-        std::shared_ptr<system::hash_list>)>
-            compact_filter_headers_fetch_handler;
 
     /// Subscription handlers.
     typedef std::function<bool(system::code, size_t,
@@ -113,17 +111,21 @@ public:
     virtual void fetch_block_header(const system::hash_digest& hash,
         block_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_filter(size_t height, uint8_t filter_type,
-        filter_fetch_handler handler) const = 0;
+    virtual void fetch_compact_filter(size_t height, uint8_t filter_type,
+        compact_filter_fetch_handler handler) const = 0;
 
-    virtual void fetch_filter(const system::hash_digest& hash,
-        uint8_t filter_type, filter_fetch_handler handler) const = 0;
+    virtual void fetch_compact_filter(const system::hash_digest& hash,
+        uint8_t filter_type, compact_filter_fetch_handler handler) const = 0;
 
-    virtual void fetch_filter_header(size_t height, uint8_t filter_type,
-        filter_header_fetch_handler handler) const = 0;
+    virtual void fetch_compact_filter_header(size_t height, uint8_t filter_type,
+        compact_filter_header_fetch_handler handler) const = 0;
 
-    virtual void fetch_filter_header(const system::hash_digest& hash,
-        uint8_t filter_type, filter_header_fetch_handler handler) const = 0;
+    virtual void fetch_compact_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, compact_filter_header_fetch_handler handler) const = 0;
+
+    virtual void fetch_compact_filter_checkpoint(uint8_t filter_type,
+        const system::hash_digest& stop_hash,
+        compact_filter_checkpoint_fetch_handler handler) const = 0;
 
     virtual void fetch_merkle_block(size_t height,
         merkle_block_fetch_handler handler) const = 0;
@@ -160,14 +162,6 @@ public:
         system::get_headers_const_ptr locator,
         const system::hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_filter_checkpoint(uint8_t filter_type,
-        const system::hash_digest& stop_hash,
-        compact_filter_checkpoint_fetch_handler handler) const = 0;
-
-    virtual void fetch_locator_filter_headers(uint8_t filter_type,
-        const system::chain::block::indexes& heights,
-        compact_filter_headers_fetch_handler handler) const = 0;
 
     ////// TODO: must be branch-relative.
     ////virtual void fetch_block_locator(const chain::block::indexes& heights,

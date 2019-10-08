@@ -238,6 +238,9 @@ public:
     /// The candidate chain has greater valid work than the confirmed chain.
     bool is_reorganizable() const;
 
+    // The confirmed chain neutrino filter checkpoints at configured interval.
+    system::hash_list neutrino_filter_checkpoints() const;
+
     // Chain State
     // ------------------------------------------------------------------------
 
@@ -293,20 +296,25 @@ public:
         block_header_fetch_handler handler) const;
 
     /// fetch filter by height.
-    void fetch_filter(size_t height, uint8_t filter_type,
-        filter_fetch_handler handler) const;
+    void fetch_compact_filter(size_t height, uint8_t filter_type,
+        compact_filter_fetch_handler handler) const;
 
     /// fetch filter by hash.
-    void fetch_filter(const system::hash_digest& hash,
-        uint8_t filter_type, filter_fetch_handler handler) const;
+    void fetch_compact_filter(const system::hash_digest& hash,
+        uint8_t filter_type, compact_filter_fetch_handler handler) const;
 
     /// fetch filter header by height.
-    void fetch_filter_header(size_t height, uint8_t filter_type,
-        filter_header_fetch_handler handler) const;
+    void fetch_compact_filter_header(size_t height, uint8_t filter_type,
+        compact_filter_header_fetch_handler handler) const;
 
     /// fetch filter header by hash.
-    void fetch_filter_header(const system::hash_digest& hash,
-        uint8_t filter_type, filter_header_fetch_handler handler) const;
+    void fetch_compact_filter_header(const system::hash_digest& hash,
+        uint8_t filter_type, compact_filter_header_fetch_handler handler) const;
+
+    /// fetch the filter checkpoint indicated by the type.
+    void fetch_compact_filter_checkpoint(uint8_t filter_type,
+        const system::hash_digest& stop_hash,
+        compact_filter_checkpoint_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
     void fetch_merkle_block(size_t height,
@@ -349,15 +357,6 @@ public:
     void fetch_locator_block_headers(system::get_headers_const_ptr locator,
         const system::hash_digest& threshold, size_t limit,
         locator_block_headers_fetch_handler handler) const;
-
-    /// fetch the filter checkpoint indicated by the type.
-    void fetch_locator_filter_checkpoint(uint8_t filter_type,
-        const system::hash_digest& stop_hash,
-        compact_filter_checkpoint_fetch_handler handler) const;
-
-    void fetch_locator_filter_headers(uint8_t filter_type,
-        const system::chain::block::indexes& heights,
-        compact_filter_headers_fetch_handler handler) const;
 
     /////// fetch an inventory locator relative to the current top and threshold.
     ////void fetch_block_locator(const system::chain::block::indexes& heights,
@@ -470,12 +469,18 @@ private:
     bool set_top_valid_candidate_state();
     bool set_next_confirmed_state();
 
+    bool set_neutrino_filter_checkpoints();
+    bool update_neutrino_filter_checkpoints(size_t fork_height,
+        system::block_const_ptr_list_const_ptr incoming,
+        system::block_const_ptr_list_const_ptr outgoing);
+
     void set_fork_point(const system::config::checkpoint& fork);
     void set_candidate_work(const system::uint256_t& work_above_fork);
     void set_confirmed_work(const system::uint256_t& work_above_fork);
     void set_top_candidate_state(system::chain::chain_state::ptr top);
     void set_top_valid_candidate_state(system::chain::chain_state::ptr top);
     void set_next_confirmed_state(system::chain::chain_state::ptr top);
+    void set_neutrino_filter_checkpoints(system::hash_list&& checkpoints);
 
     // Utilities.
     void catalog_block(system::block_const_ptr block);
@@ -499,6 +504,7 @@ private:
     system::atomic<system::chain::chain_state::ptr> top_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> top_valid_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> next_confirmed_state_;
+    system::atomic<system::hash_list> neutrino_filter_checkpoints_;
 
     const settings& settings_;
     const system::settings& bitcoin_settings_;

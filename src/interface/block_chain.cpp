@@ -725,6 +725,9 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     set_confirmed_work(0);
     set_next_confirmed_state(top_state);
 
+    if (!update_neutrino_filter_checkpoints(fork.height(), incoming, outgoing))
+        return error::operation_failed;
+
     // This does not require chain state.
     notify(fork.height(), incoming, outgoing);
 
@@ -921,6 +924,11 @@ bool block_chain::is_reorganizable() const
     return candidate_work() > confirmed_work();
 }
 
+hash_list block_chain::neutrino_filter_checkpoints() const
+{
+    return neutrino_filter_checkpoints_.load();
+}
+
 // Chain State
 // ----------------------------------------------------------------------------
 
@@ -953,6 +961,103 @@ chain::chain_state::ptr block_chain::promote_state(
     return promote_state(*branch->top(), parent->metadata.state);
 }
 
+void block_chain::set_neutrino_filter_checkpoints(hash_list&& checkpoints)
+{
+    neutrino_filter_checkpoints_.store(std::forward<hash_list>(checkpoints));
+}
+
+bool block_chain::set_neutrino_filter_checkpoints()
+{
+    if (!settings_.bip158)
+        return true;
+
+    const auto state = next_confirmed_state();
+    const auto interval = settings_.compact_filter_checkpoint_interval;
+    const auto height = floor_subtract<size_t>(state->height(), 1);
+    const auto count = height / interval;
+
+    hash_list checkpoints;
+    checkpoints.reserve(count);
+
+    for (size_t i = 0; i < height; i = ceiling_add(i, interval))
+    {
+        const auto result_block = database_.blocks().get(i, false);
+
+        if (!result_block)
+            return false;
+
+        const auto result_filter = database_.neutrino_filters().get(
+            result_block.neutrino_filter());
+
+        if (!result_filter)
+            return false;
+
+        checkpoints.push_back(result_filter.header());
+    }
+
+    set_neutrino_filter_checkpoints(std::move(checkpoints));
+    return true;
+}
+
+bool block_chain::update_neutrino_filter_checkpoints(size_t fork_height,
+    block_const_ptr_list_const_ptr incoming,
+    block_const_ptr_list_const_ptr outgoing)
+{
+    if (!settings_.bip158)
+        return true;
+
+    auto detected_change = false;
+    const auto interval = settings_.compact_filter_checkpoint_interval;
+    auto checkpoints = neutrino_filter_checkpoints();
+
+    if (outgoing->size() > 0)
+    {
+        auto previous_height = ceiling_add(fork_height, outgoing->size());
+        auto previous_checkpoint_count = (previous_height / interval);
+        auto fork_height_checkpoint_count = (fork_height / interval);
+
+        if (previous_checkpoint_count > fork_height_checkpoint_count)
+        {
+            detected_change = true;
+            checkpoints.resize(floor_subtract(checkpoints.size(),
+                (previous_checkpoint_count - fork_height_checkpoint_count)));
+        }
+    }
+
+    if (incoming->size() > 0)
+    {
+        auto height = ceiling_add(fork_height, incoming->size());
+        auto checkpoint_count = (height / interval);
+
+        if (checkpoints.size() < checkpoint_count)
+        {
+            detected_change = true;
+            auto last_height = checkpoints.size() * interval;
+
+            for (auto i = last_height; i < height; i = ceiling_add(i, interval))
+            {
+                const auto result_block = database_.blocks().get(i, false);
+
+                if (!result_block)
+                    return false;
+
+                const auto result_filter = database_.neutrino_filters().get(
+                    result_block.neutrino_filter());
+
+                if (!result_filter)
+                    return false;
+
+                checkpoints.push_back(result_filter.header());
+            }
+        }
+    }
+
+    if (detected_change)
+        set_neutrino_filter_checkpoints(std::move(checkpoints));
+
+    return true;
+}
+
 // ============================================================================
 // SAFE CHAIN
 // ============================================================================
@@ -977,6 +1082,7 @@ bool block_chain::start()
         && set_next_confirmed_state()
         && set_candidate_work()
         && set_confirmed_work()
+        && set_neutrino_filter_checkpoints()
         && organize_block_.start()
         && organize_header_.start()
         && organize_transaction_.start();
@@ -1198,8 +1304,8 @@ void block_chain::fetch_block_header(const hash_digest& hash,
     handler(error::success, message, result.height());
 }
 
-void block_chain::fetch_filter(size_t height, uint8_t filter_type,
-    filter_fetch_handler handler) const
+void block_chain::fetch_compact_filter(size_t height, uint8_t filter_type,
+    compact_filter_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1241,8 +1347,8 @@ void block_chain::fetch_filter(size_t height, uint8_t filter_type,
         result.height());
 }
 
-void block_chain::fetch_filter(const hash_digest& hash,
-    uint8_t filter_type, filter_fetch_handler handler) const
+void block_chain::fetch_compact_filter(const hash_digest& hash,
+    uint8_t filter_type, compact_filter_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1283,8 +1389,8 @@ void block_chain::fetch_filter(const hash_digest& hash,
         result.height());
 }
 
-void block_chain::fetch_filter_header(size_t height, uint8_t filter_type,
-    filter_header_fetch_handler handler) const
+void block_chain::fetch_compact_filter_header(size_t height,
+    uint8_t filter_type, compact_filter_header_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1326,8 +1432,8 @@ void block_chain::fetch_filter_header(size_t height, uint8_t filter_type,
         result.height());
 }
 
-void block_chain::fetch_filter_header(const hash_digest& hash,
-    uint8_t filter_type, filter_header_fetch_handler handler) const
+void block_chain::fetch_compact_filter_header(const hash_digest& hash,
+    uint8_t filter_type, compact_filter_header_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1366,6 +1472,63 @@ void block_chain::fetch_filter_header(const hash_digest& hash,
 
     handler(error::success, result.hash(), result_filter.header(),
         result.height());
+}
+
+void block_chain::fetch_compact_filter_checkpoint(uint8_t filter_type,
+    const system::hash_digest& stop_hash,
+    compact_filter_checkpoint_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
+        return;
+    }
+
+    if (filter_type != neutrino_filter_type)
+    {
+        handler(error::not_implemented, nullptr);
+        return;
+    }
+
+    auto headers = neutrino_filter_checkpoints();
+    size_t stop_height = 0;
+    hash_digest stop_filter_header = null_hash;
+
+    if (stop_hash != null_hash)
+    {
+        const auto result = database_.blocks().get(stop_hash);
+
+        if (!result)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        stop_height = result.height();
+
+        const auto result_filter = database_.neutrino_filters().get(
+            result.neutrino_filter());
+
+        if (!result_filter)
+        {
+            handler(error::stale_chain, nullptr);
+            return;
+        }
+
+        stop_filter_header = result_filter.header();
+    }
+
+    const auto interval = settings_.compact_filter_checkpoint_interval;
+    const size_t remainder = stop_height % interval;
+
+    if (remainder > 0)
+        headers.push_back(stop_filter_header);
+
+    auto duplicate_stop_hash = stop_hash;
+    auto message = std::make_shared<compact_filter_checkpoint>(
+        filter_type, std::move(duplicate_stop_hash), std::move(headers));
+
+     handler(error::success, std::move(message));
 }
 
 void block_chain::fetch_merkle_block(size_t height,
@@ -1720,140 +1883,6 @@ void block_chain::fetch_locator_block_headers(get_headers_const_ptr locator,
     }
 
     handler(error::success, std::move(message));
-}
-
-void block_chain::fetch_locator_filter_checkpoint(uint8_t filter_type,
-    const system::hash_digest& stop_hash,
-    compact_filter_checkpoint_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr);
-        return;
-    }
-
-    if (filter_type != neutrino_filter_type)
-    {
-        handler(error::not_implemented, nullptr);
-        return;
-    }
-
-    // TODO: replace with a maintained collection of checkpoint headers
-    // which are updated based upon reorg/longest chain extension reducing
-    // database calls to a lookup of the stop_hash to determine height and
-    // final filter header.
-    // Alternately, should this work be done by a caller?
-    size_t stop_height = 0;
-    hash_digest stop_filter_header = null_hash;
-
-    if (stop_hash != null_hash)
-    {
-        const auto result = database_.blocks().get(stop_hash);
-
-        if (!result)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        stop_height = result.height();
-
-        const auto result_filter = database_.neutrino_filters().get(
-            result.neutrino_filter());
-
-        if (!result_filter)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        stop_filter_header = result_filter.header();
-    }
-
-    const auto interval = settings_.compact_filter_checkpoint_interval;
-    const size_t remainder = stop_height % interval;
-    const size_t count = (remainder > 0) ? (stop_height / interval) + 1 :
-        (stop_height / interval);
-
-    auto message = std::make_shared<compact_filter_checkpoint>();
-    message->set_filter_type(filter_type);
-    message->set_stop_hash(stop_hash);
-    message->filter_headers().reserve(count);
-
-    if (count > 0)
-        message->filter_headers().push_back(stop_filter_header);
-
-    for (size_t i = 1; i < count; ++i)
-    {
-        const auto height = (count - i) * interval;
-        const auto result = database_.blocks().get(height, false);
-
-        if (!result)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        const auto result_filter = database_.neutrino_filters().get(
-            result.neutrino_filter());
-
-        if (!result_filter)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        message->filter_headers().push_back(result_filter.header());
-    }
-
-    std::reverse(std::begin(message->filter_headers()),
-        std::end(message->filter_headers()));
-
-     handler(error::success, std::move(message));
-}
-
-void block_chain::fetch_locator_filter_headers(uint8_t filter_type,
-    const system::chain::block::indexes& heights,
-    compact_filter_headers_fetch_handler handler) const
-{
-    if (stopped())
-    {
-        handler(error::service_stopped, nullptr);
-        return;
-    }
-
-    if (filter_type != neutrino_filter_type)
-    {
-        handler(error::not_implemented, nullptr);
-        return;
-    }
-
-    auto headers = std::make_shared<hash_list>();
-    headers->reserve(heights.size());
-
-    for (const auto height : heights)
-    {
-        const auto result = database_.blocks().get(height, false);
-
-        if (!result)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        const auto result_filter = database_.neutrino_filters().get(
-            result.neutrino_filter());
-
-        if (!result_filter)
-        {
-            handler(error::stale_chain, nullptr);
-            return;
-        }
-
-        headers->push_back(result_filter.header());
-    }
-
-     handler(error::success, std::move(headers));
 }
 
 ////// This may generally execute 29+ queries.
