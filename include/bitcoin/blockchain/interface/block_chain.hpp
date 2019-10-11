@@ -95,22 +95,22 @@ public:
         const system::hash_digest& block_hash, bool candidate) const;
 
     /// Get block filter by height.
-    bool get_filter(system::data_chunk& out_filter,
+    bool get_compact_filter(system::data_chunk& out_filter,
         system::hash_digest& out_hash, size_t height, uint8_t filter_type,
         bool candidate) const;
 
     /// Get block filter by hash.
-    bool get_filter(system::data_chunk& out_filter, size_t& out_height,
+    bool get_compact_filter(system::data_chunk& out_filter, size_t& out_height,
         const system::hash_digest& block_hash, uint8_t filter_type,
         bool candidate) const;
 
     /// Get block filter header by height.
-    bool get_filter_header(system::hash_digest& out_filter_header,
+    bool get_compact_filter_header(system::hash_digest& out_filter_header,
         system::hash_digest& out_hash, size_t height, uint8_t filter_type,
         bool candidate) const;
 
     /// Get block filter header by hash.
-    bool get_filter_header(system::hash_digest& out_filter_header,
+    bool get_compact_filter_header(system::hash_digest& out_filter_header,
         size_t& out_height, const system::hash_digest& block_hash,
         uint8_t filter_type, bool candidate) const;
 
@@ -296,25 +296,32 @@ public:
         block_header_fetch_handler handler) const;
 
     /// fetch filter by height.
-    void fetch_filter(size_t height, uint8_t filter_type,
-        filter_fetch_handler handler) const;
+    void fetch_compact_filter(uint8_t filter_type, size_t height,
+        compact_filter_fetch_handler handler) const;
 
     /// fetch filter by hash.
-    void fetch_filter(const system::hash_digest& hash,
-        uint8_t filter_type, filter_fetch_handler handler) const;
+    void fetch_compact_filter(uint8_t filter_type,
+        const system::hash_digest& hash,
+        compact_filter_fetch_handler handler) const;
 
     /// fetch filter header by height.
-    void fetch_filter_header(size_t height, uint8_t filter_type,
-        filter_header_fetch_handler handler) const;
+    void fetch_compact_filter_header(uint8_t filter_type, size_t height,
+        compact_filter_header_fetch_handler handler) const;
 
     /// fetch filter header by hash.
-    void fetch_filter_header(const system::hash_digest& hash,
-        uint8_t filter_type, filter_header_fetch_handler handler) const;
+    void fetch_compact_filter_header(uint8_t filter_type,
+        const system::hash_digest& hash,
+        compact_filter_header_fetch_handler handler) const;
+
+    /// fetch filter headers
+    void fetch_compact_filter_headers(uint8_t filter_type,
+        uint32_t start_height, const system::hash_digest& stop_hash,
+        compact_filter_headers_fetch_handler handler) const;
 
     /// fetch the filter checkpoint indicated by the type.
-    void fetch_filter_checkpoint(uint8_t filter_type,
+    void fetch_compact_filter_checkpoint(uint8_t filter_type,
         const system::hash_digest& stop_hash,
-        filter_checkpoint_fetch_handler handler) const;
+        compact_filter_checkpoint_fetch_handler handler) const;
 
     /// fetch hashes of transactions for a block, by block height.
     void fetch_merkle_block(size_t height,

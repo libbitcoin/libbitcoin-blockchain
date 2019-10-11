@@ -62,24 +62,25 @@ public:
         bool candidate) const = 0;
 
     /// Get block filter by height.
-    virtual bool get_filter(system::data_chunk& out_filter,
+    virtual bool get_compact_filter(system::data_chunk& out_filter,
         system::hash_digest& out_hash, size_t height, uint8_t filter_type,
         bool candidate) const = 0;
 
     /// Get block filter by hash.
-    virtual bool get_filter(system::data_chunk& out_filter, size_t& out_height,
-        const system::hash_digest& block_hash, uint8_t filter_type,
-        bool candidate) const = 0;
-
-    /// Get block filter header by height.
-    virtual bool get_filter_header(system::hash_digest& out_filter_header,
-        system::hash_digest& out_hash, size_t height, uint8_t filter_type,
-        bool candidate) const = 0;
-
-    /// Get block filter header by hash.
-    virtual bool get_filter_header(system::hash_digest& out_filter_header,
+    virtual bool get_compact_filter(system::data_chunk& out_filter,
         size_t& out_height, const system::hash_digest& block_hash,
         uint8_t filter_type, bool candidate) const = 0;
+
+    /// Get block filter header by height.
+    virtual bool get_compact_filter_header(
+        system::hash_digest& out_filter_header, system::hash_digest& out_hash,
+        size_t height, uint8_t filter_type, bool candidate) const = 0;
+
+    /// Get block filter header by hash.
+    virtual bool get_compact_filter_header(
+        system::hash_digest& out_filter_header, size_t& out_height,
+        const system::hash_digest& block_hash, uint8_t filter_type,
+        bool candidate) const = 0;
 
     /// Get hash of the confirmed or candidate block by index height.
     virtual bool get_block_hash(system::hash_digest& out_hash, size_t height,

@@ -51,7 +51,6 @@ settings::settings()
     bip143(true),
     bip147(true),
     bip158(false),
-    compact_filter_checkpoint_interval(1000),
     time_warp_patch(false),
     retarget_overflow_patch(false),
     scrypt_proof_of_work(false)

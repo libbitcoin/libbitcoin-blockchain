@@ -68,9 +68,6 @@ public:
     bool retarget_overflow_patch;
     bool scrypt_proof_of_work;
 
-    //
-    size_t compact_filter_checkpoint_interval;
-
     // Mining/Template inputs
     system::config::script coinbase_input;
     system::config::script coinbase_output;
