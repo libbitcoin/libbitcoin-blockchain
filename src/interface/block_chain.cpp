@@ -1316,7 +1316,7 @@ void block_chain::fetch_compact_filter(uint8_t filter_type, size_t height,
 
     if (!settings_.bip158)
     {
-        handler(error::unknown, null_hash, {}, 0);
+        handler(error::configuration_disabled, null_hash, {}, 0);
         return;
     }
 
@@ -1359,7 +1359,7 @@ void block_chain::fetch_compact_filter(uint8_t filter_type,
 
     if (!settings_.bip158)
     {
-        handler(error::unknown, null_hash, {}, 0);
+        handler(error::configuration_disabled, null_hash, {}, 0);
         return;
     }
 
@@ -1401,7 +1401,7 @@ void block_chain::fetch_compact_filter_header(uint8_t filter_type,
 
     if (!settings_.bip158)
     {
-        handler(error::unknown, null_hash, null_hash, 0);
+        handler(error::configuration_disabled, null_hash, null_hash, 0);
         return;
     }
 
@@ -1444,7 +1444,7 @@ void block_chain::fetch_compact_filter_header(uint8_t filter_type,
 
     if (!settings_.bip158)
     {
-        handler(error::unknown, null_hash, null_hash, 0);
+        handler(error::configuration_disabled, null_hash, null_hash, 0);
         return;
     }
 
