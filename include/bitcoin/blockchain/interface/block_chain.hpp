@@ -464,6 +464,40 @@ protected:
         size_t& out_height, const system::hash_digest& block_hash,
         uint8_t filter_type, bool candidate) const;
 
+    // Neutrino filter type handlers
+    bool get_neutrino_filter(system::data_chunk& out_filter,
+        system::hash_digest& out_hash, size_t height, bool candidate) const;
+
+    bool get_neutrino_filter(system::data_chunk& out_filter, size_t& out_height,
+        const system::hash_digest& block_hash, bool candidate) const;
+
+    bool get_neutrino_filter_header(system::hash_digest& out_filter_header,
+        system::hash_digest& out_hash, size_t height, bool candidate) const;
+
+    bool get_neutrino_filter_header(system::hash_digest& out_filter_header,
+        size_t& out_height, const system::hash_digest& block_hash,
+        bool candidate) const;
+
+    void fetch_neutrino_filter(size_t height,
+        compact_filter_fetch_handler handler) const;
+
+    void fetch_neutrino_filter(const system::hash_digest& hash,
+        compact_filter_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_header(size_t height,
+        compact_filter_header_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_header(const system::hash_digest& hash,
+        compact_filter_header_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_headers(uint32_t start_height,
+        const system::hash_digest& stop_hash,
+        compact_filter_headers_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_checkpoint(const system::hash_digest& stop_hash,
+        compact_filter_checkpoint_fetch_handler handler) const;
+
+
 private:
     // Properties.
     system::uint256_t candidate_work() const;

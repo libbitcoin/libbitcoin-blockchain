@@ -149,7 +149,22 @@ bool block_chain::get_compact_filter(system::data_chunk& out_filter,
     system::hash_digest& out_hash, size_t height, uint8_t filter_type,
     bool candidate) const
 {
-    if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
+    switch (filter_type)
+    {
+        case bc::neutrino_filter_type:
+            return get_neutrino_filter(out_filter, out_hash, height, candidate);
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool block_chain::get_neutrino_filter(system::data_chunk& out_filter,
+    system::hash_digest& out_hash, size_t height, bool candidate) const
+{
+    if (!settings_.bip158)
         return false;
 
     const auto result = database_.blocks().get(height, candidate);
@@ -172,7 +187,24 @@ bool block_chain::get_compact_filter(system::data_chunk& out_filter,
     size_t& out_height, const system::hash_digest& block_hash,
     uint8_t filter_type, bool candidate) const
 {
-    if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
+    switch (filter_type)
+    {
+        case bc::neutrino_filter_type:
+            return get_neutrino_filter(out_filter, out_height, block_hash,
+                candidate);
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool block_chain::get_neutrino_filter(system::data_chunk& out_filter,
+    size_t& out_height, const system::hash_digest& block_hash,
+    bool candidate) const
+{
+    if (!settings_.bip158)
         return false;
 
     const auto result = database_.blocks().get(block_hash);
@@ -204,7 +236,24 @@ bool block_chain::get_compact_filter_header(
     system::hash_digest& out_filter_header, system::hash_digest& out_hash,
     size_t height, uint8_t filter_type, bool candidate) const
 {
-    if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
+    switch (filter_type)
+    {
+        case bc::neutrino_filter_type:
+            return get_neutrino_filter_header(out_filter_header, out_hash,
+                height, candidate);
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool block_chain::get_neutrino_filter_header(
+    system::hash_digest& out_filter_header, system::hash_digest& out_hash,
+    size_t height, bool candidate) const
+{
+    if (!settings_.bip158)
         return false;
 
     const auto result = database_.blocks().get(height, candidate);
@@ -228,7 +277,24 @@ bool block_chain::get_compact_filter_header(
     const system::hash_digest& block_hash, uint8_t filter_type,
     bool candidate) const
 {
-    if ((!settings_.bip158) || (filter_type != bc::neutrino_filter_type))
+    switch (filter_type)
+    {
+        case bc::neutrino_filter_type:
+            return get_neutrino_filter_header(out_filter_header, out_height,
+                block_hash, candidate);
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool block_chain::get_neutrino_filter_header(
+    system::hash_digest& out_filter_header, size_t& out_height,
+    const system::hash_digest& block_hash, bool candidate) const
+{
+    if (!settings_.bip158)
         return false;
 
     const auto result = database_.blocks().get(block_hash);
@@ -398,9 +464,12 @@ void block_chain::populate_neutrino_filter(
 
     const auto& header = block.header();
     const auto previous_block = database_.blocks().get(header.previous_block_hash());
+
+    BITCOIN_ASSERT(previous_block);
     const auto previous_filter = database_.neutrino_filters().get(
         previous_block.neutrino_filter());
 
+    BITCOIN_ASSERT(previous_filter);
     const auto filter = system::neutrino::compute_filter(block);
     const auto filter_header = system::neutrino::compute_filter_header(
         previous_filter.header(), filter);
@@ -1314,15 +1383,30 @@ void block_chain::fetch_compact_filter(uint8_t filter_type, size_t height,
         return;
     }
 
-    if (!settings_.bip158)
+    switch (filter_type)
     {
-        handler(error::configuration_disabled, null_hash, {}, 0);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter(height, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, null_hash, {}, 0);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter(size_t height,
+    compact_filter_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, null_hash, {}, 0);
         return;
     }
 
-    if (filter_type != bc::neutrino_filter_type)
+    if (!settings_.bip158)
     {
-        handler(error::unrecognized_filter_type, null_hash, {}, 0);
+        handler(error::configuration_disabled, null_hash, {}, 0);
         return;
     }
 
@@ -1357,15 +1441,30 @@ void block_chain::fetch_compact_filter(uint8_t filter_type,
         return;
     }
 
-    if (!settings_.bip158)
+    switch (filter_type)
     {
-        handler(error::configuration_disabled, null_hash, {}, 0);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter(hash, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, null_hash, {}, 0);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter(const hash_digest& hash,
+    compact_filter_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, null_hash, {}, 0);
         return;
     }
 
-    if (filter_type != bc::neutrino_filter_type)
+    if (!settings_.bip158)
     {
-        handler(error::unrecognized_filter_type, null_hash, {}, 0);
+        handler(error::configuration_disabled, null_hash, {}, 0);
         return;
     }
 
@@ -1399,15 +1498,30 @@ void block_chain::fetch_compact_filter_header(uint8_t filter_type,
         return;
     }
 
-    if (!settings_.bip158)
+    switch (filter_type)
     {
-        handler(error::configuration_disabled, null_hash, null_hash, 0);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter_header(height, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, null_hash, null_hash, 0);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter_header(size_t height,
+    compact_filter_header_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, null_hash, null_hash, 0);
         return;
     }
 
-    if (filter_type != bc::neutrino_filter_type)
+    if (!settings_.bip158)
     {
-        handler(error::unrecognized_filter_type, null_hash, null_hash, 0);
+        handler(error::configuration_disabled, null_hash, null_hash, 0);
         return;
     }
 
@@ -1442,15 +1556,30 @@ void block_chain::fetch_compact_filter_header(uint8_t filter_type,
         return;
     }
 
-    if (!settings_.bip158)
+    switch (filter_type)
     {
-        handler(error::configuration_disabled, null_hash, null_hash, 0);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter_header(hash, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, null_hash, null_hash, 0);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter_header(const hash_digest& hash,
+    compact_filter_header_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, null_hash, null_hash, 0);
         return;
     }
 
-    if (filter_type != bc::neutrino_filter_type)
+    if (!settings_.bip158)
     {
-        handler(error::unrecognized_filter_type, null_hash, null_hash, 0);
+        handler(error::configuration_disabled, null_hash, null_hash, 0);
         return;
     }
 
@@ -1485,9 +1614,25 @@ void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
         return;
     }
 
-    if (filter_type != neutrino_filter_type)
+    switch (filter_type)
     {
-        handler(error::unrecognized_filter_type, nullptr);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter_headers(start_height, stop_hash, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, nullptr);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
+    const system::hash_digest& stop_hash,
+    compact_filter_headers_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
         return;
     }
 
@@ -1557,7 +1702,7 @@ void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
     }
 
     auto message = std::make_shared<compact_filter_headers>();
-    message->set_filter_type(filter_type);
+    message->set_filter_type(bc::neutrino_filter_type);
     message->set_stop_hash(stop_hash);
     message->set_previous_filter_header(previous_filter_header);
     message->filter_hashes().reserve(count);
@@ -1603,9 +1748,25 @@ void block_chain::fetch_compact_filter_checkpoint(uint8_t filter_type,
         return;
     }
 
-    if (filter_type != neutrino_filter_type)
+    switch (filter_type)
     {
-        handler(error::unrecognized_filter_type, nullptr);
+        case bc::neutrino_filter_type:
+            fetch_neutrino_filter_checkpoint(stop_hash, handler);
+            break;
+
+        default:
+            handler(error::unrecognized_filter_type, nullptr);
+            break;
+    }
+}
+
+void block_chain::fetch_neutrino_filter_checkpoint(
+    const system::hash_digest& stop_hash,
+    compact_filter_checkpoint_fetch_handler handler) const
+{
+    if (stopped())
+    {
+        handler(error::service_stopped, nullptr);
         return;
     }
 
@@ -1645,7 +1806,8 @@ void block_chain::fetch_compact_filter_checkpoint(uint8_t filter_type,
 
     auto duplicate_stop_hash = stop_hash;
     auto message = std::make_shared<compact_filter_checkpoint>(
-        filter_type, std::move(duplicate_stop_hash), std::move(headers));
+        bc::neutrino_filter_type, std::move(duplicate_stop_hash),
+        std::move(headers));
 
      handler(error::success, std::move(message));
 }
