@@ -127,10 +127,6 @@ public:
         const system::chain::transaction& tx, uint32_t forks,
         size_t fork_height) const = 0;
 
-    /// Sets metadata containing neutrino filter and filter header.
-    virtual void populate_neutrino_filter(
-        const system::chain::block block) const = 0;
-
     /// Populate metadata of the given transaction for pool inclusion.
     virtual void populate_pool_transaction(
         const system::chain::transaction& tx, uint32_t forks) const = 0;

@@ -456,26 +456,60 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
     database_.transactions().get_pool_metadata(tx, forks);
 }
 
-void block_chain::populate_neutrino_filter(
-    const system::chain::block block) const
+code block_chain::populate_neutrino_filters(
+    block_const_ptr_list_const_ptr blocks) const
 {
     if (!settings_.bip158)
-        return;
+        return error::success;
 
-    const auto& header = block.header();
-    const auto previous_block = database_.blocks().get(header.previous_block_hash());
+    if (!blocks)
+        return error::success;
 
-    BITCOIN_ASSERT(previous_block);
-    const auto previous_filter = database_.neutrino_filters().get(
-        previous_block.neutrino_filter());
+    auto previous_filter_header = null_hash;
 
-    BITCOIN_ASSERT(previous_filter);
-    const auto filter = system::neutrino::compute_filter(block);
-    const auto filter_header = system::neutrino::compute_filter_header(
-        previous_filter.header(), filter);
+    if (blocks->size() > 0)
+    {
+        const auto& header = blocks->front()->header();
+        if (!header.metadata.neutrino_filter)
+        {
+            const auto result_previous_block = database_.blocks().get(
+                header.previous_block_hash());
 
-    header.metadata.filter_data = std::make_shared<system::chain::block_filter>(
-        neutrino_filter_type, block.hash(), filter_header, filter);
+            BITCOIN_ASSERT(result_previous_block);
+            if (!result_previous_block)
+                return error::invalid_previous_block;
+
+            const auto result_prev_filter = database_.neutrino_filters().get(
+                result_previous_block.neutrino_filter());
+
+            BITCOIN_ASSERT(result_prev_filter);
+            if (!result_prev_filter)
+                return error::invalid_previous_block;
+
+            previous_filter_header = result_prev_filter.header();
+        }
+    }
+
+    for (const auto block : *blocks)
+    {
+        const auto& header = block->header();
+        if (header.metadata.neutrino_filter)
+        {
+            previous_filter_header = header.metadata.neutrino_filter->header();
+            continue;
+        }
+
+        const auto filter = system::neutrino::compute_filter(*block);
+        const auto filter_header = system::neutrino::compute_filter_header(
+            previous_filter_header, filter);
+
+        header.metadata.neutrino_filter = std::make_shared<chain::block_filter>(
+            neutrino_filter_type, block->hash(), filter_header, filter);
+
+        previous_filter_header = filter_header;
+    }
+
+    return error::success;
 }
 
 bool block_chain::populate_block_output(const chain::output_point& outpoint,
@@ -783,6 +817,10 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
         block->header().metadata.state.reset();
         incoming->push_back(block);
     }
+
+    // Conditionally compute neutrino filters for all incoming blocks
+    if ((ec = populate_neutrino_filters(incoming)))
+        return ec;
 
     // This unmarks candidate txs and spent outputs (because confirmed).
     // Header metadata median_time_past must be set on all incoming blocks.
