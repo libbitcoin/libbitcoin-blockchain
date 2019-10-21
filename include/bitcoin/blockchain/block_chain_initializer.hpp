@@ -49,12 +49,13 @@ public:
     /// Create and open all databases.
     system::code create(const system::chain::block& genesis);
 
+protected:
+
     // INITCHAIN (genesis)
     /// Push the block through candidacy and confirmation, without indexing.
     system::code push(const system::chain::block& block, size_t height=0,
         uint32_t median_time_past=0);
 
-protected:
     system::code populate_neutrino_filter_metadata(
         const system::chain::block& block, size_t height);
 

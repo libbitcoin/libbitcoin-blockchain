@@ -72,6 +72,8 @@ code block_chain_initializer::push(const chain::block& block,
 code block_chain_initializer::populate_neutrino_filter_metadata(
     const chain::block& block, size_t height)
 {
+    static const auto form = "Block [%s] Filter Header [%s] Filter [%s]";
+
     if (!settings_chain_.bip158)
         return error::success;
 
@@ -94,12 +96,27 @@ code block_chain_initializer::populate_neutrino_filter_metadata(
         previous_filter_header = result_filter.header();
     }
 
-    const auto filter = neutrino::compute_filter(block);
+    data_chunk filter;
+    if (!neutrino::compute_filter(block, filter))
+    {
+        LOG_ERROR(LOG_BLOCKCHAIN)
+            << boost::format(form) %
+                encode_hash(block.hash());
+
+        return error::metadata_prevout_missing;
+    }
+
     const auto filter_header = neutrino::compute_filter_header(
         previous_filter_header, filter);
 
     block.header().metadata.neutrino_filter = std::make_shared<block_filter>(
         neutrino_filter_type, block.hash(), filter_header, filter);
+
+    LOG_VERBOSE(LOG_BLOCKCHAIN)
+        << boost::format(form) %
+            encode_hash(block.hash()) %
+            encode_hash(filter_header) %
+            encode_base16(filter);
 
     return error::success;
 }

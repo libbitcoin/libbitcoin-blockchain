@@ -459,6 +459,8 @@ void block_chain::populate_pool_transaction(const chain::transaction& tx,
 code block_chain::populate_neutrino_filters(
     block_const_ptr_list_const_ptr blocks) const
 {
+    static const auto form = "Block [%s] halts neutrino filter calculation due to missing metadata";
+
     if (!settings_.bip158)
         return error::success;
 
@@ -499,7 +501,16 @@ code block_chain::populate_neutrino_filters(
             continue;
         }
 
-        const auto filter = system::neutrino::compute_filter(*block);
+        data_chunk filter;
+        if (!system::neutrino::compute_filter(*block, filter))
+        {
+            LOG_ERROR(LOG_BLOCKCHAIN)
+                << boost::format(form) %
+                    encode_hash(block->hash());
+
+            return error::metadata_prevout_missing;
+        }
+
         const auto filter_header = system::neutrino::compute_filter_header(
             previous_filter_header, filter);
 
@@ -1744,9 +1755,7 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
     message->set_stop_hash(stop_hash);
     message->set_previous_filter_header(previous_filter_header);
     message->filter_hashes().reserve(count);
-
-    if (count > 0)
-        message->filter_hashes().push_back(stop_filter_header);
+    message->filter_hashes().push_back(stop_filter_header);
 
     for (size_t i = 1; i <= count; ++i)
     {
