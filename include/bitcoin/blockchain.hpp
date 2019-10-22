@@ -20,6 +20,7 @@
 #include <bitcoin/consensus.hpp>
 #endif
 
+#include <bitcoin/blockchain/block_chain_initializer.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/version.hpp>

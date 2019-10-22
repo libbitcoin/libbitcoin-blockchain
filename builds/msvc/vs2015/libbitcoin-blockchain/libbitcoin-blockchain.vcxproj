@@ -73,6 +73,7 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\block_chain_initializer.cpp" />
     <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp" />
     <ClCompile Include="..\..\..\..\src\organizers\organize_block.cpp" />
     <ClCompile Include="..\..\..\..\src\organizers\organize_header.cpp" />
@@ -105,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_initializer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp" />

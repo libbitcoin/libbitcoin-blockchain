@@ -168,6 +168,7 @@ endif()
 # Define ${CANONICAL_LIB_NAME} project.
 #------------------------------------------------------------------------------
 add_library( ${CANONICAL_LIB_NAME}
+    "../../src/block_chain_initializer.cpp"
     "../../src/settings.cpp"
     "../../src/interface/block_chain.cpp"
     "../../src/organizers/organize_block.cpp"

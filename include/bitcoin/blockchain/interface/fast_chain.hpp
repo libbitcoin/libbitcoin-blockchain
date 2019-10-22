@@ -62,24 +62,25 @@ public:
         bool candidate) const = 0;
 
     /// Get block filter by height.
-    virtual bool get_filter(system::data_chunk& out_filter,
+    virtual bool get_compact_filter(system::data_chunk& out_filter,
         system::hash_digest& out_hash, size_t height, uint8_t filter_type,
         bool candidate) const = 0;
 
     /// Get block filter by hash.
-    virtual bool get_filter(system::data_chunk& out_filter, size_t& out_height,
-        const system::hash_digest& block_hash, uint8_t filter_type,
-        bool candidate) const = 0;
-
-    /// Get block filter header by height.
-    virtual bool get_filter_header(system::hash_digest& out_filter_header,
-        system::hash_digest& out_hash, size_t height, uint8_t filter_type,
-        bool candidate) const = 0;
-
-    /// Get block filter header by hash.
-    virtual bool get_filter_header(system::hash_digest& out_filter_header,
+    virtual bool get_compact_filter(system::data_chunk& out_filter,
         size_t& out_height, const system::hash_digest& block_hash,
         uint8_t filter_type, bool candidate) const = 0;
+
+    /// Get block filter header by height.
+    virtual bool get_compact_filter_header(
+        system::hash_digest& out_filter_header, system::hash_digest& out_hash,
+        size_t height, uint8_t filter_type, bool candidate) const = 0;
+
+    /// Get block filter header by hash.
+    virtual bool get_compact_filter_header(
+        system::hash_digest& out_filter_header, size_t& out_height,
+        const system::hash_digest& block_hash, uint8_t filter_type,
+        bool candidate) const = 0;
 
     /// Get hash of the confirmed or candidate block by index height.
     virtual bool get_block_hash(system::hash_digest& out_hash, size_t height,
@@ -125,10 +126,6 @@ public:
     virtual void populate_block_transaction(
         const system::chain::transaction& tx, uint32_t forks,
         size_t fork_height) const = 0;
-
-    /// Sets metadata containing neutrino filter and filter header.
-    virtual void populate_neutrino_filter(
-        const system::chain::block block) const = 0;
 
     /// Populate metadata of the given transaction for pool inclusion.
     virtual void populate_pool_transaction(
