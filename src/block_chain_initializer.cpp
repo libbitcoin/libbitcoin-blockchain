@@ -121,5 +121,10 @@ code block_chain_initializer::populate_neutrino_filter_metadata(
     return error::success;
 }
 
+database::data_base& block_chain_initializer::database()
+{
+    return database_;
+}
+
 } // namespace blockchain
 } // namespace libbitcoin
