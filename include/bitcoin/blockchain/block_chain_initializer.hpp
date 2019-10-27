@@ -49,16 +49,19 @@ public:
     /// Create and open all databases.
     system::code create(const system::chain::block& genesis);
 
-protected:
-    database::data_base& database();
-
-    system::code populate_neutrino_filter_metadata(
-        const system::chain::block& block, size_t height);
-
     // INITCHAIN (genesis)
     /// Push the block through candidacy and confirmation, without indexing.
     system::code push(const system::chain::block& block, size_t height=0,
         uint32_t median_time_past=0);
+
+    database::data_base& database();
+    const blockchain::settings& chain_settings();
+    const database::settings& database_settings();
+    const system::settings& system_settings();
+
+protected:
+    system::code populate_neutrino_filter_metadata(
+        const system::chain::block& block, size_t height);
 
 private:
     database::data_base database_;

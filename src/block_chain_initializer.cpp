@@ -63,10 +63,7 @@ code block_chain_initializer::push(const chain::block& block,
     if ((ec = populate_neutrino_filter_metadata(block, height)))
         return ec;
 
-    if (!database_.push(block, height, median_time_past))
-       ec = error::operation_failed;
-
-    return ec;
+    return database_.push(block, height, median_time_past);
 }
 
 code block_chain_initializer::populate_neutrino_filter_metadata(
@@ -124,6 +121,21 @@ code block_chain_initializer::populate_neutrino_filter_metadata(
 database::data_base& block_chain_initializer::database()
 {
     return database_;
+}
+
+const blockchain::settings& block_chain_initializer::chain_settings()
+{
+    return settings_chain_;
+}
+
+const database::settings& block_chain_initializer::database_settings()
+{
+    return settings_database_;
+}
+
+const system::settings& block_chain_initializer::system_settings()
+{
+    return settings_system_;
 }
 
 } // namespace blockchain
