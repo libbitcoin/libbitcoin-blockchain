@@ -41,6 +41,7 @@ settings::settings()
     bip16(true),
     bip30(true),
     bip34(true),
+    bip42(true),
     bip66(true),
     bip65(true),
     bip90(true),
@@ -118,6 +119,7 @@ settings::settings(config::settings context)
     }
 }
 
+// TODO: cache computation (requires invalidation to support non-const instance).
 uint32_t settings::enabled_forks() const
 {
     using namespace machine;
@@ -128,6 +130,7 @@ uint32_t settings::enabled_forks() const
     forks |= (bip16 ? static_cast<uint32_t>(rule_fork::bip16_rule) : 0);
     forks |= (bip30 ? static_cast<uint32_t>(rule_fork::bip30_rule) : 0);
     forks |= (bip34 ? static_cast<uint32_t>(rule_fork::bip34_rule) : 0);
+    forks |= (bip42 ? static_cast<uint32_t>(rule_fork::bip42_rule) : 0);
     forks |= (bip66 ? static_cast<uint32_t>(rule_fork::bip66_rule) : 0);
     forks |= (bip65 ? static_cast<uint32_t>(rule_fork::bip65_rule) : 0);
     forks |= (bip90 ? static_cast<uint32_t>(rule_fork::bip90_rule) : 0);
