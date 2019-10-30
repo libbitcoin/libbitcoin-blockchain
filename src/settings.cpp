@@ -119,7 +119,7 @@ settings::settings(config::settings context)
     }
 }
 
-// TODO: cache computation (requires invalidation to support non-const instance).
+// TODO: optimize to prevent recomputation.
 uint32_t settings::enabled_forks() const
 {
     using namespace machine;
