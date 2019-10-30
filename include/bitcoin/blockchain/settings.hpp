@@ -54,6 +54,7 @@ public:
     bool bip16;
     bool bip30;
     bool bip34;
+    bool bip42;
     bool bip66;
     bool bip65;
     bool bip90;
