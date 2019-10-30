@@ -301,18 +301,14 @@ public:
         const system::hash_digest& hash,
         compact_filter_fetch_handler handler) const;
 
-    /// fetch filter header by height.
-    void fetch_compact_filter_header(uint8_t filter_type, size_t height,
-        compact_filter_header_fetch_handler handler) const;
-
-    /// fetch filter header by hash.
-    void fetch_compact_filter_header(uint8_t filter_type,
-        const system::hash_digest& hash,
-        compact_filter_header_fetch_handler handler) const;
-
-    /// fetch filter headers
+    /// fetch filter headers by start height, stop hash
     void fetch_compact_filter_headers(uint8_t filter_type,
         uint32_t start_height, const system::hash_digest& stop_hash,
+        compact_filter_headers_fetch_handler handler) const;
+
+    /// fetch filter headers by start height, stop height
+    void fetch_compact_filter_headers(uint8_t filter_type,
+        uint32_t start_height, uint32_t stop_height,
         compact_filter_headers_fetch_handler handler) const;
 
     /// fetch the filter checkpoint indicated by the type.
@@ -481,14 +477,17 @@ protected:
     void fetch_neutrino_filter(const system::hash_digest& hash,
         compact_filter_fetch_handler handler) const;
 
-    void fetch_neutrino_filter_header(size_t height,
-        compact_filter_header_fetch_handler handler) const;
-
-    void fetch_neutrino_filter_header(const system::hash_digest& hash,
-        compact_filter_header_fetch_handler handler) const;
-
     void fetch_neutrino_filter_headers(uint32_t start_height,
         const system::hash_digest& stop_hash,
+        compact_filter_headers_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_headers(uint32_t start_height,
+        uint32_t stop_height,
+        compact_filter_headers_fetch_handler handler) const;
+
+    void fetch_neutrino_filter_headers(uint32_t start_height,
+        const system::hash_digest& stop_hash, uint32_t stop_height,
+        const system::hash_digest& stop_filter_header,
         compact_filter_headers_fetch_handler handler) const;
 
     void fetch_neutrino_filter_checkpoint(const system::hash_digest& stop_hash,
