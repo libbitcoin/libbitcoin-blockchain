@@ -1098,7 +1098,7 @@ bool block_chain::set_neutrino_filter_checkpoints()
     hash_list checkpoints;
     checkpoints.reserve(count);
 
-    for (size_t i = 0; i < height; i = ceiling_add(i, interval))
+    for (size_t i = interval; i < height; i = ceiling_add(i, interval))
     {
         const auto result_block = database_.blocks().get(i, false);
 
@@ -1786,7 +1786,6 @@ void block_chain::fetch_neutrino_filter_checkpoint(
 
     auto headers = neutrino_filter_checkpoints();
     size_t stop_height = 0;
-    hash_digest stop_filter_header = null_hash;
 
     if (stop_hash != null_hash)
     {
@@ -1808,15 +1807,10 @@ void block_chain::fetch_neutrino_filter_checkpoint(
             handler(error::not_found, nullptr);
             return;
         }
-
-        stop_filter_header = result_filter.header();
     }
 
     const auto interval = compact_filter_checkpoint_interval;
-    const size_t remainder = stop_height % interval;
-
-    if (remainder > 0)
-        headers.push_back(stop_filter_header);
+    headers.resize(stop_height / interval);
 
     auto duplicate_stop_hash = stop_hash;
     auto message = std::make_shared<compact_filter_checkpoint>(
