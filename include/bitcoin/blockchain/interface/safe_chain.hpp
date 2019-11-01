@@ -59,17 +59,13 @@ public:
     typedef std::function<void(const system::code&,
         system::header_ptr, size_t)> block_header_fetch_handler;
     typedef std::function<void(const system::code&,
-        const system::hash_digest&, const system::data_chunk&, size_t)>
-            compact_filter_fetch_handler;
-    typedef std::function<void(const system::code&,
-        const system::hash_digest&, const system::hash_digest&, size_t)>
-            compact_filter_header_fetch_handler;
-    typedef std::function<void(const system::code&,
-        system::compact_filter_headers_ptr)>
-            compact_filter_headers_fetch_handler;
+        system::compact_filter_ptr, size_t)> compact_filter_fetch_handler;
     typedef std::function<void(const system::code&,
         system::compact_filter_checkpoint_ptr)>
             compact_filter_checkpoint_fetch_handler;
+    typedef std::function<void(const system::code&,
+        system::compact_filter_headers_ptr)>
+            compact_filter_headers_fetch_handler;
     typedef std::function<void(const system::code&,
         system::transaction_const_ptr, size_t, size_t)>
             transaction_fetch_handler;
@@ -121,15 +117,12 @@ public:
         const system::hash_digest& hash,
         compact_filter_fetch_handler handler) const = 0;
 
-    virtual void fetch_compact_filter_header(uint8_t filter_type,
-        size_t height, compact_filter_header_fetch_handler handler) const = 0;
-
-    virtual void fetch_compact_filter_header(uint8_t filter_type,
-        const system::hash_digest& hash,
-        compact_filter_header_fetch_handler handler) const = 0;
-
     virtual void fetch_compact_filter_headers(uint8_t filter_type,
         uint32_t start_height, const system::hash_digest& stop_hash,
+        compact_filter_headers_fetch_handler handler) const = 0;
+
+    virtual void fetch_compact_filter_headers(uint8_t filter_type,
+        uint32_t start_height, uint32_t stop_height,
         compact_filter_headers_fetch_handler handler) const = 0;
 
     virtual void fetch_compact_filter_checkpoint(uint8_t filter_type,
