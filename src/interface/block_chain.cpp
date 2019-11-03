@@ -844,9 +844,6 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
     set_confirmed_work(0);
     set_next_confirmed_state(top_state);
 
-    if (!update_neutrino_filter_checkpoints(fork.height(), incoming, outgoing))
-        return error::operation_failed;
-
     // This does not require chain state.
     notify(fork.height(), incoming, outgoing);
 
@@ -1043,11 +1040,6 @@ bool block_chain::is_reorganizable() const
     return candidate_work() > confirmed_work();
 }
 
-hash_list block_chain::neutrino_filter_checkpoints() const
-{
-    return neutrino_filter_checkpoints_.load();
-}
-
 // Chain State
 // ----------------------------------------------------------------------------
 
@@ -1080,103 +1072,6 @@ chain::chain_state::ptr block_chain::promote_state(
     return promote_state(*branch->top(), parent->metadata.state);
 }
 
-void block_chain::set_neutrino_filter_checkpoints(hash_list&& checkpoints)
-{
-    neutrino_filter_checkpoints_.store(std::forward<hash_list>(checkpoints));
-}
-
-bool block_chain::set_neutrino_filter_checkpoints()
-{
-    if (!settings_.bip158)
-        return true;
-
-    const auto state = next_confirmed_state();
-    const auto height = floor_subtract<size_t>(state->height(), 1);
-    const auto interval = compact_filter_checkpoint_interval;
-    const auto count = height / interval;
-
-    hash_list checkpoints;
-    checkpoints.reserve(count);
-
-    for (size_t i = interval; i < height; i = ceiling_add(i, interval))
-    {
-        const auto result_block = database_.blocks().get(i, false);
-
-        if (!result_block)
-            return false;
-
-        const auto result_filter = database_.neutrino_filters().get(
-            result_block.neutrino_filter());
-
-        if (!result_filter)
-            return false;
-
-        checkpoints.push_back(result_filter.header());
-    }
-
-    set_neutrino_filter_checkpoints(std::move(checkpoints));
-    return true;
-}
-
-bool block_chain::update_neutrino_filter_checkpoints(size_t fork_height,
-    block_const_ptr_list_const_ptr incoming,
-    block_const_ptr_list_const_ptr outgoing)
-{
-    if (!settings_.bip158)
-        return true;
-
-    auto detected_change = false;
-    const auto interval = compact_filter_checkpoint_interval;
-    auto checkpoints = neutrino_filter_checkpoints();
-
-    if (outgoing->size() > 0)
-    {
-        auto previous_height = ceiling_add(fork_height, outgoing->size());
-        auto previous_checkpoint_count = (previous_height / interval);
-        auto fork_height_checkpoint_count = (fork_height / interval);
-
-        if (previous_checkpoint_count > fork_height_checkpoint_count)
-        {
-            detected_change = true;
-            checkpoints.resize(floor_subtract(checkpoints.size(),
-                (previous_checkpoint_count - fork_height_checkpoint_count)));
-        }
-    }
-
-    if (incoming->size() > 0)
-    {
-        auto height = ceiling_add(fork_height, incoming->size());
-        auto checkpoint_count = (height / interval);
-
-        if (checkpoints.size() < checkpoint_count)
-        {
-            detected_change = true;
-            auto last_height = checkpoints.size() * interval;
-
-            for (auto i = last_height; i < height; i = ceiling_add(i, interval))
-            {
-                const auto result_block = database_.blocks().get(i, false);
-
-                if (!result_block)
-                    return false;
-
-                const auto result_filter = database_.neutrino_filters().get(
-                    result_block.neutrino_filter());
-
-                if (!result_filter)
-                    return false;
-
-                checkpoints.push_back(result_filter.header());
-            }
-        }
-    }
-
-    if (detected_change)
-        set_neutrino_filter_checkpoints(std::move(checkpoints));
-
-    return true;
-}
-
 // ============================================================================
 // SAFE CHAIN
 // ============================================================================
@@ -1201,7 +1096,6 @@ bool block_chain::start()
         && set_next_confirmed_state()
         && set_candidate_work()
         && set_confirmed_work()
-        && set_neutrino_filter_checkpoints()
         && organize_block_.start()
         && organize_header_.start()
         && organize_transaction_.start();
@@ -1784,7 +1678,7 @@ void block_chain::fetch_neutrino_filter_checkpoint(
         return;
     }
 
-    auto headers = neutrino_filter_checkpoints();
+    auto headers = database_.neutrino_filters().checkpoints();
     size_t stop_height = 0;
 
     if (stop_hash != null_hash)

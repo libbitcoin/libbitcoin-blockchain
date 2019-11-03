@@ -545,7 +545,6 @@ private:
     system::atomic<system::chain::chain_state::ptr> top_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> top_valid_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> next_confirmed_state_;
-    system::atomic<system::hash_list> neutrino_filter_checkpoints_;
 
     const settings& settings_;
     const system::settings& bitcoin_settings_;
