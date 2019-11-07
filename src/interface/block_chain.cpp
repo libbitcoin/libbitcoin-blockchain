@@ -585,24 +585,6 @@ header_const_ptr block_chain::get_header(size_t height, bool candidate) const
 // ----------------------------------------------------------------------------
 
 // private
-void block_chain::catalog_block(block_const_ptr block)
-{
-    if (!settings_.index_payments)
-        return;
-
-    code ec;
-    if ((ec = database_.catalog(*block)))
-    {
-        LOG_FATAL(LOG_BLOCKCHAIN)
-            << "Failure in block payment indexing, store is now corrupt: "
-            << ec.message();
-
-        // In the case of a store failure the server stops processing.
-        stop();
-    }
-}
-
-// private
 void block_chain::catalog_transaction(transaction_const_ptr tx)
 {
     if (!settings_.index_payments || tx->metadata.cataloged)
@@ -768,16 +750,13 @@ code block_chain::candidate(block_const_ptr block)
     const auto& header = block->header();
     BITCOIN_ASSERT(!header.metadata.error);
 
-    // Mark candidate block valid, txs and outputs spent by them as candidate.
+    // Mark valid, txs/outputs as candidate, store filter/payments.
     if ((ec = database_.candidate(*block)))
         return ec;
 
     // Advance the top valid candidate state and candidate work.
     set_top_valid_candidate_state(header.metadata.state);
     set_candidate_work(candidate_work() + header.proof());
-
-    if (settings_.index_payments)
-        catalog_block(block);
 
     return ec;
 }
