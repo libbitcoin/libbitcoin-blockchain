@@ -524,7 +524,6 @@ private:
     void set_neutrino_filter_checkpoints(system::hash_list&& checkpoints);
 
     // Utilities.
-    void catalog_block(system::block_const_ptr block);
     void catalog_transaction(system::transaction_const_ptr tx);
     bool get_transactions(system::chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
