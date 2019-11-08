@@ -48,17 +48,17 @@
 #define TEST_NAME \
     std::string(boost::unit_test::framework::current_test_case().p_name)
 
-#define START_BLOCKCHAIN(name, flush, catalog)                                 \
-    threadpool pool;                                                           \
-    database::settings database_settings;                                      \
-    database_settings.flush_writes = flush;                                    \
-    database_settings.directory = TEST_NAME;                                   \
-    BOOST_REQUIRE(test::create_database(database_settings, catalog));   \
-    blockchain::settings blockchain_settings;                                  \
-    blockchain_settings.index_payments = catalog;                              \
-    bc::system::settings bitcoin_settings;                                     \
-    block_chain_accessor name(                                                 \
-        pool, blockchain_settings, database_settings, bitcoin_settings);       \
+#define START_BLOCKCHAIN(name, flush, catalog) \
+    threadpool pool; \
+    database::settings database_settings; \
+    database_settings.flush_writes = flush; \
+    database_settings.directory = TEST_NAME; \
+    BOOST_REQUIRE(test::create_database(database_settings, catalog)); \
+    blockchain::settings blockchain_settings; \
+    blockchain_settings.index_payments = catalog; \
+    bc::system::settings bitcoin_settings; \
+    block_chain_accessor name( \
+        pool, blockchain_settings, database_settings, bitcoin_settings); \
     BOOST_REQUIRE(name.start())
 
 #define NEW_BLOCK(height) \

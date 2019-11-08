@@ -28,8 +28,7 @@ using namespace bc::database;
 
 #define OUTPUT_SCRIPT0 "dup hash160 [58350574280395ad2c3e2ee20e322073d94e5e40] equalverify checksig"
 
-#define TEST_SET_NAME                           \
-   "fast_chain_tests"
+#define TEST_SET_NAME "fast_chain_tests"
 
 class block_chain_accessor
   : public block_chain
