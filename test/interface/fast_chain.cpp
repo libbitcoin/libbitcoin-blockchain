@@ -1052,7 +1052,6 @@ BOOST_AUTO_TEST_CASE(block_chain__store__with_cataloging_tx_metadata_existed__fa
 
     chain::script script0;
     script0.from_string(OUTPUT_SCRIPT0);
-    const auto script_hash0 = sha256_hash(script0.to_data(false));
 
     const chain::input::list inputs
     {
