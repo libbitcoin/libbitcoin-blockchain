@@ -40,7 +40,7 @@ chain::block read_block(const std::string& hex)
     return result;
 }
 
-bool create_database(database::settings& out_database)
+bool create_database(database::settings& out_database, bool index_payments)
 {
     static const auto mainnet = config::settings::mainnet;
 
@@ -48,12 +48,31 @@ bool create_database(database::settings& out_database)
     out_database.file_growth_rate = 42;
     out_database.block_table_buckets = 42;
     out_database.transaction_table_buckets = 42;
+    out_database.payment_table_buckets = 42;
 
     error_code ec;
     remove_all(out_database.directory, ec);
-    database::data_base database(out_database, false, false);
+    database::data_base database(out_database, index_payments, false);
     return create_directories(out_database.directory, ec) &&
         database.create(system::settings(mainnet).genesis_block);
+}
+
+void remove_test_directory(std::string directory)
+{
+    error_code ec;
+    remove_all(directory, ec);
+}
+
+chain::transaction random_tx(size_t fudge)
+{
+    static const auto settings = system::settings(
+        system::config::settings::mainnet);
+    static const chain::block genesis = settings.genesis_block;
+    auto tx = genesis.transactions()[0];
+    tx.inputs()[0].previous_output().set_index(fudge);
+    tx.metadata.link = chain::transaction::validation::unlinked;
+    tx.metadata.existed = false;
+    return tx;
 }
 
 } // namespace test

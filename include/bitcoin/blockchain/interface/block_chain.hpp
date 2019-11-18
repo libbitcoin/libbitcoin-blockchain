@@ -441,7 +441,7 @@ protected:
     bool stopped() const;
 
     // Notification senders.
-    void notify(system::transaction_const_ptr tx);
+    virtual void notify(system::transaction_const_ptr tx);
     void notify(size_t fork_height,
         system::header_const_ptr_list_const_ptr incoming,
         system::header_const_ptr_list_const_ptr outgoing);
@@ -497,6 +497,12 @@ protected:
     system::code populate_neutrino_filters(
         system::block_const_ptr_list_const_ptr blocks) const;
 
+    // This is protected by mutex.
+    database::data_base database_;
+
+    // Made protected for testing.
+    system::atomic<system::transaction_const_ptr> last_pool_transaction_;
+    virtual void catalog_transaction(system::transaction_const_ptr tx);
 
 private:
     // Properties.
@@ -524,14 +530,10 @@ private:
     void set_neutrino_filter_checkpoints(system::hash_list&& checkpoints);
 
     // Utilities.
-    void catalog_transaction(system::transaction_const_ptr tx);
     bool get_transactions(system::chain::transaction::list& out_transactions,
         const database::block_result& result, bool witness) const;
     bool get_transaction_hashes(system::hash_list& out_hashes,
         const database::block_result& result) const;
-
-    // This is protected by mutex.
-    database::data_base database_;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
@@ -540,7 +542,6 @@ private:
     system::atomic<system::uint256_t> candidate_work_;
     system::atomic<system::uint256_t> confirmed_work_;
     system::atomic<system::block_const_ptr> last_confirmed_block_;
-    system::atomic<system::transaction_const_ptr> last_pool_transaction_;
     system::atomic<system::chain::chain_state::ptr> top_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> top_valid_candidate_state_;
     system::atomic<system::chain::chain_state::ptr> next_confirmed_state_;
