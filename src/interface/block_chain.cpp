@@ -1835,7 +1835,7 @@ void block_chain::fetch_transaction(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.position() !=
+    if (!result || (require_confirmed && result.position() ==
         transaction_result::unconfirmed))
     {
         handler(error::not_found, nullptr, 0, 0);
@@ -1874,7 +1874,7 @@ void block_chain::fetch_transaction_position(const hash_digest& hash,
 
     const auto result = database_.transactions().get(hash);
 
-    if (!result || (require_confirmed && result.position() !=
+    if (!result || (require_confirmed && result.position() ==
         transaction_result::unconfirmed))
     {
         handler(error::not_found, 0, 0);
