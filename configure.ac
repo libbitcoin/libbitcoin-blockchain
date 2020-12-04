@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2019 libbitcoin-blockchain developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -177,8 +177,7 @@ AS_CASE([${with_tests}], [yes],
 PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 4.0.0],
     [bitcoin_database_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-database >= 4.0.0" 2>/dev/null`"
      bitcoin_database_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-database >= 4.0.0" 2>/dev/null`"],
-    [bitcoin_database_INCLUDEDIR=""
-     bitcoin_database_OTHER_CFLAGS=""])
+    [AC_MSG_ERROR([libbitcoin-database >= 4.0.0 is required but was not found.])])
 AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 4.0.0'])
 AC_SUBST([bitcoin_database_CPPFLAGS], [${bitcoin_database_CFLAGS}])
 AS_IF([test x${bitcoin_database_INCLUDEDIR} != "x"],
@@ -202,8 +201,7 @@ AS_CASE([${with_consensus}], [yes],
     [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 4.0.0],
         [bitcoin_consensus_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-consensus >= 4.0.0" 2>/dev/null`"
          bitcoin_consensus_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-consensus >= 4.0.0" 2>/dev/null`"],
-        [bitcoin_consensus_INCLUDEDIR=""
-         bitcoin_consensus_OTHER_CFLAGS=""])
+        [AC_MSG_ERROR([--with-consensus specified but libbitcoin-consensus >= 4.0.0 was not found.])])
      AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 4.0.0'])
      AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
      AS_IF([test x${bitcoin_consensus_INCLUDEDIR} != "x"],
