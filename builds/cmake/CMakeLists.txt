@@ -140,11 +140,11 @@ endif()
 # Define project common library directories
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    link_directories( 
+    link_directories(
         ${bitcoin_database_LIBRARY_DIRS}
         ${bitcoin_consensus_LIBRARY_DIRS} )
 else()
-    link_directories( 
+    link_directories(
         ${bitcoin_database_STATIC_LIBRARY_DIRS}
         ${bitcoin_consensus_STATIC_LIBRARY_DIRS} )
 endif()
@@ -152,13 +152,13 @@ endif()
 # Define project common libraries/linker flags.
 #------------------------------------------------------------------------------
 if (BUILD_SHARED_LIBS)
-    link_libraries( 
+    link_libraries(
         "-fstack-protector"
         "-fstack-protector-all"
         ${bitcoin_database_LIBRARIES}
         ${bitcoin_consensus_LIBRARIES} )
 else()
-    link_libraries( 
+    link_libraries(
         "-fstack-protector"
         "-fstack-protector-all"
         ${bitcoin_database_STATIC_LIBRARIES}
