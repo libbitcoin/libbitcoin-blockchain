@@ -158,6 +158,7 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
             break;
         }
 
+        // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
         if ((ec = validate_input::verify_script(*tx, input_index, forks,
             use_libconsensus_)))
         {
