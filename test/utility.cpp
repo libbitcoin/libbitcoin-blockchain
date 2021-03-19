@@ -69,6 +69,8 @@ chain::transaction random_tx(size_t fudge)
         system::config::settings::mainnet);
     static const chain::block genesis = settings.genesis_block;
     auto tx = genesis.transactions()[0];
+
+    // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
     tx.inputs()[0].previous_output().set_index(fudge);
     tx.metadata.link = chain::transaction::validation::unlinked;
     tx.metadata.existed = false;

@@ -1482,6 +1482,7 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
         return;
     }
 
+    // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
     fetch_neutrino_filter_headers(start_height, stop_hash, stop_height,
         stop_filter_header, handler);
 }

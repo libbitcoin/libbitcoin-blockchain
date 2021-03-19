@@ -319,6 +319,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
                 break;
             }
 
+            // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
             if ((ec = validate_input::verify_script(*tx, input_index, forks,
                 use_libconsensus_)))
             {
@@ -330,6 +331,8 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         {
             block->header().metadata.error = ec;
             const auto height = state->height();
+
+            // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
             dump(ec, *tx, input_index, forks, height, use_libconsensus_);
             break;
         }
