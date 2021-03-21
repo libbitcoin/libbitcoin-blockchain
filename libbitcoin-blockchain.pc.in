@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2015 libbitcoin-blockchain developers (see COPYING).
+#  Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -25,7 +25,7 @@ Version: @PACKAGE_VERSION@
 #==============================================================================
 # Dependencies that publish package configuration.
 #------------------------------------------------------------------------------
-Requires: libbitcoin-database >= 3.6.0 @bitcoin_consensus_PKG@
+Requires: libbitcoin-database >= 3.7.0 @bitcoin_consensus_PKG@
 
 # Include directory and any other required compiler flags.
 #------------------------------------------------------------------------------
