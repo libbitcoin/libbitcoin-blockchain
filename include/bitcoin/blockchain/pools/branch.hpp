@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {

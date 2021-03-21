@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>
 

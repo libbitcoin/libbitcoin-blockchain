@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <future>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>

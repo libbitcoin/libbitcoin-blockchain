@@ -20,7 +20,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 
 namespace libbitcoin {

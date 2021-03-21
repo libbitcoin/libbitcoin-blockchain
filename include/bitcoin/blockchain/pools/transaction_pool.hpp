@@ -21,7 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/safe_chain.hpp>
 #include <bitcoin/blockchain/settings.hpp>

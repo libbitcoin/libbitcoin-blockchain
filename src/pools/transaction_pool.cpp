@@ -20,7 +20,7 @@
 
 #include <cstddef>
 #include <memory>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
