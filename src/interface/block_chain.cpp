@@ -494,7 +494,7 @@ code block_chain::populate_neutrino_filters(
         }
     }
 
-    for (const auto block : *blocks)
+    for (const auto& block: *blocks)
     {
         const auto& header = block->header();
         if (header.metadata.neutrino_filter)
@@ -507,8 +507,7 @@ code block_chain::populate_neutrino_filters(
         if (!system::neutrino::compute_filter(*block, filter))
         {
             LOG_ERROR(LOG_BLOCKCHAIN)
-                << boost::format(form) %
-                    encode_hash(block->hash());
+                << boost::format(form) % encode_hash(block->hash());
 
             return error::metadata_prevout_missing;
         }
@@ -730,7 +729,7 @@ code block_chain::invalidate(block_const_ptr block, size_t block_height)
         outgoing->push_back(get_header(height, true));
 
     // Mark all outgoing candidate blocks as invalid, in store and metadata.
-    for (const auto header: *outgoing)
+    for (const auto& header: *outgoing)
         if ((ec = invalidate(*header, error::store_block_missing_parent)))
             return ec;
 
@@ -804,7 +803,7 @@ code block_chain::reorganize(block_const_ptr_list_const_ptr branch_cache,
 
     // Append all (validated) candidate pointers from the branch cache.
     // Clear chain state to preserve memory and hide from subscribers.
-    for (const auto block: *branch_cache)
+    for (const auto& block: *branch_cache)
     {
         block->header().metadata.state.reset();
         incoming->push_back(block);
@@ -1418,7 +1417,7 @@ void block_chain::fetch_neutrino_filter(const hash_digest& hash,
 }
 
 void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
-    uint32_t start_height, const system::hash_digest& stop_hash,
+    size_t start_height, const system::hash_digest& stop_hash,
     compact_filter_headers_fetch_handler handler) const
 {
     if (stopped())
@@ -1439,7 +1438,7 @@ void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
     }
 }
 
-void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
+void block_chain::fetch_neutrino_filter_headers(size_t start_height,
     const system::hash_digest& stop_hash,
     compact_filter_headers_fetch_handler handler) const
 {
@@ -1482,13 +1481,12 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
         return;
     }
 
-    // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
     fetch_neutrino_filter_headers(start_height, stop_hash, stop_height,
         stop_filter_header, handler);
 }
 
 void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
-    uint32_t start_height, uint32_t stop_height,
+    size_t start_height, size_t stop_height,
     compact_filter_headers_fetch_handler handler) const
 {
     if (stopped())
@@ -1509,8 +1507,8 @@ void block_chain::fetch_compact_filter_headers(uint8_t filter_type,
     }
 }
 
-void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
-    uint32_t stop_height, compact_filter_headers_fetch_handler handler) const
+void block_chain::fetch_neutrino_filter_headers(size_t start_height,
+    size_t stop_height, compact_filter_headers_fetch_handler handler) const
 {
     if (stopped())
     {
@@ -1528,8 +1526,7 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
     auto stop_filter_header = null_hash;
 
     {
-        const auto result = database_.blocks().get(
-            static_cast<size_t>(stop_height), false);
+        const auto result = database_.blocks().get(stop_height, false);
 
         if (!result)
         {
@@ -1555,8 +1552,8 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
         stop_filter_header, handler);
 }
 
-void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
-    const hash_digest& stop_hash, uint32_t stop_height,
+void block_chain::fetch_neutrino_filter_headers(size_t start_height,
+    const hash_digest& stop_hash, size_t stop_height,
     const hash_digest& stop_filter_header,
     compact_filter_headers_fetch_handler handler) const
 {
@@ -1564,8 +1561,7 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
 
     if (start_height > 0)
     {
-        const auto result = database_.blocks().get(
-            static_cast<size_t>(start_height - 1), false);
+        const auto result = database_.blocks().get(start_height - 1u, false);
 
         if (!result)
         {
@@ -1585,7 +1581,14 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
         previous_filter_header = result_filter.header();
     }
 
-    const size_t count = stop_height - start_height;
+    // Guard against subtraction underflow and loop index overflow.
+    if (start_height > stop_height || stop_height == max_size_t)
+    {
+        handler(error::invalid_response_range, nullptr);
+        return;
+    }
+
+    const auto count = stop_height - start_height;
 
     if (count >= max_get_compact_filter_headers)
     {
@@ -1600,9 +1603,9 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
     message->filter_hashes().reserve(count);
     message->filter_hashes().push_back(stop_filter_header);
 
-    for (size_t i = 1; i <= count; ++i)
+    for (auto height = start_height; height <= stop_height; ++height)
     {
-        const auto result = database_.blocks().get(stop_height - i, false);
+        const auto result = database_.blocks().get(height, false);
 
         if (!result)
         {
@@ -1621,9 +1624,6 @@ void block_chain::fetch_neutrino_filter_headers(uint32_t start_height,
 
         message->filter_hashes().push_back(result_filter.header());
     }
-
-    std::reverse(std::begin(message->filter_hashes()),
-        std::end(message->filter_hashes()));
 
      handler(error::success, std::move(message));
 }
@@ -1688,9 +1688,9 @@ void block_chain::fetch_neutrino_filter_checkpoint(
     const auto interval = compact_filter_checkpoint_interval;
     headers.resize(stop_height / interval);
 
-    auto duplicate_stop_hash = stop_hash;
+    auto copy_stop_hash = stop_hash;
     auto message = std::make_shared<compact_filter_checkpoint>(
-        bc::neutrino_filter_type, std::move(duplicate_stop_hash),
+        bc::neutrino_filter_type, std::move(copy_stop_hash),
         std::move(headers));
 
      handler(error::success, std::move(message));

@@ -18,6 +18,7 @@
  */
 #include <bitcoin/blockchain/pools/transaction_pool.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -58,7 +59,7 @@ bool transaction_pool::exists(transaction_const_ptr /*tx*/) const
 // TODO: implement (performance optimization for tx filtering via store).
 void transaction_pool::filter(get_data_ptr /*message*/) const
 {
-    // Don't crash  builds.
+    // Don't crash builds.
     ////BITCOIN_ASSERT_MSG(false, "not implemented");
 }
 
@@ -94,23 +95,28 @@ transaction_entry::list transaction_pool::get_mempool() const
 void transaction_pool::add_unconfirmed_transactions(
     const transaction_const_ptr_list& unconfirmed_txs)
 {
-//    tranasaction_entry::ptr max_introduced(null_hash);
+    //// tranasaction_entry::ptr max_introduced(null_hash);
     auto max_introduced = state_.pool.left.end();
 
     // order the transactions to be added preferring parents before children
 
     // for each entry to be added, check whether an entry already exists
     // if the entry exists
-        // if an anchor, add parent anchors, for each ancestor, recalculate priority
+    // if an anchor, add parent anchors, for each ancestor, recalculate priority
     // if the entry is new, add it
 
     for (const auto& tx: unconfirmed_txs)
     {
-        auto unconfirmed_entry = std::make_shared<transaction_entry>(tx);
-        uint32_t i = 0;
+        uint32_t index = 0;
+
+        // Guard index against overflow from (invalid) tx input size.
+        if (tx->inputs().size() > max_uint32)
+            continue;
+
+        const auto unconfirmed_entry = std::make_shared<transaction_entry>(tx);
 
         // Add/retrieve anchors for each transaction
-        for (const auto& input : tx->inputs())
+        for (const auto& input: tx->inputs())
         {
             auto lookup_entry = std::make_shared<transaction_entry>(
                     input.previous_output().hash());
@@ -123,8 +129,8 @@ void transaction_pool::add_unconfirmed_transactions(
             if (input_entry == lookup_entry)
                 state_.pool.insert({ input_entry, anchor_priority });
 
-            unconfirmed_entry->add_child(i, input_entry);
-            i++;
+            unconfirmed_entry->add_child(index, input_entry);
+            index++;
         }
 
         // Add unconfirmed transaction
@@ -139,9 +145,9 @@ void transaction_pool::add_unconfirmed_transactions(
 
     // Using remembered highest priority inserted new transaction,
     // invalidate cached solution below priority and recompute.
-    if (unconfirmed_txs.size() > 0)
+    if (!unconfirmed_txs.empty())
     {
-        auto projected = state_.pool.project_right(max_introduced);
+        const auto projected = state_.pool.project_right(max_introduced);
         update_template(projected);
     }
 }
@@ -152,45 +158,58 @@ void transaction_pool::remove_transactions(transaction_const_ptr_list& txs)
     conflicting_spend_remover deconflictor(state_);
 
     // generate map of initial txs
-    for (auto& tx : txs)
+    for (auto& tx: txs)
         anchorizer.add_bounds(tx);
 
     // compute coverage of inputs being spent
     std::map<hash_digest, std::map<uint32_t, bool>> input_indicies;
-    for (auto& tx : txs)
+    for (auto& tx: txs)
     {
-        for (auto& input : tx->inputs())
+        for (auto& input: tx->inputs())
         {
-            auto it = input_indicies.find(input.previous_output().hash());
+            const auto it = input_indicies.find(input.previous_output().hash());
+
             if (it == input_indicies.end())
-                input_indicies.insert({ input.previous_output().hash(),
-                    { { input.previous_output().index(), true } } });
-            else
             {
-                if (it->second.find(input.previous_output().index()) == it->second.end())
-                    it->second.insert({ input.previous_output().index(), true });
+                input_indicies.insert(
+                    { input.previous_output().hash(),
+                        {
+                            {
+                                input.previous_output().index(),
+                                true
+                            }
+                        }
+                    });
             }
+            else if (it->second.find(input.previous_output().index()) ==
+                it->second.end())
+                it->second.insert(
+                    {
+                        input.previous_output().index(),
+                        true
+                    });
         }
     }
 
     // walk input transactions,
-    for (auto& input_it : input_indicies)
+    for (const auto& input_it: input_indicies)
     {
         if (anchorizer.within_bounds(input_it.first))
             continue;
 
-        auto key = std::make_shared<transaction_entry>(input_it.first);
-        auto member = state_.pool.left.find(key);
+        const auto key = std::make_shared<transaction_entry>(input_it.first);
+        const auto member = state_.pool.left.find(key);
         if (member == state_.pool.left.end())
             continue;
 
-        auto children = member->first->children().left;
+        const auto& children = member->first->children().left;
         auto remove = (children.size() == input_it.second.size());
 
-        for (auto index_it : input_it.second)
+        for (const auto& index_it: input_it.second)
         {
-            auto index_child = children.find(index_it.first);
+            const auto index_child = children.find(index_it.first);
             remove &= (index_child != children.end());
+
             if (index_child != children.end())
             {
                 if (anchorizer.within_bounds(index_child->second->hash()))
@@ -204,30 +223,25 @@ void transaction_pool::remove_transactions(transaction_const_ptr_list& txs)
         // either themselves become anchors or will be removed
         if (remove)
         {
-            // NOTE: assert is inappropriate, but used to document assumption
+            // NOTE: assert only used to document assumption.
             BITCOIN_ASSERT(member->first->parents().size() == 0);
+
             member->first->remove_children();
             state_.pool.left.erase(member);
         }
     }
 
-    priority max_from_conflicts = deconflictor.deconflict();
-
-    priority max_from_demotion = anchorizer.demote();
-
-//    priority max_from_conflicts = remove_spend_conflicts(
-//        unconditional_removal);
-//
-//    priority max_from_demotion = demote(conditional_removal, removal_bounds);
-
-    priority max_removed = (max_from_conflicts > max_from_demotion) ?
-        max_from_conflicts : max_from_demotion;
+    ////const auto max_from_demotion = demote(conditional_removal, removal_bounds);
+    ////const auto max_from_conflicts = remove_spend_conflicts(unconditional_removal);
+    const auto max_from_demotion = anchorizer.demote();
+    const auto max_from_conflicts = deconflictor.deconflict();
+    const auto max_removed = std::max(max_from_conflicts, max_from_demotion);
 
     // Using remembered highest priority inserted new transaction,
     // invalidate cached solution below priority and recompute.
-    if (txs.size() > 0)
+    if (!txs.empty())
     {
-        auto inflection = find_inflection(state_.pool, max_removed);
+        const auto inflection = find_inflection(state_.pool, max_removed);
         update_template(inflection);
     }
 }
@@ -371,12 +385,12 @@ transaction_pool::priority transaction_pool::calculate_priority(
 {
     priority_calculator calculator;
     calculator.enqueue(tx);
-    auto result = calculator.prioritize();
+    const auto result = calculator.prioritize();
     uint64_t cumulative_fees = result.first;
-    size_t cumulative_size = result.second;
+    const auto cumulative_size = result.second;
 
     // return ratio of size to rate
-    return (cumulative_size > 0) ? cumulative_fees / cumulative_size :
+    return (cumulative_size > 0u) ? cumulative_fees / cumulative_size :
         std::numeric_limits<transaction_pool::priority>::max();
 }
 
@@ -384,33 +398,27 @@ transaction_pool::priority_iterator transaction_pool::find_inflection(
     transaction_pool_state::prioritized_transactions& container,
     transaction_pool::priority value)
 {
-    priority_iterator changepoint = container.right.begin();
-
     for (auto it = container.right.begin(); it != container.right.end(); ++it)
-    {
         if (it->first <= value)
-        {
-            changepoint = it;
-            break;
-        }
-    }
+            return it;
 
-    return changepoint;
+    // TODO: should this be end()?
+    return container.right.begin();
 }
 
 struct plus_sigops
 {
-    size_t operator()(size_t lhs, const transaction_entry::ptr& rhs) const
+    size_t operator()(size_t left, const transaction_entry::ptr& right) const
     {
-        return rhs ? lhs + rhs->sigops() : lhs;
+        return right ? left + right->sigops() : left;
     }
 };
 
 struct plus_size
 {
-    size_t operator()(size_t lhs, const transaction_entry::ptr& rhs) const
+    size_t operator()(size_t left, const transaction_entry::ptr& right) const
     {
-        return rhs ? lhs + rhs->size() : lhs;
+        return right ? left + right->size() : left;
     }
 };
 
@@ -419,7 +427,7 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
     // as max_changepoint may not be a value within the template,
     // walk the template entries until changepoint or a value less than it is
     // discovered
-    auto template_point = find_inflection(state_.block_template,
+    const auto template_point = find_inflection(state_.block_template,
         max_pool_change->first);
 
     // for each element in the template below this point, purge if
@@ -427,16 +435,21 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
     // alternately: scan closure of children for references in the template
     // above this prioritization value
     transaction_entry::list to_remove;
-    for (auto entry = template_point; entry != state_.block_template.right.end(); ++entry)
+
+    for (auto entry = template_point;
+        entry != state_.block_template.right.end(); ++entry)
     {
-        bool purge = true;
-        auto closure_element = state_.cached_child_closures.find(entry->second);
+        auto purge = true;
+        const auto closure_element =
+            state_.cached_child_closures.find(entry->second);
 
         if (closure_element != state_.cached_child_closures.end())
         {
-            for (auto child : closure_element->second)
+            for (const auto& child: closure_element->second)
             {
-                auto child_in_template = state_.block_template.left.find(child);
+                const auto& child_in_template =
+                    state_.block_template.left.find(child);
+
                 if ((child_in_template != state_.block_template.left.end()) &&
                     (child_in_template->second > max_pool_change->first))
                 {
@@ -456,15 +469,16 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
     for (auto it = pool_point; it != state_.pool.right.end(); ++it)
     {
         // if within template, skip
-        if (state_.block_template.left.find(it->second) != state_.block_template.left.end())
+        if (state_.block_template.left.find(it->second) !=
+            state_.block_template.left.end())
             continue;
 
         // if outside template, test addition against sigops/size limits
-        auto proposed_entries = get_parent_closure(it->second);
-        size_t cumulative_sigops = std::accumulate(proposed_entries.begin(),
-            proposed_entries.end(), 0, plus_sigops());
-        size_t cumulative_bytes = std::accumulate(proposed_entries.begin(),
-            proposed_entries.end(), 0, plus_size());
+        const auto proposed_entries = get_parent_closure(it->second);
+        const auto cumulative_sigops = std::accumulate(proposed_entries.begin(),
+            proposed_entries.end(), size_t{0}, plus_sigops());
+        const auto cumulative_bytes = std::accumulate(proposed_entries.begin(),
+            proposed_entries.end(), size_t{0}, plus_size());
 
         if ((cumulative_sigops + state_.block_template_sigops +
             state_.coinbase_sigop_reserve <= state_.template_sigop_limit) &&
@@ -474,9 +488,9 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
             state_.block_template_bytes += cumulative_bytes;
             state_.block_template_sigops += cumulative_sigops;
 
-            for (auto entry : proposed_entries)
+            for (const auto& entry: proposed_entries)
             {
-                auto pool_entry = state_.pool.left.find(entry);
+                const auto pool_entry = state_.pool.left.find(entry);
                 state_.block_template.insert({ pool_entry->first,
                     pool_entry->second });
 
@@ -497,7 +511,7 @@ void transaction_pool::update_template(priority_iterator max_pool_change)
 void transaction_pool::order_template_transactions()
 {
     transaction_order_calculator calculator;
-    for (auto entry : state_.block_template.left)
+    for (const auto& entry: state_.block_template.left)
         calculator.enqueue(entry.first);
 
     state_.ordered_block_template = calculator.order_transactions();

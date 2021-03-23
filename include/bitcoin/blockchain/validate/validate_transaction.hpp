@@ -54,12 +54,12 @@ protected:
 private:
     void handle_populated(const system::code& ec,
         system::transaction_const_ptr tx, result_handler handler) const;
-    void connect_inputs(system::transaction_const_ptr tx, size_t bucket,
-        size_t buckets, result_handler handler) const;
+    void connect_inputs(system::transaction_const_ptr tx, uint32_t bucket,
+        uint32_t buckets, result_handler handler) const;
 
     // These are thread safe.
     std::atomic<bool> stopped_;
-    const bool retarget_;
+    ////const bool retarget_;
     const bool use_libconsensus_;
     system::dispatcher& dispatch_;
     populate_transaction transaction_populator_;

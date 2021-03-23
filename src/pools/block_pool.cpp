@@ -92,14 +92,14 @@ void block_pool::add(block_const_ptr_list_ptr blocks, size_t first_height)
     mutex_.lock();
 
     auto height = first_height;
-    for (const auto block: *blocks)
+    for (const auto& block: *blocks)
         blocks_.insert({ { block }, height++ });
 
     mutex_.unlock();
     ///////////////////////////////////////////////////////////////////////////
 
     height = first_height;
-    for (const auto block: *blocks)
+    for (const auto& block: *blocks)
         subscriber_->relay(error::success, block, height++);
 }
 

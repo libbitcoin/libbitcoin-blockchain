@@ -118,11 +118,11 @@ public:
         compact_filter_fetch_handler handler) const = 0;
 
     virtual void fetch_compact_filter_headers(uint8_t filter_type,
-        uint32_t start_height, const system::hash_digest& stop_hash,
+        size_t start_height, const system::hash_digest& stop_hash,
         compact_filter_headers_fetch_handler handler) const = 0;
 
     virtual void fetch_compact_filter_headers(uint8_t filter_type,
-        uint32_t start_height, uint32_t stop_height,
+        size_t start_height, size_t stop_height,
         compact_filter_headers_fetch_handler handler) const = 0;
 
     virtual void fetch_compact_filter_checkpoint(uint8_t filter_type,

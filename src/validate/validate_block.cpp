@@ -144,9 +144,15 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         return;
     }
 
-    BITCOIN_ASSERT(metadata.state);
+    const auto state = metadata.state;
 
-    if (metadata.state->is_under_checkpoint())
+    if (!state)
+    {
+        handler(error::empty_block);
+        return;
+    }
+
+    if (state->is_under_checkpoint())
     {
         metadata.validated = true;
         handler(error::success);
@@ -168,13 +174,26 @@ void validate_block::handle_populated(const code& ec, block_const_ptr block,
         std::bind(&validate_block::handle_accepted,
             this, _1, block, sigops, bip141, asio::steady_clock::now(), handler);
 
+    const auto threads = priority_dispatch_.size();
+
+    // TODO: clean this up by exposing threads independently.
     // The threadpool must be initialized with at least 2 threads.
+    if (threads < 2u || threads > max_uint32)
+    {
+        complete_handler(error::empty_block);
+        return;
+    }
+    const auto transactions = block->transactions().size();
+
     // One dedicated thread is required by the validation subscriber.
-    const auto threads = priority_dispatch_.size() - 1u;
-    const auto count = block->transactions().size();
+    const auto buckets = std::min(threads - size_t{1}, transactions);
     const auto bip16 = metadata.state->is_enabled(rule_fork::bip16_rule);
-    const auto buckets = std::min(threads, count);
-    BITCOIN_ASSERT_MSG(buckets != 0, "block check must require transactions");
+
+    if (buckets == 0u)
+    {
+        handler(error::empty_block);
+        return;
+    }
 
     const auto join_handler = synchronize(std::move(complete_handler), buckets,
         NAME "_accept");
@@ -233,53 +252,64 @@ void validate_block::connect(block_const_ptr block,
     result_handler handler) const
 {
     const auto state = block->header().metadata.state;
-    BITCOIN_ASSERT(state);
 
-    if (state->is_under_checkpoint())
+    if (!state)
     {
-        handler(error::success);
+        handler(error::empty_block);
         return;
     }
 
     const auto non_coinbase_inputs = block->total_non_coinbase_inputs();
 
-    // Return if there are no non-coinbase inputs to validate.
-    if (non_coinbase_inputs == 0)
+    if (state->is_under_checkpoint() || non_coinbase_inputs == 0u)
     {
         handler(error::success);
         return;
     }
 
-    // Reset statistics for each block (treat coinbase as cached).
-    hits_ = 0;
-    queries_ = 0;
-
     result_handler complete_handler =
         std::bind(&validate_block::handle_connected,
             this, _1, block, asio::steady_clock::now(), handler);
 
+    const auto threads = priority_dispatch_.size();
+
+    // TODO: clean this up by exposing threads independently.
     // The threadpool must be initialized with at least 2 threads.
+    if (threads < 2u || threads > max_uint32)
+    {
+        complete_handler(error::empty_block);
+        return;
+    }
+
     // One dedicated thread is required by the validation subscriber.
-    const auto threads = priority_dispatch_.size() - 1u;
-    const auto buckets = std::min(threads, non_coinbase_inputs);
-    BITCOIN_ASSERT(buckets != 0);
+    const auto dispatch = std::min(threads - size_t{1}, non_coinbase_inputs);
+    const auto buckets = static_cast<uint32_t>(dispatch);
+
+    // Reset statistics for each block (treat coinbase as cached).
+    hits_ = 0;
+    queries_ = 0;
 
     const auto join_handler = synchronize(std::move(complete_handler), buckets,
         NAME "_validate");
 
-    for (size_t bucket = 0; bucket < buckets; ++bucket)
+    for (uint32_t bucket = 0; bucket < buckets; ++bucket)
         priority_dispatch_.concurrent(&validate_block::connect_inputs,
             this, block, bucket, buckets, join_handler);
 }
 
 // Returns store code only.
-void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
-    size_t buckets, result_handler handler) const
+void validate_block::connect_inputs(block_const_ptr block, uint32_t bucket,
+    uint32_t buckets, result_handler handler) const
 {
-    BITCOIN_ASSERT(bucket < buckets);
+    const auto state = block->header().metadata.state;
+
+    if (!(bucket < buckets && state))
+    {
+        handler(error::empty_transaction);
+        return;
+    }
 
     code ec(error::success);
-    const auto state = block->header().metadata.state;
     const auto forks = state->enabled_forks();
     const auto& txs = block->transactions();
     size_t position = 0;
@@ -296,11 +326,10 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
             continue;
         }
 
-        size_t input_index;
-        const auto& inputs = tx->inputs();
+        // Index required by verify_script signature.
+        uint32_t input_index = 0;
 
-        for (input_index = 0; input_index < inputs.size();
-            ++input_index, ++position)
+        for (const auto& input: tx->inputs())
         {
             if (position % buckets != bucket)
                 continue;
@@ -311,7 +340,7 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
                 return;
             }
 
-            const auto& prevout = inputs[input_index].previous_output();
+            const auto& prevout = input.previous_output();
 
             if (!prevout.metadata.cache.is_valid())
             {
@@ -319,11 +348,20 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
                 break;
             }
 
-            // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
-            if ((ec = validate_input::verify_script(*tx, input_index, forks,
+            const auto index = static_cast<uint32_t>(input_index);
+
+            if ((ec = validate_input::verify_script(*tx, index, forks,
                 use_libconsensus_)))
             {
+                dump(ec, *tx, index, forks, state->height());
                 break;
+            }
+
+            // Guards cast above.
+            if (input_index++ == max_uint32)
+            {
+                handler(error::empty_transaction);
+                return;
             }
         }
 
@@ -331,9 +369,6 @@ void validate_block::connect_inputs(block_const_ptr block, size_t bucket,
         {
             block->header().metadata.error = ec;
             const auto height = state->height();
-
-            // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
-            dump(ec, *tx, input_index, forks, height, use_libconsensus_);
             break;
         }
     }
@@ -361,7 +396,7 @@ void validate_block::handle_connected(const code& ec, block_const_ptr block,
 //-----------------------------------------------------------------------------
 
 void validate_block::dump(const code& ec, const transaction& tx,
-    uint32_t input_index, uint32_t forks, size_t height, bool use_libconsensus)
+    uint32_t input_index, uint32_t forks, size_t height) const
 {
     const auto& prevout = tx.inputs()[input_index].previous_output();
     const auto script = prevout.metadata.cache.script().to_data(false);
@@ -370,7 +405,7 @@ void validate_block::dump(const code& ec, const transaction& tx,
 
     LOG_DEBUG(LOG_BLOCKCHAIN)
         << "Verify failed [" << height << "] : " << ec.message() << std::endl
-        << " libconsensus : " << use_libconsensus << std::endl
+        << " libconsensus : " << use_libconsensus_ << std::endl
         << " forks        : " << forks << std::endl
         << " outpoint     : " << hash << ":" << prevout.index() << std::endl
         << " script       : " << encode_base16(script) << std::endl

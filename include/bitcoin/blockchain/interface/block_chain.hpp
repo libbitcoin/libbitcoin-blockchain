@@ -235,8 +235,8 @@ public:
     /// The candidate chain has greater valid work than the confirmed chain.
     bool is_reorganizable() const;
 
-    // The confirmed chain neutrino filter checkpoints at configured interval.
-    system::hash_list neutrino_filter_checkpoints() const;
+    ////// The confirmed chain neutrino filter checkpoints at configured interval.
+    ////system::hash_list neutrino_filter_checkpoints() const;
 
     // Chain State
     // ------------------------------------------------------------------------
@@ -303,12 +303,12 @@ public:
 
     /// fetch filter headers by start height, stop hash
     void fetch_compact_filter_headers(uint8_t filter_type,
-        uint32_t start_height, const system::hash_digest& stop_hash,
+        size_t start_height, const system::hash_digest& stop_hash,
         compact_filter_headers_fetch_handler handler) const;
 
     /// fetch filter headers by start height, stop height
     void fetch_compact_filter_headers(uint8_t filter_type,
-        uint32_t start_height, uint32_t stop_height,
+        size_t start_height, size_t stop_height,
         compact_filter_headers_fetch_handler handler) const;
 
     /// fetch the filter checkpoint indicated by the type.
@@ -477,16 +477,16 @@ protected:
     void fetch_neutrino_filter(const system::hash_digest& hash,
         compact_filter_fetch_handler handler) const;
 
-    void fetch_neutrino_filter_headers(uint32_t start_height,
+    void fetch_neutrino_filter_headers(size_t start_height,
         const system::hash_digest& stop_hash,
         compact_filter_headers_fetch_handler handler) const;
 
-    void fetch_neutrino_filter_headers(uint32_t start_height,
-        uint32_t stop_height,
+    void fetch_neutrino_filter_headers(size_t start_height,
+        size_t stop_height,
         compact_filter_headers_fetch_handler handler) const;
 
-    void fetch_neutrino_filter_headers(uint32_t start_height,
-        const system::hash_digest& stop_hash, uint32_t stop_height,
+    void fetch_neutrino_filter_headers(size_t start_height,
+        const system::hash_digest& stop_hash, size_t stop_height,
         const system::hash_digest& stop_filter_header,
         compact_filter_headers_fetch_handler handler) const;
 

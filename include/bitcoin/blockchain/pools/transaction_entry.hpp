@@ -132,8 +132,8 @@ private:
     // These are non-const to allow for default copy construction.
     uint64_t fees_;
     uint32_t forks_;
-    uint32_t locktime_;
-    uint32_t min_spendable_height_;
+    ////uint32_t locktime_;
+    ////uint32_t min_spendable_height_;
     uint32_t sigops_;
     uint32_t size_;
     system::hash_digest hash_;

@@ -76,7 +76,7 @@ code block_chain_initializer::populate_neutrino_filter_metadata(
 
     auto previous_filter_header = null_hash;
 
-    if (height != 0)
+    if (height > 0u)
     {
         const auto result_block_previous = database_.blocks().get(
             block.header().previous_block_hash());
