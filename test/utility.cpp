@@ -63,14 +63,12 @@ void remove_test_directory(std::string directory)
     remove_all(directory, ec);
 }
 
-chain::transaction random_tx(size_t fudge)
+chain::transaction random_tx(uint32_t fudge)
 {
     static const auto settings = system::settings(
         system::config::settings::mainnet);
     static const chain::block genesis = settings.genesis_block;
     auto tx = genesis.transactions()[0];
-
-    // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
     tx.inputs()[0].previous_output().set_index(fudge);
     tx.metadata.link = chain::transaction::validation::unlinked;
     tx.metadata.existed = false;

@@ -57,9 +57,8 @@ private:
     typedef std::atomic<size_t> atomic_counter;
     typedef std::shared_ptr<atomic_counter> atomic_counter_ptr;
 
-    static void dump(const system::code& ec,
-        const system::chain::transaction& tx, uint32_t input_index,
-        uint32_t forks, size_t height, bool use_libconsensus);
+    void dump(const system::code& ec, const system::chain::transaction& tx,
+        uint32_t input_index, uint32_t forks, size_t height) const;
 
     void handle_populated(const system::code& ec,
         system::block_const_ptr block, system::asio::time_point start_time,
@@ -70,8 +69,8 @@ private:
     void handle_accepted(const system::code& ec, system::block_const_ptr block,
         atomic_counter_ptr sigops, bool bip141,
         system::asio::time_point start_time, result_handler handler) const;
-    void connect_inputs(system::block_const_ptr block, size_t bucket,
-        size_t buckets, result_handler handler) const;
+    void connect_inputs(system::block_const_ptr block, uint32_t bucket,
+        uint32_t buckets, result_handler handler) const;
     void handle_connected(const system::code& ec,
         system::block_const_ptr block, system::asio::time_point start_time,
         result_handler handler) const;

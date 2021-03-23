@@ -69,6 +69,6 @@ namespace test {
 bc::system::chain::block read_block(const std::string& hex);
 bool create_database(bc::database::settings& out_database, bool index_payments);
 void remove_test_directory(std::string name);
-bc::system::chain::transaction random_tx(size_t fudge);
+bc::system::chain::transaction random_tx(uint32_t fudge);
 
 } // namespace test

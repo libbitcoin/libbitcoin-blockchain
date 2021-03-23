@@ -40,7 +40,7 @@ using namespace std::placeholders;
 validate_transaction::validate_transaction(dispatcher& dispatch,
     const fast_chain& chain, const settings& settings)
   : stopped_(true),
-    retarget_(settings.retarget),
+    ////retarget_(settings.retarget),
     use_libconsensus_(settings.use_libconsensus),
     dispatch_(dispatch),
     transaction_populator_(dispatch, chain)
@@ -106,8 +106,6 @@ void validate_transaction::handle_populated(const code& ec,
         return;
     }
 
-    BITCOIN_ASSERT(tx->metadata.state);
-
     // Run contextual tx checks.
     handler(tx->accept());
 }
@@ -120,25 +118,38 @@ void validate_transaction::connect(transaction_const_ptr tx,
     result_handler handler) const
 {
     const auto total_inputs = tx->inputs().size();
-    const auto buckets = std::min(dispatch_.size(), total_inputs);
+    const auto dispatch_size = dispatch_.size();
+    const auto dispatch = std::min(dispatch_size, total_inputs);
+
+    if (dispatch == 0u || dispatch > max_uint32)
+    {
+        handler(error::empty_transaction);
+        return;
+    }
+
+    const auto buckets = static_cast<uint32_t>(dispatch);
     const auto join_handler = synchronize(handler, buckets, NAME "_validate");
-    BITCOIN_ASSERT_MSG(buckets != 0, "transaction check must require inputs");
 
     // If the priority threadpool is shut down when this is called the handler
     // will never be invoked, resulting in a threadpool.join indefinite hang.
-    for (size_t bucket = 0; bucket < buckets; ++bucket)
+    for (uint32_t bucket = 0; bucket < buckets; ++bucket)
         dispatch_.concurrent(&validate_transaction::connect_inputs,
             this, tx, bucket, buckets, join_handler);
 }
 
 void validate_transaction::connect_inputs(transaction_const_ptr tx,
-    size_t bucket, size_t buckets, result_handler handler) const
+    uint32_t bucket, uint32_t buckets, result_handler handler) const
 {
-    BITCOIN_ASSERT(bucket < buckets);
-    BITCOIN_ASSERT(tx->metadata.state);
+    const auto state = tx->metadata.state;
+
+    if (!(bucket < buckets && state))
+    {
+        handler(error::empty_transaction);
+        return;
+    }
 
     code ec(error::success);
-    const auto forks = tx->metadata.state->enabled_forks();
+    const auto forks = state->enabled_forks();
     const auto& inputs = tx->inputs();
 
     for (auto input_index = bucket; input_index < inputs.size();
@@ -158,7 +169,6 @@ void validate_transaction::connect_inputs(transaction_const_ptr tx,
             break;
         }
 
-        // TODO: 4267: 'argument' : conversion from 'size_t' to 'uint32_t', possible loss of data.
         if ((ec = validate_input::verify_script(*tx, input_index, forks,
             use_libconsensus_)))
         {
