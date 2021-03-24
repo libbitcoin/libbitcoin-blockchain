@@ -20,7 +20,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_POPULATE_BLOCK_HPP
 
 #include <cstddef>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>

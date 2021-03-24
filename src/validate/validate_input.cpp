@@ -19,7 +19,7 @@
 #include <bitcoin/blockchain/validate/validate_input.hpp>
 
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 
 #ifdef WITH_CONSENSUS
 #include <bitcoin/consensus.hpp>

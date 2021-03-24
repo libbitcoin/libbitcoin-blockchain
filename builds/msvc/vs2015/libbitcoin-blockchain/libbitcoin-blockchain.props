@@ -6,25 +6,23 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
-  
+
   <!-- Configuration -->
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-consensus)' != 'none'">WITH_CONSENSUS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCB_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  
+
   <!-- Dependencies -->
-  
+
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(SolutionDir)libbitcoin.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-system.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-database.import.props" />
   </ImportGroup>
@@ -35,19 +33,19 @@
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
     <Linkage-secp256k1>dynamic</Linkage-secp256k1>
-    <Linkage-libbitcoin>dynamic</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>dynamic</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>dynamic</Linkage-libbitcoin-database>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
-    <Linkage-libbitcoin>ltcg</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>ltcg</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>ltcg</Linkage-libbitcoin-database>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-secp256k1>static</Linkage-secp256k1>
-    <Linkage-libbitcoin>static</Linkage-libbitcoin>
+    <Linkage-libbitcoin-system>static</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>static</Linkage-libbitcoin-database>
   </PropertyGroup>
@@ -56,7 +54,7 @@
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-secp256k1 : $(Linkage-secp256k1)" Importance="high"/>
-    <Message Text="Linkage-libbitcoin: $(Linkage-libbitcoin)" Importance="high"/>
+    <Message Text="Linkage-_system   : $(Linkage-libbitcoin-system)" Importance="high"/>
     <Message Text="Linkage-_consensus: $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_database : $(Linkage-libbitcoin-database)" Importance="high"/>
   </Target>

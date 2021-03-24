@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {

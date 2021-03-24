@@ -23,7 +23,7 @@
 #include <future>
 #include <memory>
 #include <utility>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/interface/fast_chain.hpp>
 #include <bitcoin/blockchain/pools/block_pool.hpp>
 #include <bitcoin/blockchain/pools/branch.hpp>

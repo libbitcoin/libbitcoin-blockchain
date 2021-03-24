@@ -20,7 +20,7 @@
 #define LIBBITCOIN_BLOCKCHAIN_VALIDATE_INPUT_HPP
 
 #include <cstdint>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 #ifdef WITH_CONSENSUS

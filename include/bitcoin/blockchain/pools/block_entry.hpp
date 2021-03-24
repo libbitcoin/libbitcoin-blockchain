@@ -22,7 +22,7 @@
 #include <iostream>
 ////#include <memory>
 #include <boost/functional/hash_fwd.hpp>
-#include <bitcoin/bitcoin.hpp>
+#include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
 namespace libbitcoin {
