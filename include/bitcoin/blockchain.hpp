@@ -22,6 +22,7 @@
 
 #include <bitcoin/blockchain/block_chain_initializer.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/prioritized_mutex.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/version.hpp>
 #include <bitcoin/blockchain/interface/block_chain.hpp>

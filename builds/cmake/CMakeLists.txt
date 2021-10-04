@@ -169,6 +169,7 @@ endif()
 #------------------------------------------------------------------------------
 add_library( ${CANONICAL_LIB_NAME}
     "../../src/block_chain_initializer.cpp"
+    "../../src/prioritized_mutex.cpp"
     "../../src/settings.cpp"
     "../../src/interface/block_chain.cpp"
     "../../src/organizers/organize_block.cpp"
@@ -233,6 +234,8 @@ endif()
 if (with-tests)
     add_executable( libbitcoin-blockchain-test
         "../../test/main.cpp"
+        "../../test/test.cpp"
+        "../../test/test.hpp"
         "../../test/utility.cpp"
         "../../test/utility.hpp"
         "../../test/interface/fast_chain.cpp"

@@ -135,6 +135,9 @@
     <ClCompile Include="..\..\..\..\src\populate\populate_transaction.cpp">
       <Filter>src\populate</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\prioritized_mutex.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -238,6 +241,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_transaction.hpp">
       <Filter>include\bitcoin\blockchain\populate</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\prioritized_mutex.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>

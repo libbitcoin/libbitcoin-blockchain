@@ -98,6 +98,7 @@
     <ClCompile Include="..\..\..\..\src\populate\populate_chain_state.cpp" />
     <ClCompile Include="..\..\..\..\src\populate\populate_header.cpp" />
     <ClCompile Include="..\..\..\..\src\populate\populate_transaction.cpp" />
+    <ClCompile Include="..\..\..\..\src\prioritized_mutex.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
     <ClCompile Include="..\..\..\..\src\validate\validate_block.cpp" />
     <ClCompile Include="..\..\..\..\src\validate\validate_header.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_chain_state.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_header.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_transaction.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\prioritized_mutex.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_block.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_header.hpp" />

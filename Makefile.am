@@ -36,6 +36,7 @@ src_libbitcoin_blockchain_la_CPPFLAGS = -I${srcdir}/include ${bitcoin_database_B
 src_libbitcoin_blockchain_la_LIBADD = ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 src_libbitcoin_blockchain_la_SOURCES = \
     src/block_chain_initializer.cpp \
+    src/prioritized_mutex.cpp \
     src/settings.cpp \
     src/interface/block_chain.cpp \
     src/organizers/organize_block.cpp \
@@ -77,6 +78,8 @@ test_libbitcoin_blockchain_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_databas
 test_libbitcoin_blockchain_test_LDADD = src/libbitcoin-blockchain.la ${boost_unit_test_framework_LIBS} ${bitcoin_database_LIBS} ${bitcoin_consensus_LIBS}
 test_libbitcoin_blockchain_test_SOURCES = \
     test/main.cpp \
+    test/test.cpp \
+    test/test.hpp \
     test/utility.cpp \
     test/utility.hpp \
     test/interface/fast_chain.cpp \
@@ -123,6 +126,7 @@ include_bitcoin_blockchaindir = ${includedir}/bitcoin/blockchain
 include_bitcoin_blockchain_HEADERS = \
     include/bitcoin/blockchain/block_chain_initializer.hpp \
     include/bitcoin/blockchain/define.hpp \
+    include/bitcoin/blockchain/prioritized_mutex.hpp \
     include/bitcoin/blockchain/settings.hpp \
     include/bitcoin/blockchain/version.hpp
 
