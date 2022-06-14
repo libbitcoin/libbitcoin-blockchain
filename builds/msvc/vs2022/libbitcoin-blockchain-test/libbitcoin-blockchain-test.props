@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>Libbitcoin Blockchain Library Common Settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>Libbitcoin Blockchain Test Common Settings</_PropertySheetDisplayName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -11,12 +11,13 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(RepoRoot)include\;(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-consensus)' != 'none'">WITH_CONSENSUS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCB_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DefaultLinkage)' == 'dynamic'">BOOST_TEST_DYN_LINK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <PostBuildEvent Condition="'$(DebugOrRelease)' == 'release'">
+      <Command>"$(TargetPath)" --run_test=* --show_progress=no --build_info=yes</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <!-- Dependencies -->
@@ -25,6 +26,7 @@
     <Import Project="$(SolutionDir)libbitcoin-system.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-consensus.import.props" />
     <Import Project="$(SolutionDir)libbitcoin-database.import.props" />
+    <Import Project="$(SolutionDir)libbitcoin-blockchain.import.props" />
   </ImportGroup>
 
   <PropertyGroup Condition="'$(NuGetPackageRoot)' == ''">
@@ -36,18 +38,21 @@
     <Linkage-libbitcoin-system>dynamic</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>dynamic</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>dynamic</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>dynamic</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
     <Linkage-secp256k1>ltcg</Linkage-secp256k1>
     <Linkage-libbitcoin-system>ltcg</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>ltcg</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>ltcg</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>ltcg</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
     <Linkage-secp256k1>static</Linkage-secp256k1>
     <Linkage-libbitcoin-system>static</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-consensus>static</Linkage-libbitcoin-consensus>
     <Linkage-libbitcoin-database>static</Linkage-libbitcoin-database>
+    <Linkage-libbitcoin-blockchain>static</Linkage-libbitcoin-blockchain>
   </PropertyGroup>
 
   <!-- Messages -->
@@ -57,6 +62,7 @@
     <Message Text="Linkage-_system   : $(Linkage-libbitcoin-system)" Importance="high"/>
     <Message Text="Linkage-_consensus: $(Linkage-libbitcoin-consensus)" Importance="high"/>
     <Message Text="Linkage-_database : $(Linkage-libbitcoin-database)" Importance="high"/>
+    <Message Text="Linkage-_blockchain: $(Linkage-libbitcoin-blockchain)" Importance="high"/>
   </Target>
 
 </Project>
