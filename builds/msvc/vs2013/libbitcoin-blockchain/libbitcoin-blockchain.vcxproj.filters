@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- |  Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
+ |  Copyright (c) 2014-2021 libbitcoin-blockchain developers (see COPYING).
  |
  |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
  |
@@ -135,6 +135,9 @@
     <ClCompile Include="..\..\..\..\src\populate\populate_transaction.cpp">
       <Filter>src\populate</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\prioritized_mutex.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\settings.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -239,6 +242,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_transaction.hpp">
       <Filter>include\bitcoin\blockchain\populate</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\prioritized_mutex.hpp">
+      <Filter>include\bitcoin\blockchain</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp">
       <Filter>include\bitcoin\blockchain</Filter>
     </ClInclude>
@@ -260,5 +266,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
   </ItemGroup>
 </Project>

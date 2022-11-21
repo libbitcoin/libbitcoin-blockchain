@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
+// Copyright (c) 2014-2021 libbitcoin-blockchain developers (see COPYING).
 //
 //        GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 //
@@ -22,6 +22,7 @@
 
 #include <bitcoin/blockchain/block_chain_initializer.hpp>
 #include <bitcoin/blockchain/define.hpp>
+#include <bitcoin/blockchain/prioritized_mutex.hpp>
 #include <bitcoin/blockchain/settings.hpp>
 #include <bitcoin/blockchain/version.hpp>
 #include <bitcoin/blockchain/interface/block_chain.hpp>

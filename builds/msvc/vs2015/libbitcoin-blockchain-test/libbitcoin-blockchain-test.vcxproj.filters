@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- |  Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
+ |  Copyright (c) 2014-2021 libbitcoin-blockchain developers (see COPYING).
  |
  |         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
  |
@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\..\..\test\pools\utilities\utilities.cpp">
       <Filter>src\pools\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\test.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\utility.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -89,11 +92,17 @@
     <ClInclude Include="..\..\..\..\test\pools\utilities\utilities.hpp">
       <Filter>src\pools\utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\test\test.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\utility.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug.natvis" />
   </ItemGroup>
 </Project>

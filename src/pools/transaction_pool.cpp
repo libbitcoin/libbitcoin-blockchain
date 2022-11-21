@@ -172,22 +172,25 @@ void transaction_pool::remove_transactions(transaction_const_ptr_list& txs)
             if (it == input_indicies.end())
             {
                 input_indicies.insert(
-                    { input.previous_output().hash(),
+                {
+                    input.previous_output().hash(),
+                    {
                         {
-                            {
-                                input.previous_output().index(),
-                                true
-                            }
+                            input.previous_output().index(),
+                            true
                         }
-                    });
+                    }
+                });
             }
             else if (it->second.find(input.previous_output().index()) ==
                 it->second.end())
+            {
                 it->second.insert(
-                    {
-                        input.previous_output().index(),
-                        true
-                    });
+                {
+                    input.previous_output().index(),
+                    true
+                });
+            }
         }
     }
 
