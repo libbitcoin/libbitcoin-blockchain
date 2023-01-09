@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -27,12 +27,13 @@
 namespace libbitcoin {
 namespace blockchain {
 
-/// Common blockchain configuration settings, properties not thread safe.
+using namespace bc::system;
+
 class BCB_API settings
 {
 public:
     settings();
-    settings(system::config::settings context);
+    settings(chain::selection context);
 
     /// Fork flags combiner.
     uint32_t enabled_forks() const;
@@ -48,7 +49,7 @@ public:
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
     uint32_t block_buffer_limit;
-    system::config::checkpoint::list checkpoints;
+    system::chain::checkpoints checkpoints;
     bool difficult;
     bool retarget;
     bool bip16;

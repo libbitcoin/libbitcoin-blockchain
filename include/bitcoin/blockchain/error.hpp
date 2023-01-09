@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,33 +16,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
-#define LIBBITCOIN_BLOCKCHAIN_POPULATE_BASE_HPP
+#ifndef LIBBITCOIN_BLOCKCHAIN_ERROR_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ERROR_HPP
 
-#include <cstddef>
-#include <cstdint>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
-#include <bitcoin/blockchain/settings.hpp>
 
 namespace libbitcoin {
 namespace blockchain {
 
-/// This class is thread safe.
-class BCB_API populate_base
+/// Alias system code.
+/// std::error_code "blockchain" category holds blockchain::error::error_t.
+typedef std::error_code code;
+
+namespace error {
+
+enum error_t
 {
-protected:
-    typedef system::handle0 result_handler;
-
-    populate_base(system::dispatcher& dispatch, const fast_chain& chain);
-
-    // These are thread safe.
-    system::dispatcher& dispatch_;
-    const fast_chain& fast_chain_;
+    success
 };
 
+// No current need for error_code equivalence mapping.
+DECLARE_ERROR_T_CODE_CATEGORY(error);
+
+} // namespace error
 } // namespace blockchain
 } // namespace libbitcoin
+
+DECLARE_STD_ERROR_REGISTRATION(bc::blockchain::error::error)
 
 #endif

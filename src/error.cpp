@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,14 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <boost/test/unit_test.hpp>
+#include <bitcoin/blockchain/error.hpp>
 
-#include <bitcoin/blockchain.hpp>
+#include <bitcoin/system.hpp>
 
-BOOST_AUTO_TEST_SUITE(block_pool_tests)
+namespace libbitcoin {
+namespace blockchain {
+namespace error {
 
-BOOST_AUTO_TEST_CASE(block_pool__construct__todo__success)
+DEFINE_ERROR_T_MESSAGE_MAP(error)
 {
-}
+    { success, "success" }
+};
 
-BOOST_AUTO_TEST_SUITE_END()
+DEFINE_ERROR_T_CATEGORY(error, "blockchain", "blockchain code")
+
+} // namespace error
+} // namespace blockchain
+} // namespace libbitcoin

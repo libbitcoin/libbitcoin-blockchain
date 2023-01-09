@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,23 +16,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/blockchain/populate/populate_base.hpp>
+#include "test.hpp"
 
-#include <bitcoin/system.hpp>
-#include <bitcoin/blockchain/interface/fast_chain.hpp>
+BOOST_AUTO_TEST_SUITE(settings_tests)
 
-namespace libbitcoin {
-namespace blockchain {
-
-using namespace bc::system;
-
-#define NAME "populate_base"
-
-populate_base::populate_base(dispatcher& dispatch, const fast_chain& chain)
-  : dispatch_(dispatch),
-    fast_chain_(chain)
+BOOST_AUTO_TEST_CASE(settings__construct__default__expected)
 {
+    blockchain::settings configuration;
+    BOOST_REQUIRE(true);
 }
 
-} // namespace blockchain
-} // namespace libbitcoin
+BOOST_AUTO_TEST_SUITE_END()

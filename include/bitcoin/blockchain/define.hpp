@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2019 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -21,6 +21,9 @@
 
 #include <bitcoin/system.hpp>
 
+ /// Attributes.
+ /// ---------------------------------------------------------------------------
+
 // Now we use the generic helper definitions in libbitcoin to
 // define BCB_API and BCB_INTERNAL.
 // BCB_API is used for the public API symbols. It either DLL imports or
@@ -38,24 +41,23 @@
     #define BCB_INTERNAL BC_HELPER_DLL_LOCAL
 #endif
 
-// Now we use the generic helper definitions in libbitcoin to
-// define BCD_API and BCD_INTERNAL.
-// BCD_API is used for the public API symbols. It either DLL imports or
-// DLL exports (or does nothing for static build)
-// BCD_INTERNAL is used for non-api symbols.
+/// Logging.
+/// ---------------------------------------------------------------------------
+#define LOG_DATABASE "database"
 
-#if defined BCB_STATIC
-    #define BCD_API
-    #define BCD_INTERNAL
-#elif defined BCB_DLL
-    #define BCD_API      BC_HELPER_DLL_EXPORT
-    #define BCD_INTERNAL BC_HELPER_DLL_LOCAL
-#else
-    #define BCD_API      BC_HELPER_DLL_IMPORT
-    #define BCD_INTERNAL BC_HELPER_DLL_LOCAL
-#endif
+#define LOG_INFO(name) std::cout << name << " : "
+#define LOG_DEBUG(name) std::cout << name << " : "
+#define LOG_VERBOSE(name) std::cout << name << " : "
+#define LOG_ERROR(name) std::cerr << name << " : "
+#define LOG_WARNING(name) std::cerr << name << " : "
+#define LOG_FATAL(name) std::cerr << name << " : "
 
-// Log name.
-#define LOG_BLOCKCHAIN "blockchain"
+namespace libbitcoin {
+namespace database {
+
+using code = system::code;
+
+} // namespace database
+} // namespace libbitcoin
 
 #endif

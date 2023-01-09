@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2018 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -16,18 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <boost/test/unit_test.hpp>
+#include "test.hpp"
 
-#include <bitcoin/blockchain.hpp>
+BOOST_AUTO_TEST_SUITE(error_tests)
 
-using namespace bc;
-using namespace bc::blockchain;
-using namespace bc::system;
+// error_t
+// These test std::error_code equality operator overrides.
 
-BOOST_AUTO_TEST_SUITE(block_entry_tests)
-
-BOOST_AUTO_TEST_CASE(block_entry__construct__default__expected)
+BOOST_AUTO_TEST_CASE(error_t__code__success__false_exected_message)
 {
+    constexpr auto value = error::success;
+    const auto ec = code(value);
+    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "success");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
