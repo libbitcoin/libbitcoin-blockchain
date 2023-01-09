@@ -27,3 +27,5 @@ obj
 
 /bin
 /obj
+*.lock
+*.vsidx

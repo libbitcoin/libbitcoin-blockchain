@@ -174,37 +174,8 @@ endif()
 # Define ${CANONICAL_LIB_NAME} project.
 #------------------------------------------------------------------------------
 add_library( ${CANONICAL_LIB_NAME}
-    "../../src/block_chain_initializer.cpp"
-    "../../src/prioritized_mutex.cpp"
-    "../../src/settings.cpp"
-    "../../src/interface/block_chain.cpp"
-    "../../src/organizers/organize_block.cpp"
-    "../../src/organizers/organize_header.cpp"
-    "../../src/organizers/organize_transaction.cpp"
-    "../../src/pools/block_entry.cpp"
-    "../../src/pools/block_pool.cpp"
-    "../../src/pools/header_branch.cpp"
-    "../../src/pools/header_entry.cpp"
-    "../../src/pools/header_pool.cpp"
-    "../../src/pools/transaction_entry.cpp"
-    "../../src/pools/transaction_pool.cpp"
-    "../../src/pools/utilities/anchor_converter.cpp"
-    "../../src/pools/utilities/child_closure_calculator.cpp"
-    "../../src/pools/utilities/conflicting_spend_remover.cpp"
-    "../../src/pools/utilities/parent_closure_calculator.cpp"
-    "../../src/pools/utilities/priority_calculator.cpp"
-    "../../src/pools/utilities/stack_evaluator.cpp"
-    "../../src/pools/utilities/transaction_order_calculator.cpp"
-    "../../src/pools/utilities/transaction_pool_state.cpp"
-    "../../src/populate/populate_base.cpp"
-    "../../src/populate/populate_block.cpp"
-    "../../src/populate/populate_chain_state.cpp"
-    "../../src/populate/populate_header.cpp"
-    "../../src/populate/populate_transaction.cpp"
-    "../../src/validate/validate_block.cpp"
-    "../../src/validate/validate_header.cpp"
-    "../../src/validate/validate_input.cpp"
-    "../../src/validate/validate_transaction.cpp" )
+    "../../src/error.cpp"
+    "../../src/settings.cpp" )
 
 # ${CANONICAL_LIB_NAME} project specific include directories.
 #------------------------------------------------------------------------------
@@ -239,30 +210,11 @@ endif()
 #------------------------------------------------------------------------------
 if (with-tests)
     add_executable( libbitcoin-blockchain-test
+        "../../test/error.cpp"
         "../../test/main.cpp"
+        "../../test/settings.cpp"
         "../../test/test.cpp"
-        "../../test/test.hpp"
-        "../../test/utility.cpp"
-        "../../test/utility.hpp"
-        "../../test/interface/fast_chain.cpp"
-        "../../test/interface/safe_chain.cpp"
-        "../../test/pools/block_entry.cpp"
-        "../../test/pools/block_pool.cpp"
-        "../../test/pools/header_branch.cpp"
-        "../../test/pools/header_entry.cpp"
-        "../../test/pools/header_pool.cpp"
-        "../../test/pools/transaction_entry.cpp"
-        "../../test/pools/transaction_pool.cpp"
-        "../../test/pools/utilities/anchor_converter.cpp"
-        "../../test/pools/utilities/child_closure_calculator.cpp"
-        "../../test/pools/utilities/conflicting_spend_remover.cpp"
-        "../../test/pools/utilities/parent_closure_calculator.cpp"
-        "../../test/pools/utilities/priority_calculator.cpp"
-        "../../test/pools/utilities/transaction_order_calculator.cpp"
-        "../../test/pools/utilities/utilities.cpp"
-        "../../test/pools/utilities/utilities.hpp"
-        "../../test/validators/validate_block.cpp"
-        "../../test/validators/validate_transaction.cpp" )
+        "../../test/test.hpp" )
 
     add_test( NAME libbitcoin-blockchain-test COMMAND libbitcoin-blockchain-test
             --run_test=*
@@ -288,7 +240,7 @@ endif()
 #------------------------------------------------------------------------------
 if (with-tools)
     add_executable( initchain
-        "../../tools/initchain/initchain.cpp" )
+        "../../tools/initchain/main.cpp" )
 
 #     initchain project specific include directories.
 #------------------------------------------------------------------------------

@@ -16,6 +16,33 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_blockchain_test
-#include <boost/test/unit_test.hpp>
+#ifndef LIBBITCOIN_BLOCKCHAIN_ERROR_HPP
+#define LIBBITCOIN_BLOCKCHAIN_ERROR_HPP
 
+#include <bitcoin/system.hpp>
+#include <bitcoin/blockchain/define.hpp>
+
+namespace libbitcoin {
+namespace blockchain {
+
+/// Alias system code.
+/// std::error_code "blockchain" category holds blockchain::error::error_t.
+typedef std::error_code code;
+
+namespace error {
+
+enum error_t
+{
+    success
+};
+
+// No current need for error_code equivalence mapping.
+DECLARE_ERROR_T_CODE_CATEGORY(error);
+
+} // namespace error
+} // namespace blockchain
+} // namespace libbitcoin
+
+DECLARE_STD_ERROR_REGISTRATION(bc::blockchain::error::error)
+
+#endif

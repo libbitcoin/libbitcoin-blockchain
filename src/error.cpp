@@ -16,6 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_blockchain_test
-#include <boost/test/unit_test.hpp>
+#include <bitcoin/blockchain/error.hpp>
 
+#include <bitcoin/system.hpp>
+
+namespace libbitcoin {
+namespace blockchain {
+namespace error {
+
+DEFINE_ERROR_T_MESSAGE_MAP(error)
+{
+    { success, "success" }
+};
+
+DEFINE_ERROR_T_CATEGORY(error, "blockchain", "blockchain code")
+
+} // namespace error
+} // namespace blockchain
+} // namespace libbitcoin

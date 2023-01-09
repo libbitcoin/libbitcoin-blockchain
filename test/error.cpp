@@ -16,6 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_blockchain_test
-#include <boost/test/unit_test.hpp>
+#include "test.hpp"
 
+BOOST_AUTO_TEST_SUITE(error_tests)
+
+// error_t
+// These test std::error_code equality operator overrides.
+
+BOOST_AUTO_TEST_CASE(error_t__code__success__false_exected_message)
+{
+    constexpr auto value = error::success;
+    const auto ec = code(value);
+    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "success");
+}
+
+BOOST_AUTO_TEST_SUITE_END()

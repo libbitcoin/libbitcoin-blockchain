@@ -16,6 +16,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_blockchain_test
-#include <boost/test/unit_test.hpp>
+#include "test.hpp"
 
+BOOST_AUTO_TEST_SUITE(settings_tests)
+
+BOOST_AUTO_TEST_CASE(settings__construct__default__expected)
+{
+    blockchain::settings configuration;
+    BOOST_REQUIRE(true);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

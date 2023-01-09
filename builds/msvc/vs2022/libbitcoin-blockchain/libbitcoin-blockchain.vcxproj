@@ -73,74 +73,14 @@
     <Import Project="$(ProjectDir)$(ProjectName).props" />
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\block_chain_initializer.cpp" />
-    <ClCompile Include="..\..\..\..\src\interface\block_chain.cpp" />
-    <ClCompile Include="..\..\..\..\src\organizers\organize_block.cpp" />
-    <ClCompile Include="..\..\..\..\src\organizers\organize_header.cpp" />
-    <ClCompile Include="..\..\..\..\src\organizers\organize_transaction.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\block_entry.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\block_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\header_branch.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\header_entry.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\header_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\transaction_entry.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\transaction_pool.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\anchor_converter.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\child_closure_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\conflicting_spend_remover.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\parent_closure_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\priority_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\stack_evaluator.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\transaction_order_calculator.cpp" />
-    <ClCompile Include="..\..\..\..\src\pools\utilities\transaction_pool_state.cpp" />
-    <ClCompile Include="..\..\..\..\src\populate\populate_base.cpp" />
-    <ClCompile Include="..\..\..\..\src\populate\populate_block.cpp" />
-    <ClCompile Include="..\..\..\..\src\populate\populate_chain_state.cpp" />
-    <ClCompile Include="..\..\..\..\src\populate\populate_header.cpp" />
-    <ClCompile Include="..\..\..\..\src\populate\populate_transaction.cpp" />
-    <ClCompile Include="..\..\..\..\src\prioritized_mutex.cpp" />
+    <ClCompile Include="..\..\..\..\src\error.cpp" />
     <ClCompile Include="..\..\..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\..\..\src\validate\validate_block.cpp" />
-    <ClCompile Include="..\..\..\..\src\validate\validate_header.cpp" />
-    <ClCompile Include="..\..\..\..\src\validate\validate_input.cpp" />
-    <ClCompile Include="..\..\..\..\src\validate\validate_transaction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\block_chain_initializer.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\define.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\block_chain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\fast_chain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\interface\safe_chain.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_block.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_header.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\organizers\organize_transaction.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_entry.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\block_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_branch.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_entry.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\header_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_entry.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\transaction_pool.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\anchor_converter.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\child_closure_calculator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\conflicting_spend_remover.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\parent_closure_calculator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\priority_calculator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\stack_evaluator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\transaction_order_calculator.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\pools\utilities\transaction_pool_state.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_base.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_block.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_chain_state.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_header.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\populate\populate_transaction.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\prioritized_mutex.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\error.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\settings.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_block.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_header.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_input.hpp" />
-    <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\validate\validate_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\blockchain\version.hpp" />
   </ItemGroup>
   <ItemGroup>

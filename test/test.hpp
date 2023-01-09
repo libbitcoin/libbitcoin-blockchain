@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011-2021 libbitcoin developers (see AUTHORS)
+ * Copyright (c) 2011-2023 libbitcoin developers (see AUTHORS)
  *
  * This file is part of libbitcoin.
  *
@@ -24,57 +24,79 @@
 #include <array>
 #include <iostream>
 #include <vector>
+#include <filesystem>
 #include <bitcoin/system.hpp>
+#include <bitcoin/blockchain.hpp>
 
- // copied from libbitcoin-network-test
+#define TEST_NAME \
+    boost::unit_test::framework::current_test_case().p_name.get()
+#define SUITE_NAME \
+    boost::unit_test::framework::current_auto_test_suite().p_name.get()
+#define TEST_DIRECTORY \
+    test::directory
+#define TEST_PATH \
+    TEST_DIRECTORY + "/" + TEST_NAME
+
+#ifdef HAVE_MSC
+    #define NO_GLOBAL_INIT_CALLS 26426
+    #define NO_UNUSED_LOCAL_SMART_PTR 26414
+#endif
+
+#ifdef HAVE_MSC
+    BC_DISABLE_WARNING(NO_ARRAY_INDEXING)
+    BC_DISABLE_WARNING(NO_GLOBAL_INIT_CALLS)
+    BC_DISABLE_WARNING(NO_UNUSED_LOCAL_SMART_PTR)
+    BC_DISABLE_WARNING(NO_DYNAMIC_ARRAY_INDEXING)
+#endif
 
 using namespace bc;
-using namespace bc::system;
+////using namespace bc::system;
+using namespace bc::database;
 
 namespace std {
 
 // data_slice -> base16(data)
 std::ostream& operator<<(std::ostream& stream,
-    const data_slice& slice) noexcept;
+    const system::data_slice& slice) NOEXCEPT;
 
 // vector<Type> -> join(<<Type)
 template <typename Type>
 std::ostream& operator<<(std::ostream& stream,
-    const std::vector<Type>& values) noexcept
+    const std::vector<Type>& values) NOEXCEPT
 {
-    stream << serialize(values);
+    // Ok when testing serialize because only used for error message out.
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    stream << system::serialize(values);
+    BC_POP_WARNING()
     return stream;
 }
 
 // array<Type, Size> -> join(<<Type)
 template <typename Type, size_t Size>
 std::ostream& operator<<(std::ostream& stream,
-    const std::array<Type, Size>& values) noexcept
+    const std::array<Type, Size>& values) NOEXCEPT
 {
-    stream << serialize(values);
+    // Ok when testing serialize because only used for error message out.
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    stream << system::serialize(values);
+    BC_POP_WARNING()
     return stream;
 }
 
 } // namespace std
 
-#define TEST_NAME \
-    boost::unit_test::framework::current_test_case().p_name.get()
-#define SUITE_NAME \
-    boost::unit_test::framework::current_auto_test_suite().p_name.get()
-#define TEST_PATH \
-    test::directory + "/" + TEST_NAME
-
 namespace test {
 
 // Common directory for all test file creations.
 // Subdirectories and/or files must be differentiated (i.e. by TEST_NAME).
-// Total path length cannot exceed MAX_PATH in _MSC_VER builds.
+// Total path length cannot exceed MAX_PATH in HAVE_MSC builds.
 extern const std::string directory;
 
-bool clear(const boost::filesystem::path& directory) noexcept;
-bool create(const boost::filesystem::path& file_path) noexcept;
-bool exists(const boost::filesystem::path& file_path) noexcept;
-bool remove(const boost::filesystem::path& file_path) noexcept;
+bool clear(const std::filesystem::path& directory) NOEXCEPT;
+bool folder(const std::filesystem::path& directory) NOEXCEPT;
+bool create(const std::filesystem::path& file_path) NOEXCEPT;
+bool exists(const std::filesystem::path& file_path) NOEXCEPT;
+bool remove(const std::filesystem::path& file_path) NOEXCEPT;
 
 } // namespace test
 

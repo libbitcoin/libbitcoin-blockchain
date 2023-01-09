@@ -16,6 +16,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_blockchain_test
-#include <boost/test/unit_test.hpp>
+#include <bitcoin/blockchain.hpp>
 
+// Create a new mainnet blockchain database.
+int main(int, char**)
+{
+    return 0;
+}
