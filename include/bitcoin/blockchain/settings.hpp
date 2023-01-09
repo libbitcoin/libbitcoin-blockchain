@@ -20,7 +20,6 @@
 #define LIBBITCOIN_BLOCKCHAIN_SETTINGS_HPP
 
 #include <cstdint>
-#include <boost/filesystem.hpp>
 #include <bitcoin/system.hpp>
 #include <bitcoin/blockchain/define.hpp>
 
