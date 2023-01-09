@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\tools\initchain\initchain.cpp">
+    <ClCompile Include="..\..\..\..\tools\initchain\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
