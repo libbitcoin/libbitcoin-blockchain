@@ -31,11 +31,13 @@ using namespace bc::system;
 class BCB_API settings
 {
 public:
+    DEFAULT_COPY_MOVE_DESTRUCT(settings);
+
     settings();
     settings(chain::selection context);
 
     /// Fork flags combiner.
-    uint32_t enabled_forks() const;
+    virtual uint32_t enabled_forks() const;
 
     /// Properties.
     uint32_t cores;
