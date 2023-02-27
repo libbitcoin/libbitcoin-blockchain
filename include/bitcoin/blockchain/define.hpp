@@ -43,21 +43,14 @@
 
 /// Logging.
 /// ---------------------------------------------------------------------------
-#define LOG_DATABASE "database"
-
-#define LOG_INFO(name) std::cout << name << " : "
-#define LOG_DEBUG(name) std::cout << name << " : "
-#define LOG_VERBOSE(name) std::cout << name << " : "
-#define LOG_ERROR(name) std::cerr << name << " : "
-#define LOG_WARNING(name) std::cerr << name << " : "
-#define LOG_FATAL(name) std::cerr << name << " : "
+#define LOG_BLOCKCHAIN "blockchain"
 
 namespace libbitcoin {
-namespace database {
+namespace blockchain {
 
 using code = system::code;
 
-} // namespace database
+} // namespace blockchain
 } // namespace libbitcoin
 
 #endif
