@@ -36,12 +36,7 @@ public:
     settings();
     settings(chain::selection context);
 
-    /// Fork flags combiner.
-    virtual uint32_t enabled_forks() const;
-
     /// Properties.
-    uint32_t cores;
-    bool priority;
     bool index_payments;
     bool use_libconsensus;
     float byte_fee_satoshis;
@@ -50,32 +45,12 @@ public:
     uint32_t notify_limit_hours;
     uint32_t reorganization_limit;
     uint32_t block_buffer_limit;
-    system::chain::checkpoints checkpoints;
-    bool difficult;
-    bool retarget;
-    bool bip16;
-    bool bip30;
-    bool bip34;
-    bool bip42;
-    bool bip66;
-    bool bip65;
-    bool bip90;
-    bool bip68;
-    bool bip112;
-    bool bip113;
-    bool bip141;
-    bool bip143;
-    bool bip147;
-    bool bip158;
-    bool time_warp_patch;
-    bool retarget_overflow_patch;
-    bool scrypt_proof_of_work;
 
-    // Mining/Template inputs
-    system::config::script coinbase_input;
-    system::config::script coinbase_output;
-    size_t block_sigop_limit;
-    size_t block_bytes_limit;
+    ////// Mining/Template inputs
+    ////system::config::script coinbase_input{};
+    ////system::config::script coinbase_output{};
+    ////size_t block_sigop_limit{};
+    ////size_t block_bytes_limit{};
 };
 
 } // namespace blockchain
