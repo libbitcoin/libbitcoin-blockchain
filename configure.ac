@@ -1,5 +1,5 @@
 ###############################################################################
-#  Copyright (c) 2014-2020 libbitcoin-blockchain developers (see COPYING).
+#  Copyright (c) 2014-2023 libbitcoin-blockchain developers (see COPYING).
 #
 #         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
@@ -146,81 +146,6 @@ AC_ARG_ENABLE([isystem],
 AC_MSG_RESULT([$enable_isystem])
 
 
-# Check dependencies.
-#==============================================================================
-# Require Boost of at least version 1.72.0 and output ${boost_CPPFLAGS/LDFLAGS}.
-#------------------------------------------------------------------------------
-AS_CASE([${CC}], [*],
-    [AX_BOOST_BASE([1.72.0],
-        [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
-         AC_SUBST([boost_ISYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
-         AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
-         AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
-         AC_MSG_NOTICE([boost_ISYS_CPPFLAGS : ${boost_ISYS_CPPFLAGS}])
-         AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
-        [AC_MSG_ERROR([Boost 1.72.0 or later is required but was not found.])])])
-
-AS_CASE([${enable_isystem}],[yes],
-    [AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_ISYS_CPPFLAGS}])],
-    [AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_CPPFLAGS}])])
-
-AC_MSG_NOTICE([boost_BUILD_CPPFLAGS : ${boost_BUILD_CPPFLAGS}])
-
-AS_CASE([${with_tests}], [yes],
-    [AX_BOOST_UNIT_TEST_FRAMEWORK
-     AC_SUBST([boost_unit_test_framework_LIBS], [${BOOST_UNIT_TEST_FRAMEWORK_LIB}])
-     AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
-    [AC_SUBST([boost_unit_test_framework_LIBS], [])])
-
-# Require bitcoin-database of at least version 3.7.0 and output ${bitcoin_database_CPPFLAGS/LIBS/PKG}.
-#------------------------------------------------------------------------------
-PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 3.7.0],
-    [bitcoin_database_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-database >= 3.7.0" 2>/dev/null`"
-     bitcoin_database_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-database >= 3.7.0" 2>/dev/null`"],
-    [AC_MSG_ERROR([libbitcoin-database >= 3.7.0 is required but was not found.])])
-AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 3.7.0'])
-AC_SUBST([bitcoin_database_CPPFLAGS], [${bitcoin_database_CFLAGS}])
-AS_IF([test x${bitcoin_database_INCLUDEDIR} != "x"],
-    [AC_SUBST([bitcoin_database_ISYS_CPPFLAGS], ["-isystem${bitcoin_database_INCLUDEDIR} ${bitcoin_database_OTHER_CFLAGS}"])],
-    [AC_SUBST([bitcoin_database_ISYS_CPPFLAGS], [${bitcoin_database_OTHER_CFLAGS}])])
-AC_MSG_NOTICE([bitcoin_database_CPPFLAGS : ${bitcoin_database_CPPFLAGS}])
-AC_MSG_NOTICE([bitcoin_database_ISYS_CPPFLAGS : ${bitcoin_database_ISYS_CPPFLAGS}])
-AC_MSG_NOTICE([bitcoin_database_OTHER_CFLAGS : ${bitcoin_database_OTHER_CFLAGS}])
-AC_MSG_NOTICE([bitcoin_database_INCLUDEDIR : ${bitcoin_database_INCLUDEDIR}])
-AC_MSG_NOTICE([bitcoin_database_LIBS : ${bitcoin_database_LIBS}])
-
-AS_CASE([${enable_isystem}],[yes],
-    [AC_SUBST([bitcoin_database_BUILD_CPPFLAGS], [${bitcoin_database_ISYS_CPPFLAGS}])],
-    [AC_SUBST([bitcoin_database_BUILD_CPPFLAGS], [${bitcoin_database_CPPFLAGS}])])
-
-AC_MSG_NOTICE([bitcoin_database_BUILD_CPPFLAGS : ${bitcoin_database_BUILD_CPPFLAGS}])
-
-# Require bitcoin-consensus of at least version 3.7.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
-#------------------------------------------------------------------------------
-AS_CASE([${with_consensus}], [yes],
-    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 3.7.0],
-        [bitcoin_consensus_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-consensus >= 3.7.0" 2>/dev/null`"
-         bitcoin_consensus_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-consensus >= 3.7.0" 2>/dev/null`"],
-        [AC_MSG_ERROR([--with-consensus specified but libbitcoin-consensus >= 3.7.0 was not found.])])
-     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 3.7.0'])
-     AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
-     AS_IF([test x${bitcoin_consensus_INCLUDEDIR} != "x"],
-        [AC_SUBST([bitcoin_consensus_ISYS_CPPFLAGS], ["-isystem${bitcoin_consensus_INCLUDEDIR} ${bitcoin_consensus_OTHER_CFLAGS}"])],
-        [AC_SUBST([bitcoin_consensus_ISYS_CPPFLAGS], [${bitcoin_consensus_OTHER_CFLAGS}])])
-     AC_MSG_NOTICE([bitcoin_consensus_CPPFLAGS : ${bitcoin_consensus_CPPFLAGS}])
-     AC_MSG_NOTICE([bitcoin_consensus_ISYS_CPPFLAGS : ${bitcoin_consensus_ISYS_CPPFLAGS}])
-     AC_MSG_NOTICE([bitcoin_consensus_OTHER_CFLAGS : ${bitcoin_consensus_OTHER_CFLAGS}])
-     AC_MSG_NOTICE([bitcoin_consensus_INCLUDEDIR : ${bitcoin_consensus_INCLUDEDIR}])
-     AC_MSG_NOTICE([bitcoin_consensus_LIBS : ${bitcoin_consensus_LIBS}])],
-    [AC_SUBST([bitcoin_consensus_PKG], [])])
-
-AS_CASE([${enable_isystem}],[yes],
-    [AC_SUBST([bitcoin_consensus_BUILD_CPPFLAGS], [${bitcoin_consensus_ISYS_CPPFLAGS}])],
-    [AC_SUBST([bitcoin_consensus_BUILD_CPPFLAGS], [${bitcoin_consensus_CPPFLAGS}])])
-
-AC_MSG_NOTICE([bitcoin_consensus_BUILD_CPPFLAGS : ${bitcoin_consensus_BUILD_CPPFLAGS}])
-
-
 # Set flags.
 #==============================================================================
 # Require c++11 for all c++ products.
@@ -316,6 +241,81 @@ AS_CASE([${CC}], [*],
 AS_CASE([${CC}], [*],
     [AX_CHECK_LINK_FLAG([-fstack-protector-all],
         [LDFLAGS="$LDFLAGS -fstack-protector-all"])])
+
+
+# Check dependencies.
+#==============================================================================
+# Require Boost of at least version 1.72.0 and output ${boost_CPPFLAGS/LDFLAGS}.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_BOOST_BASE([1.72.0],
+        [AC_SUBST([boost_CPPFLAGS], [${BOOST_CPPFLAGS}])
+         AC_SUBST([boost_ISYS_CPPFLAGS], [`echo ${BOOST_CPPFLAGS} | $SED s/^-I/-isystem/g | $SED s/' -I'/' -isystem'/g`])
+         AC_SUBST([boost_LDFLAGS], [${BOOST_LDFLAGS}])
+         AC_MSG_NOTICE([boost_CPPFLAGS : ${boost_CPPFLAGS}])
+         AC_MSG_NOTICE([boost_ISYS_CPPFLAGS : ${boost_ISYS_CPPFLAGS}])
+         AC_MSG_NOTICE([boost_LDFLAGS : ${boost_LDFLAGS}])],
+        [AC_MSG_ERROR([Boost 1.72.0 or later is required but was not found.])])])
+
+AS_CASE([${enable_isystem}],[yes],
+    [AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_ISYS_CPPFLAGS}])],
+    [AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_CPPFLAGS}])])
+
+AC_MSG_NOTICE([boost_BUILD_CPPFLAGS : ${boost_BUILD_CPPFLAGS}])
+
+AS_CASE([${with_tests}], [yes],
+    [AX_BOOST_UNIT_TEST_FRAMEWORK
+     AC_SUBST([boost_unit_test_framework_LIBS], [${BOOST_UNIT_TEST_FRAMEWORK_LIB}])
+     AC_MSG_NOTICE([boost_unit_test_framework_LIBS : ${boost_unit_test_framework_LIBS}])],
+    [AC_SUBST([boost_unit_test_framework_LIBS], [])])
+
+# Require bitcoin-database of at least version 3.7.0 and output ${bitcoin_database_CPPFLAGS/LIBS/PKG}.
+#------------------------------------------------------------------------------
+PKG_CHECK_MODULES([bitcoin_database], [libbitcoin-database >= 3.7.0],
+    [bitcoin_database_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-database >= 3.7.0" 2>/dev/null`"
+     bitcoin_database_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-database >= 3.7.0" 2>/dev/null`"],
+    [AC_MSG_ERROR([libbitcoin-database >= 3.7.0 is required but was not found.])])
+AC_SUBST([bitcoin_database_PKG], ['libbitcoin-database >= 3.7.0'])
+AC_SUBST([bitcoin_database_CPPFLAGS], [${bitcoin_database_CFLAGS}])
+AS_IF([test x${bitcoin_database_INCLUDEDIR} != "x"],
+    [AC_SUBST([bitcoin_database_ISYS_CPPFLAGS], ["-isystem${bitcoin_database_INCLUDEDIR} ${bitcoin_database_OTHER_CFLAGS}"])],
+    [AC_SUBST([bitcoin_database_ISYS_CPPFLAGS], [${bitcoin_database_OTHER_CFLAGS}])])
+AC_MSG_NOTICE([bitcoin_database_CPPFLAGS : ${bitcoin_database_CPPFLAGS}])
+AC_MSG_NOTICE([bitcoin_database_ISYS_CPPFLAGS : ${bitcoin_database_ISYS_CPPFLAGS}])
+AC_MSG_NOTICE([bitcoin_database_OTHER_CFLAGS : ${bitcoin_database_OTHER_CFLAGS}])
+AC_MSG_NOTICE([bitcoin_database_INCLUDEDIR : ${bitcoin_database_INCLUDEDIR}])
+AC_MSG_NOTICE([bitcoin_database_LIBS : ${bitcoin_database_LIBS}])
+
+AS_CASE([${enable_isystem}],[yes],
+    [AC_SUBST([bitcoin_database_BUILD_CPPFLAGS], [${bitcoin_database_ISYS_CPPFLAGS}])],
+    [AC_SUBST([bitcoin_database_BUILD_CPPFLAGS], [${bitcoin_database_CPPFLAGS}])])
+
+AC_MSG_NOTICE([bitcoin_database_BUILD_CPPFLAGS : ${bitcoin_database_BUILD_CPPFLAGS}])
+
+# Require bitcoin-consensus of at least version 3.7.0 and output ${bitcoin_consensus_CPPFLAGS/LIBS/PKG}.
+#------------------------------------------------------------------------------
+AS_CASE([${with_consensus}], [yes],
+    [PKG_CHECK_MODULES([bitcoin_consensus], [libbitcoin-consensus >= 3.7.0],
+        [bitcoin_consensus_INCLUDEDIR="`$PKG_CONFIG --variable=includedir "libbitcoin-consensus >= 3.7.0" 2>/dev/null`"
+         bitcoin_consensus_OTHER_CFLAGS="`$PKG_CONFIG --cflags-only-other "libbitcoin-consensus >= 3.7.0" 2>/dev/null`"],
+        [AC_MSG_ERROR([--with-consensus specified but libbitcoin-consensus >= 3.7.0 was not found.])])
+     AC_SUBST([bitcoin_consensus_PKG], ['libbitcoin-consensus >= 3.7.0'])
+     AC_SUBST([bitcoin_consensus_CPPFLAGS], [${bitcoin_consensus_CFLAGS}])
+     AS_IF([test x${bitcoin_consensus_INCLUDEDIR} != "x"],
+        [AC_SUBST([bitcoin_consensus_ISYS_CPPFLAGS], ["-isystem${bitcoin_consensus_INCLUDEDIR} ${bitcoin_consensus_OTHER_CFLAGS}"])],
+        [AC_SUBST([bitcoin_consensus_ISYS_CPPFLAGS], [${bitcoin_consensus_OTHER_CFLAGS}])])
+     AC_MSG_NOTICE([bitcoin_consensus_CPPFLAGS : ${bitcoin_consensus_CPPFLAGS}])
+     AC_MSG_NOTICE([bitcoin_consensus_ISYS_CPPFLAGS : ${bitcoin_consensus_ISYS_CPPFLAGS}])
+     AC_MSG_NOTICE([bitcoin_consensus_OTHER_CFLAGS : ${bitcoin_consensus_OTHER_CFLAGS}])
+     AC_MSG_NOTICE([bitcoin_consensus_INCLUDEDIR : ${bitcoin_consensus_INCLUDEDIR}])
+     AC_MSG_NOTICE([bitcoin_consensus_LIBS : ${bitcoin_consensus_LIBS}])],
+    [AC_SUBST([bitcoin_consensus_PKG], [])])
+
+AS_CASE([${enable_isystem}],[yes],
+    [AC_SUBST([bitcoin_consensus_BUILD_CPPFLAGS], [${bitcoin_consensus_ISYS_CPPFLAGS}])],
+    [AC_SUBST([bitcoin_consensus_BUILD_CPPFLAGS], [${bitcoin_consensus_CPPFLAGS}])])
+
+AC_MSG_NOTICE([bitcoin_consensus_BUILD_CPPFLAGS : ${bitcoin_consensus_BUILD_CPPFLAGS}])
 
 
 # Process outputs into templates.
