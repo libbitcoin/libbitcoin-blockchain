@@ -956,6 +956,7 @@ build_from_tarball_boost()
         "$BOOST_CXXFLAGS" \
         "$BOOST_LINKFLAGS" \
         "link=$BOOST_LINK" \
+	"warnings=off" \
         "boost.locale.iconv=$BOOST_ICU_ICONV" \
         "boost.locale.posix=$BOOST_ICU_POSIX" \
         "-sNO_BZIP2=1" \
@@ -979,20 +980,40 @@ build_from_tarball_boost()
 build_all()
 {
     unpack_from_tarball "$ICU_ARCHIVE" "$ICU_URL" gzip "$BUILD_ICU"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${ICU_FLAGS[@]}"
     build_from_tarball "$ICU_ARCHIVE" source "$PARALLEL" "$BUILD_ICU" "${ICU_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
+    export CPPFLAGS=$SAVE_CPPFLAGS
     unpack_from_tarball "$BOOST_ARCHIVE" "$BOOST_URL" bzip2 "$BUILD_BOOST"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${BOOST_FLAGS[@]}"
     build_from_tarball_boost "$BOOST_ARCHIVE" "$PARALLEL" "$BUILD_BOOST" "${BOOST_OPTIONS[@]}"
+    export CPPFLAGS=$SAVE_CPPFLAGS
     create_from_github libbitcoin secp256k1 version7 "yes"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${SECP256K1_FLAGS[@]}"
     build_from_github secp256k1 "$PARALLEL" false "yes" "${SECP256K1_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS
+    export CPPFLAGS=$SAVE_CPPFLAGS
     create_from_github libbitcoin libbitcoin-system version3 "yes"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${BITCOIN_SYSTEM_FLAGS[@]}"
     display_message "libbitcoin-system PRESET ${REPO_PRESET[libbitcoin-system]}"
     build_from_github_cmake libbitcoin-system ${REPO_PRESET[libbitcoin-system]} "$PARALLEL" false "yes" "${BITCOIN_SYSTEM_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
+    export CPPFLAGS=$SAVE_CPPFLAGS
     create_from_github libbitcoin libbitcoin-database version3 "yes"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${BITCOIN_DATABASE_FLAGS[@]}"
     display_message "libbitcoin-database PRESET ${REPO_PRESET[libbitcoin-database]}"
     build_from_github_cmake libbitcoin-database ${REPO_PRESET[libbitcoin-database]} "$PARALLEL" false "yes" "${BITCOIN_DATABASE_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
+    export CPPFLAGS=$SAVE_CPPFLAGS
     create_from_github libbitcoin libbitcoin-consensus version3 "$WITH_BITCOIN_CONSENSUS"
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${BITCOIN_CONSENSUS_FLAGS[@]}"
     display_message "libbitcoin-consensus PRESET ${REPO_PRESET[libbitcoin-consensus]}"
     build_from_github_cmake libbitcoin-consensus ${REPO_PRESET[libbitcoin-consensus]} "$PARALLEL" false "$WITH_BITCOIN_CONSENSUS" "${BITCOIN_CONSENSUS_OPTIONS[@]}" $CUMULATIVE_FILTERED_ARGS_CMAKE "$@"
+    export CPPFLAGS=$SAVE_CPPFLAGS
+    local SAVE_CPPFLAGS="$CPPFLAGS"
+    export CPPFLAGS="$CPPFLAGS ${BITCOIN_BLOCKCHAIN_FLAGS[@]}"
     if [[ ! ($CI == true) ]]; then
         create_from_github libbitcoin libbitcoin-blockchain version3 "yes"
         display_message "libbitcoin-blockchain PRESET ${REPO_PRESET[libbitcoin-blockchain]}"
@@ -1005,6 +1026,7 @@ build_all()
         pop_directory
         pop_directory
     fi
+    export CPPFLAGS=$SAVE_CPPFLAGS
 }
 
 
@@ -1025,6 +1047,19 @@ set_pkgconfigdir
 set_with_boost_prefix
 
 remove_install_options
+
+# Define build flags.
+#==============================================================================
+# Define icu flags.
+#------------------------------------------------------------------------------
+ICU_FLAGS=(
+"-w")
+
+# Define secp256k1 flags.
+#------------------------------------------------------------------------------
+SECP256K1_FLAGS=(
+"-w")
+
 
 # Define build options.
 #==============================================================================
